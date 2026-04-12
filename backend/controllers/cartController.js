@@ -100,7 +100,6 @@ exports.updateCartLocation = asyncHandler(async (req, res) => {
 exports.createMenuItems = asyncHandler(async (req, res) => {
   const cartId = req.params.cartId
   const { items } = req.body
-  console.log(cartId);
 
   if (!Array.isArray(items) || items.length === 0) {
     res.status(400)
@@ -127,7 +126,6 @@ exports.createMenuItems = asyncHandler(async (req, res) => {
   }
 
   const processedItems = items.map((item) => {
-    console.log(item)
     if (!item.name || item.price === undefined || !item.isVeg) {
       throw new Error('Each item must have name, price and isVeg')
     }
@@ -197,12 +195,10 @@ exports.generateAndUploadQR = asyncHandler(async (req, res) => {
 
     const qrImageUrl = `https://${bucketName}.s3.amazonaws.com/${s3Key}`
     cart.qrImageUrl = qrImageUrl
-    console.log('QR Code uploaded to S3 at:', qrImageUrl)
     await cart.save()
 
     res.json({ success: true, qrImageUrl })
   } catch (s3Error) {
-    console.error('S3 Upload Error:', s3Error)
 
     res.status(502).json({
       success: false,
@@ -372,8 +368,6 @@ exports.deleteStaff = asyncHandler(async (req, res) => {
   const staffId = req.params.staffId
 
   const staff = await User.findById({ _id: staffId })
-
-  console.log(staff)
 
   if (!staff) {
     res.status(404)
