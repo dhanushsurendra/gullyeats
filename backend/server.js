@@ -34,6 +34,10 @@ app.use('/api/', limiter);
 app.use(cors());
 app.use(express.json({ limit: '10kb' })); 
 
+app.get('/', (req, res) => {
+  res.send('GullyEats API is running 🚀');
+});
+
 app.use('/api/vendors', vendorRoutes);
 app.use('/api/carts', cartRoutes);
 
