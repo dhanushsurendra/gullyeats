@@ -1,67 +1,188 @@
-import { FiPlus, FiMinus } from 'react-icons/fi'
+import defaultFoodImage from '../assets/default-food.png'
 
-export const MenuItem = ({ item, onAdd, onRemove, quantity }) => (
-  <div className='p-16px bg-white border border-grey-200 rounded-xl flex justify-between 
-  items-center shadow-sm mb-12px'>
-    <div className='flex-1'>
-      <DietIndicator isVeg={item.isVeg} />
+export function MenuItem({
+  item,
+  quantity,
+  onAdd,
+  onRemove,
+  disabled = false,
+}) {
+  const outOfStock = !item.isInStock || disabled
 
-      <h3 className='text-h3 text-black mt-1 font-semibold'>{item.name}</h3>
-      <p className='text-h3 text-black mt-1 font-bold'>₹{item.price}</p>
-    </div>
+  return (
+    <div
+      className={`
+        group
+        flex items-center gap-4
+        border border-grey-200
+        rounded-xl
+        p-3
+        bg-white
+        transition-all
+        duration-200
+        ease-out
+        ${
+          outOfStock
+            ? 'opacity-50'
+            : 'hover:border-primary/30 hover:shadow-md active:scale-[0.99]'
+        }
+      `}
+    >
+      {/* ==========================================
+          FOOD IMAGE
+      ========================================== */}
 
-    <div className='ml-12px'>
-      {quantity === 0 ? (
-        <button
-          onClick={() => onAdd(item.id)}
-          className='bg-light-orange text-primary border border-primary/30 px-6 py-2 
-          rounded-pill font-bold text-caption active:scale-95 transition-all shadow-sm'
-        >
-          + ADD
-        </button>
-      ) : (
-        <div className='flex items-center bg-white border border-primary rounded-pill p-1 
-        shadow-sm'>
-          <button
-            onClick={() => onRemove(item.id)}
-            className='w-8 h-8 flex items-center justify-center text-grey-500 
-            active:scale-75 transition'
-          >
-            <FiMinus className='text-gray-400' size={14} strokeWidth={4} />
-          </button>
-          <span className='w-6 text-center text-primary font-bold text-body'>
-            {quantity}
-          </span>
-          <button
-            onClick={() => onAdd(item.id)}
-            className='w-8 h-8 flex items-center justify-center bg-primary text-white 
-            rounded-full active:scale-75 transition shadow-md'
-          >
-            <FiPlus size={14} strokeWidth={4} />
-          </button>
+      <div className='w-20 h-20 shrink-0 overflow-hidden rounded-xl bg-grey-100'>
+        <img
+          src={item.imageUrl || defaultFoodImage}
+          alt={item.name}
+          className='
+            w-full h-full
+            object-cover
+            transition-transform
+            duration-300
+            ease-out
+            group-hover:scale-105
+          '
+          onError={(e) => {
+            e.currentTarget.onerror = null
+            e.currentTarget.src = defaultFoodImage
+          }}
+        />
+      </div>
+
+      {/* ==========================================
+          ITEM DETAILS
+      ========================================== */}
+
+      <div className='flex-1 min-w-0 self-stretch flex flex-col justify-center'>
+        {/* Item name */}
+        <div className='flex items-start gap-2'>
+          <span
+            className={`
+              w-2 h-2
+              shrink-0
+              rounded-full
+              mt-1.5
+              ${item.isVeg ? 'bg-green-500' : 'bg-red-500'}
+            `}
+          />
+
+          <p className='text-sm font-semibold text-black leading-snug line-clamp-2'>
+            {item.name}
+          </p>
+        </div>
+
+        {/* Price */}
+        <p className='text-sm font-semibold text-grey-700 mt-1'>
+          ₹{item.price}
+        </p>
+        
+        {/* Out of stock */}
+        {outOfStock && !disabled && (
+          <p className='text-caption text-red-500 mt-1'>Out of stock</p>
+        )}
+      </div>
+
+      {/* ==========================================
+          ACTION
+      ========================================== */}
+
+      {!outOfStock && (
+        <div className='shrink-0'>
+          {quantity === 0 ? (
+            /* ADD */
+            <button
+              onClick={() => onAdd(item._id)}
+              className='
+                flex items-center justify-center
+                gap-1
+                border border-primary
+                text-primary
+                bg-white
+                px-4 py-2
+                rounded-pill
+                font-semibold
+                text-sm
+                transition-all
+                duration-200
+                hover:bg-primary
+                hover:text-white
+                active:scale-95
+              '
+            >
+              <span className='text-base leading-none'>+</span>
+              ADD
+            </button>
+          ) : (
+            <div
+              className='
+    flex items-center
+    gap-1
+    border border-primary/30
+    bg-white
+    rounded-pill
+    px-1
+    py-1
+    shadow-sm
+  '
+            >
+              {/* Minus */}
+              <button
+                onClick={() => onRemove(item._id)}
+                className='
+      w-7 h-7
+      rounded-full
+      flex items-center justify-center
+      text-primary
+      text-base
+      font-semibold
+      leading-none
+      transition-all
+      duration-150
+      hover:bg-lightOrange
+      active:scale-90
+    '
+              >
+                −
+              </button>
+
+              {/* Quantity */}
+              <span
+                className='
+      min-w-7
+      text-center
+      text-sm
+      font-semibold
+      text-black
+    '
+              >
+                {quantity}
+              </span>
+
+              {/* Plus */}
+              <button
+                onClick={() => onAdd(item._id)}
+                className='
+                  w-7 h-7
+                  rounded-full
+                  flex items-center justify-center
+                  text-primary
+                  text-base
+                  font-semibold
+                  leading-none
+                  transition-all
+                  duration-150
+                  hover:bg-lightOrange
+                  active:scale-90
+                '
+              >
+                +
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
-  </div>
-)
-
-const DietIndicator = ({ isVeg }) => (
-  <div className='flex items-center gap-1.5 mt-1'>
-    <div
-      className={`
-      w-3.5 h-3.5 border-2 flex items-center justify-center rounded-sm
-      ${isVeg ? 'border-green-600' : 'border-red-600'}
-    `}
-    >
-      <div
-        className={`
-        w-1.5 h-1.5 rounded-full
-        ${isVeg ? 'bg-green-600' : 'bg-red-600'}
-      `}
-      />
-    </div>
-    <span className='text-[11px] font-medium text-grey-500 uppercase tracking-tight'>
-      {isVeg ? 'Veg' : 'Non-Veg'}
-    </span>
-  </div>
-)
+  )
+}
