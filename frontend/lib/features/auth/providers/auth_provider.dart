@@ -13,7 +13,7 @@ class AuthProvider with ChangeNotifier {
   Future<String> sendOtp(String phone) async {
     try {
       final otp = await _api.sendOtp(phone);
-      return otp;
+      return otp; 
     } finally {
       notifyListeners();
     }
@@ -33,7 +33,7 @@ class AuthProvider with ChangeNotifier {
       await prefs.setString('user_data', userJson);
 
       _token = token;
-      return {'userId': res['user']['userId'], 'pin': res['pin']};
+      return {'userId': res['user']['_id'], 'pin': res['pin']};
     } finally {
       notifyListeners();
     }

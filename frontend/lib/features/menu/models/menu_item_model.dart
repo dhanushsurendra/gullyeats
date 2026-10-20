@@ -7,7 +7,7 @@ class MenuItemModel {
 
   Map<String, dynamic> toJson() {
     return {
-      "name": name,
+      "name": name, 
       "price": price,
       "isVeg": isVeg,
     };

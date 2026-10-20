@@ -1,48 +1,109 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:geolocator/geolocator.dart'; 
+import 'package:flutter_map_vector_tiles/flutter_map_vector_tiles.dart' as vt;
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:latlong2/latlong.dart';
+
 import 'package:gullyeats/core/theme/app_colors.dart';
 import 'package:gullyeats/core/theme/app_gaps.dart';
 import 'package:gullyeats/core/theme/app_text_styles.dart';
 import 'package:gullyeats/core/widgets/app_button.dart';
 import 'package:gullyeats/core/widgets/app_snack_bar.dart';
 import 'package:gullyeats/core/widgets/base_screen.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:geocoding/geocoding.dart';
 
 class EnableLocationScreen extends StatefulWidget {
   const EnableLocationScreen({super.key});
 
   @override
-  State<EnableLocationScreen> createState() => _EnableLocationScreenState();
+  State<EnableLocationScreen> createState() =>
+      _EnableLocationScreenState();
 }
 
 class _EnableLocationScreenState extends State<EnableLocationScreen> {
   bool _isLocating = false;
   bool _isLocationCaptured = false;
+
   double? lat;
   double? lng;
   Placemark? address;
   double? accuracyValue;
 
-  Future<Placemark> getAddressFromLatLng(double lat, double lng) async {
+  vt.Style? _mapStyle;
+  bool _isMapLoading = true;
+  bool _mapStyleFailed = false;
+
+  static const String _styleUri =
+      'https://tiles.openfreemap.org/styles/positron';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMapStyle();
+  }
+
+  Future<void> _loadMapStyle() async {
+    if (!mounted) return;
+
+    setState(() {
+      _isMapLoading = true;
+      _mapStyleFailed = false;
+    });
+
+    vt.Style? style;
+
     try {
-      List<Placemark> placemarks = await placemarkFromCoordinates(lat, lng);
+      style = await vt.StyleReader(
+        uri: _styleUri,
+      ).read().timeout(const Duration(seconds: 12));
 
-      if (placemarks.isNotEmpty) {
-        Placemark place = placemarks[0];
-        return place;
+      if (!mounted) {
+        style.dispose();
+        return;
       }
 
-      return Placemark();
-    } catch (e) {
-      if (mounted) {
-        AppSnackBar.show(
-          context,
-          message: "Failed to get address from coordinates.",
-          isError: true,
-        );
-      }
+      final previousStyle = _mapStyle;
+
+      setState(() {
+        _mapStyle = style;
+        _isMapLoading = false;
+        _mapStyleFailed = false;
+      });
+
+      previousStyle?.dispose();
+    } catch (_) {
+      style?.dispose();
+
+      if (!mounted) return;
+
+      setState(() {
+        _isMapLoading = false;
+        _mapStyleFailed = true;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _mapStyle?.dispose();
+    super.dispose();
+  }
+
+  Future<Placemark> getAddressFromLatLng(
+    double latitude,
+    double longitude,
+  ) async {
+    try {
+      final placemarks = await placemarkFromCoordinates(
+        latitude,
+        longitude,
+      );
+
+      return placemarks.isNotEmpty
+          ? placemarks.first
+          : Placemark();
+    } catch (_) {
       return Placemark();
     }
   }
@@ -53,13 +114,19 @@ class _EnableLocationScreenState extends State<EnableLocationScreen> {
     setState(() => _isLocating = true);
 
     try {
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled && mounted) {
-        AppSnackBar.show(
-          context,
-          message: "Location services are disabled. Please enable them.",
-          isError: true,
-        );
+      final serviceEnabled =
+          await Geolocator.isLocationServiceEnabled();
+
+      if (!serviceEnabled) {
+        if (mounted) {
+          AppSnackBar.show(
+            context,
+            message:
+                'Location services are disabled. Please enable them.',
+            isError: true,
+          );
+        }
+
         await Geolocator.openLocationSettings();
         return;
       }
@@ -70,21 +137,27 @@ class _EnableLocationScreenState extends State<EnableLocationScreen> {
         permission = await Geolocator.requestPermission();
       }
 
-      if (permission == LocationPermission.denied && mounted) {
-        AppSnackBar.show(
-          context,
-          message: "Location permission is required.",
-          isError: true,
-        );
+      if (permission == LocationPermission.denied) {
+        if (mounted) {
+          AppSnackBar.show(
+            context,
+            message: 'Location permission is required.',
+            isError: true,
+          );
+        }
+        return;
       }
 
-      if (permission == LocationPermission.deniedForever && mounted) {
-        AppSnackBar.show(
-          context,
-          message:
-              "Permission permanently denied. Please enable from settings.",
-          isError: true,
-        );
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          AppSnackBar.show(
+            context,
+            message:
+                'Permission permanently denied. Please enable from settings.',
+            isError: true,
+          );
+        }
+
         await Geolocator.openAppSettings();
         return;
       }
@@ -96,27 +169,27 @@ class _EnableLocationScreenState extends State<EnableLocationScreen> {
         ),
       ).timeout(const Duration(seconds: 20));
 
-      if (!mounted) return;
-
-      Placemark addressStr = await getAddressFromLatLng(
+      final addressResult = await getAddressFromLatLng(
         position.latitude,
         position.longitude,
       );
+
+      if (!mounted) return;
 
       setState(() {
         lat = position.latitude;
         lng = position.longitude;
         accuracyValue = position.accuracy;
-        address = addressStr;
+        address = addressResult;
         _isLocationCaptured = true;
       });
-
-    } catch (e) {
-      _isLocationCaptured = false;
+    } catch (_) {
       if (mounted) {
+        setState(() => _isLocationCaptured = false);
+
         AppSnackBar.show(
           context,
-          message: "Unable to fetch location. Please try again.",
+          message: 'Unable to fetch location. Please try again.',
           isError: true,
         );
       }
@@ -130,8 +203,8 @@ class _EnableLocationScreenState extends State<EnableLocationScreen> {
   @override
   Widget build(BuildContext context) {
     return BaseScreen(
-      title: "Enable Location",
-      subtitle: "We need your location to verify your cart",
+      title: 'Enable Location',
+      subtitle: 'We need your location to verify your cart',
       expandToFullHeight: true,
       onBack: () => Navigator.pop(context),
       child: Column(
@@ -143,25 +216,31 @@ class _EnableLocationScreenState extends State<EnableLocationScreen> {
           const Spacer(),
           Center(
             child: Text(
-              "Securely used only for verification",
-              style: AppTextStyles.caption.copyWith(color: AppColors.grey400),
+              'Securely used only for verification',
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.grey400,
+              ),
             ),
           ),
           AppGaps.h16,
           AppButton(
-            label: _isLocationCaptured ? "CONTINUE" : "ENABLE LOCATION",
+            label: _isLocationCaptured
+                ? 'CONTINUE'
+                : 'ENABLE LOCATION',
             isLoading: _isLocating,
             onPressed: _isLocationCaptured
-                ? () => Navigator.pushNamed(
-                    context,
-                    "/confirm-location",
-                    arguments: {
-                      "placemark": address,
-                      "accuracy": accuracyValue?.toInt(),
-                      "lat": lat,
-                      "lng": lng,
-                    },
-                  )
+                ? () {
+                    Navigator.pushNamed(
+                      context,
+                      '/confirm-location',
+                      arguments: {
+                        'placemark': address,
+                        'accuracy': accuracyValue?.toInt(),
+                        'lat': lat,
+                        'lng': lng,
+                      },
+                    );
+                  }
                 : _handleEnableLocation,
           ),
           AppGaps.h12,
@@ -170,9 +249,56 @@ class _EnableLocationScreenState extends State<EnableLocationScreen> {
     );
   }
 
-  Widget _buildMap(double? lat, double? lng) {
-    if (lat == null || lng == null || _isLocating) {
+  Widget _buildMap(double? latitude, double? longitude) {
+    if (latitude == null || longitude == null || _isLocating) {
       return _buildMapPlaceholder();
+    }
+
+    if (_isMapLoading) {
+      return Container(
+        height: 220,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: AppColors.grey100,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: AppColors.primary.withValues(alpha: 0.1),
+          ),
+        ),
+        child: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (_mapStyleFailed || _mapStyle == null) {
+      return Container(
+        height: 220,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: AppColors.grey100,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: AppColors.primary.withValues(alpha: 0.1),
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.location_on,
+              color: AppColors.primary,
+              size: 36,
+            ),
+            AppGaps.h12,
+            const Text('Map unavailable'),
+            TextButton(
+              onPressed: _loadMapStyle,
+              child: const Text('Tap to retry'),
+            ),
+          ],
+        ),
+      );
     }
 
     return Container(
@@ -196,28 +322,45 @@ class _EnableLocationScreenState extends State<EnableLocationScreen> {
       ),
       child: FlutterMap(
         options: MapOptions(
-          initialCenter: LatLng(lat, lng),
-          initialZoom: 16.0,
+          initialCenter: LatLng(latitude, longitude),
+          initialZoom: 16,
           interactionOptions: const InteractionOptions(
-            flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+            flags: InteractiveFlag.all &
+                ~InteractiveFlag.rotate,
           ),
         ),
         children: [
-          TileLayer(
-            urlTemplate:
-                'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-            subdomains: const ['a', 'b', 'c', 'd'],
+          vt.VectorTileLayer(
+            theme: _mapStyle!.theme,
+            tileProviders: _mapStyle!.providers,
+            sprites: _mapStyle!.sprites,
+            rasterSources: _mapStyle!.rasterSources,
           ),
           MarkerLayer(
             markers: [
               Marker(
-                point: LatLng(lat, lng),
+                point: LatLng(latitude, longitude),
                 width: 50,
                 height: 50,
                 alignment: Alignment.center,
                 child: _buildLightModeMarker(),
               ),
             ],
+          ),
+          Positioned(
+            right: 4,
+            bottom: 4,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 4,
+                vertical: 2,
+              ),
+              color: Colors.white.withValues(alpha: 0.8),
+              child: const Text(
+                '© OpenStreetMap · OpenFreeMap',
+                style: TextStyle(fontSize: 8),
+              ),
+            ),
           ),
         ],
       ),
@@ -247,7 +390,11 @@ class _EnableLocationScreenState extends State<EnableLocationScreen> {
             shape: BoxShape.circle,
             color: Colors.white,
             boxShadow: [
-              BoxShadow(color: Colors.black12, blurRadius: 2, spreadRadius: 1),
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 2,
+                spreadRadius: 1,
+              ),
             ],
           ),
         ),
@@ -275,13 +422,16 @@ class _EnableLocationScreenState extends State<EnableLocationScreen> {
           width: 2,
         ),
       ),
-
       child: Stack(
         alignment: Alignment.center,
         children: [
           Opacity(
             opacity: 0.1,
-            child: Icon(Icons.grid_4x4, size: 300, color: AppColors.primary),
+            child: Icon(
+              Icons.grid_4x4,
+              size: 300,
+              color: AppColors.primary,
+            ),
           ),
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -315,7 +465,7 @@ class _EnableLocationScreenState extends State<EnableLocationScreen> {
                   ],
                 ),
                 child: Text(
-                  "Your location will appear here",
+                  'Your location will appear here',
                   style: AppTextStyles.caption.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -339,21 +489,24 @@ class _EnableLocationScreenState extends State<EnableLocationScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Why we need location?", style: AppTextStyles.heading2),
-          AppGaps.h16,
-          _buildInfoRow(
-            "Verify your cart is real",
-            "We match your photo location with GPS.",
+          Text(
+            'Why we need location?',
+            style: AppTextStyles.heading2,
           ),
           AppGaps.h16,
           _buildInfoRow(
-            "Helps customers find you",
-            "Your cart will show up on the nearby map.",
+            'Verify your cart is real',
+            'We match your photo location with GPS.',
           ),
           AppGaps.h16,
           _buildInfoRow(
-            "Prevents fake registrations",
-            "Ensures only genuine vendors join.",
+            'Helps customers find you',
+            'Your cart will show up on the nearby map.',
+          ),
+          AppGaps.h16,
+          _buildInfoRow(
+            'Prevents fake registrations',
+            'Ensures only genuine vendors join.',
           ),
         ],
       ),
@@ -374,7 +527,9 @@ class _EnableLocationScreenState extends State<EnableLocationScreen> {
         ),
         Text(
           subtitle,
-          style: AppTextStyles.caption.copyWith(color: AppColors.grey500),
+          style: AppTextStyles.caption.copyWith(
+            color: AppColors.grey500,
+          ),
         ),
       ],
     );

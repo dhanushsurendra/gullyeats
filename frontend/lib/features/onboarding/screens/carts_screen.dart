@@ -23,7 +23,7 @@ class CartsScreen extends StatefulWidget {
 }
 
 class _CartsScreenState extends State<CartsScreen> {
-  String? selectedOutletId;
+  String? selectedCartId;
   String searchQuery = "";
 
   List<CartModel> _allCarts = [];
@@ -54,7 +54,12 @@ class _CartsScreenState extends State<CartsScreen> {
       final cartProvider = Provider.of<CartProvider>(context, listen: false);
       final auth = Provider.of<AuthProvider>(context, listen: false);
 
-      List<CartModel> carts = await cartProvider.loadCarts(auth.token);
+      final args =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+
+      final userId = args?['userId'];
+
+      List<CartModel> carts = await cartProvider.loadCarts(auth.token, userId);
 
       setState(() {
         _allCarts = carts;
@@ -153,7 +158,7 @@ class _CartsScreenState extends State<CartsScreen> {
                               padding: const EdgeInsets.only(bottom: 16),
                               child: CartCard(
                                 cart: cart,
-                                isSelected: selectedOutletId == cart.id,
+                                isSelected: selectedCartId == cart.id,
                               ),
                             ),
                           ),

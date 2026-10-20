@@ -22,9 +22,9 @@ class CartProvider with ChangeNotifier {
   String? _cartName;
   String? get cartName => _cartName;
 
-  Future<List<CartModel>> loadCarts(String? token) async {
+  Future<List<CartModel>> loadCarts(String? token, String userId) async {
     try {
-      _carts = await _cartService.fetchUserCarts(token);
+      _carts = await _cartService.fetchUserCarts(token, userId);
       return _carts;
     } finally {
       notifyListeners();

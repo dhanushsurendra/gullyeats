@@ -8,10 +8,11 @@ import 'package:http/http.dart' as http;
 import '../models/cart_model.dart';
 
 class CartService {
-  Future<List<CartModel>> fetchUserCarts(String? token) async {
+  Future<List<CartModel>> fetchUserCarts(String? token, String userId) async {
+    
     final response = await http
         .get(
-          Uri.parse("${ApiConstants.carts}/get-all-carts/"),
+          Uri.parse("${ApiConstants.carts}/get-all-carts/$userId"),
           headers: {
             "Content-Type": "application/json",
             "Authorization": "Bearer $token",
@@ -20,6 +21,7 @@ class CartService {
         .timeout(const Duration(seconds: 10));
 
     final data = response.body.isNotEmpty ? jsonDecode(response.body) : {};
+    print(data);
     if (response.statusCode == 200) {
       return (data["carts"] as List)
           .map((e) => CartModel.fromJson(e as Map<String, dynamic>))
@@ -100,7 +102,7 @@ class CartService {
   ) async {
     final response = await http
         .post(
-          Uri.parse("${ApiConstants.carts}/generate-url/$cartId"),
+          Uri.parse("${ApiConstants.carts}/generate-cart-image-url/$cartId"),
           headers: {
             "Content-Type": "application/json",
             "Authorization": "Bearer $token",

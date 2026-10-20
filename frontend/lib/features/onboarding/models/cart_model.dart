@@ -11,7 +11,7 @@ class CartModel {
   final String userId;
   final CartLocation location;
 
-  CartModel({
+  CartModel({ 
     required this.id,
     required this.cartName,
     required this.cartCity,
@@ -62,19 +62,19 @@ class CartModel {
 
 class CartLocation {
   final String type;
-  final double longitude;
   final double latitude;
+  final double longitude;
 
   CartLocation({
     required this.type,
-    required this.longitude,
     required this.latitude,
+    required this.longitude,
   });
 
   Map<String, dynamic> toJson() {
     return {
       'type': type,
-      'coordinates': [longitude, latitude], 
+      'coordinates': [latitude, longitude], 
     };
   }
 
@@ -82,12 +82,12 @@ class CartLocation {
     List<dynamic> coords = json['coordinates'] ?? [0.0, 0.0];
     return CartLocation(
       type: json['type'] ?? 'Point',
-      longitude: (coords[0] as num).toDouble(),
-      latitude: (coords[1] as num).toDouble(),
+      latitude: (coords[0] as num).toDouble(),
+      longitude: (coords[1] as num).toDouble(),
     );
   }
 
   factory CartLocation.empty() {
-    return CartLocation(type: 'Point', longitude: 0.0, latitude: 0.0);
+    return CartLocation(type: 'Point', latitude: 0.0, longitude: 0.0);
   }
 }

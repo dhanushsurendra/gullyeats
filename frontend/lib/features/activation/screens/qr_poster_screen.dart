@@ -70,11 +70,13 @@ class _QrPosterScreenState extends State<QrPosterScreen> {
 
   Future<void> _shareQr() async {
     setState(() => _isBtnLoading = true);
+    final cartProvider = Provider.of<CartProvider>(context, listen: false);
+
     try {
       await QrService.saveAndSharePdf(
         qrKey: _qrKey,
         cartName: _cartName,
-        cartId: "69caa80e0b0f7b957daf05b4",
+        cartId: cartProvider.cartId!,
       );
     } catch (e) {
       final message = AppExceptionHandler.getMessage(e);
@@ -264,7 +266,7 @@ class _QrPosterCard extends StatelessWidget {
                 TextSpan(
                   text: "GullyEats",
                   style: TextStyle(
-                    color: AppColors.primary, 
+                    color: AppColors.primary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

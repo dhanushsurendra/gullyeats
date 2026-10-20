@@ -210,7 +210,7 @@ class _CartDetailsScreenState extends State<CartDetailsScreen> {
               value: city,
               child: Text(
                 city,
-                style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600),
+                style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w400),
               ),
             );
           }).toList(),
