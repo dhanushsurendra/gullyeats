@@ -14,7 +14,8 @@ const menuSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
-    isAvailable: { type: Boolean, default: true },
+    imageUrl: String,
+    isInStock: { type: Boolean, default: true },
   },
   { timestamps: true },
 )

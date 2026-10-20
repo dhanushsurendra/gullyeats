@@ -21,10 +21,18 @@ const userSchema = new mongoose.Schema(
       unique: true,
       index: true,
     },
+    email: {
+      type: String,
+      lowercase: true,
+      trim: true,
+      unique: true,
+      sparse: true,
+      index: true,
+    },
     name: { type: String, trim: true },
     role: {
       type: String,
-      enum: ['vendor', 'staff'],
+      enum: ['vendor', 'staff', 'admin'],
       required: true,
     },
     pinHash: {

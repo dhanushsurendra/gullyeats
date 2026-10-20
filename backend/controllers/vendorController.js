@@ -20,7 +20,7 @@ exports.sendOtp = asyncHandler(async (req, res) => {
 
   if (!user) {
     user = await User.create({ phoneNumber, role })
-  } 
+  }
 
   const otp = Math.floor(100000 + Math.random() * 900000).toString()
   const hash = await bcrypt.hash(otp, 10)
@@ -82,24 +82,110 @@ exports.verifyOtp = asyncHandler(async (req, res) => {
     user.pinHash = pinHash
   }
 
-  await user.save();
+  await user.save()
 
-  const userResponse = user.toObject();
-  delete userResponse.otpHash;
-  delete userResponse.otpExpiresAt;
-  delete userResponse.pinHash; 
-  delete userResponse.__v;     
+  const userResponse = user.toObject()
+  delete userResponse.otpHash
+  delete userResponse.otpExpiresAt
+  delete userResponse.pinHash
+  delete userResponse.__v
 
   const token = jwt.sign(
     { _id: user._id, role: user.role },
     process.env.JWT_SECRET,
     { expiresIn: '7d' },
-  );
+  )
 
   res.json({
     success: true,
     token,
     pin: plainPin,
-    user: userResponse
-  });
+    user: userResponse,
+  })
+})
+
+exports.vendorLogin = asyncHandler(async (req, res) => {
+  const { vendorIdentifier, pin } = req.body
+
+  console.log(vendorIdentifier, pin)
+
+  if (!vendorIdentifier || !pin) {
+    return res.status(400).json({
+      success: false,
+      message: 'Please provide Vendor ID/Phone and PIN',
+    })
+  }
+
+  const user = await User.findOne({
+    $or: [{ phoneNumber: vendorIdentifier }, { userId: vendorIdentifier }],
+  }).select('+pinHash')
+
+  if (!user) {
+    return res
+      .status(401)
+      .json({ success: false, message: 'Invalid credentials' })
+  }
+
+  const isMatch = await bcrypt.compare(pin, user.pinHash)
+
+  if (!isMatch) {
+    return res
+      .status(401)
+      .json({ success: false, message: 'Invalid credentials' })
+  }
+
+  const token = jwt.sign(
+    { _id: user._id, role: user.role },
+    process.env.JWT_SECRET,
+  )
+
+  res.status(200).json({
+    success: true,
+    token,
+    user: {
+      id: user._id,
+      userId: user.userId,
+      name: user.name,
+      phoneNumber: user.phoneNumber,
+    },
+  })
+})
+
+exports.changePin = asyncHandler(async (req, res) => {
+  const { currentPin, newPin, id } = req.body
+
+  if (!currentPin || !newPin) {
+    return res
+      .status(400)
+      .json({ success: false, message: 'All fields are required' })
+  }
+
+  if (newPin.length !== 4) {
+    return res
+      .status(400)
+      .json({ success: false, message: 'PIN must be exactly 4 digits' })
+  }
+
+  const user = await User.findById(id).select('+pinHash')
+
+  if (!user) {
+    return res.status(404).json({ success: false, message: 'User not found' })
+  }
+
+  const isMatch = await bcrypt.compare(currentPin, user.pinHash)
+  if (!isMatch) {
+    return res
+      .status(401)
+      .json({ success: false, message: 'Incorrect current PIN' })
+  }
+
+  const salt = await bcrypt.genSalt(10)
+  user.pinHash = await bcrypt.hash(newPin, salt)
+
+  await user.save()
+
+  res.status(200).json({
+    success: true,
+    message: 'PIN updated successfully',
+  })
 })
