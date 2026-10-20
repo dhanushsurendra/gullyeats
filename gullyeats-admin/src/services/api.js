@@ -1,8 +1,8 @@
-const BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+const BASE = import.meta.env.API_URL || 'http://localhost:5000'
 
-const ADMIN = import.meta.env.VITE_ADMIN_PATH || '/api/admin'
+const ADMIN = import.meta.env.ADMIN_PATH || '/api/admin'
 
-const CARTS = import.meta.env.VITE_CART_PATH || '/api/carts'
+const CARTS = import.meta.env.CART_PATH || '/api/carts'
 
 async function request(path, params) {
   const clean = Object.entries(params || {}).filter(
