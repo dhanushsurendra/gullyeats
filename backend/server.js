@@ -18,8 +18,11 @@ const server = http.createServer(app)
 
 app.use(cookieParser())
 
-const allowedOrigins = (process.env.FRONTEND_URL_CUSTOMER || process.env.FRONTEND_URL_ADMIN || 'http://localhost:5173')
-  .split(',')
+const allowedOrigins = [
+  ...(process.env.FRONTEND_URL_CUSTOMER || '').split(','),
+  ...(process.env.FRONTEND_URL_ADMIN || '').split(','),
+  'http://localhost:5173',
+]
   .map((origin) => origin.trim().replace(/\/+$/, ''))
   .filter(Boolean)
 
