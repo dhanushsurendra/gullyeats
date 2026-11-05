@@ -22,6 +22,13 @@ exports.sendOtp = asyncHandler(async (req, res) => {
     user = await User.create({ phoneNumber, role })
   }
 
+  // The OTP comes back in this response (see onboarding-app notes), so it
+  // must never log anyone into a staff or admin account.
+  if (user.role !== 'vendor') {
+    res.status(403)
+    throw new Error('This number belongs to a staff or admin account')
+  }
+
   const otp = Math.floor(100000 + Math.random() * 900000).toString()
   const hash = await bcrypt.hash(otp, 10)
 
@@ -54,7 +61,7 @@ exports.verifyOtp = asyncHandler(async (req, res) => {
 
   const user = await User.findOne({ phoneNumber })
 
-  if (!user) {
+  if (!user || user.role !== 'vendor') {
     res.status(404)
     throw new Error('User not found')
   }
@@ -124,7 +131,8 @@ exports.vendorLogin = asyncHandler(async (req, res) => {
       .json({ success: false, message: 'Invalid credentials' })
   }
 
-  const isMatch = await bcrypt.compare(pin, user.pinHash)
+  const isMatch =
+    Boolean(user.pinHash) && (await bcrypt.compare(String(pin), user.pinHash))
 
   if (!isMatch) {
     return res
@@ -135,6 +143,7 @@ exports.vendorLogin = asyncHandler(async (req, res) => {
   const token = jwt.sign(
     { _id: user._id, role: user.role },
     process.env.JWT_SECRET,
+    { expiresIn: '30d' },
   )
 
   res.status(200).json({
@@ -150,7 +159,7 @@ exports.vendorLogin = asyncHandler(async (req, res) => {
 })
 
 exports.changePin = asyncHandler(async (req, res) => {
-  const { currentPin, newPin, id } = req.body
+  const { currentPin, newPin } = req.body
 
   if (!currentPin || !newPin) {
     return res
@@ -158,19 +167,21 @@ exports.changePin = asyncHandler(async (req, res) => {
       .json({ success: false, message: 'All fields are required' })
   }
 
-  if (newPin.length !== 4) {
+  if (!/^\d{4}$/.test(String(newPin))) {
     return res
       .status(400)
       .json({ success: false, message: 'PIN must be exactly 4 digits' })
   }
 
-  const user = await User.findById(id).select('+pinHash')
+  const user = await User.findById(req.user._id).select('+pinHash')
 
   if (!user) {
     return res.status(404).json({ success: false, message: 'User not found' })
   }
 
-  const isMatch = await bcrypt.compare(currentPin, user.pinHash)
+  const isMatch =
+    Boolean(user.pinHash) &&
+    (await bcrypt.compare(String(currentPin), user.pinHash))
   if (!isMatch) {
     return res
       .status(401)
@@ -178,7 +189,7 @@ exports.changePin = asyncHandler(async (req, res) => {
   }
 
   const salt = await bcrypt.genSalt(10)
-  user.pinHash = await bcrypt.hash(newPin, salt)
+  user.pinHash = await bcrypt.hash(String(newPin), salt)
 
   await user.save()
 
