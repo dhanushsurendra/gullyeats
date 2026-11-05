@@ -18,7 +18,6 @@ class StaffMemberCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print(staffId);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(

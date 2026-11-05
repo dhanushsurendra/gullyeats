@@ -21,7 +21,6 @@ class CartService {
         .timeout(const Duration(seconds: 10));
 
     final data = response.body.isNotEmpty ? jsonDecode(response.body) : {};
-    print(data);
     if (response.statusCode == 200) {
       return (data["carts"] as List)
           .map((e) => CartModel.fromJson(e as Map<String, dynamic>))
