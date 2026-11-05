@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; 
+import 'package:gullyeats/core/utils/format_price.dart';
 import 'package:gullyeats/core/theme/app_colors.dart';
 import 'package:gullyeats/core/theme/app_gaps.dart';
 import 'package:gullyeats/core/theme/app_text_styles.dart';
@@ -33,7 +34,7 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
     super.initState();
     _nameController = TextEditingController(text: widget.initialName);
     _priceController = TextEditingController(
-      text: widget.initialPrice.toString(),
+      text: formatPrice(widget.initialPrice),
     );
     _isVeg = widget.initialIsVeg;
   }

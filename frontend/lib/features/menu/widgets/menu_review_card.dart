@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gullyeats/core/theme/app_colors.dart';
 import 'package:gullyeats/core/theme/app_text_styles.dart';
+import 'package:gullyeats/core/utils/format_price.dart';
 
 class MenuReviewCard extends StatelessWidget {
   final String name;
@@ -49,7 +50,7 @@ class MenuReviewCard extends StatelessWidget {
                   spacing: 12,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    Text("₹$price",
+                    Text("₹${formatPrice(price)}",
                       style: const TextStyle(
                         color: AppColors.primary,
                         fontWeight: FontWeight.bold,
