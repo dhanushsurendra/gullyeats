@@ -19,7 +19,8 @@ class StaffModel {
 
   factory StaffModel.fromJson(Map<String, dynamic> json) {
     return StaffModel(
-      id: json['id'] ?? '',
+      // The API sends Mongo's `_id`; there is no `id` field.
+      id: json['_id'] ?? '',
       userId: json['userId'] ?? '',
       name: json['name'] ?? '',
       phoneNumber: json['phoneNumber'] ?? '',
