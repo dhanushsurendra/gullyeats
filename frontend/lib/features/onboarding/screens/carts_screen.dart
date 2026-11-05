@@ -86,46 +86,57 @@ class _CartsScreenState extends State<CartsScreen> {
     if (mounted) _loadCarts();
   }
 
+  /// Texts the vendor their login ID and a new PIN. Only the PIN's hash is
+  /// stored, so a PIN can't be sent again; each press issues a new one.
   Future<void> _handleSendCredentials(BuildContext context) async {
     final args =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-
-    final pin = args?['pin'];
-    final userId = args?['userId'];
     final phoneNumber = args?['phoneNumber'];
 
-    if (pin == null || userId == null || phoneNumber == null) {
-      AppSnackBar.show(
-        context,
-        message: "Credential data missing",
-        isError: true,
-      );
+    if (phoneNumber == null) {
+      AppSnackBar.show(context, message: "Vendor phone number missing", isError: true);
       return;
     }
 
-    final message = "Your login credentials:\nUser ID: $userId\nPIN: $pin";
-
-    final Uri smsUri = Uri(
-      scheme: 'sms',
-      path: phoneNumber,
-      queryParameters: {'body': message},
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Send new login PIN?"),
+        content: const Text(
+          "This creates a new PIN and texts it to the vendor with their "
+          "login ID. Their current PIN will stop working.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text("Send"),
+          ),
+        ],
+      ),
     );
+    if (confirmed != true || !context.mounted) return;
 
     try {
-      final canLaunch = await canLaunchUrl(smsUri);
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      final credentials = await auth.resetPin();
+      final message =
+          "Your GullyEats login:\nID: ${credentials['userId']}\nPIN: ${credentials['pin']}";
 
-      if (!context.mounted) return;
-
-      if (canLaunch) {
-        await launchUrl(smsUri);
-      } else {
-        throw 'could_not_launch_sms';
-      }
+      final smsUri = Uri(
+        scheme: 'sms',
+        path: phoneNumber,
+        queryParameters: {'body': message},
+      );
+      if (!await launchUrl(smsUri)) throw 'could_not_launch_sms';
     } catch (e) {
       if (!context.mounted) return;
 
       final errorMessage = (e == 'could_not_launch_sms')
-          ? "Staff added, but couldn't open SMS app."
+          ? "New PIN created, but couldn't open the SMS app. Try again."
           : AppExceptionHandler.getMessage(e);
 
       AppSnackBar.show(context, message: errorMessage, isError: true);
