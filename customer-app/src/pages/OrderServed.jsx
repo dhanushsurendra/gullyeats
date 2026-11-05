@@ -78,15 +78,18 @@ export default function OrderServed() {
         updatedOrder,
       )
 
+      // The :orderNumber route param holds the order's _id, not its daily
+      // orderNumber (see PhoneCapture and OrderToken).
       if (
-        String(updatedOrder?.orderNumber) !==
+        String(updatedOrder?._id) !==
         String(orderNumber)
       ) {
         return
       }
 
-      // Vendor undid "SERVED"
-      if (updatedOrder?.status === 'PREPARING') {
+      // Vendor undid "SERVED": serveOrderUndo puts the order back to PAID.
+      // ("PREPARING" is only the admin dashboard's label for PAID.)
+      if (['PENDING', 'PAID'].includes(updatedOrder?.status)) {
         navigate(
           `/c/${cartId}/order/${orderNumber}`,
           { replace: true },
