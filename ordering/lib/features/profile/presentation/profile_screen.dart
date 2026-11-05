@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:ordering/core/routes/app_routes.dart';
 import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
 import 'package:ordering/core/theme/app_padding.dart';
@@ -11,18 +10,14 @@ import 'package:ordering/features/cart/models/cart_model.dart';
 import 'package:ordering/features/cart/presentation/edit_cart_screen.dart';
 import 'package:ordering/features/cart/presentation/switch_cart_screen.dart';
 import 'package:ordering/features/cart/providers/cart_provider.dart';
-import 'package:ordering/features/cart/providers/staff_provider.dart';
-import 'package:ordering/features/orders/providers/menu_provider.dart';
-import 'package:ordering/features/orders/providers/order_provider.dart';
 import 'package:ordering/features/orders/screens/edit_menu_screen.dart';
 import 'package:ordering/features/orders/screens/orders_overview_screen.dart';
 import 'package:ordering/features/payment/presentation/payment_screen.dart';
-import 'package:ordering/features/payment/providers/payment_provider.dart';
 import 'package:ordering/features/profile/presentation/change_pin_screen.dart';
 import 'package:ordering/features/profile/presentation/language_preferences_screen.dart';
 import 'package:ordering/features/profile/presentation/qr_screen.dart';
 import 'package:ordering/features/profile/presentation/staff_management_screen.dart';
-import 'package:ordering/features/profile/providers/profile_provider.dart';
+import 'package:ordering/core/utils/session.dart';
 import 'package:provider/provider.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -70,28 +65,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     setState(() => _isLoggingOut = true);
 
-    final orderProvider = context.read<OrderProvider>();
-    final menuProvider = context.read<MenuProvider>();
-    final cartProvider = context.read<CartProvider>();
-    final profileProvider = context.read<ProfileProvider>();
-    final staffProvider = context.read<StaffProvider>();
-    final paymentProvider = context.read<PaymentProvider>();
-    final authProvider = context.read<AuthProvider>();
-
-    orderProvider.clear();
-    menuProvider.clear();
-    await cartProvider.clear();
-    profileProvider.clear();
-    staffProvider.clear();
-    paymentProvider.clear();
-
-    await authProvider.logout();
-
-    if (!mounted) return;
-
-    Navigator.of(
-      context,
-    ).pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
+    await signOut(context);
   }
 
   @override

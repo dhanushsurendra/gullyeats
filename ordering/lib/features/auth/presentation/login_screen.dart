@@ -60,7 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
         if (!mounted) return;
         AppSnackBar.show(context, message: "Login successful", isError: false);
 
-        Navigator.push(
+        Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (context) => const SwitchCartScreen(isDraggable: false),

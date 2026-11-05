@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:ordering/core/routes/app_routes.dart';
 import 'package:ordering/core/theme/app_colors.dart';
+import 'package:ordering/core/utils/session.dart';
+import 'package:ordering/features/cart/presentation/switch_cart_screen.dart';
 import 'package:ordering/features/cart/providers/cart_provider.dart';
 import 'package:ordering/features/auth/providers/auth_provider.dart';
 import 'package:ordering/features/payment/models/payment_status_model.dart';
@@ -20,6 +22,10 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   Offset _offset = const Offset(0, 0.2);
 
   late AnimationController _floatController;
+
+  // Set when the payment-status check fails, so the screen offers a way out
+  // instead of spinning forever.
+  String? _error;
 
   @override
   void initState() {
@@ -43,8 +49,9 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   }
 
   Future<void> _checkCartPaymentStatus() async {
-
     if (!mounted) return;
+
+    setState(() => _error = null);
 
     final cartProvider = context.read<CartProvider>();
     final paymentProvider = context.read<PaymentProvider>();
@@ -69,8 +76,17 @@ class _WelcomeScreenState extends State<WelcomeScreen>
 
       if (!mounted) return;
 
+      if (paymentStatus == null) {
+        setState(() {
+          _error =
+              paymentProvider.error ??
+              'Unable to check payment status. Please try again.';
+        });
+        return;
+      }
+
       // Cart is locked because payment is required
-      if (paymentStatus!.isLocked) {
+      if (paymentStatus.isLocked) {
         Navigator.pushReplacementNamed(
           context,
           AppRoutes.paymentLockScreen,
@@ -83,14 +99,11 @@ class _WelcomeScreenState extends State<WelcomeScreen>
       // Cart is not locked
       Navigator.pushReplacementNamed(context, AppRoutes.home);
     } catch (e) {
-
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Unable to check payment status. Please try again.'),
-        ),
-      );
+      setState(() {
+        _error = 'Unable to check payment status. Please try again.';
+      });
     }
   }
 
@@ -135,20 +148,82 @@ class _WelcomeScreenState extends State<WelcomeScreen>
 
                 const SizedBox(height: 28),
 
-                SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AppColors.white.withAlpha(204),
-                  ),
-                ),
+                if (_error == null)
+                  SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.white.withAlpha(204),
+                    ),
+                  )
+                else
+                  _errorActions(),
 
                 const SizedBox(height: 20),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _errorActions() {
+    final buttonStyle = OutlinedButton.styleFrom(
+      foregroundColor: Colors.white,
+      side: const BorderSide(color: Colors.white70),
+      minimumSize: const Size(0, 48),
+    );
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        children: [
+          Text(
+            _error!,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white, fontSize: 14),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: AppColors.primary,
+                minimumSize: const Size(0, 48),
+              ),
+              onPressed: _checkCartPaymentStatus,
+              child: const Text('RETRY'),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  style: buttonStyle,
+                  onPressed: () => showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (_) => const SwitchCartScreen(isDraggable: true),
+                  ),
+                  child: const Text('SWITCH CART'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton(
+                  style: buttonStyle,
+                  onPressed: () => signOut(context),
+                  child: const Text('LOGOUT'),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

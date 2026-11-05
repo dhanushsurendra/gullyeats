@@ -1,10 +1,17 @@
 import 'package:ordering/core/error/api_exception.dart';
+import 'package:ordering/core/utils/session.dart';
 
 class AppExceptionHandler {
   static String getMessage(Object error) {
     final message = error.toString();
 
-     if (error is ApiException) {
+    if (error is ApiException) {
+      // Every screen reports errors through here, so this is the one place
+      // that notices an expired login.
+      if (error.statusCode == 401) {
+        handleUnauthorized();
+        return "Your login has expired. Please log in again.";
+      }
       return error.message;
     }
 

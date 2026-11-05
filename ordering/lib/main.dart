@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:ordering/core/routes/routes.dart';
 import 'package:ordering/core/theme/app_theme.dart';
+import 'package:ordering/core/utils/session.dart';
 import 'package:ordering/features/auth/providers/auth_provider.dart';
 import 'package:ordering/features/cart/providers/staff_provider.dart';
 import 'package:ordering/features/orders/providers/menu_provider.dart';
@@ -39,6 +40,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'GullyEats Vendor Ordering',
       debugShowCheckedModeBanner: false,
+      navigatorKey: navigatorKey,
       theme: AppTheme.lightTheme,
       routes: Routes.getRoutes(),
       home: const SplashScreen(),

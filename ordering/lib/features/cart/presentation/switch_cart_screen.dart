@@ -4,6 +4,7 @@ import 'package:ordering/core/routes/app_routes.dart';
 import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_padding.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
+import 'package:ordering/core/utils/session.dart';
 import 'package:ordering/core/widgets/app_button.dart';
 import 'package:ordering/core/widgets/app_search_bar.dart';
 import 'package:ordering/core/widgets/app_snack_bar.dart';
@@ -56,10 +57,35 @@ class _SwitchCartScreenState extends State<SwitchCartScreen> {
 
       await auth.loadToken();
       await auth.loadUser();
+      if (cartProvider.selectedCart == null) {
+        await cartProvider.loadSelectedCart();
+      }
 
-      await cartProvider.loadCarts(auth.token ?? "", auth.user?["id"] ?? "");
+      final carts = await cartProvider.loadCarts(
+        auth.token ?? "",
+        auth.user?["id"] ?? "",
+      );
 
       if (!mounted) return;
+
+      // On app start, skip the picker when the saved cart still exists or
+      // there is only one cart to choose.
+      if (!widget.isDraggable) {
+        final savedId = cartProvider.selectedCart?.id;
+        final saved = carts.where((cart) => cart.id == savedId);
+        final cart = saved.isNotEmpty
+            ? saved.first
+            : carts.length == 1
+            ? carts.first
+            : null;
+
+        if (cart != null) {
+          await cartProvider.selectCart(cart);
+          if (!mounted) return;
+          Navigator.of(context).pushReplacementNamed(AppRoutes.welcome);
+          return;
+        }
+      }
 
       // Re-select the current cart after carts are loaded.
       setState(() {
@@ -134,7 +160,11 @@ class _SwitchCartScreenState extends State<SwitchCartScreen> {
                         onPressed: () => Navigator.pop(context),
                         icon: const Icon(Icons.close, color: AppColors.grey600),
                       )
-                    : const SizedBox.shrink(),
+                    : TextButton.icon(
+                        onPressed: () => signOut(context),
+                        icon: const Icon(Icons.logout, size: 18),
+                        label: const Text("Logout"),
+                      ),
               ],
             ),
           ),
@@ -160,6 +190,17 @@ class _SwitchCartScreenState extends State<SwitchCartScreen> {
           Expanded(
             child: cartProvider.isLoading
                 ? const Center(child: CircularProgressIndicator())
+                : cartProvider.carts.isEmpty
+                ? Center(
+                    child: Padding(
+                      padding: AppPadding.horizontalScreen,
+                      child: Text(
+                        "No carts assigned. Contact your vendor.",
+                        textAlign: TextAlign.center,
+                        style: AppTextStyles.body,
+                      ),
+                    ),
+                  )
                 : ListView.builder(
                     controller: controller,
                     padding: AppPadding.horizontalScreen,
@@ -195,7 +236,10 @@ class _SwitchCartScreenState extends State<SwitchCartScreen> {
               // Disable button when:
               // 1. Nothing is selected
               // 2. Selected cart is already the current cart
-              disabled: selectedId == null || selectedId == currentCartId,
+              // On app start the current cart can be picked again.
+              disabled:
+                  selectedId == null ||
+                  (widget.isDraggable && selectedId == currentCartId),
 
               onPressed: () async {
                 // ==============================================================
@@ -207,7 +251,8 @@ class _SwitchCartScreenState extends State<SwitchCartScreen> {
                 // No navigation.
                 // ==============================================================
 
-                if (selectedId == null || selectedId == currentCartId) {
+                if (selectedId == null ||
+                    (widget.isDraggable && selectedId == currentCartId)) {
                   return;
                 }
 

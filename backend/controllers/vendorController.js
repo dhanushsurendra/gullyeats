@@ -182,9 +182,10 @@ exports.changePin = asyncHandler(async (req, res) => {
   const isMatch =
     Boolean(user.pinHash) &&
     (await bcrypt.compare(String(currentPin), user.pinHash))
+  // 400, not 401: the app treats 401 as "session expired" and logs out.
   if (!isMatch) {
     return res
-      .status(401)
+      .status(400)
       .json({ success: false, message: 'Incorrect current PIN' })
   }
 

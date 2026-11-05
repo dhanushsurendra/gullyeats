@@ -23,6 +23,9 @@ class AuthProvider extends ChangeNotifier {
 
       final isLoggedIn = await _authService.login(identifier, pin);
 
+      await loadToken();
+      await loadUser();
+
       return isLoggedIn;
     } finally {
       _isLoading = false;
