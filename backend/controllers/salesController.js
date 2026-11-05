@@ -1,6 +1,7 @@
 const mongoose = require('mongoose')
 const asyncHandler = require('../utils/asyncHandler')
 const Order = require('../models/Order')
+const { findManagedCart } = require('../utils/cartAccess')
 
 function formatDuration(seconds) {
   if (seconds === null || seconds === undefined || Number.isNaN(seconds)) {
@@ -43,24 +44,20 @@ exports.getSalesDashboard = asyncHandler(async (req, res) => {
       .json({ success: false, message: 'startDate and endDate are required' })
   }
 
-  const start = new Date(startDate)
-  start.setHours(0, 0, 0, 0)
-
-  const end = new Date(endDate)
-  end.setHours(23, 59, 59, 999)
-
-  const orders = await Order.find({
-    createdAt: {
-      $gte: start,
-      $lte: end,
-    },
-  })
+  // Days are IST calendar days. Older app builds send DateTime.toString()
+  // ("2026-11-06 00:00:00.000"), so only the date part is used.
+  const startDay = String(startDate).slice(0, 10)
+  const endDay = String(endDate).slice(0, 10)
+  const start = new Date(`${startDay}T00:00:00.000+05:30`)
+  const end = new Date(`${endDay}T23:59:59.999+05:30`)
 
   if (isNaN(start.getTime()) || isNaN(end.getTime())) {
     return res
       .status(400)
       .json({ success: false, message: 'Invalid startDate or endDate' })
   }
+
+  await findManagedCart(req, res, cartId)
 
   let cartObjectId
   try {

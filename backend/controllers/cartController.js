@@ -61,9 +61,19 @@ exports.updateCart = asyncHandler(async (req, res) => {
     location,
     isActive,
     isOpen,
+    parcelCharge,
   } = req.body;
 
   const cart = await findManagedCart(req, res, cartId);
+
+  if (parcelCharge !== undefined) {
+    const value = Number(parcelCharge);
+    if (parcelCharge === null || !Number.isFinite(value) || value < 0) {
+      res.status(400);
+      throw new Error('Parcel charge must be a number of 0 or more');
+    }
+    cart.parcelCharge = value;
+  }
 
   if (cartName !== undefined) {
     cart.cartName = cartName;
@@ -243,47 +253,92 @@ exports.getMenuItems = asyncHandler(async (req, res) => {
   })
 })
 
-exports.deleteMenuItem = asyncHandler(async (req, res) => {
-  const itemId = req.params.itemId
-  const cartId = req.params.cartId
+// Menu photos live under uploads/<cart _id>/menu/ (see the presigned URL
+// handlers below). Anything else is not ours to delete or to point at.
+function menuImagePrefix(cartId) {
+  return `https://${process.env.BUCKET_NAME}.s3.amazonaws.com/uploads/${cartId}/menu/`
+}
 
-  const item = await MenuItem.findOne({
-    _id: itemId,
-    cartId,
-  })
+async function deleteMenuImage(cartId, imageUrl) {
+  if (!imageUrl || !imageUrl.startsWith(menuImagePrefix(cartId))) return
+
+  try {
+    const s3Key = decodeURIComponent(new URL(imageUrl).pathname.substring(1))
+
+    await s3Client.send(
+      new DeleteObjectCommand({
+        Bucket: process.env.BUCKET_NAME,
+        Key: s3Key,
+      }),
+    )
+  } catch (error) {
+    // Don't fail the request if S3 cleanup fails
+    console.error('Failed to delete menu image from S3:', error)
+  }
+}
+
+// Validates the editable menu item fields present in the body. Anything
+// else (cartId, _id, ...) is ignored.
+function menuItemFields(req, res, { requireAll }) {
+  const { name, price, isVeg, isInStock, imageUrl } = req.body
+  const fields = {}
+
+  if (name !== undefined || requireAll) {
+    if (typeof name !== 'string' || name.trim().length < 2) {
+      res.status(400)
+      throw new Error('Item name must be at least 2 characters')
+    }
+    fields.name = name.trim()
+  }
+
+  if (price !== undefined || requireAll) {
+    const value = Number(price)
+    if (price === null || price === '' || !Number.isFinite(value) || value < 0) {
+      res.status(400)
+      throw new Error('Price must be a number of 0 or more')
+    }
+    fields.price = value
+  }
+
+  for (const [key, value] of Object.entries({ isVeg, isInStock })) {
+    if (value === undefined) continue
+    if (typeof value !== 'boolean') {
+      res.status(400)
+      throw new Error(`${key} must be true or false`)
+    }
+    fields[key] = value
+  }
+
+  if (imageUrl !== undefined) {
+    if (
+      imageUrl !== null &&
+      imageUrl !== '' &&
+      (typeof imageUrl !== 'string' ||
+        !imageUrl.startsWith(menuImagePrefix(req.params.cartId)))
+    ) {
+      res.status(400)
+      throw new Error('Invalid image URL')
+    }
+    fields.imageUrl = imageUrl || null
+  }
+
+  return fields
+}
+
+exports.deleteMenuItem = asyncHandler(async (req, res) => {
+  const { cartId, itemId } = req.params
+
+  await findManagedCart(req, res, cartId)
+
+  const item = await MenuItem.findOne({ _id: itemId, cartId })
 
   if (!item) {
     res.status(404)
     throw new Error('Menu item not found')
   }
 
-  // Keep the image URL before deleting the document
-  const oldImageUrl = item.imageUrl
-
-  // Delete image from S3 if it exists
-  if (oldImageUrl) {
-    try {
-      const bucketName = process.env.BUCKET_NAME
-
-      const url = new URL(oldImageUrl)
-      const s3Key = decodeURIComponent(url.pathname.substring(1))
-
-      await s3Client.send(
-        new DeleteObjectCommand({
-          Bucket: bucketName,
-          Key: s3Key,
-        }),
-      )
-
-      console.log('Old menu image deleted:', s3Key)
-    } catch (error) {
-      // Don't fail the entire deletion if S3 cleanup fails
-      console.error('Failed to delete menu image from S3:', error)
-    }
-  }
-
-  // Delete menu item from MongoDB
   await item.deleteOne()
+  await deleteMenuImage(cartId, item.imageUrl)
 
   res.status(200).json({
     success: true,
@@ -292,71 +347,49 @@ exports.deleteMenuItem = asyncHandler(async (req, res) => {
 })
 
 exports.updateMenuItem = asyncHandler(async (req, res) => {
-  const { id, oldImageUrl, ...item } = req.body
-
   const { cartId } = req.params
 
-  const updatedItem = await MenuItem.findOneAndUpdate(
-    {
-      _id: id,
-      cartId: cartId,
-    },
-    {
-      $set: item,
-    },
-    {
-      new: true,
-      runValidators: true,
-    },
-  )
+  await findManagedCart(req, res, cartId)
 
-  if (!updatedItem) {
+  const item = await MenuItem.findOne({ _id: req.body.id, cartId })
+
+  if (!item) {
     res.status(404)
     throw new Error('Menu item not found')
   }
 
-  // --------------------------------------------------
-  // Delete old image from S3
-  // --------------------------------------------------
+  // Only the image stored before this update may be deleted, never a URL
+  // the client names.
+  const previousImageUrl = item.imageUrl
 
-  if (oldImageUrl && oldImageUrl !== updatedItem.imageUrl) {
-    try {
-      const bucketName = process.env.BUCKET_NAME
+  Object.assign(item, menuItemFields(req, res, { requireAll: false }))
+  await item.save()
 
-      const url = new URL(oldImageUrl)
-      const s3Key = decodeURIComponent(url.pathname.substring(1))
-
-      await s3Client.send(
-        new DeleteObjectCommand({
-          Bucket: bucketName,
-          Key: s3Key,
-        }),
-      )
-
-      console.log('Old menu image deleted:', s3Key)
-    } catch (error) {
-      // Don't fail the entire update if image deletion fails
-      console.error('Failed to delete old menu image:', error)
-    }
+  if (previousImageUrl !== item.imageUrl) {
+    await deleteMenuImage(cartId, previousImageUrl)
   }
 
   res.status(201).json({
     success: true,
     message: 'Menu item updated successfully',
-    data: updatedItem,
+    data: item,
   })
 })
 
 exports.updateMenuItemStock = asyncHandler(async (req, res) => {
-  const menuItem = await MenuItem.findByIdAndUpdate(
-    req.params.itemId,
-    {
-      isInStock: req.body.isInStock,
-    },
-    {
-      new: true,
-      runValidators: true,
-    },
+  const { cartId, itemId } = req.params
+
+  await findManagedCart(req, res, cartId)
+
+  if (typeof req.body.isInStock !== 'boolean') {
+    res.status(400)
+    throw new Error('isInStock must be true or false')
+  }
+
+  const menuItem = await MenuItem.findOneAndUpdate(
+    { _id: itemId, cartId },
+    { isInStock: req.body.isInStock },
+    { new: true, runValidators: true },
   )
 
   if (!menuItem) {
@@ -371,20 +404,13 @@ exports.updateMenuItemStock = asyncHandler(async (req, res) => {
 })
 
 exports.addMenuItem = asyncHandler(async (req, res) => {
-  const { name, isVeg, price, isInStock, imageUrl } = req.body
   const { cartId } = req.params
 
-  if (!name || !price) {
-    res.status(400)
-    throw new Error('Item name and price are required')
-  }
+  await findManagedCart(req, res, cartId)
 
   const menuItem = await MenuItem.create({
+    ...menuItemFields(req, res, { requireAll: true }),
     cartId,
-    name: name.trim(),
-    price: Number(price),
-    isVeg,
-    imageUrl,
   })
 
   res.status(201).json({
@@ -396,6 +422,8 @@ exports.addMenuItem = asyncHandler(async (req, res) => {
 exports.getPresignedUploadUrlForMenuItem = asyncHandler(async (req, res) => {
   const { fileType, menuItemId } = req.body
   const { cartId } = req.params
+
+  await findManagedCart(req, res, cartId)
 
   if (!fileType) {
     res.status(400)
@@ -455,6 +483,13 @@ exports.getPresignedUploadUrlForExistingMenuItem = asyncHandler(
   async (req, res) => {
     const { fileType } = req.body
     const { cartId, menuItemId } = req.params
+
+    await findManagedCart(req, res, cartId)
+
+    if (!fileType) {
+      res.status(400)
+      throw new Error('File type is required')
+    }
 
     const menuItem = await MenuItem.findOne({
       _id: menuItemId,
@@ -722,7 +757,11 @@ exports.getAllCarts = asyncHandler(async (req, res) => {
     throw new Error('User not found')
   }
 
-  const carts = await Cart.find({ userId: user._id })
+  // Staff work on the one cart they are assigned to.
+  const carts =
+    user.role === 'staff'
+      ? await Cart.find({ _id: user.cartId })
+      : await Cart.find({ userId: user._id })
 
   res.status(200).json({
     success: true,
@@ -795,20 +834,22 @@ exports.getQRDetails = asyncHandler(async (req, res) => {
 })
 
 exports.toggleCartStatus = asyncHandler(async (req, res) => {
-  const cartId = req.params.cartId
-  const cart = await Cart.findById(cartId)
+  const cart = await findManagedCart(req, res, req.params.cartId)
 
-  if (!cart) {
-    res.status(404)
-    throw new Error('Cart not found')
+  // Set the state the app asks for; older clients send no isOpen and get
+  // the old flip.
+  const { isOpen } = req.body || {}
+  if (isOpen !== undefined && typeof isOpen !== 'boolean') {
+    res.status(400)
+    throw new Error('isOpen must be true or false')
   }
 
-  cart.isOpen = !cart.isOpen
+  cart.isOpen = isOpen === undefined ? !cart.isOpen : isOpen
   await cart.save()
 
   res.status(200).json({
     success: true,
-    message: 'Cart status toggled successfully',
+    message: 'Cart status updated successfully',
     data: cart,
   })
 })

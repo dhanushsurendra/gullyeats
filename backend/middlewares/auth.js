@@ -4,13 +4,15 @@ const authMiddleware = (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
-    if (!authHeader) {
+    // The apps send a Bearer token; the admin dashboard sends its login
+    // cookie (sameSite lax).
+    if (!authHeader && !req.cookies?.token) {
       return res.status(401).json({
         message: "Authorization header missing",
       });
     }
 
-    const token = authHeader.split(" ")[1];
+    const token = authHeader ? authHeader.split(" ")[1] : req.cookies.token;
 
     if (!token) {
       return res.status(401).json({
@@ -24,8 +26,6 @@ const authMiddleware = (req, res, next) => {
       _id: decoded._id,
       role: decoded.role,
     };
-
-    console.log(req.user)
 
     next();
   } catch (err) {

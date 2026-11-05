@@ -66,20 +66,20 @@ router.get('/get-all-staff/:cartId', auth, getAllStaff)
 
 router.delete('/delete-staff/:staffId', auth, deleteStaff)
 
-router.get('/sales-insights/:cartId', getSalesDashboard)
+router.get('/sales-insights/:cartId', auth, getSalesDashboard)
 
 router.get('/get-menu-items/:cartId', getMenuItems)
 
-router.put('/update-menu-item/:cartId', updateMenuItem)
+router.put('/update-menu-item/:cartId', auth, updateMenuItem)
 
-router.delete('/delete-menu-item/:cartId/:itemId', deleteMenuItem)
+router.delete('/delete-menu-item/:cartId/:itemId', auth, deleteMenuItem)
 
-router.post('/add-menu-item/:cartId', addMenuItem)
+router.post('/add-menu-item/:cartId', auth, addMenuItem)
 
 router.get('/get-qr-details/:cartId', getQRDetails)
 
-router.patch('/update-stock/:cartId/:itemId', updateMenuItemStock)
+router.patch('/update-stock/:cartId/:itemId', auth, updateMenuItemStock)
 
-router.put('/toggle-cart-status/:cartId', toggleCartStatus)
+router.put('/toggle-cart-status/:cartId', auth, toggleCartStatus)
 
 module.exports = router
