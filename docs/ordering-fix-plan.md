@@ -1,8 +1,15 @@
 # Fix plan: vendor app (`ordering/`) and backend
 
-Written 2026-11-06 at the end of a long session, so the next session can start from here without the earlier conversation. Everything in "Findings" comes from a read-only review of every file in `ordering/lib` and of the backend endpoints it calls. **Nothing here has been fixed yet.**
+Written 2026-11-06 at the end of a long session, so the next session can start from here without the earlier conversation. Everything in "Findings" comes from a read-only review of every file in `ordering/lib` and of the backend endpoints it calls. See Progress for what has been fixed since.
 
-## Where things stand
+## Progress (branch `ordering-fixes`, 2026-11-06)
+
+Done, one commit per group, not merged or pushed: B1–B4, B6–B15, F1–F21, F23–F29. Also, outside the plan: `/api/admin/*` now needs an admin login (it was public), and `send-otp`/`verify-otp` refuse staff and admin accounts (the OTP in the response let anyone log in as an admin). Backend tests: `npm test` (node:test, stubbed models, 27 pass). Vendor app: `flutter test` (5 pass), `flutter analyze` has no errors or warnings.
+
+Still open, needing a decision: **B5** (what the payment lock should block), **B16** (OTP login design), **F22** (language SAVE), **F27** (should a photo be optional), **F30** (dead code to delete), **F31** (UI pass). Not done: Edit Cart has no parcel-charge field (the backend now saves it), and any client can still join any cart's socket room.
+
+Behaviour changes to know before deploying: customers can only cancel unpaid orders and can't shrink a paid one; QR orders need the cart open and active; serving needs payment; order prices come from the menu. After deploy, the admin dashboard needs its login cookie to work cross-site (`SameSite=None` in production), and `gullyeats-admin/src/services/api.js` reads `import.meta.env.API_URL` where `.env` defines `VITE_API_URL`.
+
 
 - **`main`** (local only, **not pushed**) has all the onboarding-app work merged: responsive layout, bug fixes, resuming half-finished outlets, Send Credentials with `POST /vendors/reset-pin`, the QR poster flow, the shared UI widgets, and tests (353 pass). It also has the backend fixes: QR link, `findManagedCart` access checks on cart and staff endpoints, `get-all-carts` login, active-by-default carts, menu replace on save, and no PIN logging. It also has the customer-app "Order served" fix.
 - **`local-testing`** is `main` with the onboarding app pointed at `http://192.168.0.165:5000/api` (this PC). **Never merge it.** Rebase it onto `main` before using it.
