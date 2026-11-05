@@ -80,3 +80,21 @@ test('vendor login tokens expire', async () => {
   assert.strictEqual(r.status, 200)
   assert.ok(jwt.decode(r.body.token).exp)
 })
+
+test('admin data needs an admin login', async () => {
+  const adminRoutes = require('../routes/adminRoutes')
+  const cookieParser = require('cookie-parser')
+  const app = express()
+  app.use(cookieParser())
+  app.use('/api/admin', adminRoutes)
+  const server = app.listen(0)
+  const base = `http://127.0.0.1:${server.address().port}/api/admin`
+  try {
+    assert.strictEqual((await fetch(`${base}/owners`)).status, 401)
+    const vendor = jwt.sign({ _id: 'v', role: 'vendor' }, process.env.JWT_SECRET)
+    const r = await fetch(`${base}/owners`, { headers: { Cookie: `token=${vendor}` } })
+    assert.strictEqual(r.status, 403)
+  } finally {
+    server.close()
+  }
+})
