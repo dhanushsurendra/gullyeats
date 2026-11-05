@@ -56,28 +56,35 @@ class _AddMenuScreenState extends State<AddMenuScreen> {
       return;
     }
 
-    final updatedItems = await Navigator.push(
+    // Review edits this same list, so changes survive however the user
+    // leaves the review screen (back arrow, system back, "add more").
+    await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => MenuReviewScreen(menuItems: List.from(_menuItems)),
+        builder: (_) => MenuReviewScreen(menuItems: _menuItems),
       ),
     );
 
-    if (updatedItems != null && updatedItems is List<MenuItemModel>) {
-      setState(() {
-        _menuItems.clear();
-        _nameControllers.clear();
-        _priceControllers.clear();
+    if (!mounted) return;
+    setState(_syncControllers);
+  }
 
-        for (var item in updatedItems) {
-          _menuItems.add(item);
-
-          _nameControllers[item] = TextEditingController(text: item.name);
-          _priceControllers[item] = TextEditingController(
-            text: item.price.toString(),
-          );
-        }
-      });
+  /// Review may replace or remove items, so rebuild the fields from the list.
+  void _syncControllers() {
+    final old = [..._nameControllers.values, ..._priceControllers.values];
+    // The fields still use the old controllers until this rebuild is drawn.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      for (final c in old) {
+        c.dispose();
+      }
+    });
+    _nameControllers.clear();
+    _priceControllers.clear();
+    for (final item in _menuItems) {
+      _nameControllers[item] = TextEditingController(text: item.name);
+      _priceControllers[item] = TextEditingController(
+        text: item.price.toString(),
+      );
     }
   }
 

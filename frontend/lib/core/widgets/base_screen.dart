@@ -78,7 +78,7 @@ class BaseScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         if (showBackButton && onBack != null) ...[
-                          AppBackButton(),
+                          AppBackButton(onPressed: onBack),
                           AppGaps.h16,
                         ],
 
@@ -109,7 +109,7 @@ class BaseScreen extends StatelessWidget {
   Widget _buildExpanded(BuildContext context, BoxConstraints constraints) {
     final top = [
       if (showBackButton && onBack != null) ...[
-        AppBackButton(),
+        AppBackButton(onPressed: onBack),
         AppGaps.h16,
       ],
       _buildHeader(),

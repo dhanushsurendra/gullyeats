@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 
 class AppBackButton extends StatelessWidget {
-  const AppBackButton({super.key});
+  /// Defaults to closing the current screen.
+  final VoidCallback? onPressed;
+
+  const AppBackButton({super.key, this.onPressed});
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       borderRadius: BorderRadius.circular(12),
-      onTap: () => Navigator.pop(context),
+      onTap: onPressed ?? () => Navigator.pop(context),
       child: Container(
         height: 40,
         width: 40,
