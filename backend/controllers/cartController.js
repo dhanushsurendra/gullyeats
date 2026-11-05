@@ -509,7 +509,21 @@ exports.generateAndUploadQR = asyncHandler(async (req, res) => {
     throw new Error('Cart not found')
   }
 
-  const url = `${process.env.FRONTEND_URL}/c/${cartId}`
+  // FRONTEND_URL_CUSTOMER may list several origins (it also feeds CORS);
+  // the first is the customer app the QR should open.
+  const customerAppUrl = (
+    process.env.FRONTEND_URL || process.env.FRONTEND_URL_CUSTOMER || ''
+  )
+    .split(',')[0]
+    .trim()
+    .replace(/\/+$/, '')
+
+  if (!customerAppUrl) {
+    res.status(500)
+    throw new Error('Customer app URL is not configured')
+  }
+
+  const url = `${customerAppUrl}/c/${cartId}`
   const qrBinary = await QRCode.toBuffer(url, {
     errorCorrectionLevel: 'H',
     type: 'image/png',
