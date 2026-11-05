@@ -611,22 +611,31 @@ exports.switchStaffCart = asyncHandler(async (req, res) => {
   const { staffId } = req.params
   const { cartId } = req.body
 
-  const updatedStaff = await User.findByIdAndUpdate(
-    staffId,
-    { cartId },
-    { new: true },
-  )
+  const staff = await User.findById(staffId)
 
-  if (!updatedStaff) {
-    return res.status(404).json({
-      success: false,
-      message: 'Staff member not found',
-    })
+  if (!staff || staff.role !== 'staff') {
+    res.status(404)
+    throw new Error('Staff member not found')
   }
+
+  // The caller must manage both the staff member's cart and the new one,
+  // otherwise anyone could move any account onto any cart.
+  await findManagedCart(req, res, staff.cartId)
+  const cart = await findManagedCart(req, res, cartId)
+
+  staff.cartId = cart._id
+  await staff.save()
 
   res.status(200).json({
     success: true,
-    data: updatedStaff,
+    data: {
+      _id: staff._id,
+      userId: staff.userId,
+      name: staff.name,
+      phoneNumber: staff.phoneNumber,
+      role: staff.role,
+      cartId: staff.cartId,
+    },
   })
 })
 
