@@ -60,6 +60,23 @@ class CartService {
     }
   }
 
+  Future<int> fetchMenuItemCount(String cartId) async {
+    final response = await http
+        .get(Uri.parse("${ApiConstants.carts}/get-menu-items/$cartId"))
+        .timeout(const Duration(seconds: 10));
+
+    final data = response.body.isNotEmpty ? jsonDecode(response.body) : {};
+
+    if (response.statusCode == 200) {
+      return (data['count'] as num?)?.toInt() ?? 0;
+    } else {
+      throw ApiException(
+        data['message'] ?? "Failed to load menu",
+        response.statusCode,
+      );
+    }
+  }
+
   Future<CartModel> updateCartDetails(
     String token,
     String cartId,

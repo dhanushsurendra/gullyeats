@@ -23,6 +23,7 @@ MockClient _backend(List<String> requests) => MockClient((request) async {
   return switch (request.method) {
     'POST' => http.Response(jsonEncode({'cart': _cartJson}), 201),
     'PUT' => http.Response(jsonEncode({'cart': _cartJson}), 200),
+    'GET' => http.Response(jsonEncode({'count': 0}), 200),
     _ => http.Response('{}', 404),
   };
 });
@@ -72,6 +73,7 @@ void main() {
     expect(requests, [
       'POST /api/carts/create-basic-cart',
       'PUT /api/carts/update-cart/c1',
+      'GET /api/carts/get-menu-items/c1', // which step to resume at
     ]);
   });
 
@@ -94,6 +96,47 @@ void main() {
       await _fillAndContinue(tester);
     }, () => _backend(requests));
 
-    expect(requests, ['PUT /api/carts/update-cart/c1']);
+    expect(requests, [
+      'PUT /api/carts/update-cart/c1',
+      'GET /api/carts/get-menu-items/c1',
+    ]);
   });
+
+  testWidgets('a half-done cart resumes at its first unfinished step', (tester) async {
+    _phoneSize(tester);
+    // Photo and location are done and a menu exists, but there's no QR yet.
+    final halfDone = {
+      ..._cartJson,
+      'cartImageUrl': 'https://bucket/uploads/c1.jpeg',
+      'address': 'Indiranagar, Bengaluru',
+    };
+    final pushed = <String>[];
+    await http.runWithClient(() async {
+      final providers = TestProviders();
+      await providers.auth.loadToken();
+      await tester.pumpWidget(buildApp(
+        providers,
+        const CartDetailsScreen(),
+        arguments: CartModel.fromJson(halfDone),
+        navigatorObservers: [_RouteRecorder(pushed)],
+      ));
+      await tester.pump();
+      await _fillAndContinue(tester);
+    }, () => MockClient((request) async => switch (request.method) {
+          'PUT' => http.Response(jsonEncode({'cart': halfDone}), 200),
+          _ => http.Response(jsonEncode({'count': 3}), 200),
+        }));
+
+    expect(pushed.last, '/operating-setup');
+  });
+}
+
+class _RouteRecorder extends NavigatorObserver {
+  final List<String> names;
+  _RouteRecorder(this.names);
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    if (route.settings.name != null) names.add(route.settings.name!);
+  }
 }

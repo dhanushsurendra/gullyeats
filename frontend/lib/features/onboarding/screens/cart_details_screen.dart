@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:gullyeats/core/error/app_exceptions.dart';
-import 'package:gullyeats/core/routes/app_routes.dart';
 import 'package:gullyeats/core/theme/app_colors.dart';
 import 'package:gullyeats/core/theme/app_gaps.dart';
 import 'package:gullyeats/core/theme/app_text_styles.dart';
@@ -12,6 +11,7 @@ import 'package:gullyeats/core/widgets/fill_or_scroll.dart';
 import 'package:gullyeats/core/utils/responsive.dart';
 import 'package:gullyeats/features/auth/providers/auth_provider.dart';
 import 'package:gullyeats/features/onboarding/models/cart_model.dart';
+import 'package:gullyeats/features/onboarding/onboarding_progress.dart';
 import 'package:gullyeats/features/onboarding/providers/cart_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -85,10 +85,15 @@ class _CartDetailsScreenState extends State<CartDetailsScreen> {
           isError: false,
         );
 
+        // A new cart has done nothing yet; a resumed one skips finished steps.
+        final next = nextOnboardingRoute(
+          result,
+          hasMenu: !isNew && await cartProvider.hasMenu(result.id),
+        );
         await Future.delayed(const Duration(milliseconds: 400));
 
         if (mounted) {
-          Navigator.pushNamed(context, AppRoutes.cartPhoto);
+          Navigator.pushNamed(context, next);
         }
       } else {
         throw Exception("Failed to create cart");

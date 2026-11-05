@@ -102,7 +102,12 @@ class TestProviders {
   final staff = StaffProvider();
 }
 
-Widget buildApp(TestProviders p, Widget screen, {Object? arguments}) {
+Widget buildApp(
+  TestProviders p,
+  Widget screen, {
+  Object? arguments,
+  List<NavigatorObserver> navigatorObservers = const [],
+}) {
   return MultiProvider(
     providers: [
       ChangeNotifierProvider.value(value: p.auth),
@@ -114,6 +119,7 @@ Widget buildApp(TestProviders p, Widget screen, {Object? arguments}) {
     child: MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      navigatorObservers: navigatorObservers,
       onGenerateRoute: (settings) => MaterialPageRoute(
         settings: settings.name == '/'
             ? RouteSettings(name: '/', arguments: arguments)

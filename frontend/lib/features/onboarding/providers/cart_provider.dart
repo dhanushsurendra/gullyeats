@@ -58,6 +58,9 @@ class CartProvider with ChangeNotifier {
     }
   }
 
+  Future<bool> hasMenu(String cartId) async =>
+      await _cartService.fetchMenuItemCount(cartId) > 0;
+
   /// Makes [cart] the one the onboarding steps work on. Later screens read
   /// it back with [loadCartId] and [loadCartDetails].
   Future<void> selectCart(CartModel cart) async {

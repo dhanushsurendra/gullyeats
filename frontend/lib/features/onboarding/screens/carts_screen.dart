@@ -78,6 +78,14 @@ class _CartsScreenState extends State<CartsScreen> {
     }
   }
 
+  /// Opens Cart Details: prefilled for an existing cart (its Continue then
+  /// resumes at the first unfinished step), empty for a new one. Reloads the
+  /// list afterwards so statuses are current.
+  Future<void> _openCart(CartModel? cart) async {
+    await Navigator.pushNamed(context, AppRoutes.cartDetails, arguments: cart);
+    if (mounted) _loadCarts();
+  }
+
   Future<void> _handleSendCredentials(BuildContext context) async {
     final args =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
@@ -168,6 +176,7 @@ class _CartsScreenState extends State<CartsScreen> {
                                 child: CartCard(
                                   cart: cart,
                                   isSelected: selectedCartId == cart.id,
+                                  onTap: () => _openCart(cart),
                                 ),
                               ),
                             ),
@@ -181,7 +190,7 @@ class _CartsScreenState extends State<CartsScreen> {
                           AppButton(
                             label: "+ Add New Outlet",
                             onPressed: () {
-                              Navigator.pushNamed(context, AppRoutes.cartDetails);
+                              _openCart(null);
                             },
                             isDotted: true,
                             backgroundColor: Colors.transparent,

@@ -3,16 +3,19 @@ import 'package:gullyeats/core/theme/app_colors.dart';
 import 'package:gullyeats/core/theme/app_gaps.dart';
 import 'package:gullyeats/core/theme/app_text_styles.dart';
 import 'package:gullyeats/features/onboarding/models/cart_model.dart';
+import 'package:gullyeats/features/onboarding/onboarding_progress.dart';
 import 'package:gullyeats/features/onboarding/widgets/status_badge.dart';
 
 class CartCard extends StatelessWidget {
   final CartModel cart;
   final bool isSelected;
+  final VoidCallback? onTap;
 
   const CartCard({
     super.key,
     required this.cart,
     required this.isSelected,
+    this.onTap,
   });
 
   @override
@@ -40,6 +43,7 @@ class CartCard extends StatelessWidget {
             : null,
       ),
       child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -48,6 +52,7 @@ class CartCard extends StatelessWidget {
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: Text(
@@ -59,10 +64,13 @@ class CartCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  StatusBadge(
-                    label: cart.isActive ? "ACTIVE" : "INACTIVE",
-                    isSuccess: cart.isActive,
-                  ),
+                  isOnboardingComplete(cart)
+                      ? StatusBadge(
+                          label: cart.isActive ? "ACTIVE" : "INACTIVE",
+                          isSuccess: cart.isActive,
+                        )
+                      // Tapping it resumes onboarding where it stopped.
+                      : const StatusBadge(label: "SETUP INCOMPLETE", isSuccess: false),
                 ],
               ),
               AppGaps.h12,

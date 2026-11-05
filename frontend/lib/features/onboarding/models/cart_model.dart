@@ -25,6 +25,10 @@ class CartModel {
     required this.location,
   });
 
+  /// Whether the location step was done (it saves both an address and GPS).
+  bool get hasLocation =>
+      address.isNotEmpty || location.latitude != 0 || location.longitude != 0;
+
   Map<String, dynamic> toJson() {
     return {
       '_id': id,
