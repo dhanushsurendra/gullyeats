@@ -2,6 +2,7 @@ const Cart = require('../models/Cart')
 const MenuItem = require('../models/Menu')
 const User = require('../models/User')
 const Order = require('../models/Order')
+const { findManagedCart } = require('../utils/cartAccess')
 const QRCode = require('qrcode')
 const asyncHandler = require('../utils/asyncHandler')
 const bcrypt = require('bcrypt')
@@ -62,14 +63,7 @@ exports.updateCart = asyncHandler(async (req, res) => {
     isOpen,
   } = req.body;
 
-  const cart = await Cart.findById(cartId);
-
-  if (!cart) {
-    return res.status(404).json({
-      success: false,
-      message: 'Cart not found',
-    });
-  }
+  const cart = await findManagedCart(req, res, cartId);
 
   if (cartName !== undefined) {
     cart.cartName = cartName;
@@ -502,12 +496,7 @@ exports.getPresignedUploadUrlForExistingMenuItem = asyncHandler(
 
 exports.generateAndUploadQR = asyncHandler(async (req, res) => {
   const { cartId } = req.params
-  const cart = await Cart.findById(cartId)
-
-  if (!cart) {
-    res.status(404)
-    throw new Error('Cart not found')
-  }
+  const cart = await findManagedCart(req, res, cartId)
 
   // FRONTEND_URL_CUSTOMER may list several origins (it also feeds CORS);
   // the first is the customer app the QR should open.
@@ -649,6 +638,8 @@ exports.switchStaffCart = asyncHandler(async (req, res) => {
 exports.getPresignedUploadUrl = asyncHandler(async (req, res) => {
   const { fileType } = req.body
   const cartId = req.params.cartId
+
+  await findManagedCart(req, res, cartId)
   const bucketName = process.env.BUCKET_NAME
 
   const extension = fileType.split('/')[1] || 'jpg'
@@ -674,6 +665,8 @@ exports.getPresignedUploadUrl = asyncHandler(async (req, res) => {
 exports.updateCartImage = asyncHandler(async (req, res) => {
   const { cartId } = req.params
   const { imageUrl } = req.body
+
+  await findManagedCart(req, res, cartId)
 
   const updatedCart = await Cart.findByIdAndUpdate(
     cartId,
