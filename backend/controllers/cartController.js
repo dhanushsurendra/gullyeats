@@ -1,6 +1,7 @@
 const Cart = require('../models/Cart')
 const MenuItem = require('../models/Menu')
 const User = require('../models/User')
+const Order = require('../models/Order')
 const QRCode = require('qrcode')
 const asyncHandler = require('../utils/asyncHandler')
 const bcrypt = require('bcrypt')
@@ -210,6 +211,18 @@ exports.createMenuItems = asyncHandler(async (req, res) => {
     }
   })
 
+  // Onboarding sends the whole menu each time it is saved, so replace the
+  // cart's items instead of appending (going back and saving again used to
+  // duplicate them). Once orders exist they reference these items, so leave
+  // a live menu alone.
+  if (await Order.exists({ cartId })) {
+    res.status(409)
+    throw new Error(
+      'This cart already has orders. Edit its menu from the ordering app.',
+    )
+  }
+
+  await MenuItem.deleteMany({ cartId })
   const createdItems = await MenuItem.insertMany(processedItems)
 
   res.status(201).json({
