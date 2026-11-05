@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:gullyeats/core/error/app_exceptions.dart';
+import 'package:gullyeats/core/utils/build_address.dart';
 import 'package:gullyeats/core/theme/app_colors.dart';
 import 'package:gullyeats/core/theme/app_gaps.dart';
 import 'package:gullyeats/core/theme/app_text_styles.dart';
@@ -91,6 +92,14 @@ class _ConfirmLocationScreenState extends State<ConfirmLocationScreen> {
     }
   }
 
+  String get _title =>
+      joinAddressParts([placemark?.name, placemark?.subLocality]);
+
+  String get _subtitle => joinAddressParts([
+    joinAddressParts([placemark?.locality, placemark?.administrativeArea]),
+    placemark?.postalCode,
+  ], separator: ' - ');
+
   String getAccuracyLevel(int accuracy) {
     if (accuracy <= 20) return "High";
     if (accuracy <= 50) return "Medium";
@@ -151,14 +160,14 @@ class _ConfirmLocationScreenState extends State<ConfirmLocationScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "${placemark?.name}, ${placemark?.subLocality}",
+                      _title.isEmpty ? "Address not found" : _title,
                       style: AppTextStyles.heading3,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
 
                     Text(
-                      "${placemark?.locality}, ${placemark?.administrativeArea} - ${placemark?.postalCode}",
+                      _subtitle,
                       style: AppTextStyles.body.copyWith(
                         color: AppColors.grey400,
                       ),
