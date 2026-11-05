@@ -103,6 +103,15 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
 
       final checkout = result.checkout;
 
+      // Already paid (e.g. verified by the webhook): nothing to open.
+      if (checkout == null ||
+          result.payment.isVerified ||
+          !result.isLocked) {
+        AppSnackBar.show(context, message: 'Payment received. Your cart is unlocked.');
+        Navigator.pushReplacementNamed(context, AppRoutes.home);
+        return;
+      }
+
       final options = {
         'key': checkout.keyId,
         'order_id': checkout.razorpayOrderId,
@@ -112,7 +121,7 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
         'description': checkout.description,
 
         // Razorpay can show UPI, cards, net banking, wallets, etc.
-        'theme': {'color': '#ffffff'},
+        'theme': {'color': '#FE5200'},
       };
 
       _razorpay.open(options);

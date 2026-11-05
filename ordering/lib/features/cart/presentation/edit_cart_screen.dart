@@ -70,6 +70,10 @@ class _EditCartScreenState extends State<EditCartScreen> {
     )..addListener(_markDirty);
 
     _selectedCity = widget.cart.cartCity;
+    // The dropdown needs the current value among its items.
+    if (_selectedCity!.isNotEmpty && !_cities.contains(_selectedCity)) {
+      _cities.insert(0, _selectedCity!);
+    }
 
     _isOpen = widget.cart.isOpen;
     _isActive = widget.cart.isActive;

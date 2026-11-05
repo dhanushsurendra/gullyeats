@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:ordering/core/constants/api_constants.dart';
 import 'package:ordering/core/error/api_exception.dart';
+import 'package:ordering/core/utils/compress_image.dart';
 import 'package:ordering/features/cart/models/cart_model.dart';
 import 'package:ordering/features/cart/models/sales_model.dart';
 
@@ -41,10 +42,13 @@ class CartService {
     String cartId,
     bool isOpen,
   ) async {
-    final response = await http.put(
-      Uri.parse("${ApiConstants.carts}/toggle-cart-status/$cartId"),
-      headers: _headers(token),
-    );
+    final response = await http
+        .put(
+          Uri.parse("${ApiConstants.carts}/toggle-cart-status/$cartId"),
+          headers: _headers(token),
+          body: json.encode({"isOpen": isOpen}),
+        )
+        .timeout(const Duration(seconds: 10));
 
     final data = response.body.isNotEmpty ? jsonDecode(response.body) : {};
     if (response.statusCode != 200) {
@@ -62,12 +66,17 @@ class CartService {
     String startDate,
     String endDate,
   ) async {
-    final response = await http.get(
-      Uri.parse(
-        '${ApiConstants.carts}/sales-insights/$cartId?startDate=$startDate&endDate=$endDate',
-      ),
-      headers: _headers(token),
-    );
+    final response = await http
+        .get(
+          Uri.parse('${ApiConstants.carts}/sales-insights/$cartId').replace(
+            queryParameters: {
+              'startDate': _day(startDate),
+              'endDate': _day(endDate),
+            },
+          ),
+          headers: _headers(token),
+        )
+        .timeout(const Duration(seconds: 15));
 
     final data = json.decode(response.body);
     if (response.statusCode == 200) {
@@ -101,7 +110,9 @@ class CartService {
 
     // Upload the new image first, if one was selected.
     if (imageFile != null) {
-      final ext = imageFile.path.split('.').last.toLowerCase();
+      // compressImage always writes a JPEG.
+      final photo = await compressImage(imageFile);
+      const fileType = "image/jpeg";
 
       final response = await http
           .post(
@@ -109,7 +120,7 @@ class CartService {
               "${ApiConstants.carts}/generate-cart-image-url/${cart.id}",
             ),
             headers: _headers(token),
-            body: json.encode({"fileType": "image/$ext"}),
+            body: json.encode({"fileType": fileType}),
           )
           .timeout(const Duration(seconds: 10));
 
@@ -125,15 +136,15 @@ class CartService {
       final uploadUrl = data['uploadUrl'];
       final fileUrl = data['fileUrl'];
 
-      final fileBytes = await imageFile.readAsBytes();
+      final fileBytes = await photo.readAsBytes();
 
       final uploadResponse = await http
           .put(
             Uri.parse(uploadUrl),
-            headers: {"Content-Type": "image/$ext"},
+            headers: {"Content-Type": fileType},
             body: fileBytes,
           )
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 60));
 
       if (uploadResponse.statusCode != 200) {
         throw ApiException(
@@ -166,6 +177,10 @@ class CartService {
       response.statusCode,
     );
   }
+
+  // The server reads YYYY-MM-DD as an IST day; callers pass
+  // DateTime.toString(), which starts with it.
+  String _day(String date) => date.length >= 10 ? date.substring(0, 10) : date;
 
   dynamic _decode(http.Response response) =>
       response.body.isNotEmpty ? jsonDecode(response.body) : {};

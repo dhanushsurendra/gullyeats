@@ -10,7 +10,9 @@ import 'package:ordering/features/payment/models/razorpay_checkout_model.dart';
 
 class CreatePaymentResult {
   final PaymentModel payment;
-  final RazorpayCheckoutModel checkout;
+
+  /// Null when the backend has nothing left to pay (already verified).
+  final RazorpayCheckoutModel? checkout;
   final bool isLocked;
   final bool existingPayment;
 
@@ -66,9 +68,10 @@ class PaymentService {
         data['payment'] as Map<String, dynamic>,
       );
 
-      final checkout = RazorpayCheckoutModel.fromJson(
-        data['checkout'] as Map<String, dynamic>,
-      );
+      final checkoutJson = data['checkout'];
+      final checkout = checkoutJson is Map<String, dynamic>
+          ? RazorpayCheckoutModel.fromJson(checkoutJson)
+          : null;
 
       return CreatePaymentResult(
         payment: payment,
@@ -129,8 +132,6 @@ class PaymentService {
     .timeout(const Duration(seconds: 10));
 
     final data = _decode(response);
-
-    print(data);
 
     if (response.statusCode == 200) {
       return PaymentStatusModel.fromJson(data as Map<String, dynamic>);

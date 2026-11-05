@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:ordering/core/error/app_exceptions.dart';
+import 'package:ordering/core/widgets/app_snack_bar.dart';
 import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
 import 'package:ordering/core/theme/app_padding.dart';
@@ -70,13 +72,29 @@ class _SalesScreenState extends State<SalesScreen> {
     }
   }
 
+  // Set when loading fails and there is no earlier data to show.
+  String? _error;
+
   Future<void> _loadSales() async {
     final authProvider = context.read<AuthProvider>();
-    await context.read<CartProvider>().loadSales(
-      authProvider.token!,
-      _startDate.toString(),
-      _endDate.toString(),
-    );
+    final cartProvider = context.read<CartProvider>();
+    setState(() => _error = null);
+
+    try {
+      await cartProvider.loadSales(
+        authProvider.token,
+        _startDate.toString(),
+        _endDate.toString(),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      final message = AppExceptionHandler.getMessage(e);
+      if (cartProvider.sales == null) {
+        setState(() => _error = message);
+      } else {
+        AppSnackBar.show(context, message: message, isError: true);
+      }
+    }
   }
 
   void _applyPreset(String presetKey) {
@@ -166,6 +184,29 @@ class _SalesScreenState extends State<SalesScreen> {
   Widget build(BuildContext context) {
     final provider = context.watch<CartProvider>();
     final data = provider.sales;
+
+    if (data == null && _error != null) {
+      return Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(_error!, textAlign: TextAlign.center),
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: _loadSales,
+                    child: const Text("RETRY"),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
 
     // Initial loading: no data exists yet.
     if (data == null) {

@@ -108,7 +108,6 @@ class PaymentProvider with ChangeNotifier {
 
       return status;
     } catch (e) {
-      print(e);
       error = AppExceptionHandler.getMessage(e);
       paymentStatus = null;
       notifyListeners();
