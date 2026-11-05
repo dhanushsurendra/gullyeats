@@ -3,9 +3,10 @@ import 'package:gullyeats/core/error/app_exceptions.dart';
 import 'package:gullyeats/core/routes/app_routes.dart';
 import 'package:gullyeats/core/theme/app_colors.dart';
 import 'package:gullyeats/core/theme/app_gaps.dart';
-import 'package:gullyeats/core/theme/app_padding.dart';
 import 'package:gullyeats/core/theme/app_text_styles.dart';
 import 'package:gullyeats/core/widgets/app_button.dart';
+import 'package:gullyeats/core/widgets/app_footer.dart';
+import 'package:gullyeats/core/widgets/base_screen.dart';
 import 'package:gullyeats/core/widgets/app_search_bar.dart';
 import 'package:gullyeats/core/widgets/app_snack_bar.dart';
 import 'package:gullyeats/features/auth/providers/auth_provider.dart';
@@ -145,80 +146,61 @@ class _CartsScreenState extends State<CartsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.white,
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              // Same 500px content width as BaseScreen.
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight: constraints.maxHeight,
-                    maxWidth: 500,
-                  ),
-                  child: IntrinsicHeight(
-                    child: Padding(
-                      padding: AppPadding.screen,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text("Your Carts", style: AppTextStyles.heading1),
-                          AppGaps.h4,
-                          AppGaps.h24,
-                          AppSearchBar(
-                            hintText: "Search outlet name or city...",
-                            onChanged: (value) =>
-                                setState(() => searchQuery = value),
-                          ),
-
-                          AppGaps.h24,
-
-                          if (_isLoading)
-                            const Center(child: CircularProgressIndicator())
-                          else if (_filteredCarts.isEmpty)
-                            _buildEmptyState()
-                          else
-                            ..._filteredCarts.map(
-                              (cart) => Padding(
-                                padding: const EdgeInsets.only(bottom: 16),
-                                child: CartCard(
-                                  cart: cart,
-                                  isSelected: selectedCartId == cart.id,
-                                  onTap: () => _openCart(cart),
-                                ),
-                              ),
-                            ),
-                          const Spacer(),
-                          AppGaps.h16,
-                          AppButton(
-                            label: "Send Credentials",
-                            onPressed: () => _handleSendCredentials(context),
-                          ),
-                          AppGaps.h16,
-                          AppButton(
-                            label: "+ Add New Outlet",
-                            onPressed: () {
-                              _openCart(null);
-                            },
-                            isDotted: true,
-                            backgroundColor: Colors.transparent,
-                            borderColor: AppColors.grey300,
-                            textColor: AppColors.primary,
-                          ),
-                          AppGaps.h16,
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
+    return BaseScreen(
+      title: "Your Carts",
+      subtitle: "Tap an outlet to continue its setup.",
+      showBackButton: false,
+      expandToFullHeight: true,
+      bottomNavigationBar: AppFooter(
+        children: [
+          AppButton(
+            label: "+ ADD NEW OUTLET",
+            onPressed: () => _openCart(null),
+            isDotted: true,
+            backgroundColor: Colors.transparent,
+            borderColor: AppColors.grey300,
+            textColor: AppColors.primary,
+          ),
+          AppButton(
+            label: "SEND CREDENTIALS",
+            onPressed: () => _handleSendCredentials(context),
+          ),
+        ],
       ),
+      child: Column(
+        children: [
+          AppSearchBar(
+            hintText: "Search outlet name or city...",
+            onChanged: (value) => setState(() => searchQuery = value),
+          ),
+          AppGaps.h24,
+          Expanded(
+            child: RefreshIndicator(onRefresh: _loadCarts, child: _buildList()),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildList() {
+    // Only the first load shows a spinner; reloads keep the list on screen.
+    if (_isLoading && _allCarts.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    final carts = _filteredCarts;
+    return ListView.separated(
+      // Scrollable even when short, so pull-to-refresh always works.
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.only(bottom: 16),
+      itemCount: carts.isEmpty ? 1 : carts.length,
+      separatorBuilder: (_, _) => AppGaps.h16,
+      itemBuilder: (_, i) => carts.isEmpty
+          ? _buildEmptyState()
+          : CartCard(
+              cart: carts[i],
+              isSelected: selectedCartId == carts[i].id,
+              onTap: () => _openCart(carts[i]),
+            ),
     );
   }
 

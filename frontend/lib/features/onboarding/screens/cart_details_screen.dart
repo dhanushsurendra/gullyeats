@@ -7,7 +7,7 @@ import 'package:gullyeats/core/widgets/app_button.dart';
 import 'package:gullyeats/core/widgets/app_input.dart';
 import 'package:gullyeats/core/widgets/app_snack_bar.dart';
 import 'package:gullyeats/core/widgets/base_screen.dart';
-import 'package:gullyeats/core/widgets/fill_or_scroll.dart';
+import 'package:gullyeats/core/widgets/app_footer.dart';
 import 'package:gullyeats/core/utils/responsive.dart';
 import 'package:gullyeats/features/auth/providers/auth_provider.dart';
 import 'package:gullyeats/features/onboarding/models/cart_model.dart';
@@ -113,7 +113,21 @@ class _CartDetailsScreenState extends State<CartDetailsScreen> {
       subtitle: "Tell us about your cart to get started.",
       expandToFullHeight: true,
       onBack: () => Navigator.pop(context),
-      child: FillOrScroll(
+      bottomNavigationBar: AppFooter(
+        note: "You can update these details later from settings.",
+        children: [
+          AppButton(
+            label: "CONTINUE",
+            isLoading: _isLoading,
+            onPressed:
+                (_selectedCity != null && _nameController.text.isNotEmpty)
+                ? _handleContinue
+                : null,
+          ),
+        ],
+      ),
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         child: Form(
           key: _formKey,
           autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -174,28 +188,6 @@ class _CartDetailsScreenState extends State<CartDetailsScreen> {
                 ),
               ),
 
-              const Spacer(),
-              AppGaps.h24,
-              Center(
-                child: Text(
-                  "You can update these details later from settings.",
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.grey400,
-                  ),
-                ),
-              ),
-              AppGaps.h16,
-              AppButton(
-                label: "CONTINUE",
-                isLoading: _isLoading,
-                onPressed:
-                    (_selectedCity != null && _nameController.text.isNotEmpty)
-                    ? _handleContinue
-                    : null,
-              ),
-              SizedBox(
-                height: MediaQuery.of(context).viewInsets.bottom > 0 ? 10 : 0,
-              ),
             ],
           ),
         ),

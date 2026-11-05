@@ -3,6 +3,7 @@ import 'package:gullyeats/core/error/app_exceptions.dart';
 import 'package:gullyeats/core/theme/app_colors.dart';
 import 'package:gullyeats/core/theme/app_gaps.dart';
 import 'package:gullyeats/core/theme/app_text_styles.dart';
+import 'package:gullyeats/core/widgets/app_footer.dart';
 import 'package:gullyeats/core/widgets/app_button.dart';
 import 'package:gullyeats/core/widgets/app_snack_bar.dart';
 import 'package:gullyeats/core/widgets/base_screen.dart';
@@ -96,6 +97,15 @@ class _QrPosterScreenState extends State<QrPosterScreen> {
       onBack: () => Navigator.pop(context),
       subtitle: "Print and paste this on your cart.",
       expandToFullHeight: true,
+      bottomNavigationBar: AppFooter(
+        children: [
+          AppButton(
+            label: "SHARE QR",
+            isLoading: _isBtnLoading,
+            onPressed: _shareQr,
+          ),
+        ],
+      ),
       child: ListView(
         padding: const EdgeInsets.only(bottom: 16),
         children: [
@@ -135,12 +145,6 @@ class _QrPosterScreenState extends State<QrPosterScreen> {
               style: AppTextStyles.caption.copyWith(color: AppColors.grey600),
               textAlign: TextAlign.center,
             ),
-          ),
-          AppGaps.h24,
-          AppButton(
-            label: "SHARE QR",
-            isLoading: _isBtnLoading,
-            onPressed: _shareQr,
           ),
         ],
       ),

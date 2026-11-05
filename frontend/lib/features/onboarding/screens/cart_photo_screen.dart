@@ -8,7 +8,7 @@ import 'package:gullyeats/core/utils/compress_image.dart';
 import 'package:gullyeats/core/widgets/app_button.dart';
 import 'package:gullyeats/core/widgets/app_snack_bar.dart';
 import 'package:gullyeats/core/widgets/base_screen.dart';
-import 'package:gullyeats/core/widgets/fill_or_scroll.dart';
+import 'package:gullyeats/core/widgets/app_footer.dart';
 import 'package:gullyeats/features/auth/providers/auth_provider.dart';
 import 'package:gullyeats/features/onboarding/providers/cart_provider.dart';
 import 'package:image_picker/image_picker.dart';
@@ -150,7 +150,22 @@ class _CartPhotoScreenState extends State<CartPhotoScreen> {
       subtitle: "Take a live photo of your cart for verification",
       expandToFullHeight: true,
       onBack: () => Navigator.pop(context),
-      child: FillOrScroll(
+      bottomNavigationBar: AppFooter(
+        note: "Your photo is used only for verification.",
+        children: [
+          AppButton(
+            label: hasPhoto ? "CONFIRM & UPLOAD" : "OPEN CAMERA",
+            isLoading: _isLoading,
+            onPressed: _isLoading
+                ? null
+                : hasPhoto
+                ? _onContinue
+                : _openCamera,
+          ),
+        ],
+      ),
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -265,24 +280,6 @@ class _CartPhotoScreenState extends State<CartPhotoScreen> {
               ),
             ),
 
-            const Spacer(),
-
-            Center(
-              child: Text(
-                "Your photo is used only for verification.",
-                style: AppTextStyles.caption,
-              ),
-            ),
-            AppGaps.h12,
-            AppButton(
-              label: hasPhoto ? "CONFIRM & UPLOAD" : "OPEN CAMERA",
-              isLoading: _isLoading,
-              onPressed: _isLoading
-                  ? null
-                  : hasPhoto
-                  ? _onContinue
-                  : _openCamera,
-            ),
           ],
         ),
       ),

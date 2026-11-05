@@ -5,6 +5,7 @@ import 'package:gullyeats/core/routes/app_routes.dart';
 import 'package:gullyeats/core/theme/app_colors.dart';
 import 'package:gullyeats/core/theme/app_gaps.dart';
 import 'package:gullyeats/core/theme/app_text_styles.dart';
+import 'package:gullyeats/core/widgets/app_footer.dart';
 import 'package:gullyeats/core/widgets/app_button.dart';
 import 'package:gullyeats/core/widgets/base_screen.dart';
 import 'package:gullyeats/features/onboarding/providers/cart_provider.dart';
@@ -50,6 +51,15 @@ class _CartActivatedScreenState extends State<CartActivatedScreen> {
       title: "Cart Activated",
       onBack: () => Navigator.pop(context),
       subtitle: "Your cart is now live on GullyEats",
+      bottomNavigationBar: AppFooter(
+        note: "Welcome to the GullyEats vendor community.",
+        children: [
+          AppButton(
+            label: "CONTINUE",
+            onPressed: () => Navigator.pushNamed(context, AppRoutes.qrPoster),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -66,19 +76,6 @@ class _CartActivatedScreenState extends State<CartActivatedScreen> {
             onCopy: _copyGeneratedCartId,
             isCopying: _isCopying,
           ),
-          AppGaps.h32,
-          AppButton(
-            label: "CONTINUE",
-            onPressed: () => Navigator.pushNamed(context, AppRoutes.qrPoster),
-          ),
-          AppGaps.h12,
-          Text(
-            "Welcome to the GullyEats vendor community.",
-            style: AppTextStyles.caption.copyWith(color: AppColors.grey500),
-            textAlign: TextAlign.center,
-          ),
-
-          AppGaps.h24,
         ],
       ),
     );

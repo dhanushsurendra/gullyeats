@@ -31,7 +31,7 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Send Credentials'));
+      await tester.tap(find.text('SEND CREDENTIALS'));
       await tester.pumpAndSettle();
       expect(find.text('Send new login PIN?'), findsOneWidget);
 
