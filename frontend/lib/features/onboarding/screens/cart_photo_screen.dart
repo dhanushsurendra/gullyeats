@@ -5,6 +5,7 @@ import 'package:gullyeats/core/theme/app_colors.dart';
 import 'package:gullyeats/core/theme/app_gaps.dart';
 import 'package:gullyeats/core/theme/app_text_styles.dart';
 import 'package:gullyeats/core/utils/compress_image.dart';
+import 'package:gullyeats/core/widgets/info_box.dart';
 import 'package:gullyeats/core/widgets/app_button.dart';
 import 'package:gullyeats/core/widgets/app_snack_bar.dart';
 import 'package:gullyeats/core/widgets/base_screen.dart';
@@ -254,30 +255,12 @@ class _CartPhotoScreenState extends State<CartPhotoScreen> {
             ),
 
             AppGaps.h16,
-            Container(
-              padding: const EdgeInsets.all(16),
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-
-                children: [
-                  Text(
-                    "• No gallery upload allowed",
-                    style: AppTextStyles.caption,
-                  ),
-                  AppGaps.h8,
-                  Text("• Time will be recorded", style: AppTextStyles.caption),
-                  AppGaps.h8,
-                  Text(
-                    "• Prevents fake carts & builds trust",
-                    style: AppTextStyles.caption,
-                  ),
-                ],
-              ),
+            const InfoBox(
+              lines: [
+                "No gallery upload allowed",
+                "Time will be recorded",
+                "Prevents fake carts & builds trust",
+              ],
             ),
 
           ],

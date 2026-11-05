@@ -3,6 +3,7 @@ import 'package:gullyeats/core/error/app_exceptions.dart';
 import 'package:gullyeats/core/theme/app_colors.dart';
 import 'package:gullyeats/core/theme/app_gaps.dart';
 import 'package:gullyeats/core/theme/app_text_styles.dart';
+import 'package:gullyeats/core/widgets/info_box.dart';
 import 'package:gullyeats/core/widgets/app_footer.dart';
 import 'package:gullyeats/core/widgets/app_button.dart';
 import 'package:gullyeats/core/widgets/app_snack_bar.dart';
@@ -133,18 +134,9 @@ class _QrPosterScreenState extends State<QrPosterScreen> {
             ),
           ),
           AppGaps.h24,
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.grey100,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              "Tip: Print in A4 size and laminate for durability.",
-              style: AppTextStyles.caption.copyWith(color: AppColors.grey600),
-              textAlign: TextAlign.center,
-            ),
+          const InfoBox(
+            icon: Icons.lightbulb_outline,
+            lines: ["Tip: Print in A4 size and laminate for durability."],
           ),
         ],
       ),
@@ -279,11 +271,15 @@ class _QrPosterCard extends StatelessWidget {
               ],
             ),
           ),
-          Text(
-            cartName,
-            style: AppTextStyles.heading2.copyWith(fontSize: width * 0.06),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          // Padded so a long name doesn't run into the border.
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: width * 0.05),
+            child: Text(
+              cartName,
+              style: AppTextStyles.heading2.copyWith(fontSize: width * 0.06),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
           Text(
             "Cart ID: $cartId",

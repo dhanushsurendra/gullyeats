@@ -5,6 +5,7 @@ import 'package:gullyeats/core/utils/build_address.dart';
 import 'package:gullyeats/core/theme/app_colors.dart';
 import 'package:gullyeats/core/theme/app_gaps.dart';
 import 'package:gullyeats/core/theme/app_text_styles.dart';
+import 'package:gullyeats/core/widgets/info_box.dart';
 import 'package:gullyeats/core/widgets/app_footer.dart';
 import 'package:gullyeats/core/widgets/app_button.dart';
 import 'package:gullyeats/core/widgets/app_snack_bar.dart';
@@ -135,7 +136,7 @@ class _ConfirmLocationScreenState extends State<ConfirmLocationScreen> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.grey300),
       ),
       child: Column(
@@ -203,16 +204,8 @@ class _ConfirmLocationScreenState extends State<ConfirmLocationScreen> {
   }
 
   Widget _buildInfoBox() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.orange.shade50,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        "This location is used to show your cart to nearby customers.",
-        style: TextStyle(color: Colors.orange.shade900, fontSize: 13),
-      ),
+    return const InfoBox(
+      lines: ["This location is used to show your cart to nearby customers."],
     );
   }
 

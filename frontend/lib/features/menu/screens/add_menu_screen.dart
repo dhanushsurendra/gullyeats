@@ -4,6 +4,7 @@ import 'package:gullyeats/core/utils/format_price.dart';
 import 'package:gullyeats/core/theme/app_colors.dart';
 import 'package:gullyeats/core/theme/app_gaps.dart';
 import 'package:gullyeats/core/theme/app_text_styles.dart';
+import 'package:gullyeats/core/widgets/info_box.dart';
 import 'package:gullyeats/core/widgets/app_footer.dart';
 import 'package:gullyeats/core/widgets/app_button.dart';
 import 'package:gullyeats/core/widgets/app_snack_bar.dart';
@@ -296,46 +297,16 @@ class _AddMenuScreenState extends State<AddMenuScreen> {
   }
 
   Widget _buildInfoBox() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.grey100.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.grey200),
-      ),
-      child: Column(
-        children: [
-          _infoRow("Simple setup (Text + Price)"),
-          AppGaps.h12,
-          _infoRow("No images needed for now"),
-          AppGaps.h12,
-          _infoRow("Update your menu anytime"),
-        ],
-      ),
-    );
-  }
-
-  Widget _infoRow(String text) {
-    return Row(
-      children: [
-        const Icon(
-          Icons.check_circle_outline,
-          size: 18,
-          color: AppColors.grey400,
-        ),
-        AppGaps.w12,
-        Expanded(
-          child: Text(
-            text,
-            style: AppTextStyles.body.copyWith(
-              color: AppColors.grey400,
-              fontSize: 13,
-            ),
-          ),
-        ),
+    return const InfoBox(
+      icon: Icons.check_circle_outline,
+      lines: [
+        "Simple setup (Text + Price)",
+        "No images needed for now",
+        "Update your menu anytime",
       ],
     );
   }
+
 
   Widget _buildFooter() {
     return AppFooter(

@@ -256,7 +256,7 @@ class _EnableLocationScreenState extends State<EnableLocationScreen> {
         width: double.infinity,
         decoration: BoxDecoration(
           color: AppColors.grey100,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: AppColors.primary.withValues(alpha: 0.1),
           ),
@@ -273,7 +273,7 @@ class _EnableLocationScreenState extends State<EnableLocationScreen> {
         width: double.infinity,
         decoration: BoxDecoration(
           color: AppColors.grey100,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: AppColors.primary.withValues(alpha: 0.1),
           ),
@@ -303,7 +303,7 @@ class _EnableLocationScreenState extends State<EnableLocationScreen> {
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: AppColors.primary.withValues(alpha: 0.1),
           width: 1.5,
@@ -481,8 +481,8 @@ class _EnableLocationScreenState extends State<EnableLocationScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.grey100.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(20),
+        color: AppColors.grey100,
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
