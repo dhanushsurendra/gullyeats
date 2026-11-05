@@ -18,7 +18,7 @@ class MenuService {
     final response = await http.get(
       Uri.parse('${ApiConstants.carts}/get-menu-items/$cartId'),
       headers: _headers(token),
-    );
+    ).timeout(const Duration(seconds: 10));
 
     final data = json.decode(response.body);
     if (response.statusCode == 200) {
@@ -27,7 +27,7 @@ class MenuService {
           .toList();
     } else {
       throw ApiException(
-        data["message"] ?? "Failed to update order",
+        data["message"] ?? "Failed to load menu",
         response.statusCode,
       );
     }
@@ -42,14 +42,14 @@ class MenuService {
       Uri.parse('${ApiConstants.carts}/add-menu-item/$cartId'),
       headers: _headers(token),
       body: json.encode(item.toJson()),
-    );
+    ).timeout(const Duration(seconds: 10));
 
     final data = json.decode(response.body);
     if (response.statusCode == 201) {
       return MenuItemModel.fromJson(data['data']);
     } else {
       throw ApiException(
-        data["message"] ?? "Failed to update order",
+        data["message"] ?? "Failed to add item",
         response.statusCode,
       );
     }
@@ -69,7 +69,7 @@ class MenuService {
       Uri.parse('${ApiConstants.carts}/update-menu-item/${item.cartId}'),
       headers: _headers(token),
       body: json.encode(body),
-    );
+    ).timeout(const Duration(seconds: 10));
 
     final data = json.decode(response.body);
 
@@ -77,7 +77,7 @@ class MenuService {
       return MenuItemModel.fromJson(data['data']);
     } else {
       throw ApiException(
-        data["message"] ?? "Failed to update order",
+        data["message"] ?? "Failed to update item",
         response.statusCode,
       );
     }
@@ -91,7 +91,7 @@ class MenuService {
     final response = await http.delete(
       Uri.parse('${ApiConstants.carts}/delete-menu-item/$cartId/$itemId'),
       headers: _headers(token),
-    );
+    ).timeout(const Duration(seconds: 10));
 
     final data = json.decode(response.body);
 
@@ -99,7 +99,7 @@ class MenuService {
       return true;
     } else {
       throw ApiException(
-        data["message"] ?? "Failed to update order",
+        data["message"] ?? "Failed to delete item",
         response.statusCode,
       );
     }
@@ -180,7 +180,7 @@ class MenuService {
       Uri.parse('${ApiConstants.carts}/update-stock/$cartId/$itemId'),
       headers: _headers(token),
       body: jsonEncode({'isInStock': isInStock}),
-    );
+    ).timeout(const Duration(seconds: 10));
 
     final data = json.decode(response.body);
 
@@ -188,7 +188,7 @@ class MenuService {
       return true;
     } else {
       throw ApiException(
-        data["message"] ?? "Failed to update order",
+        data["message"] ?? "Failed to update stock",
         response.statusCode,
       );
     }

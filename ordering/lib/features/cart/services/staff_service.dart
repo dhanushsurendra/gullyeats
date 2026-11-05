@@ -25,7 +25,6 @@ class StaffService {
 
     final data = response.body.isNotEmpty ? jsonDecode(response.body) : {};
     if (response.statusCode == 201) {
-      print(StaffModel.fromJson(data['data']));
       return StaffModel.fromJson(data['data']);
     } else {
       throw ApiException(

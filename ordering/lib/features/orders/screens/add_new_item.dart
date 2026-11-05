@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:ordering/core/error/app_exceptions.dart';
 import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
@@ -88,18 +89,23 @@ class _AddItemScreenState extends State<AddItemScreen> {
 
   void _handleSave() async {
     setState(() {
-      _nameError = _nameController.text.isEmpty
+      final name = _nameController.text.trim();
+      _nameError = name.isEmpty
           ? "Item name is required"
+          : name.length < 2
+          ? "Item name must be at least 2 characters"
           : null;
-      _priceError = _priceController.text.isEmpty ? "Price is required" : null;
+      _priceError = int.tryParse(_priceController.text.trim()) == null
+          ? "Price is required"
+          : null;
     });
 
     if (_nameError == null && _priceError == null && _imageUrl.isNotEmpty) {
       try {
         MenuItemModel data = MenuItemModel.fromJson({
           "name": _nameController.text.trim(),
-          "price": double.tryParse(_priceController.text) ?? 0.0,
-          "inStock": _isInStock,
+          "price": double.parse(_priceController.text.trim()),
+          "isInStock": _isInStock,
           "isVeg": _isVeg,
           "imageUrl": _imageUrl
         });
@@ -323,6 +329,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
             label: "Price",
             hint: "99",
             keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             prefix: const Padding(
               padding: EdgeInsets.only(left: 12, right: 8),
               child: Icon(

@@ -80,7 +80,6 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
         _staffList = staffList;
       });
     } catch (e) {
-      print(e);
       final message = AppExceptionHandler.getMessage(e);
       if (mounted) {
         AppSnackBar.show(context, message: message, isError: true, marginBottom: 32);

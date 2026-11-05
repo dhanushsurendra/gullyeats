@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:ordering/core/widgets/app_snack_bar.dart';
+import 'package:ordering/core/error/app_exceptions.dart';
 import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
 import 'package:ordering/core/theme/app_padding.dart';
@@ -104,12 +106,21 @@ class _OrdersOverviewScreenState extends State<OrdersOverviewScreen> {
 
     if (cartId == null) return;
 
-    await orderProvider.loadAllOrders(
-      authProvider.token!,
-      cartId,
-      _startDate.toString(),
-      _endDate.toString(),
-    );
+    try {
+      await orderProvider.loadAllOrders(
+        authProvider.token!,
+        cartId,
+        _startDate.toString(),
+        _endDate.toString(),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      AppSnackBar.show(
+        context,
+        message: AppExceptionHandler.getMessage(e),
+        isError: true,
+      );
+    }
   }
 
   // ==========================================================================
@@ -161,12 +172,21 @@ class _OrdersOverviewScreenState extends State<OrdersOverviewScreen> {
 
     if (cartId == null) return;
 
-    await orderProvider.loadAllOrders(
-      authProvider.token!,
-      cartId,
-      start.toString(),
-      end.toString(),
-    );
+    try {
+      await orderProvider.loadAllOrders(
+        authProvider.token!,
+        cartId,
+        start.toString(),
+        end.toString(),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      AppSnackBar.show(
+        context,
+        message: AppExceptionHandler.getMessage(e),
+        isError: true,
+      );
+    }
   }
 
   // ==========================================================================
@@ -220,12 +240,21 @@ class _OrdersOverviewScreenState extends State<OrdersOverviewScreen> {
 
     if (cartId == null) return;
 
-    await orderProvider.loadAllOrders(
-      authProvider.token!,
-      cartId,
-      _startDate.toString(),
-      _endDate.toString(),
-    );
+    try {
+      await orderProvider.loadAllOrders(
+        authProvider.token!,
+        cartId,
+        _startDate.toString(),
+        _endDate.toString(),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      AppSnackBar.show(
+        context,
+        message: AppExceptionHandler.getMessage(e),
+        isError: true,
+      );
+    }
   }
 
   // ==========================================================================

@@ -25,7 +25,7 @@ class EditMenuScreen extends StatefulWidget {
 
 class _EditMenuScreenState extends State<EditMenuScreen> {
   final TextEditingController _searchController = TextEditingController();
-  List<MenuItemModel> filteredItems = [];
+  String _query = "";
   bool _isInit = false;
 
   @override
@@ -38,11 +38,17 @@ class _EditMenuScreenState extends State<EditMenuScreen> {
 
       context
           .read<MenuProvider>()
-          .fetchMenuItems(authProvider.token!, cartProvider.selectedCart?.id ?? "")
-          .then((_) {
-            setState(() {
-              filteredItems = context.read<MenuProvider>().menuItems;
-            });
+          .fetchMenuItems(
+            authProvider.token,
+            cartProvider.selectedCart?.id ?? "",
+          )
+          .catchError((Object e) {
+            if (!mounted) return;
+            AppSnackBar.show(
+              context,
+              message: AppExceptionHandler.getMessage(e),
+              isError: true,
+            );
           });
     }
   }
@@ -60,13 +66,7 @@ class _EditMenuScreenState extends State<EditMenuScreen> {
               AppSearchBar(
                 controller: _searchController,
                 hintText: "Search menu items",
-                onChanged: (value) {
-                  setState(() {
-                    filteredItems = context.read<MenuProvider>().searchMenuItem(
-                      value,
-                    );
-                  });
-                },
+                onChanged: (value) => setState(() => _query = value),
               ),
               AppGaps.h16,
               Expanded(
@@ -75,6 +75,10 @@ class _EditMenuScreenState extends State<EditMenuScreen> {
                     if (provider.isLoading) {
                       return const Center(child: CircularProgressIndicator());
                     }
+
+                    // Derived on every build so edits, adds and deletes show
+                    // up while a search is active.
+                    final filteredItems = provider.searchMenuItem(_query);
 
                     if (filteredItems.isEmpty) {
                       return const Center(child: Text("No menu items found"));

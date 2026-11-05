@@ -14,7 +14,7 @@ class OrderService {
     final response = await http.get(
       Uri.parse('${ApiConstants.orders}/orders-today/$cartId'),
       headers: _headers(token),
-    );
+    ).timeout(const Duration(seconds: 10));
 
     final data = json.decode(response.body);
     if (response.statusCode == 200) {
@@ -46,7 +46,9 @@ class OrderService {
       queryParameters: {'startDate': startDateString, 'endDate': endDateString},
     );
 
-    final response = await http.get(uri, headers: _headers(token));
+    final response = await http
+        .get(uri, headers: _headers(token))
+        .timeout(const Duration(seconds: 10));
 
     final data = json.decode(response.body);
 
@@ -68,7 +70,7 @@ class OrderService {
       Uri.parse('${ApiConstants.orders}/create-order'),
       headers: _headers(token),
       body: json.encode(orderData),
-    );
+    ).timeout(const Duration(seconds: 10));
 
     final data = json.decode(response.body);
 
@@ -86,7 +88,7 @@ class OrderService {
     final response = await http.put(
       Uri.parse('${ApiConstants.orders}/mark-order-paid/$orderId'),
       headers: _headers(token),
-    );
+    ).timeout(const Duration(seconds: 10));
 
     final data = json.decode(response.body);
     if (response.statusCode == 200) {
@@ -103,7 +105,7 @@ class OrderService {
     final response = await http.put(
       Uri.parse('${ApiConstants.orders}/mark-order-unpaid/$orderId'),
       headers: _headers(token),
-    );
+    ).timeout(const Duration(seconds: 10));
 
     final data = json.decode(response.body);
     if (response.statusCode == 200) {
@@ -126,7 +128,7 @@ class OrderService {
       Uri.parse('${ApiConstants.orders}/update-order/$orderId'),
       headers: _headers(token),
       body: json.encode(orderData),
-    );
+    ).timeout(const Duration(seconds: 10));
 
     final data = json.decode(response.body);
 
@@ -149,7 +151,7 @@ class OrderService {
     final response = await http.put(
       Uri.parse('${ApiConstants.orders}/serve-order/$orderId'),
       headers: _headers(token),
-    );
+    ).timeout(const Duration(seconds: 10));
 
     final data = json.decode(response.body);
     if (response.statusCode == 200) {
@@ -172,7 +174,9 @@ class OrderService {
       '${ApiConstants.orders}/overview/$cartId',
     ).replace(queryParameters: {'startDate': startDate, 'endDate': endDate});
 
-    final response = await http.get(uri, headers: _headers(token));
+    final response = await http
+        .get(uri, headers: _headers(token))
+        .timeout(const Duration(seconds: 10));
 
     final data = json.decode(response.body);
 
@@ -190,7 +194,7 @@ class OrderService {
     final response = await http.put(
       Uri.parse('${ApiConstants.orders}/serve-order-undo/$orderId'),
       headers: _headers(token),
-    );
+    ).timeout(const Duration(seconds: 10));
 
     final data = json.decode(response.body);
     if (response.statusCode == 200) {
@@ -207,7 +211,7 @@ class OrderService {
     final response = await http.put(
       Uri.parse('${ApiConstants.orders}/delete-order-undo/$orderId'),
       headers: _headers(token),
-    );
+    ).timeout(const Duration(seconds: 10));
 
     final data = json.decode(response.body);
     if (response.statusCode == 200) {
@@ -225,7 +229,7 @@ class OrderService {
     final response = await http.delete(
       Uri.parse('${ApiConstants.orders}/delete-order/$orderId'),
       headers: _headers(token),
-    );
+    ).timeout(const Duration(seconds: 10));
     final data = json.decode(response.body);
     if (response.statusCode == 200) {
       return (

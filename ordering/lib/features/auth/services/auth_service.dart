@@ -18,7 +18,7 @@ class AuthService {
       Uri.parse('${ApiConstants.vendors}/login'),
       headers: _headers(null),
       body: json.encode({"vendorIdentifier": identifier, "pin": pin}),
-    );
+    ).timeout(const Duration(seconds: 10));
 
     final data = json.decode(response.body);
 
@@ -50,7 +50,7 @@ class AuthService {
         "currentPin": currentPin,
         "newPin": newPin,
       }),
-    );
+    ).timeout(const Duration(seconds: 10));
 
     if (response.statusCode == 200) {
       return true;

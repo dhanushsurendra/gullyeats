@@ -18,6 +18,8 @@ import 'package:ordering/features/profile/presentation/language_preferences_scre
 import 'package:ordering/features/profile/presentation/qr_screen.dart';
 import 'package:ordering/features/profile/presentation/staff_management_screen.dart';
 import 'package:ordering/core/utils/session.dart';
+import 'package:ordering/core/error/app_exceptions.dart';
+import 'package:ordering/core/widgets/app_snack_bar.dart';
 import 'package:provider/provider.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -324,11 +326,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Switch(
                   value: isOpen,
                   onChanged: (value) async {
-                    if (selectedCart != null) {
+                    if (selectedCart == null) return;
+                    try {
                       await context.read<CartProvider>().toggleCartStatus(
-                        context.read<AuthProvider>().token!,
+                        context.read<AuthProvider>().token ?? '',
                         selectedCart.id,
                         value,
+                      );
+                    } catch (e) {
+                      if (!context.mounted) return;
+                      AppSnackBar.show(
+                        context,
+                        message: AppExceptionHandler.getMessage(e),
+                        isError: true,
                       );
                     }
                   },

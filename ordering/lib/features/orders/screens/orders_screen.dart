@@ -115,42 +115,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
         filteredOrders = provider.orders;
     }
 
-    String getOrdersTitle(String selectedTab, List<OrderModel> orders) {
-      late List<OrderModel> filteredOrders;
-
-      switch (selectedTab) {
-        case "Active":
-          filteredOrders = orders
-              .where(
-                (order) => order.status == "PENDING" || order.status == "PAID",
-              )
-              .toList();
-          break;
-
-        case "QR":
-          filteredOrders = orders
-              .where((order) => order.orderType == "QR")
-              .toList();
-          break;
-
-        case "Manual":
-          filteredOrders = orders
-              .where((order) => order.orderType == "MANUAL")
-              .toList();
-          break;
-
-        case "All":
-        default:
-          filteredOrders = orders;
-          break;
-      }
-
-      return "${selectedTab == "Active"
-          ? "Active"
-          : selectedTab == "All"
-          ? "All"
-          : selectedTab} Orders (${filteredOrders.length})";
-    }
+    // "QR Orders" already ends in "Orders"; the count is the list shown.
+    String getOrdersTitle(String selectedTab, List<OrderModel> orders) =>
+        "${selectedTab.replaceAll(" Orders", "")} Orders (${filteredOrders.length})";
 
     Future<void> markOrderServed(String token, String orderId) async {
       try {
@@ -517,7 +484,12 @@ class _OrdersScreenState extends State<OrdersScreen> {
           ),
           AppGaps.h12,
           Text(
-            "No active orders",
+            switch (selectedTab) {
+              "Active" => "No active orders",
+              "QR Orders" => "No QR orders today",
+              "Manual" => "No manual orders today",
+              _ => "No orders today",
+            },
             style: AppTextStyles.body.copyWith(color: AppColors.grey500),
           ),
         ],
