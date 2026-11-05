@@ -569,17 +569,12 @@ exports.addStaff = asyncHandler(async (req, res) => {
     throw new Error('Invalid name')
   }
 
-  const cart = await Cart.findById(cartId)
-
-  if (!cart) {
-    res.status(404)
-    throw new Error('Cart not found')
-  }
+  const cart = await findManagedCart(req, res, cartId)
 
   let user = await User.findOne({ phoneNumber })
 
   if (user) {
-    res.status(401)
+    res.status(409)
     throw new Error('User with this phone number already exists')
   }
 
@@ -727,12 +722,7 @@ exports.getAllStaff = asyncHandler(async (req, res) => {
 
   console.log('Fetching staff for cartId:', cartId)
 
-  const cart = await Cart.findById(cartId)
-
-  if (!cart) {
-    res.status(404)
-    throw new Error('Cart not found')
-  }
+  const cart = await findManagedCart(req, res, cartId)
 
   const staffs = await User.find({
     role: 'staff',
@@ -750,10 +740,14 @@ exports.deleteStaff = asyncHandler(async (req, res) => {
 
   const staff = await User.findById({ _id: staffId })
 
-  if (!staff) {
+  // Only staff accounts can be removed here, and only by someone who
+  // manages their cart (this used to delete any user, vendors included).
+  if (!staff || staff.role !== 'staff') {
     res.status(404)
     throw new Error('Staff member not found')
   }
+
+  await findManagedCart(req, res, staff.cartId)
 
   await staff.deleteOne()
 
