@@ -28,6 +28,7 @@ class _CartsScreenState extends State<CartsScreen> {
 
   List<CartModel> _allCarts = [];
   bool _isLoading = false;
+  bool _loadFailed = false;
 
   List<CartModel> get _filteredCarts {
     if (searchQuery.isEmpty) return _allCarts;
@@ -48,7 +49,10 @@ class _CartsScreenState extends State<CartsScreen> {
   }
 
   Future<void> _loadCarts() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _loadFailed = false;
+    });
 
     try {
       final cartProvider = Provider.of<CartProvider>(context, listen: false);
@@ -61,16 +65,16 @@ class _CartsScreenState extends State<CartsScreen> {
 
       List<CartModel> carts = await cartProvider.loadCarts(auth.token, userId);
 
-      setState(() {
-        _allCarts = carts;
-        _isLoading = false;
-      });
+      if (mounted) setState(() => _allCarts = carts);
     } catch (e) {
       final errorMessage = AppExceptionHandler.getMessage(e);
 
       if (mounted) {
+        setState(() => _loadFailed = true);
         AppSnackBar.show(context, message: errorMessage, isError: true);
       }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -199,16 +203,32 @@ class _CartsScreenState extends State<CartsScreen> {
   }
 
   Widget _buildEmptyState() {
+    final isSearching = searchQuery.isNotEmpty;
     return Center(
       child: Column(
         children: [
           AppGaps.h32,
-          Icon(Icons.search_off_rounded, size: 64, color: AppColors.grey300),
+          Icon(
+            _loadFailed
+                ? Icons.cloud_off_outlined
+                : isSearching
+                ? Icons.search_off_rounded
+                : Icons.storefront_outlined,
+            size: 64,
+            color: AppColors.grey300,
+          ),
           AppGaps.h16,
           Text(
-            "No outlets found matching '$searchQuery'",
+            _loadFailed
+                ? "Couldn't load outlets."
+                : isSearching
+                ? "No outlets found matching '$searchQuery'"
+                : "No outlets yet. Add the vendor's first outlet below.",
+            textAlign: TextAlign.center,
             style: AppTextStyles.body.copyWith(color: AppColors.grey400),
           ),
+          if (_loadFailed)
+            TextButton(onPressed: _loadCarts, child: const Text("Retry")),
         ],
       ),
     );
