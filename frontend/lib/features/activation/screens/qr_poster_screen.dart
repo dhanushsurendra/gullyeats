@@ -109,13 +109,18 @@ class _QrPosterScreenState extends State<QrPosterScreen> {
                 final width = constraints.maxWidth;
                 final height = width * 1.3;
 
-                return _QrPosterCard(
-                  width: width,
-                  height: height,
-                  cartId: _cartId,
-                  cartName: _cartName,
-                  qrImageUrl: qrImageUrl,
-                  isLoading: _isLoading,
+                // The poster is a printable graphic sized from its width, so
+                // it ignores the phone's text size; otherwise the shared PDF
+                // would change (and overflow) with each vendor's settings.
+                return MediaQuery.withNoTextScaling(
+                  child: _QrPosterCard(
+                    width: width,
+                    height: height,
+                    cartId: _cartId,
+                    cartName: _cartName,
+                    qrImageUrl: qrImageUrl,
+                    isLoading: _isLoading,
+                  ),
                 );
               },
             ),

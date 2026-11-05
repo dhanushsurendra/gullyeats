@@ -8,6 +8,8 @@ import 'package:gullyeats/core/widgets/app_button.dart';
 import 'package:gullyeats/core/widgets/app_input.dart';
 import 'package:gullyeats/core/widgets/app_snack_bar.dart';
 import 'package:gullyeats/core/widgets/base_screen.dart';
+import 'package:gullyeats/core/widgets/fill_or_scroll.dart';
+import 'package:gullyeats/core/utils/responsive.dart';
 import 'package:gullyeats/features/auth/providers/auth_provider.dart';
 import 'package:gullyeats/features/onboarding/providers/cart_provider.dart';
 import 'package:provider/provider.dart';
@@ -78,106 +80,92 @@ class _CartDetailsScreenState extends State<CartDetailsScreen> {
       subtitle: "Tell us about your cart to get started.",
       expandToFullHeight: true,
       onBack: () => Navigator.pop(context),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          return SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: IntrinsicHeight(
-                child: Form(
-                  key: _formKey,
-                  autovalidateMode: AutovalidateMode.onUserInteraction,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Center(
-                        child: Image.asset(
-                          "assets/images/cart.png",
-                          height: 180,
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Icon(
-                                Icons.storefront,
-                                size: 100,
-                                color: AppColors.grey200,
-                              ),
-                        ),
-                      ),
-                      AppGaps.h32,
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.grey200),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.02),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            AppInput(
-                              controller: _nameController,
-                              label: "Cart Name",
-                              hint: "e.g. Ramesh's Dosa Point",
-                              validator: (value) =>
-                                  (value == null || value.trim().isEmpty)
-                                  ? "Please enter a cart name"
-                                  : null,
-                              onChanged: (_) => setState(() {}),
-                            ),
-                            AppGaps.h24,
-                            Text(
-                              "City",
-                              style: AppTextStyles.body.copyWith(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
-                            ),
-                            AppGaps.h8,
-                            _buildCityDropdown(),
-                          ],
-                        ),
-                      ),
-
-                      const Spacer(),
-                      AppGaps.h24,
-                      Center(
-                        child: Text(
-                          "You can update these details later from settings.",
-                          style: AppTextStyles.caption.copyWith(
-                            color: AppColors.grey400,
-                          ),
-                        ),
-                      ),
-                      AppGaps.h16,
-                      AppButton(
-                        label: "CONTINUE",
-                        isLoading: _isLoading,
-                        onPressed:
-                            (_selectedCity != null &&
-                                _nameController.text.isNotEmpty)
-                            ? _handleContinue
-                            : null,
-                      ),
-                      SizedBox(
-                        height: MediaQuery.of(context).viewInsets.bottom > 0
-                            ? 10
-                            : 0,
-                      ),
-                    ],
+      child: FillOrScroll(
+        child: Form(
+          key: _formKey,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Image.asset(
+                  "assets/images/cart.png",
+                  height: illustrationHeight(context, 180),
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => const Icon(
+                    Icons.storefront,
+                    size: 100,
+                    color: AppColors.grey200,
                   ),
                 ),
               ),
-            ),
-          );
-        },
+              AppGaps.h32,
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.grey200),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.02),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AppInput(
+                      controller: _nameController,
+                      label: "Cart Name",
+                      hint: "e.g. Ramesh's Dosa Point",
+                      validator: (value) =>
+                          (value == null || value.trim().isEmpty)
+                          ? "Please enter a cart name"
+                          : null,
+                      onChanged: (_) => setState(() {}),
+                    ),
+                    AppGaps.h24,
+                    Text(
+                      "City",
+                      style: AppTextStyles.body.copyWith(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    AppGaps.h8,
+                    _buildCityDropdown(),
+                  ],
+                ),
+              ),
+
+              const Spacer(),
+              AppGaps.h24,
+              Center(
+                child: Text(
+                  "You can update these details later from settings.",
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.grey400,
+                  ),
+                ),
+              ),
+              AppGaps.h16,
+              AppButton(
+                label: "CONTINUE",
+                isLoading: _isLoading,
+                onPressed:
+                    (_selectedCity != null && _nameController.text.isNotEmpty)
+                    ? _handleContinue
+                    : null,
+              ),
+              SizedBox(
+                height: MediaQuery.of(context).viewInsets.bottom > 0 ? 10 : 0,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

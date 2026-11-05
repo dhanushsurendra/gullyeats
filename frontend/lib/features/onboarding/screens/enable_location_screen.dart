@@ -12,6 +12,7 @@ import 'package:gullyeats/core/theme/app_text_styles.dart';
 import 'package:gullyeats/core/widgets/app_button.dart';
 import 'package:gullyeats/core/widgets/app_snack_bar.dart';
 import 'package:gullyeats/core/widgets/base_screen.dart';
+import 'package:gullyeats/core/widgets/fill_or_scroll.dart';
 
 class EnableLocationScreen extends StatefulWidget {
   const EnableLocationScreen({super.key});
@@ -207,44 +208,46 @@ class _EnableLocationScreenState extends State<EnableLocationScreen> {
       subtitle: 'We need your location to verify your cart',
       expandToFullHeight: true,
       onBack: () => Navigator.pop(context),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildMap(lat, lng),
-          AppGaps.h32,
-          _buildWhyLocationCard(),
-          const Spacer(),
-          Center(
-            child: Text(
-              'Securely used only for verification',
-              style: AppTextStyles.caption.copyWith(
-                color: AppColors.grey400,
+      child: FillOrScroll(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildMap(lat, lng),
+            AppGaps.h32,
+            _buildWhyLocationCard(),
+            const Spacer(),
+            Center(
+              child: Text(
+                'Securely used only for verification',
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.grey400,
+                ),
               ),
             ),
-          ),
-          AppGaps.h16,
-          AppButton(
-            label: _isLocationCaptured
-                ? 'CONTINUE'
-                : 'ENABLE LOCATION',
-            isLoading: _isLocating,
-            onPressed: _isLocationCaptured
-                ? () {
-                    Navigator.pushNamed(
-                      context,
-                      '/confirm-location',
-                      arguments: {
-                        'placemark': address,
-                        'accuracy': accuracyValue?.toInt(),
-                        'lat': lat,
-                        'lng': lng,
-                      },
-                    );
-                  }
-                : _handleEnableLocation,
-          ),
-          AppGaps.h12,
-        ],
+            AppGaps.h16,
+            AppButton(
+              label: _isLocationCaptured
+                  ? 'CONTINUE'
+                  : 'ENABLE LOCATION',
+              isLoading: _isLocating,
+              onPressed: _isLocationCaptured
+                  ? () {
+                      Navigator.pushNamed(
+                        context,
+                        '/confirm-location',
+                        arguments: {
+                          'placemark': address,
+                          'accuracy': accuracyValue?.toInt(),
+                          'lat': lat,
+                          'lng': lng,
+                        },
+                      );
+                    }
+                  : _handleEnableLocation,
+            ),
+            AppGaps.h12,
+          ],
+        ),
       ),
     );
   }
@@ -414,6 +417,8 @@ class _EnableLocationScreenState extends State<EnableLocationScreen> {
     return Container(
       height: 220,
       width: double.infinity,
+      // The 300px background grid icon is bigger than the box.
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: AppColors.grey100,
         borderRadius: BorderRadius.circular(16),

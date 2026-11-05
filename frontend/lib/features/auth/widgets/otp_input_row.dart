@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gullyeats/core/theme/app_colors.dart';
@@ -51,11 +53,18 @@ class _OtpInputRowState extends State<OtpInputRow> {
 
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(builder: _buildRow);
+  }
+
+  Widget _buildRow(BuildContext context, BoxConstraints constraints) {
+    // 45 wide on most phones; narrower on small screens so the boxes keep a gap.
+    final boxWidth = math.min(45.0, (constraints.maxWidth - 5 * 6) / 6);
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: List.generate(6, (index) {
         return SizedBox(
-          width: 45,
+          width: boxWidth,
           height: 55,
           child: KeyboardListener(
             focusNode: listenerNodes[index],

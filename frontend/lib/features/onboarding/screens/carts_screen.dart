@@ -129,58 +129,64 @@ class _CartsScreenState extends State<CartsScreen> {
           builder: (context, constraints) {
             return SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: IntrinsicHeight(
-                  child: Padding(
-                    padding: AppPadding.screen,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("Your Carts", style: AppTextStyles.heading1),
-                        AppGaps.h4,
-                        AppGaps.h24,
-                        AppSearchBar(
-                          hintText: "Search outlet name or city...",
-                          onChanged: (value) =>
-                              setState(() => searchQuery = value),
-                        ),
+              // Same 500px content width as BaseScreen.
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: constraints.maxHeight,
+                    maxWidth: 500,
+                  ),
+                  child: IntrinsicHeight(
+                    child: Padding(
+                      padding: AppPadding.screen,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text("Your Carts", style: AppTextStyles.heading1),
+                          AppGaps.h4,
+                          AppGaps.h24,
+                          AppSearchBar(
+                            hintText: "Search outlet name or city...",
+                            onChanged: (value) =>
+                                setState(() => searchQuery = value),
+                          ),
 
-                        AppGaps.h24,
+                          AppGaps.h24,
 
-                        if (_isLoading)
-                          const Center(child: CircularProgressIndicator())
-                        else if (_filteredCarts.isEmpty)
-                          _buildEmptyState()
-                        else
-                          ..._filteredCarts.map(
-                            (cart) => Padding(
-                              padding: const EdgeInsets.only(bottom: 16),
-                              child: CartCard(
-                                cart: cart,
-                                isSelected: selectedCartId == cart.id,
+                          if (_isLoading)
+                            const Center(child: CircularProgressIndicator())
+                          else if (_filteredCarts.isEmpty)
+                            _buildEmptyState()
+                          else
+                            ..._filteredCarts.map(
+                              (cart) => Padding(
+                                padding: const EdgeInsets.only(bottom: 16),
+                                child: CartCard(
+                                  cart: cart,
+                                  isSelected: selectedCartId == cart.id,
+                                ),
                               ),
                             ),
+                          const Spacer(),
+                          AppGaps.h16,
+                          AppButton(
+                            label: "Send Credentials",
+                            onPressed: () => _handleSendCredentials(context),
                           ),
-                        const Spacer(),
-                        AppGaps.h16,
-                        AppButton(
-                          label: "Send Credentials",
-                          onPressed: () => _handleSendCredentials(context),
-                        ),
-                        AppGaps.h16,
-                        AppButton(
-                          label: "+ Add New Outlet",
-                          onPressed: () {
-                            Navigator.pushNamed(context, AppRoutes.cartDetails);
-                          },
-                          isDotted: true,
-                          backgroundColor: Colors.transparent,
-                          borderColor: AppColors.grey300,
-                          textColor: AppColors.primary,
-                        ),
-                        AppGaps.h16,
-                      ],
+                          AppGaps.h16,
+                          AppButton(
+                            label: "+ Add New Outlet",
+                            onPressed: () {
+                              Navigator.pushNamed(context, AppRoutes.cartDetails);
+                            },
+                            isDotted: true,
+                            backgroundColor: Colors.transparent,
+                            borderColor: AppColors.grey300,
+                            textColor: AppColors.primary,
+                          ),
+                          AppGaps.h16,
+                        ],
+                      ),
                     ),
                   ),
                 ),

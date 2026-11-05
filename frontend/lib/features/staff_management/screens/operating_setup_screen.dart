@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gullyeats/core/utils/responsive.dart';
 import 'package:gullyeats/core/theme/app_colors.dart';
 import 'package:gullyeats/core/theme/app_gaps.dart';
 import 'package:gullyeats/core/theme/app_text_styles.dart';
@@ -42,7 +43,7 @@ class _OperatingSetupScreenState extends State<OperatingSetupScreen> {
           Center(
             child: Image.asset(
               "assets/images/operating.png",
-              height: 180,
+              height: illustrationHeight(context, 180),
               fit: BoxFit.contain,
             ),
           ),

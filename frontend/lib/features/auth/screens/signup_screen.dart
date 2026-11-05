@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gullyeats/core/utils/responsive.dart';
 import 'package:gullyeats/core/error/app_exceptions.dart';
 import 'package:gullyeats/features/auth/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
@@ -90,7 +91,7 @@ class _SignupScreenState extends State<SignupScreen> {
             Center(
               child: Image.asset(
                 "assets/images/login.png",
-                height: 180,
+                height: illustrationHeight(context, 180),
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) => const Icon(
                   Icons.mobile_friendly,

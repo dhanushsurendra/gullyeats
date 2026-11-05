@@ -44,25 +44,32 @@ class MenuReviewCard extends StatelessWidget {
               children: [
                 Text(name, style: AppTextStyles.heading3),
                 const SizedBox(height: 4),
-                Row(
+                // Wrap: the veg tag moves under the price on narrow cards.
+                Wrap(
+                  spacing: 12,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    Text("₹$price", 
+                    Text("₹$price",
                       style: const TextStyle(
-                        color: AppColors.primary, 
-                        fontWeight: FontWeight.bold, 
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.bold,
                         fontSize: 16
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Icon(Icons.circle, size: 8, color: statusColor),
-                    const SizedBox(width: 4),
-                    Text(
-                      isVeg ? "Veg" : "Non-Veg", 
-                      style: TextStyle(
-                        color: statusColor, 
-                        fontSize: 12, 
-                        fontWeight: FontWeight.w600
-                      ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.circle, size: 8, color: statusColor),
+                        const SizedBox(width: 4),
+                        Text(
+                          isVeg ? "Veg" : "Non-Veg",
+                          style: TextStyle(
+                            color: statusColor,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

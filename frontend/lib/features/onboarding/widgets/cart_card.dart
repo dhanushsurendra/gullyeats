@@ -74,8 +74,12 @@ class CartCard extends StatelessWidget {
                 ),
               ),
               AppGaps.h12,
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              // Wrap: the status moves under the ID when both don't fit.
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                runSpacing: 8,
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -96,6 +100,7 @@ class CartCard extends StatelessWidget {
                     ),
                   ),
                   Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       CircleAvatar(
                         radius: 4,

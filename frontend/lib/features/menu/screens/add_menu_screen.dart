@@ -140,7 +140,7 @@ class _AddMenuScreenState extends State<AddMenuScreen> {
             Expanded(
               flex: 3,
               child: _buildField(
-                hint: "Price",
+                hint: "0",
                 prefix: "₹",
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
@@ -199,17 +199,24 @@ class _AddMenuScreenState extends State<AddMenuScreen> {
         style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600),
         decoration: InputDecoration(
           hintText: hint,
-          prefixText: prefix != null ? "$prefix " : null,
-          prefixStyle: const TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-          ),
+          // Always-visible currency prefix: prefixText only shows once the
+          // field has focus but still takes its width, which squeezed the hint.
+          prefixIcon: prefix == null
+              ? null
+              : Padding(
+                  padding: const EdgeInsets.only(left: 16, right: 4),
+                  child: Text(
+                    prefix,
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+          prefixIconConstraints: const BoxConstraints(),
           hintStyle: TextStyle(color: AppColors.grey400, fontSize: 14),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 14,
-          ),
+          contentPadding: EdgeInsets.fromLTRB(prefix == null ? 16 : 0, 14, 16, 14),
         ),
       ),
     );
@@ -308,11 +315,13 @@ class _AddMenuScreenState extends State<AddMenuScreen> {
           color: AppColors.grey400,
         ),
         AppGaps.w12,
-        Text(
-          text,
-          style: AppTextStyles.body.copyWith(
-            color: AppColors.grey400,
-            fontSize: 13,
+        Expanded(
+          child: Text(
+            text,
+            style: AppTextStyles.body.copyWith(
+              color: AppColors.grey400,
+              fontSize: 13,
+            ),
           ),
         ),
       ],

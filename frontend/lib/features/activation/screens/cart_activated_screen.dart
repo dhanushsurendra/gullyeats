@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gullyeats/core/utils/responsive.dart';
 import 'package:gullyeats/core/routes/app_routes.dart';
 import 'package:gullyeats/core/theme/app_colors.dart';
 import 'package:gullyeats/core/theme/app_gaps.dart';
@@ -54,7 +55,7 @@ class _CartActivatedScreenState extends State<CartActivatedScreen> {
         children: [
           Image.asset(
             "assets/images/activated.png",
-            height: 200,
+            height: illustrationHeight(context, 200),
             fit: BoxFit.contain,
           ),
           AppGaps.h24,

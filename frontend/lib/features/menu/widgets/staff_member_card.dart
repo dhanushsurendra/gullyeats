@@ -47,7 +47,13 @@ class StaffMemberCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: AppTextStyles.heading3),
+                Text(
+                  name,
+                  style: AppTextStyles.heading3,
+                  // Two lines max: the phone number below identifies the person.
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 Text(
                   phone,
                   style: AppTextStyles.body.copyWith(
