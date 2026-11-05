@@ -135,7 +135,14 @@ class MenuProvider extends ChangeNotifier {
     }).toList();
   }
 
-  Future<void> toggleStock(String id, String cartId, bool value) async {
+  /// Updates the item optimistically; on failure it reverts and rethrows so
+  /// the screen can say so.
+  Future<void> toggleStock(
+    String? token,
+    String id,
+    String cartId,
+    bool value,
+  ) async {
     final index = _menuItems.indexWhere((e) => e.id == id);
     if (index == -1) return;
 
@@ -145,10 +152,11 @@ class MenuProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _menuService.updateStock(null, id, cartId, value);
+      await _menuService.updateStock(token, id, cartId, value);
     } catch (_) {
       _menuItems[index] = old;
       notifyListeners();
+      rethrow;
     }
   }
 

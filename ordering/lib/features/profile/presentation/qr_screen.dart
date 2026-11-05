@@ -7,6 +7,8 @@ import 'package:ordering/core/theme/app_text_styles.dart';
 import 'package:ordering/core/widgets/app_button.dart';
 import 'package:ordering/core/widgets/app_header.dart';
 import 'package:ordering/core/widgets/app_snack_bar.dart';
+import 'package:ordering/features/auth/providers/auth_provider.dart';
+import 'package:ordering/features/cart/providers/cart_provider.dart';
 import 'package:ordering/features/profile/providers/profile_provider.dart';
 import 'package:ordering/features/profile/services/qr_service.dart';
 import 'package:provider/provider.dart';
@@ -33,12 +35,14 @@ class _QrPosterScreenState extends State<QrPosterScreen> {
 
   Future<void> _loadQrDetails() async {
     final provider = context.read<ProfileProvider>();
+    final token = context.read<AuthProvider>().token;
+    final cartId = context.read<CartProvider>().selectedCart?.id;
+
+    if (cartId == null) return;
 
     try {
-      await provider.loadQrDetails(null, "69db91dd3766ae8b43dd50c7");
-    } catch (e, stack) {
-      debugPrint('ERROR: $e');
-      debugPrintStack(stackTrace: stack);
+      await provider.loadQrDetails(token, cartId);
+    } catch (e) {
       final message = AppExceptionHandler.getMessage(e);
       if (!mounted) return;
       AppSnackBar.show(

@@ -41,7 +41,6 @@ class AuthService {
   Future<bool> changePin(
     String? token,
     String currentPin,
-    String userId,
     String newPin,
   ) async {
     final response = await http.post(
@@ -50,7 +49,6 @@ class AuthService {
       body: json.encode({
         "currentPin": currentPin,
         "newPin": newPin,
-        "id": userId,
       }),
     );
 

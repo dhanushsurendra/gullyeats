@@ -5,6 +5,10 @@ import 'package:ordering/core/theme/app_text_styles.dart';
 import 'package:ordering/core/widgets/app_header.dart';
 import 'package:ordering/core/widgets/app_search_bar.dart';
 import 'package:ordering/core/widgets/app_tab_filter.dart';
+import 'package:ordering/core/error/app_exceptions.dart';
+import 'package:ordering/core/widgets/app_snack_bar.dart';
+import 'package:ordering/features/auth/providers/auth_provider.dart';
+import 'package:ordering/features/cart/providers/cart_provider.dart';
 import 'package:ordering/features/orders/models/menu_item_model.dart';
 import 'package:ordering/features/orders/providers/menu_provider.dart';
 import 'package:provider/provider.dart';
@@ -28,11 +32,37 @@ class _StockScreenState extends State<StockScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      context.read<MenuProvider>().fetchMenuItems(
-        "",
-        "69db91dd3766ae8b43dd50c7",
-      );
+      final cartId = context.read<CartProvider>().selectedCart?.id;
+      if (cartId == null) return;
+      context
+          .read<MenuProvider>()
+          .fetchMenuItems(context.read<AuthProvider>().token, cartId)
+          .catchError((Object e) {
+            if (mounted) _showError(e);
+          });
     });
+  }
+
+  void _showError(Object e) {
+    AppSnackBar.show(
+      context,
+      message: AppExceptionHandler.getMessage(e),
+      marginBottom: 0,
+      isError: true,
+    );
+  }
+
+  Future<void> _setStock(MenuItemModel item, bool value) async {
+    try {
+      await context.read<MenuProvider>().toggleStock(
+        context.read<AuthProvider>().token,
+        item.id,
+        item.cartId,
+        value,
+      );
+    } catch (e) {
+      if (mounted) _showError(e);
+    }
   }
 
   void onTabSelected(String value) {
@@ -164,13 +194,13 @@ class _StockScreenState extends State<StockScreen> {
                 _segment(
                   "In",
                   item.isInStock,
-                  () async => await provider.toggleStock(item.id, item.cartId, true),
+                  () => _setStock(item, true),
                   AppColors.success,
                 ),
                 _segment(
                   "Out",
                   !item.isInStock,
-                  () async => await provider.toggleStock(item.id, item.cartId, false),
+                  () => _setStock(item, false),
                   AppColors.error,
                 ),
               ],

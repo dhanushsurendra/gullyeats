@@ -30,19 +30,13 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> changePin(
-    String? token,
-    String currentPin,
-    String newPin,
-    String userId,
-  ) async {
+  Future<bool> changePin(String? token, String currentPin, String newPin) async {
     try {
       _isLoading = true;
 
       final isChanged = await _authService.changePin(
         token,
         currentPin,
-        userId,
         newPin,
       );
 

@@ -5,4 +5,7 @@ class ApiConstants {
   static const String vendors = "$baseUrl/vendors";
   static const String carts = "$baseUrl/carts";
   static const String payments = "$baseUrl/payments";
+
+  // Socket.IO runs on the same server, without the /api path.
+  static final String socketUrl = Uri.parse(baseUrl).origin;
 }

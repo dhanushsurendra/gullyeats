@@ -50,7 +50,10 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
     if (_newPin.text.isEmpty) {
       newPinError = "New PIN is required";
       isValid = false;
-    } 
+    } else if (!RegExp(r'^\d{4}$').hasMatch(_newPin.text)) {
+      newPinError = "PIN must be 4 digits";
+      isValid = false;
+    }
 
     if (_confirmPin.text.isEmpty) {
       confirmPinError = "Confirm your PIN";
@@ -73,15 +76,9 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
       _isLoading = true;
     });
 
-    // TODO: Pass actual token and user ID
-
     try {
-      await context.read<AuthProvider>().changePin(
-        "",
-        _currentPin.text,
-        _newPin.text,
-        "69db91a03766ae8b43dd50bf"
-      );
+      final auth = context.read<AuthProvider>();
+      await auth.changePin(auth.token, _currentPin.text, _newPin.text);
 
       if (!mounted) return;
 
