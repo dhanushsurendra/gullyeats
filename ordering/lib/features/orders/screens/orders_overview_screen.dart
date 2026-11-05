@@ -348,7 +348,7 @@ class _OrdersOverviewScreenState extends State<OrdersOverviewScreen> {
         // Header and filters are completely unaffected.
         // Previous order data stays visible.
         // ======================================================================
-        if (provider.isLoading)
+        if (provider.isOverviewLoading)
           Positioned.fill(
             child: IgnorePointer(
               child: Container(

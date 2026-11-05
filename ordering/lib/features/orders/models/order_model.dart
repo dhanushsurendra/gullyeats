@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:ordering/features/orders/models/order_item_model.dart';
 
 class PaymentAdjustment {
@@ -51,6 +50,9 @@ class OrderModel {
   final String status;
   final bool isPaid;
 
+  /// What the customer has paid so far; edits settle against this.
+  final double paidAmount;
+
   final String orderType;
 
   final DateTime? orderDate;
@@ -73,6 +75,7 @@ class OrderModel {
     required this.totalPrice,
     required this.status,
     required this.isPaid,
+    this.paidAmount = 0.0,
     required this.orderType,
     this.orderDate,
     this.createdAt,
@@ -85,13 +88,6 @@ class OrderModel {
   bool get isQrOrder => orderType == "QR";
 
   factory OrderModel.fromJson(Map<String, dynamic> json) {
-    debugPrint(
-      'ORDER ${json["_id"]}: '
-      'isPaid=${json["isPaid"]}, '
-      'type=${json["isPaid"]?.runtimeType}, '
-      'status=${json["status"]}',
-    );
-
     return OrderModel(
       id: json["_id"]?.toString() ?? "",
       orderNumber: json["orderNumber"]?.toString() ?? "",
@@ -113,6 +109,14 @@ class OrderModel {
       status: json["status"]?.toString() ?? "PENDING",
 
       isPaid: json["status"] != "PENDING" && json["status"] != "CANCELLED",
+
+      // Orders saved before the server stored paidAmount count as fully
+      // paid when PAID (the server does the same).
+      paidAmount:
+          (json["paidAmount"] as num?)?.toDouble() ??
+          (json["status"] == "PAID"
+              ? (json["totalPrice"] as num?)?.toDouble() ?? 0.0
+              : 0.0),
 
       orderType: json["orderType"]?.toString() ?? "MANUAL",
 
@@ -166,6 +170,8 @@ class OrderModel {
 
       "isPaid": isPaid,
 
+      "paidAmount": paidAmount,
+
       "orderType": orderType,
 
       "orderDate": orderDate?.toIso8601String(),
@@ -194,6 +200,7 @@ class OrderModel {
     double? totalPrice,
     String? status,
     bool? isPaid,
+    double? paidAmount,
     String? orderType,
     DateTime? orderDate,
     DateTime? createdAt,
@@ -213,6 +220,7 @@ class OrderModel {
       totalPrice: totalPrice ?? this.totalPrice,
       status: status ?? this.status,
       isPaid: isPaid ?? this.isPaid,
+      paidAmount: paidAmount ?? this.paidAmount,
       orderType: orderType ?? this.orderType,
       orderDate: orderDate ?? this.orderDate,
       createdAt: createdAt ?? this.createdAt,

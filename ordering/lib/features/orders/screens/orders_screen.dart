@@ -348,7 +348,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                       ),
                       AppGaps.h16,
                       Expanded(
-                        child: provider.isLoading
+                        child: provider.isOrdersLoading
                             ? const Center(
                                 child: CircularProgressIndicator(
                                   color: AppColors.primary,

@@ -1,7 +1,9 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:ordering/core/constants/api_constants.dart';
 import 'package:ordering/features/orders/models/menu_item_model.dart';
+import 'package:ordering/features/orders/models/order_item_model.dart';
 import 'package:ordering/features/orders/models/order_model.dart';
 import 'package:ordering/features/orders/services/menu_service.dart';
 import 'package:ordering/features/orders/services/orders_service.dart';
@@ -32,9 +34,15 @@ class OrderProvider with ChangeNotifier {
   // Used only for DELETE -> UNDO.
   int? _lastRemovedIndex;
 
-  bool _isLoading = false;
+  // Separate flags so loading the menu or the overview doesn't show a
+  // spinner on the Orders tab.
+  bool _isOrdersLoading = false;
+  bool _isMenuLoading = false;
+  bool _isOverviewLoading = false;
 
-  bool get isLoading => _isLoading;
+  bool get isOrdersLoading => _isOrdersLoading;
+  bool get isMenuLoading => _isMenuLoading;
+  bool get isOverviewLoading => _isOverviewLoading;
 
   // ---------------------------------------------------------------------------
   // MENU
@@ -54,13 +62,12 @@ class OrderProvider with ChangeNotifier {
 
   double _parcelPrice = 0;
 
-  double get parcelPrice => _parcelPrice;
+  bool get _hasItems => _cart.values.any((count) => count > 0);
 
-  double get platformFee {
-    final hasItems = _cart.values.any((count) => count > 0);
+  /// The typed parcel charge, applied only once the order has items.
+  double get parcelPrice => _hasItems ? _parcelPrice : 0;
 
-    return hasItems ? 2.0 : 0.0;
-  }
+  double get platformFee => _hasItems ? 2.0 : 0.0;
 
   // ---------------------------------------------------------------------------
   // SOCKET
@@ -97,8 +104,8 @@ class OrderProvider with ChangeNotifier {
     );
 
     if (existingIndex == -1) {
-      // Order doesn't exist yet → add it.
-      _orders.add(updatedOrder);
+      // New order → top of the newest-first list.
+      _orders.insert(0, updatedOrder);
     } else {
       // Order already exists → update it.
       _orders[existingIndex] = updatedOrder;
@@ -115,7 +122,7 @@ class OrderProvider with ChangeNotifier {
     _socket?.dispose();
 
     _socket = socket_io.io(
-      'http://192.168.0.241:5000/',
+      ApiConstants.socketUrl,
       socket_io.OptionBuilder()
           .setTransports(['websocket'])
           .setQuery({'cartId': cartId})
@@ -141,6 +148,11 @@ class OrderProvider with ChangeNotifier {
       _addOrUpdateOrder(data);
     });
 
+    // Customer (or another device) cancelled an order
+    _socket!.on('order_cancelled', (data) {
+      _addOrUpdateOrder(data);
+    });
+
     _socket!.onDisconnect(
       (_) => debugPrint('Disconnected from Socket.io'),
     );
@@ -151,7 +163,7 @@ class OrderProvider with ChangeNotifier {
   // ---------------------------------------------------------------------------
 
   Future<List<OrderModel>> loadOrders(String token, String cartId) async {
-    _isLoading = true;
+    _isOrdersLoading = true;
 
     try {
       final fetchedOrders = await _orderService.fetchOrders(token, cartId);
@@ -166,7 +178,7 @@ class OrderProvider with ChangeNotifier {
 
       return _orders;
     } finally {
-      _isLoading = false;
+      _isOrdersLoading = false;
 
       notifyListeners();
     }
@@ -182,7 +194,8 @@ class OrderProvider with ChangeNotifier {
     String startDate,
     String endDate,
   ) async {
-    _isLoading = true;
+    _isOverviewLoading = true;
+    notifyListeners();
 
     try {
       _ordersOverview = await _orderService.fetchAllOrders(
@@ -194,7 +207,7 @@ class OrderProvider with ChangeNotifier {
 
       return _ordersOverview;
     } finally {
-      _isLoading = false;
+      _isOverviewLoading = false;
 
       notifyListeners();
     }
@@ -431,13 +444,13 @@ class OrderProvider with ChangeNotifier {
 
   Future<void> loadMenu(String token, String cartId) async {
     try {
-      _isLoading = true;
+      _isMenuLoading = true;
 
       notifyListeners();
 
       _menu = await _service.fetchMenu(token, cartId);
     } finally {
-      _isLoading = false;
+      _isMenuLoading = false;
 
       notifyListeners();
     }
@@ -457,15 +470,45 @@ class OrderProvider with ChangeNotifier {
     if ((_cart[item.id] ?? 0) > 0) {
       _cart[item.id] = _cart[item.id]! - 1;
 
-      final hasItems = _cart.values.any((count) => count > 0);
-
-      if (!hasItems) {
-        _parcelPrice = 0;
-      }
-
       notifyListeners();
     }
   }
+
+  /// Loads an existing order for editing. Its lines keep the price they
+  /// were ordered at, and lines whose item has left the menu stay editable,
+  /// matching how the server re-prices an edit.
+  void startEditing(OrderModel order) {
+    _cart.clear();
+
+    final lines = {for (final line in order.orderItems) line.menuItemId: line};
+
+    _menu = [
+      for (final item in _menu)
+        lines.containsKey(item.id)
+            ? item.copyWith(price: lines[item.id]!.price)
+            : item,
+      for (final line in lines.values)
+        if (!_menu.any((item) => item.id == line.menuItemId)) _lineAsItem(line),
+    ];
+
+    for (final line in lines.values) {
+      _cart[line.menuItemId] = line.quantity;
+    }
+
+    _parcelPrice = order.parcelCharge;
+
+    notifyListeners();
+  }
+
+  MenuItemModel _lineAsItem(OrderItemModel line) => MenuItemModel(
+    id: line.menuItemId,
+    name: line.name,
+    price: line.price,
+    isVeg: true,
+    isInStock: true,
+    cartId: '',
+    imageUrl: '',
+  );
 
   int getCount(MenuItemModel item) {
     return _cart[item.id] ?? 0;
@@ -508,9 +551,7 @@ class OrderProvider with ChangeNotifier {
   }
 
   void setParcelPrice(double value) {
-    final hasItems = _cart.values.any((count) => count > 0);
-
-    _parcelPrice = hasItems ? value : 0;
+    _parcelPrice = value < 0 ? 0 : value;
 
     notifyListeners();
   }
@@ -547,7 +588,9 @@ class OrderProvider with ChangeNotifier {
     _lastRemovedIndex = null;
 
     // Loading state
-    _isLoading = false;
+    _isOrdersLoading = false;
+    _isMenuLoading = false;
+    _isOverviewLoading = false;
 
     // Menu
     _menu = [];

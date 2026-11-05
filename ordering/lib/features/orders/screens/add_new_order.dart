@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:ordering/core/error/app_exceptions.dart';
 import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
@@ -30,7 +31,6 @@ class AddNewOrder extends StatefulWidget {
 class _AddNewOrderState extends State<AddNewOrder> {
   String searchQuery = '';
 
-  bool _editOrderInitialized = false;
   bool _isSubmitting = false;
   bool _isMarkingPaid = false;
 
@@ -53,7 +53,6 @@ class _AddNewOrderState extends State<AddNewOrder> {
       if (!mounted) return;
 
       _orderProvider = context.read<OrderProvider>();
-      _orderProvider.addListener(_handleProviderChange);
 
       _cartProvider = context.read<CartProvider>();
       _authProvider = context.read<AuthProvider>();
@@ -66,7 +65,7 @@ class _AddNewOrderState extends State<AddNewOrder> {
 
       // Populate existing order first
       if (widget.isEditing) {
-        _initializeEditOrder(_orderProvider.menu, _orderProvider);
+        _orderProvider.startEditing(widget.existingOrder!);
       } else {
         _orderProvider.clearOrder();
       }
@@ -82,60 +81,11 @@ class _AddNewOrderState extends State<AddNewOrder> {
     });
   }
 
-  void _handleProviderChange() {
-    if (!mounted) return;
-
-    // If there are no items, reset parcel charge
-    if (_orderProvider.orderItems.isEmpty &&
-        parcelChargeController.text != '0') {
-      parcelChargeController.text = '0';
-    }
-  }
-
   @override
   void dispose() {
-    _orderProvider.removeListener(_handleProviderChange);
     parcelChargeController.dispose();
 
     super.dispose();
-  }
-
-  // ============================================================
-  // INITIALIZE EDIT ORDER
-  // ============================================================
-
-  void _initializeEditOrder(List<MenuItemModel> menu, OrderProvider provider) {
-    if (!widget.isEditing || _editOrderInitialized) {
-      return;
-    }
-
-    if (provider.isLoading || menu.isEmpty) {
-      return;
-    }
-
-    _editOrderInitialized = true;
-
-    provider.clearOrder();
-
-    final order = widget.existingOrder!;
-
-    for (final orderItem in order.orderItems) {
-      final matches = menu.where((item) => item.id == orderItem.menuItemId);
-
-      if (matches.isEmpty) {
-        continue;
-      }
-
-      final item = matches.first;
-
-      for (int i = 0; i < orderItem.quantity; i++) {
-        provider.addItem(item);
-      }
-    }
-
-    provider.setParcelPrice(order.parcelCharge);
-
-    parcelChargeController.text = order.parcelCharge.toStringAsFixed(0);
   }
 
   // ============================================================
@@ -155,15 +105,14 @@ class _AddNewOrderState extends State<AddNewOrder> {
       _isMarkingPaid = isPaid;
     });
 
+    // The server prices the order from the menu; only items, quantities
+    // and the parcel charge matter.
     final orderData = {
       "cartId": cartId,
       "orderType": "MANUAL",
       "status": isPaid ? "PAID" : "PENDING",
       "orderItems": provider.orderItems,
-      "subtotal": provider.subtotal,
-      "platformFee": provider.platformFee,
-      "totalPrice": provider.total,
-      "parcelCharge": provider.parcelPrice > 0 ? provider.parcelPrice : 0,
+      "parcelCharge": provider.parcelPrice,
     };
 
     try {
@@ -277,10 +226,7 @@ class _AddNewOrderState extends State<AddNewOrder> {
     try {
       final orderData = {
         "orderItems": currentItems,
-        "subtotal": provider.subtotal,
         "parcelCharge": provider.parcelPrice,
-        "platformFee": provider.platformFee,
-        "totalPrice": newTotal,
       };
 
       final updatedOrder = await provider.updateOrder(
@@ -361,17 +307,6 @@ class _AddNewOrderState extends State<AddNewOrder> {
 
     final menu = displayMenu;
 
-    // DELETE THIS BLOCK
-    if (widget.isEditing &&
-        !_editOrderInitialized &&
-        !provider.isLoading &&
-        menu.isNotEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        _initializeEditOrder(menu, provider);
-      });
-    }
-
     final filteredMenu = menu
         .where(
           (item) => item.name.toLowerCase().contains(searchQuery.toLowerCase()),
@@ -416,7 +351,7 @@ class _AddNewOrderState extends State<AddNewOrder> {
                     // ------------------------------------------------
                     // MENU
                     // ------------------------------------------------
-                    provider.isLoading
+                    provider.isMenuLoading
                         ? const Center(
                             child: Padding(
                               padding: EdgeInsets.all(30),
@@ -629,6 +564,7 @@ class _AddNewOrderState extends State<AddNewOrder> {
             child: AppInput(
               controller: parcelChargeController,
               keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               prefix: const Align(
                 alignment: Alignment.center,
                 widthFactor: 1,
@@ -656,11 +592,12 @@ class _AddNewOrderState extends State<AddNewOrder> {
     String? cartId,
   ) {
     final oldTotal = widget.existingOrder?.totalPrice ?? 0.0;
-    final orderStatus = widget.existingOrder?.status ?? "PENDING";
+    final paidAmount = widget.existingOrder?.paidAmount ?? 0.0;
 
     final newTotal = provider.total;
 
-    final difference = widget.isEditing ? newTotal - oldTotal : 0.0;
+    // Same rule as the server: only money already collected is settled.
+    final difference = paidAmount > 0 ? newTotal - paidAmount : 0.0;
 
     return Container(
       padding: AppPadding.screen,
@@ -710,7 +647,7 @@ class _AddNewOrderState extends State<AddNewOrder> {
             ],
           ),
 
-          if (widget.isEditing && difference != 0 && orderStatus == "PAID") ...[
+          if (widget.isEditing && difference != 0) ...[
             AppGaps.h12,
             _buildDifference(difference),
           ],
