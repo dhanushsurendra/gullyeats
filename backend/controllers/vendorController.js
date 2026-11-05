@@ -107,8 +107,6 @@ exports.verifyOtp = asyncHandler(async (req, res) => {
 exports.vendorLogin = asyncHandler(async (req, res) => {
   const { vendorIdentifier, pin } = req.body
 
-  console.log(vendorIdentifier, pin)
-
   if (!vendorIdentifier || !pin) {
     return res.status(400).json({
       success: false,
