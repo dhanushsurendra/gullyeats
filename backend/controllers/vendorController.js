@@ -189,3 +189,21 @@ exports.changePin = asyncHandler(async (req, res) => {
     message: 'PIN updated successfully',
   })
 })
+
+// Only the PIN's hash is stored, so onboarding staff can't re-send an
+// existing PIN. "Send Credentials" issues a new one instead: the old PIN
+// stops working and the new one is returned once, to be texted to the vendor.
+exports.resetPin = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id)
+
+  if (!user) {
+    res.status(404)
+    throw new Error('User not found')
+  }
+
+  const pin = generatePin()
+  user.pinHash = await bcrypt.hash(pin, 10)
+  await user.save()
+
+  res.json({ success: true, userId: user.userId, pin })
+})
