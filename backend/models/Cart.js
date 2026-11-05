@@ -29,7 +29,8 @@
       },
       cartImageUrl: String,
       qrImageUrl: String,
-      isActive: { type: Boolean, default: false },
+      // New carts start active; the vendor can switch this in the ordering app.
+      isActive: { type: Boolean, default: true },
       isOpen: { type: Boolean, default: false },
     },
     { timestamps: true },
