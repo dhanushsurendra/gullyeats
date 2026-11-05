@@ -37,12 +37,36 @@ class CartProvider with ChangeNotifier {
   ) async {
     try {
       final cart = await _cartService.createBasicCart(token, cartDetails);
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString("cart", json.encode(cart.toJson()));
+      await selectCart(cart);
       return cart;
     } finally {
       notifyListeners();
     }
+  }
+
+  Future<CartModel> updateCart(
+    String token,
+    String cartId,
+    Map<String, dynamic> cartDetails,
+  ) async {
+    try {
+      final cart = await _cartService.updateCartDetails(token, cartId, cartDetails);
+      await selectCart(cart);
+      return cart;
+    } finally {
+      notifyListeners();
+    }
+  }
+
+  /// Makes [cart] the one the onboarding steps work on. Later screens read
+  /// it back with [loadCartId] and [loadCartDetails].
+  Future<void> selectCart(CartModel cart) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString("cart", json.encode(cart.toJson()));
+    _cartId = cart.id;
+    _cartGeneratedId = cart.cartId;
+    _cartName = cart.cartName;
+    notifyListeners();
   }
 
   CartModel? findById(String id) {

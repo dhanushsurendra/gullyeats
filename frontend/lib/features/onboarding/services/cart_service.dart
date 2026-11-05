@@ -60,6 +60,34 @@ class CartService {
     }
   }
 
+  Future<CartModel> updateCartDetails(
+    String token,
+    String cartId,
+    Map<String, dynamic> cartDetails,
+  ) async {
+    final response = await http
+        .put(
+          Uri.parse("${ApiConstants.carts}/update-cart/$cartId"),
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer $token",
+          },
+          body: json.encode(cartDetails),
+        )
+        .timeout(const Duration(seconds: 10));
+
+    final data = response.body.isNotEmpty ? jsonDecode(response.body) : {};
+
+    if (response.statusCode == 200) {
+      return CartModel.fromJson(data["cart"]);
+    } else {
+      throw ApiException(
+        data['message'] ?? "Failed to update cart",
+        response.statusCode,
+      );
+    }
+  }
+
   Future<dynamic> updateLocation(
     String? token,
     Placemark placemark,

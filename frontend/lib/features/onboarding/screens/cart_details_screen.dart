@@ -11,6 +11,7 @@ import 'package:gullyeats/core/widgets/base_screen.dart';
 import 'package:gullyeats/core/widgets/fill_or_scroll.dart';
 import 'package:gullyeats/core/utils/responsive.dart';
 import 'package:gullyeats/features/auth/providers/auth_provider.dart';
+import 'package:gullyeats/features/onboarding/models/cart_model.dart';
 import 'package:gullyeats/features/onboarding/providers/cart_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -28,6 +29,29 @@ class _CartDetailsScreenState extends State<CartDetailsScreen> {
   final List<String> _cities = ["Bangalore"];
   String? _selectedCity;
   bool _isLoading = false;
+
+  /// Set once this cart exists on the server: opened from Your Carts, or
+  /// created here earlier. Continue then updates it instead of creating
+  /// another cart (e.g. after going back from the photo step).
+  String? _cartId;
+  bool _initialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_initialized) return;
+    _initialized = true;
+
+    final cart = ModalRoute.of(context)?.settings.arguments;
+    if (cart is CartModel) {
+      _cartId = cart.id;
+      _nameController.text = cart.cartName;
+      if (cart.cartCity.isNotEmpty) {
+        if (!_cities.contains(cart.cartCity)) _cities.add(cart.cartCity);
+        _selectedCity = cart.cartCity;
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -48,12 +72,16 @@ class _CartDetailsScreenState extends State<CartDetailsScreen> {
 
       final cartProvider = Provider.of<CartProvider>(context, listen: false);
       final auth = Provider.of<AuthProvider>(context, listen: false);
-      final result = await cartProvider.createCart(auth.token!, cartDetails);
+      final isNew = _cartId == null;
+      final result = isNew
+          ? await cartProvider.createCart(auth.token!, cartDetails)
+          : await cartProvider.updateCart(auth.token!, _cartId!, cartDetails);
+      _cartId = result?.id;
 
       if (result != null && mounted) {
         AppSnackBar.show(
           context,
-          message: "Cart added successfully!",
+          message: isNew ? "Cart added successfully!" : "Cart updated",
           isError: false,
         );
 
