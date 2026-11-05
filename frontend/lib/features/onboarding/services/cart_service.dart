@@ -99,6 +99,10 @@ class CartService {
     String cartId,
     File imageFile,
   ) async {
+    final extension = imageFile.path.split('.').last.toLowerCase();
+    // "image/jpg" isn't a real MIME type.
+    final contentType = "image/${extension == 'jpg' ? 'jpeg' : extension}";
+
     final response = await http
         .post(
           Uri.parse("${ApiConstants.carts}/generate-cart-image-url/$cartId"),
@@ -107,7 +111,7 @@ class CartService {
             "Authorization": "Bearer $token",
           },
           body: json.encode({
-            "fileType": "image/${imageFile.path.split('.').last}", 
+            "fileType": contentType,
           }),
         )
         .timeout(const Duration(seconds: 10));
@@ -130,8 +134,7 @@ class CartService {
         .put(
           Uri.parse(uploadUrl),
           headers: {
-            "Content-Type":
-                "image/${imageFile.path.split('.').last.toLowerCase()}",
+            "Content-Type": contentType,
           },
           body: fileBytes,
         )
