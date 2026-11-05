@@ -1,6 +1,8 @@
 const Cart = require('../models/Cart')
 const MenuItem = require('../models/Menu')
 const User = require('../models/User')
+const Order = require('../models/Order')
+const { findManagedCart } = require('../utils/cartAccess')
 const QRCode = require('qrcode')
 const asyncHandler = require('../utils/asyncHandler')
 const bcrypt = require('bcrypt')
@@ -61,14 +63,7 @@ exports.updateCart = asyncHandler(async (req, res) => {
     isOpen,
   } = req.body;
 
-  const cart = await Cart.findById(cartId);
-
-  if (!cart) {
-    return res.status(404).json({
-      success: false,
-      message: 'Cart not found',
-    });
-  }
+  const cart = await findManagedCart(req, res, cartId);
 
   if (cartName !== undefined) {
     cart.cartName = cartName;
@@ -210,6 +205,18 @@ exports.createMenuItems = asyncHandler(async (req, res) => {
     }
   })
 
+  // Onboarding sends the whole menu each time it is saved, so replace the
+  // cart's items instead of appending (going back and saving again used to
+  // duplicate them). Once orders exist they reference these items, so leave
+  // a live menu alone.
+  if (await Order.exists({ cartId })) {
+    res.status(409)
+    throw new Error(
+      'This cart already has orders. Edit its menu from the ordering app.',
+    )
+  }
+
+  await MenuItem.deleteMany({ cartId })
   const createdItems = await MenuItem.insertMany(processedItems)
 
   res.status(201).json({
@@ -489,14 +496,23 @@ exports.getPresignedUploadUrlForExistingMenuItem = asyncHandler(
 
 exports.generateAndUploadQR = asyncHandler(async (req, res) => {
   const { cartId } = req.params
-  const cart = await Cart.findById(cartId)
+  const cart = await findManagedCart(req, res, cartId)
 
-  if (!cart) {
-    res.status(404)
-    throw new Error('Cart not found')
+  // FRONTEND_URL_CUSTOMER may list several origins (it also feeds CORS);
+  // the first is the customer app the QR should open.
+  const customerAppUrl = (
+    process.env.FRONTEND_URL || process.env.FRONTEND_URL_CUSTOMER || ''
+  )
+    .split(',')[0]
+    .trim()
+    .replace(/\/+$/, '')
+
+  if (!customerAppUrl) {
+    res.status(500)
+    throw new Error('Customer app URL is not configured')
   }
 
-  const url = `${process.env.FRONTEND_URL}/c/${cartId}`
+  const url = `${customerAppUrl}/c/${cartId}`
   const qrBinary = await QRCode.toBuffer(url, {
     errorCorrectionLevel: 'H',
     type: 'image/png',
@@ -553,17 +569,12 @@ exports.addStaff = asyncHandler(async (req, res) => {
     throw new Error('Invalid name')
   }
 
-  const cart = await Cart.findById(cartId)
-
-  if (!cart) {
-    res.status(404)
-    throw new Error('Cart not found')
-  }
+  const cart = await findManagedCart(req, res, cartId)
 
   let user = await User.findOne({ phoneNumber })
 
   if (user) {
-    res.status(401)
+    res.status(409)
     throw new Error('User with this phone number already exists')
   }
 
@@ -622,6 +633,8 @@ exports.switchStaffCart = asyncHandler(async (req, res) => {
 exports.getPresignedUploadUrl = asyncHandler(async (req, res) => {
   const { fileType } = req.body
   const cartId = req.params.cartId
+
+  await findManagedCart(req, res, cartId)
   const bucketName = process.env.BUCKET_NAME
 
   const extension = fileType.split('/')[1] || 'jpg'
@@ -647,6 +660,8 @@ exports.getPresignedUploadUrl = asyncHandler(async (req, res) => {
 exports.updateCartImage = asyncHandler(async (req, res) => {
   const { cartId } = req.params
   const { imageUrl } = req.body
+
+  await findManagedCart(req, res, cartId)
 
   const updatedCart = await Cart.findByIdAndUpdate(
     cartId,
@@ -678,12 +693,17 @@ exports.getCart = asyncHandler(async (req, res) => {
 
 
 exports.getAllCarts = asyncHandler(async (req, res) => {
-  // const userId = req.user._id
   const userId = req.params.userId
 
   if (!userId) {
     res.status(400)
     throw new Error('User Id is required')
+  }
+
+  // Users may list only their own carts (both apps pass their own id).
+  if (String(userId) !== String(req.user._id) && req.user.role !== 'admin') {
+    res.status(403)
+    throw new Error('Not allowed to view these carts')
   }
 
   const user = await User.findOne({ _id: userId })
@@ -707,12 +727,7 @@ exports.getAllStaff = asyncHandler(async (req, res) => {
 
   console.log('Fetching staff for cartId:', cartId)
 
-  const cart = await Cart.findById(cartId)
-
-  if (!cart) {
-    res.status(404)
-    throw new Error('Cart not found')
-  }
+  const cart = await findManagedCart(req, res, cartId)
 
   const staffs = await User.find({
     role: 'staff',
@@ -730,10 +745,14 @@ exports.deleteStaff = asyncHandler(async (req, res) => {
 
   const staff = await User.findById({ _id: staffId })
 
-  if (!staff) {
+  // Only staff accounts can be removed here, and only by someone who
+  // manages their cart (this used to delete any user, vendors included).
+  if (!staff || staff.role !== 'staff') {
     res.status(404)
     throw new Error('Staff member not found')
   }
+
+  await findManagedCart(req, res, staff.cartId)
 
   await staff.deleteOne()
 

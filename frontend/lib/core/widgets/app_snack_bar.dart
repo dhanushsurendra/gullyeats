@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gullyeats/core/theme/app_colors.dart';
 
 class AppSnackBar {
   static Future<void> show(
@@ -31,8 +32,7 @@ class AppSnackBar {
             ),
           ],
         ),
-        backgroundColor:
-            isError ? Colors.redAccent[700] : Colors.green[800],
+        backgroundColor: isError ? AppColors.error : AppColors.success,
         duration: const Duration(seconds: 3),
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(16),

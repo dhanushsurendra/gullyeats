@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gullyeats/core/theme/app_colors.dart';
 import 'package:gullyeats/core/theme/app_text_styles.dart';
+import 'package:gullyeats/core/utils/format_price.dart';
 
 class MenuReviewCard extends StatelessWidget {
   final String name;
@@ -26,7 +27,7 @@ class MenuReviewCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.grey.shade100),
         boxShadow: [
           BoxShadow(
@@ -44,25 +45,32 @@ class MenuReviewCard extends StatelessWidget {
               children: [
                 Text(name, style: AppTextStyles.heading3),
                 const SizedBox(height: 4),
-                Row(
+                // Wrap: the veg tag moves under the price on narrow cards.
+                Wrap(
+                  spacing: 12,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    Text("₹$price", 
+                    Text("₹${formatPrice(price)}",
                       style: const TextStyle(
-                        color: AppColors.primary, 
-                        fontWeight: FontWeight.bold, 
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.bold,
                         fontSize: 16
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Icon(Icons.circle, size: 8, color: statusColor),
-                    const SizedBox(width: 4),
-                    Text(
-                      isVeg ? "Veg" : "Non-Veg", 
-                      style: TextStyle(
-                        color: statusColor, 
-                        fontSize: 12, 
-                        fontWeight: FontWeight.w600
-                      ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.circle, size: 8, color: statusColor),
+                        const SizedBox(width: 4),
+                        Text(
+                          isVeg ? "Veg" : "Non-Veg",
+                          style: TextStyle(
+                            color: statusColor,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

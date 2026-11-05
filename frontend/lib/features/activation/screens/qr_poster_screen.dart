@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:gullyeats/core/error/app_exceptions.dart';
+import 'package:gullyeats/core/routes/app_routes.dart';
 import 'package:gullyeats/core/theme/app_colors.dart';
 import 'package:gullyeats/core/theme/app_gaps.dart';
 import 'package:gullyeats/core/theme/app_text_styles.dart';
+import 'package:gullyeats/core/widgets/info_box.dart';
+import 'package:gullyeats/core/widgets/app_footer.dart';
 import 'package:gullyeats/core/widgets/app_button.dart';
+import 'package:gullyeats/core/widgets/app_snack_bar.dart';
 import 'package:gullyeats/core/widgets/base_screen.dart';
 import 'package:gullyeats/features/activation/providers/activation_provider.dart';
 import 'package:gullyeats/features/activation/services/qr_service.dart';
@@ -24,6 +28,11 @@ class _QrPosterScreenState extends State<QrPosterScreen> {
   String qrImageUrl = "";
   bool _isLoading = false;
   bool _isBtnLoading = false;
+
+  /// Set once the poster has been shared, which finishes onboarding. From
+  /// then on, leaving goes straight to Your Carts: going back through the
+  /// steps would land on this screen again and regenerate the QR.
+  bool _hasShared = false;
   final GlobalKey _qrKey = GlobalKey();
 
   @override
@@ -57,9 +66,7 @@ class _QrPosterScreenState extends State<QrPosterScreen> {
         cartProvider.cartId!,
       );
 
-      setState(() {
-        qrImageUrl = url;
-      });
+      if (mounted) setState(() => qrImageUrl = url);
     } catch (e) {
       final message = AppExceptionHandler.getMessage(e);
       _showError(message);
@@ -78,6 +85,7 @@ class _QrPosterScreenState extends State<QrPosterScreen> {
         cartName: _cartName,
         cartId: cartProvider.cartId!,
       );
+      if (mounted) setState(() => _hasShared = true);
     } catch (e) {
       final message = AppExceptionHandler.getMessage(e);
       _showError(message);
@@ -86,61 +94,78 @@ class _QrPosterScreenState extends State<QrPosterScreen> {
     }
   }
 
-  void _showError(String message) {
-    ScaffoldMessenger.of(
+  void _goToOutlets() {
+    Navigator.popUntil(
       context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+      (route) => route.settings.name == AppRoutes.carts || route.isFirst,
+    );
+  }
+
+  void _showError(String message) {
+    if (mounted) AppSnackBar.show(context, message: message, isError: true);
   }
 
   @override
   Widget build(BuildContext context) {
-    return BaseScreen(
-      title: 'QR Code Poster',
-      onBack: () => Navigator.pop(context),
-      subtitle: "Print and paste this on your cart.",
-      expandToFullHeight: true,
-      child: ListView(
-        padding: const EdgeInsets.only(bottom: 16),
-        children: [
-          RepaintBoundary(
-            key: _qrKey,
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final width = constraints.maxWidth;
-                final height = width * 1.3;
+    return PopScope(
+      // After sharing, system back also goes to Your Carts.
+      canPop: !_hasShared,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _goToOutlets();
+      },
+      child: BaseScreen(
+        title: 'QR Code Poster',
+        onBack: _hasShared ? _goToOutlets : () => Navigator.pop(context),
+        subtitle: "Print and paste this on your cart.",
+        expandToFullHeight: true,
+        bottomNavigationBar: AppFooter(
+          children: [
+            AppButton(
+              label: "SHARE QR",
+              isLoading: _isBtnLoading,
+              onPressed: _shareQr,
+              // Once shared, going back to the outlets is the main action.
+              backgroundColor: _hasShared ? AppColors.white : null,
+              borderColor: _hasShared ? AppColors.primary : null,
+              textColor: _hasShared ? AppColors.primary : null,
+            ),
+            if (_hasShared)
+              AppButton(label: "BACK TO OUTLETS", onPressed: _goToOutlets),
+          ],
+        ),
+        child: ListView(
+          padding: const EdgeInsets.only(bottom: 16),
+          children: [
+            RepaintBoundary(
+              key: _qrKey,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final width = constraints.maxWidth;
+                  final height = width * 1.3;
 
-                return _QrPosterCard(
-                  width: width,
-                  height: height,
-                  cartId: _cartId,
-                  cartName: _cartName,
-                  qrImageUrl: qrImageUrl,
-                  isLoading: _isLoading,
-                );
-              },
+                  // The poster is a printable graphic sized from its width, so
+                  // it ignores the phone's text size; otherwise the shared PDF
+                  // would change (and overflow) with each vendor's settings.
+                  return MediaQuery.withNoTextScaling(
+                    child: _QrPosterCard(
+                      width: width,
+                      height: height,
+                      cartId: _cartId,
+                      cartName: _cartName,
+                      qrImageUrl: qrImageUrl,
+                      isLoading: _isLoading,
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
-          AppGaps.h24,
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.grey100,
-              borderRadius: BorderRadius.circular(12),
+            AppGaps.h24,
+            const InfoBox(
+              icon: Icons.lightbulb_outline,
+              lines: ["Tip: Print in A4 size and laminate for durability."],
             ),
-            child: Text(
-              "Tip: Print in A4 size and laminate for durability.",
-              style: AppTextStyles.caption.copyWith(color: AppColors.grey600),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          AppGaps.h24,
-          AppButton(
-            label: "SHARE QR",
-            isLoading: _isBtnLoading,
-            onPressed: _shareQr,
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -273,11 +298,15 @@ class _QrPosterCard extends StatelessWidget {
               ],
             ),
           ),
-          Text(
-            cartName,
-            style: AppTextStyles.heading2.copyWith(fontSize: width * 0.06),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          // Padded so a long name doesn't run into the border.
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: width * 0.05),
+            child: Text(
+              cartName,
+              style: AppTextStyles.heading2.copyWith(fontSize: width * 0.06),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
           Text(
             "Cart ID: $cartId",

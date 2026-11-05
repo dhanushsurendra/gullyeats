@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gullyeats/core/utils/responsive.dart';
 import 'package:gullyeats/core/error/app_exceptions.dart';
 import 'package:gullyeats/features/auth/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
@@ -39,12 +40,8 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   void _handleOtpSend() async {
-    setState(() {
-      isLoading = true;
-    });
-
     FocusScope.of(context).unfocus();
-    
+
     final phone = _phoneController.text.trim();
     final isValid = RegExp(r'^[6-9]\d{9}$').hasMatch(phone);
 
@@ -54,6 +51,11 @@ class _SignupScreenState extends State<SignupScreen> {
       });
       return;
     }
+
+    setState(() {
+      isLoading = true;
+      _errorMessage = null;
+    });
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
@@ -66,11 +68,9 @@ class _SignupScreenState extends State<SignupScreen> {
       }
     } catch (e) {
       final message = AppExceptionHandler.getMessage(e);
-      setState(() {
-        _errorMessage = message;
-      });
+      if (mounted) setState(() => _errorMessage = message);
     } finally {
-      isLoading = false;
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
@@ -90,7 +90,7 @@ class _SignupScreenState extends State<SignupScreen> {
             Center(
               child: Image.asset(
                 "assets/images/login.png",
-                height: 180,
+                height: illustrationHeight(context, 180),
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) => const Icon(
                   Icons.mobile_friendly,

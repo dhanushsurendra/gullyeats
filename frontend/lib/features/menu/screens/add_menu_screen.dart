@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gullyeats/core/utils/format_price.dart';
 import 'package:gullyeats/core/theme/app_colors.dart';
 import 'package:gullyeats/core/theme/app_gaps.dart';
 import 'package:gullyeats/core/theme/app_text_styles.dart';
+import 'package:gullyeats/core/widgets/info_box.dart';
+import 'package:gullyeats/core/widgets/app_footer.dart';
 import 'package:gullyeats/core/widgets/app_button.dart';
 import 'package:gullyeats/core/widgets/app_snack_bar.dart';
 import 'package:gullyeats/core/widgets/base_screen.dart';
@@ -56,28 +59,35 @@ class _AddMenuScreenState extends State<AddMenuScreen> {
       return;
     }
 
-    final updatedItems = await Navigator.push(
+    // Review edits this same list, so changes survive however the user
+    // leaves the review screen (back arrow, system back, "add more").
+    await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => MenuReviewScreen(menuItems: List.from(_menuItems)),
+        builder: (_) => MenuReviewScreen(menuItems: _menuItems),
       ),
     );
 
-    if (updatedItems != null && updatedItems is List<MenuItemModel>) {
-      setState(() {
-        _menuItems.clear();
-        _nameControllers.clear();
-        _priceControllers.clear();
+    if (!mounted) return;
+    setState(_syncControllers);
+  }
 
-        for (var item in updatedItems) {
-          _menuItems.add(item);
-
-          _nameControllers[item] = TextEditingController(text: item.name);
-          _priceControllers[item] = TextEditingController(
-            text: item.price.toString(),
-          );
-        }
-      });
+  /// Review may replace or remove items, so rebuild the fields from the list.
+  void _syncControllers() {
+    final old = [..._nameControllers.values, ..._priceControllers.values];
+    // The fields still use the old controllers until this rebuild is drawn.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      for (final c in old) {
+        c.dispose();
+      }
+    });
+    _nameControllers.clear();
+    _priceControllers.clear();
+    for (final item in _menuItems) {
+      _nameControllers[item] = TextEditingController(text: item.name);
+      _priceControllers[item] = TextEditingController(
+        text: formatPrice(item.price),
+      );
     }
   }
 
@@ -140,7 +150,7 @@ class _AddMenuScreenState extends State<AddMenuScreen> {
             Expanded(
               flex: 3,
               child: _buildField(
-                hint: "Price",
+                hint: "0",
                 prefix: "₹",
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
@@ -199,17 +209,24 @@ class _AddMenuScreenState extends State<AddMenuScreen> {
         style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600),
         decoration: InputDecoration(
           hintText: hint,
-          prefixText: prefix != null ? "$prefix " : null,
-          prefixStyle: const TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-          ),
+          // Always-visible currency prefix: prefixText only shows once the
+          // field has focus but still takes its width, which squeezed the hint.
+          prefixIcon: prefix == null
+              ? null
+              : Padding(
+                  padding: const EdgeInsets.only(left: 16, right: 4),
+                  child: Text(
+                    prefix,
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+          prefixIconConstraints: const BoxConstraints(),
           hintStyle: TextStyle(color: AppColors.grey400, fontSize: 14),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 14,
-          ),
+          contentPadding: EdgeInsets.fromLTRB(prefix == null ? 16 : 0, 14, 16, 14),
         ),
       ),
     );
@@ -280,66 +297,28 @@ class _AddMenuScreenState extends State<AddMenuScreen> {
   }
 
   Widget _buildInfoBox() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.grey100.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.grey200),
-      ),
-      child: Column(
-        children: [
-          _infoRow("Simple setup (Text + Price)"),
-          AppGaps.h12,
-          _infoRow("No images needed for now"),
-          AppGaps.h12,
-          _infoRow("Update your menu anytime"),
-        ],
-      ),
-    );
-  }
-
-  Widget _infoRow(String text) {
-    return Row(
-      children: [
-        const Icon(
-          Icons.check_circle_outline,
-          size: 18,
-          color: AppColors.grey400,
-        ),
-        AppGaps.w12,
-        Text(
-          text,
-          style: AppTextStyles.body.copyWith(
-            color: AppColors.grey400,
-            fontSize: 13,
-          ),
-        ),
+    return const InfoBox(
+      icon: Icons.check_circle_outline,
+      lines: [
+        "Simple setup (Text + Price)",
+        "No images needed for now",
+        "Update your menu anytime",
       ],
     );
   }
 
+
   Widget _buildFooter() {
-    return SafeArea(
-      top: false,
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
-        child: AppButton(
+    final hasItems = _menuItems.isNotEmpty;
+    return AppFooter(
+      // Say why the button is disabled.
+      note: hasItems ? null : "Add at least one item to continue.",
+      children: [
+        AppButton(
           label: "SAVE & CONTINUE",
-          // isLoading: _isSaving,
-          onPressed: _saveAndContinue,
+          onPressed: hasItems ? _saveAndContinue : null,
         ),
-      ),
+      ],
     );
   }
 }

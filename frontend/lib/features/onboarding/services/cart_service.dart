@@ -21,7 +21,6 @@ class CartService {
         .timeout(const Duration(seconds: 10));
 
     final data = response.body.isNotEmpty ? jsonDecode(response.body) : {};
-    print(data);
     if (response.statusCode == 200) {
       return (data["carts"] as List)
           .map((e) => CartModel.fromJson(e as Map<String, dynamic>))
@@ -56,6 +55,51 @@ class CartService {
     } else {
       throw ApiException(
         data['message'] ?? "Failed to create cart",
+        response.statusCode,
+      );
+    }
+  }
+
+  Future<int> fetchMenuItemCount(String cartId) async {
+    final response = await http
+        .get(Uri.parse("${ApiConstants.carts}/get-menu-items/$cartId"))
+        .timeout(const Duration(seconds: 10));
+
+    final data = response.body.isNotEmpty ? jsonDecode(response.body) : {};
+
+    if (response.statusCode == 200) {
+      return (data['count'] as num?)?.toInt() ?? 0;
+    } else {
+      throw ApiException(
+        data['message'] ?? "Failed to load menu",
+        response.statusCode,
+      );
+    }
+  }
+
+  Future<CartModel> updateCartDetails(
+    String token,
+    String cartId,
+    Map<String, dynamic> cartDetails,
+  ) async {
+    final response = await http
+        .put(
+          Uri.parse("${ApiConstants.carts}/update-cart/$cartId"),
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer $token",
+          },
+          body: json.encode(cartDetails),
+        )
+        .timeout(const Duration(seconds: 10));
+
+    final data = response.body.isNotEmpty ? jsonDecode(response.body) : {};
+
+    if (response.statusCode == 200) {
+      return CartModel.fromJson(data["cart"]);
+    } else {
+      throw ApiException(
+        data['message'] ?? "Failed to update cart",
         response.statusCode,
       );
     }
@@ -100,6 +144,10 @@ class CartService {
     String cartId,
     File imageFile,
   ) async {
+    final extension = imageFile.path.split('.').last.toLowerCase();
+    // "image/jpg" isn't a real MIME type.
+    final contentType = "image/${extension == 'jpg' ? 'jpeg' : extension}";
+
     final response = await http
         .post(
           Uri.parse("${ApiConstants.carts}/generate-cart-image-url/$cartId"),
@@ -108,7 +156,7 @@ class CartService {
             "Authorization": "Bearer $token",
           },
           body: json.encode({
-            "fileType": "image/${imageFile.path.split('.').last}", 
+            "fileType": contentType,
           }),
         )
         .timeout(const Duration(seconds: 10));
@@ -131,12 +179,12 @@ class CartService {
         .put(
           Uri.parse(uploadUrl),
           headers: {
-            "Content-Type":
-                "image/${imageFile.path.split('.').last.toLowerCase()}",
+            "Content-Type": contentType,
           },
           body: fileBytes,
         )
-        .timeout(const Duration(seconds: 10));
+        // A photo over mobile data can take a while.
+        .timeout(const Duration(seconds: 60));
 
     if (uploadResponse.statusCode != 200) {
       throw ApiException(

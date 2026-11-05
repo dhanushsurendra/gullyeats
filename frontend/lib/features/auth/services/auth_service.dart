@@ -9,7 +9,7 @@ class AuthService {
       Uri.parse("${ApiConstants.vendors}/send-otp"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({"phoneNumber": phone, "role": "vendor"}),
-    );
+    ).timeout(const Duration(seconds: 10));
 
     final data = jsonDecode(response.body);
     if (response.statusCode == 200) {
@@ -22,12 +22,32 @@ class AuthService {
     }
   }
 
+  /// Issues a new PIN for the logged-in vendor. Returns their login ID
+  /// (`userId`, e.g. VEN-AB12CD) and the new `pin`.
+  Future<Map<String, dynamic>> resetPin(String? token) async {
+    final response = await http.post(
+      Uri.parse("${ApiConstants.vendors}/reset-pin"),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+    ).timeout(const Duration(seconds: 10));
+
+    final data = response.body.isNotEmpty ? jsonDecode(response.body) : {};
+
+    if (response.statusCode == 200) {
+      return data as Map<String, dynamic>;
+    } else {
+      throw ApiException(data["message"] ?? "Couldn't create a new PIN", response.statusCode);
+    }
+  }
+
   Future<Map<String, dynamic>> verifyOtp(String phone, String otp) async {
     final response = await http.post(
       Uri.parse("${ApiConstants.vendors}/verify-otp"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({"phoneNumber": phone, "otp": otp}),
-    );
+    ).timeout(const Duration(seconds: 10));
 
     final data = response.body.isNotEmpty ? jsonDecode(response.body) : {};
 

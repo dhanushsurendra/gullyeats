@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:gullyeats/core/utils/responsive.dart';
 import 'package:gullyeats/core/error/app_exceptions.dart';
 import 'package:gullyeats/core/routes/app_routes.dart';
 import 'package:gullyeats/core/theme/app_colors.dart';
@@ -69,9 +70,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
       await launchUrl(smsUri);
     } catch (e) {
       final message = AppExceptionHandler.getMessage(e);
-      setState(() {
-        _errorMessage = message;
-      });
+      if (mounted) setState(() => _errorMessage = message);
     }
   }
 
@@ -131,11 +130,11 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
           );
         }
       } else {
-        setState(() => _errorMessage = "Invalid OTP. Please try again.");
+        if (mounted) setState(() => _errorMessage = "Invalid OTP. Please try again.");
       }
     } catch (e) {
       final message = AppExceptionHandler.getMessage(e);
-      setState(() => _errorMessage = message);
+      if (mounted) setState(() => _errorMessage = message);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -152,10 +151,11 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          // Wrap: "Change" moves under the number with large text.
+          Wrap(
+            spacing: 8,
             children: [
               Text("+91 $phone", style: AppTextStyles.heading3),
-              AppGaps.w8,
               GestureDetector(
                 onTap: () => Navigator.pop(context),
                 child: Text(
@@ -169,7 +169,12 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
           ),
 
           AppGaps.h32,
-          Center(child: Image.asset("assets/images/login.png", height: 160)),
+          Center(
+            child: Image.asset(
+              "assets/images/login.png",
+              height: illustrationHeight(context, 160),
+            ),
+          ),
           AppGaps.h32,
           OtpInputRow(
             onCompleted: (otp) {

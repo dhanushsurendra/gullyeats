@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:gullyeats/core/utils/responsive.dart';
 import 'package:gullyeats/core/theme/app_colors.dart';
 import 'package:gullyeats/core/theme/app_gaps.dart';
 import 'package:gullyeats/core/theme/app_text_styles.dart';
+import 'package:gullyeats/core/widgets/info_box.dart';
+import 'package:gullyeats/core/widgets/app_footer.dart';
 import 'package:gullyeats/core/widgets/app_button.dart';
 import 'package:gullyeats/core/widgets/base_screen.dart';
 
@@ -42,7 +45,7 @@ class _OperatingSetupScreenState extends State<OperatingSetupScreen> {
           Center(
             child: Image.asset(
               "assets/images/operating.png",
-              height: 180,
+              height: illustrationHeight(context, 180),
               fit: BoxFit.contain,
             ),
           ),
@@ -70,40 +73,23 @@ class _OperatingSetupScreenState extends State<OperatingSetupScreen> {
   }
 
   Widget _buildFooter() {
-    return SafeArea(
-      top: false,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        child: AppButton(
+    return AppFooter(
+      children: [
+        AppButton(
           label: _isStaffOption ? "ADD STAFF MEMBERS" : "SAVE & CONTINUE",
           onPressed: _handleContinue,
         ),
-      ),
+      ],
     );
   }
 
   Widget _buildInfoBox() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.grey100,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.info_outline, size: 18, color: AppColors.primary),
-          AppGaps.w12,
-          Expanded(
-            child: Text(
-              _selectedOption == OperatingMode.solo
-                  ? "All orders and serving details will be managed directly on this device."
-                  : "You can assign roles to your staff and track their activity remotely.",
-              style: AppTextStyles.caption.copyWith(height: 1.4),
-            ),
-          ),
-        ],
-      ),
+    return InfoBox(
+      lines: [
+        _selectedOption == OperatingMode.solo
+            ? "All orders and serving details will be managed directly on this device."
+            : "You can assign roles to your staff and track their activity remotely.",
+      ],
     );
   }
 

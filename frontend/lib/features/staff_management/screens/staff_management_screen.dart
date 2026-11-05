@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gullyeats/core/error/app_exceptions.dart';
 import 'package:gullyeats/core/theme/app_gaps.dart';
 import 'package:gullyeats/core/theme/app_text_styles.dart';
+import 'package:gullyeats/core/widgets/app_footer.dart';
 import 'package:gullyeats/core/widgets/app_button.dart';
 import 'package:gullyeats/core/widgets/app_snack_bar.dart';
 import 'package:gullyeats/core/widgets/base_screen.dart';
@@ -48,9 +49,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
         cartId!,
       );
 
-      setState(() {
-        _staffList = staffList;
-      });
+      if (mounted) setState(() => _staffList = staffList);
     } catch (e) {
       final message = AppExceptionHandler.getMessage(e);
       if (mounted) {
@@ -106,7 +105,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
         AppSnackBar.show(context, message: errorMessage, isError: true);
       }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -116,10 +115,8 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
       final auth = Provider.of<AuthProvider>(context, listen: false);
       final result = await staffProvider.deleteStaff(auth.token, staffId);
 
-      if (result != '') {
-        if (mounted) {
-          AppSnackBar.show(context, message: result);
-        }
+      if (result != '' && mounted) {
+        AppSnackBar.show(context, message: result);
         setState(() {
           _staffList.removeWhere((staff) => staff.id == staffId);
         });
@@ -183,25 +180,13 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
   }
 
   Widget _buildFooter() {
-    return SafeArea(
-      top: false,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -4),
-            ),
-          ],
-        ),
-        child: AppButton(
+    return AppFooter(
+      children: [
+        AppButton(
           label: "CONTINUE",
           onPressed: () => Navigator.pushNamed(context, "/cart-activated"),
         ),
-      ),
+      ],
     );
   }
 }

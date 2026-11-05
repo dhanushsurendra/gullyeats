@@ -1,0 +1,72 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Repository layout
+
+GullyEats is a QR-based ordering platform for street food carts. It's a monorepo of five independent projects with no shared tooling or root package. Run commands from inside each project directory.
+
+| Dir | Stack | Purpose |
+|---|---|---|
+| `backend/` | Node (CommonJS), Express 5, Mongoose, Socket.IO | Single API for all clients |
+| `frontend/` | Flutter (package `gullyeats`) | **Onboarding** app, used by GullyEats staff (not vendors) to onboard a vendor: OTP login for the vendor's number, create or resume a cart, photo, location, menu, staff, QR poster |
+| `ordering/` | Flutter (package `ordering`) | **Vendor ordering** app: live orders, serve/paid toggles, sales charts, platform-fee payment via Razorpay |
+| `customer-app/` | React 19 + Vite 8 + Tailwind 4 + Redux Toolkit (React Compiler enabled) | Customer web app opened from a cart's QR code (`/c/:cartId/...`) |
+| `gullyeats-admin/` | React 18 + Vite 5 + Tailwind 3 + Redux Toolkit, Recharts, Leaflet | Super-admin dashboard |
+
+## Commands
+
+```bash
+# backend (needs backend/.env with MONGO_URI, JWT_SECRET, AWS_*, BUCKET_NAME, RAZORPAY_*, FRONTEND_URL_CUSTOMER, FRONTEND_URL_ADMIN)
+npm run dev        # nodemon server.js, default port 5000
+npm start
+
+# customer-app / gullyeats-admin
+npm run dev
+npm run build
+npm run lint       # customer-app only (ESLint); the admin app has no linter
+
+# frontend / ordering (Flutter)
+flutter pub get
+flutter run
+flutter analyze
+flutter test
+flutter test test/responsive/screens_responsive_test.dart --plain-name "signup"   # one screen
+flutter test test/responsive --update-goldens   # after an intended visual change
+flutter run -t tool/screen_gallery.dart          # every screen with sample data, on a device
+```
+
+`frontend/test/responsive/` renders every onboarding screen at 6 phone/tablet sizes, at 1.3× and 1.5× system text size, in landscape and with the keyboard open, and fails on any layout error (overflow, unbounded constraints). For the small phone, standard phone, tablet and small phone at 1.5× text, it also compares each screen with a reference image in `test/responsive/goldens/`. A failed comparison writes diff images to `test/responsive/failures/`, which is gitignored. The goldens were generated on Windows, and font rendering differs on macOS and Linux, so regenerate them with `--update-goldens` before comparing on another OS. Add `--dart-define=SHOTS=<dir>` to also save a PNG for every screen and size. Add new screens to the `screens` list there. `ordering/` and the web apps have no real tests, and the backend `npm test` is a placeholder that always fails.
+
+`tool/screen_gallery.dart` (debug builds only) opens each screen with sample data and never logs in. Switch screens with `adb shell "run-as com.example.gullyeats sh -c 'echo <index> > files/gallery_index'"`.
+
+Flutter work uses the official `dart-flutter` Claude Code plugin (`claude plugin marketplace add flutter/agent-plugins`, then `claude plugin install dart-flutter@dart-flutter`). It provides the Flutter skills (for example `flutter-build-responsive-layout`, `flutter-fix-layout-issues` and `flutter-add-widget-test`) and the Dart/Flutter MCP server (`dart mcp-server`). The MCP server can launch the app, read runtime errors, inspect the widget tree and hot reload.
+
+## API base URLs (hardcoded)
+
+Every client points at the deployed backend by default, so check these before testing locally:
+- `frontend/lib/core/constants/api_constants.dart` and `ordering/lib/core/constants/api_constants.dart` (`baseUrl`)
+- `customer-app/src/constants/api.js` (`API_BASE_URL`; the Socket.IO URL comes from stripping `/api` off it)
+- `gullyeats-admin/.env` (`VITE_API_URL`, `VITE_ADMIN_PATH`, `VITE_CART_PATH`; see `.env.example`)
+
+## Backend architecture
+
+- `server.js` wires everything together. Routes are mounted under `/api/{vendors,carts,orders,payments,admin}` and are implemented as `routes/*Routes.js` → `controllers/*Controller.js`. Handlers are wrapped in `utils/asyncHandler`. To return an error, set `res.status(code)` and then `throw new Error(msg)`; `middlewares/errorHandler` turns that into `{ success: false, message }`.
+- **The Razorpay webhook must stay registered before `express.json()`.** It needs `express.raw` so the HMAC signature check runs on the raw request bytes. The JSON body limit is `10kb`.
+- CORS uses an allowlist built from `FRONTEND_URL_CUSTOMER` and `FRONTEND_URL_ADMIN` (comma-separated) plus `http://localhost:5173`. Requests with no `Origin` header (the Flutter apps) are allowed.
+- Auth: vendors and staff log in with phone + OTP + PIN (`vendorRoutes`). `middlewares/auth.js` reads `Authorization: Bearer <jwt>` and sets `req.user = { _id, role }` (role is one of `vendor | staff | admin`). Many cart, menu and order routes are deliberately **unauthenticated**, since the customer web app calls them without logging in. Admin login sets a `token` cookie.
+- Real-time: `req.io` is attached to every request. Vendor clients join the room `<cartId>` (`join_vendor`). Customers join `order:<id>` (`join_order`). Controllers emit `new_order_received`, `order_updated` and `order_cancelled` to these rooms.
+- Billing lock: carts owe GullyEats a daily `platformFee` that is summed from their orders over IST calendar days (`utils/cartPaymentLock.js`, 26h grace period). `middlewares/cartPaymentLock.js` returns 403 with the lock status when a cart has unpaid fees. `Payment` documents are owner→platform fee payments, not customer payments.
+- Uploads: images and QR codes go to S3 through presigned URLs (`utils/s3Client.js`). Order numbers come from the `Counter` model (`utils/getNextOrderNumber.js`).
+- `Cart.location.coordinates` is stored as `[lat, lng]`, not the GeoJSON `[lng, lat]` order, even though there is a `2dsphere` index on it.
+
+## Flutter apps
+
+Both apps use the same structure: `lib/core/` (constants, routes, theme, widgets, utils) and `lib/features/<feature>/{models,providers,services,screens|presentation,widgets}`. State management uses `provider` with `ChangeNotifier`s that are registered in `main.dart`. Services make HTTP calls using `ApiConstants`. Tokens are stored in `shared_preferences`. Both apps are locked to portrait mode and use the Poppins font. In `frontend/`, screens are built on `core/widgets/base_screen.dart`, which caps content at 500px wide. With `expandToFullHeight: true` the child gets a bounded height, so it must scroll itself (a `ListView` or a `SingleChildScrollView`). Step screens put their main buttons in `AppFooter`, passed as `bottomNavigationBar`. **UI rules for both Flutter apps (tokens, layout, feedback, responsive and async rules, and a checklist for porting them to `ordering/`) are in `docs/ui-guidelines.md`.** Only `ordering` uses `socket_io_client` (in `OrderProvider`) and `razorpay_flutter`.
+
+## Admin dashboard domain mapping (from gullyeats-admin/README.md)
+
+- Cart status: LIVE = `isOpen`. PAUSED = closed and `isActive === false`. ATTENTION = the cart has a PENDING platform-fee `Payment`. Anything else is OFFLINE.
+- Order status: PENDING = awaiting payment, PAID = preparing, SERVED, CANCELLED.
+- GMV = the sum of `totalPrice` over non-cancelled orders. Platform revenue = `platformFee`.
+- Orders have no star rating, so the feedback views show counts and rates instead.

@@ -12,6 +12,7 @@ import 'package:gullyeats/core/theme/app_text_styles.dart';
 import 'package:gullyeats/core/widgets/app_button.dart';
 import 'package:gullyeats/core/widgets/app_snack_bar.dart';
 import 'package:gullyeats/core/widgets/base_screen.dart';
+import 'package:gullyeats/core/widgets/app_footer.dart';
 
 class EnableLocationScreen extends StatefulWidget {
   const EnableLocationScreen({super.key});
@@ -207,26 +208,11 @@ class _EnableLocationScreenState extends State<EnableLocationScreen> {
       subtitle: 'We need your location to verify your cart',
       expandToFullHeight: true,
       onBack: () => Navigator.pop(context),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      bottomNavigationBar: AppFooter(
+        note: 'Securely used only for verification',
         children: [
-          _buildMap(lat, lng),
-          AppGaps.h32,
-          _buildWhyLocationCard(),
-          const Spacer(),
-          Center(
-            child: Text(
-              'Securely used only for verification',
-              style: AppTextStyles.caption.copyWith(
-                color: AppColors.grey400,
-              ),
-            ),
-          ),
-          AppGaps.h16,
           AppButton(
-            label: _isLocationCaptured
-                ? 'CONTINUE'
-                : 'ENABLE LOCATION',
+            label: _isLocationCaptured ? 'CONTINUE' : 'ENABLE LOCATION',
             isLoading: _isLocating,
             onPressed: _isLocationCaptured
                 ? () {
@@ -243,8 +229,18 @@ class _EnableLocationScreenState extends State<EnableLocationScreen> {
                   }
                 : _handleEnableLocation,
           ),
-          AppGaps.h12,
         ],
+      ),
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildMap(lat, lng),
+            AppGaps.h32,
+            _buildWhyLocationCard(),
+          ],
+        ),
       ),
     );
   }
@@ -260,7 +256,7 @@ class _EnableLocationScreenState extends State<EnableLocationScreen> {
         width: double.infinity,
         decoration: BoxDecoration(
           color: AppColors.grey100,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: AppColors.primary.withValues(alpha: 0.1),
           ),
@@ -277,7 +273,7 @@ class _EnableLocationScreenState extends State<EnableLocationScreen> {
         width: double.infinity,
         decoration: BoxDecoration(
           color: AppColors.grey100,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: AppColors.primary.withValues(alpha: 0.1),
           ),
@@ -307,7 +303,7 @@ class _EnableLocationScreenState extends State<EnableLocationScreen> {
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: AppColors.primary.withValues(alpha: 0.1),
           width: 1.5,
@@ -414,6 +410,8 @@ class _EnableLocationScreenState extends State<EnableLocationScreen> {
     return Container(
       height: 220,
       width: double.infinity,
+      // The 300px background grid icon is bigger than the box.
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: AppColors.grey100,
         borderRadius: BorderRadius.circular(16),
@@ -483,8 +481,8 @@ class _EnableLocationScreenState extends State<EnableLocationScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.grey100.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(20),
+        color: AppColors.grey100,
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

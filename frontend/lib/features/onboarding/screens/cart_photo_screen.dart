@@ -5,9 +5,11 @@ import 'package:gullyeats/core/theme/app_colors.dart';
 import 'package:gullyeats/core/theme/app_gaps.dart';
 import 'package:gullyeats/core/theme/app_text_styles.dart';
 import 'package:gullyeats/core/utils/compress_image.dart';
+import 'package:gullyeats/core/widgets/info_box.dart';
 import 'package:gullyeats/core/widgets/app_button.dart';
 import 'package:gullyeats/core/widgets/app_snack_bar.dart';
 import 'package:gullyeats/core/widgets/base_screen.dart';
+import 'package:gullyeats/core/widgets/app_footer.dart';
 import 'package:gullyeats/features/auth/providers/auth_provider.dart';
 import 'package:gullyeats/features/onboarding/providers/cart_provider.dart';
 import 'package:image_picker/image_picker.dart';
@@ -39,9 +41,9 @@ class _CartPhotoScreenState extends State<CartPhotoScreen> {
 
     final status = await Permission.camera.request();
 
+    if (!mounted) return;
     if (status.isDenied || status.isPermanentlyDenied) {
       setState(() => _isLoading = false);
-      if (!mounted) return;
 
       if (status.isPermanentlyDenied) {
         _showSettingsDialog();
@@ -58,6 +60,7 @@ class _CartPhotoScreenState extends State<CartPhotoScreen> {
       imageQuality: 90,
     );
 
+    if (!mounted) return;
     setState(() {
       _isLoading = false;
       if (photo != null) {
@@ -148,129 +151,9 @@ class _CartPhotoScreenState extends State<CartPhotoScreen> {
       subtitle: "Take a live photo of your cart for verification",
       expandToFullHeight: true,
       onBack: () => Navigator.pop(context),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      bottomNavigationBar: AppFooter(
+        note: "Your photo is used only for verification.",
         children: [
-          Center(
-            child: Text(
-              "Make sure your cart name board is visible",
-              style: AppTextStyles.body,
-              textAlign: TextAlign.center,
-            ),
-          ),
-          AppGaps.h24,
-
-          Stack(
-            children: [
-              Container(
-                height: 250,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: AppColors.primary,
-                    style: BorderStyle.solid,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  color: Colors.grey[50],
-                ),
-                clipBehavior: Clip.hardEdge,
-                child: hasPhoto
-                    ? Image.file(
-                        _capturedPhoto!,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        height: 250,
-                      )
-                    : Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.camera_alt_outlined,
-                            size: 40,
-                            color: _isLoading
-                                ? AppColors.grey400
-                                : AppColors.primary,
-                          ),
-                          AppGaps.h12,
-                          Text(
-                            _isLoading ? "Opening camera..." : "Photo Preview",
-                            style: AppTextStyles.body,
-                          ),
-                        ],
-                      ),
-              ),
-              if (hasPhoto)
-                Positioned(
-                  top: 10,
-                  right: 10,
-                  child: GestureDetector(
-                    onTap: _retakePhoto,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.55),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.refresh, color: Colors.white, size: 14),
-                          SizedBox(width: 4),
-                          Text(
-                            "Retake",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-
-          AppGaps.h16,
-          Container(
-            padding: const EdgeInsets.all(16),
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-
-              children: [
-                Text(
-                  "• No gallery upload allowed",
-                  style: AppTextStyles.caption,
-                ),
-                AppGaps.h8,
-                Text("• Time will be recorded", style: AppTextStyles.caption),
-                AppGaps.h8,
-                Text(
-                  "• Prevents fake carts & builds trust",
-                  style: AppTextStyles.caption,
-                ),
-              ],
-            ),
-          ),
-
-          const Spacer(),
-
-          Center(
-            child: Text(
-              "Your photo is used only for verification.",
-              style: AppTextStyles.caption,
-            ),
-          ),
-          AppGaps.h12,
           AppButton(
             label: hasPhoto ? "CONFIRM & UPLOAD" : "OPEN CAMERA",
             isLoading: _isLoading,
@@ -281,6 +164,107 @@ class _CartPhotoScreenState extends State<CartPhotoScreen> {
                 : _openCamera,
           ),
         ],
+      ),
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Text(
+                "Make sure your cart name board is visible",
+                style: AppTextStyles.body,
+                textAlign: TextAlign.center,
+              ),
+            ),
+            AppGaps.h24,
+
+            Stack(
+              children: [
+                Container(
+                  height: 250,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: AppColors.primary,
+                      style: BorderStyle.solid,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.grey[50],
+                  ),
+                  clipBehavior: Clip.hardEdge,
+                  child: hasPhoto
+                      ? Image.file(
+                          _capturedPhoto!,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: 250,
+                        )
+                      : Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.camera_alt_outlined,
+                              size: 40,
+                              color: _isLoading
+                                  ? AppColors.grey400
+                                  : AppColors.primary,
+                            ),
+                            AppGaps.h12,
+                            Text(
+                              _isLoading ? "Opening camera..." : "Photo Preview",
+                              style: AppTextStyles.body,
+                            ),
+                          ],
+                        ),
+                ),
+                if (hasPhoto)
+                  Positioned(
+                    top: 10,
+                    right: 10,
+                    child: GestureDetector(
+                      onTap: _retakePhoto,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.55),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.refresh, color: Colors.white, size: 14),
+                            SizedBox(width: 4),
+                            Text(
+                              "Retake",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+
+            AppGaps.h16,
+            const InfoBox(
+              lines: [
+                "No gallery upload allowed",
+                "Time will be recorded",
+                "Prevents fake carts & builds trust",
+              ],
+            ),
+
+          ],
+        ),
       ),
     );
   }

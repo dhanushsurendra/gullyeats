@@ -18,12 +18,11 @@ class StaffMemberCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print(staffId);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.grey.shade100),
       ),
       child: Row(
@@ -47,7 +46,13 @@ class StaffMemberCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: AppTextStyles.heading3),
+                Text(
+                  name,
+                  style: AppTextStyles.heading3,
+                  // Two lines max: the phone number below identifies the person.
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 Text(
                   phone,
                   style: AppTextStyles.body.copyWith(

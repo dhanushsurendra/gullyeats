@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:gullyeats/core/theme/app_colors.dart';
@@ -39,6 +40,9 @@ class _SplashScreenState extends State<SplashScreen> {
           padding: AppPadding.screen,
           child: LayoutBuilder(
             builder: (context, constraints) {
+              // Size from the 500px content column, not the whole window, so
+              // the logo doesn't balloon on wide screens.
+              final width = math.min(constraints.maxWidth, 500.0);
               return Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 500),
@@ -46,11 +50,11 @@ class _SplashScreenState extends State<SplashScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Spacer(flex: 2),
-                      _buildHeader(constraints),
+                      _buildHeader(width),
                       const Spacer(flex: 1),
                       _buildIllustration(screenHeight),
                       const Spacer(flex: 2),
-                      _buildLoadingSection(constraints),
+                      _buildLoadingSection(width),
                       const Spacer(flex: 1),
                     ],
                   ),
@@ -63,7 +67,7 @@ class _SplashScreenState extends State<SplashScreen> {
     );
   }
 
-  Widget _buildHeader(BoxConstraints constraints) {
+  Widget _buildHeader(double width) {
     return Column(
       children: [
         Row(
@@ -76,14 +80,14 @@ class _SplashScreenState extends State<SplashScreen> {
                     text: "Gully",
                     style: AppTextStyles.heading1.copyWith(
                       color: AppColors.primary,
-                      fontSize: constraints.maxWidth * 0.08, // Dynamic font size
+                      fontSize: (width * 0.08).clamp(24.0, 40.0),
                     ),
                   ),
                   TextSpan(
                     text: "Eats",
                     style: AppTextStyles.heading1.copyWith(
                       fontWeight: FontWeight.w700,
-                      fontSize: constraints.maxWidth * 0.08,
+                      fontSize: (width * 0.08).clamp(24.0, 40.0),
                     ),
                   ),
                 ],
@@ -95,7 +99,7 @@ class _SplashScreenState extends State<SplashScreen> {
         Text(
           "THE STREET FOOD REVOLUTION",
           style: AppTextStyles.body.copyWith(
-            fontSize: constraints.maxWidth * 0.025,
+            fontSize: (width * 0.025).clamp(10.0, 14.0),
             letterSpacing: 1.01,
           ),
         ),
@@ -118,11 +122,11 @@ class _SplashScreenState extends State<SplashScreen> {
     );
   }
 
-  Widget _buildLoadingSection(BoxConstraints constraints) {
+  Widget _buildLoadingSection(double width) {
     return Column(
       children: [
         SizedBox(
-          width: constraints.maxWidth * 0.4, 
+          width: width * 0.4, 
           child: ClipRRect(
             borderRadius: BorderRadius.circular(10),
             child: const LinearProgressIndicator(

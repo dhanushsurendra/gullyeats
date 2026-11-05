@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gullyeats/core/error/app_exceptions.dart';
 import 'package:gullyeats/core/theme/app_colors.dart';
 import 'package:gullyeats/core/theme/app_gaps.dart';
+import 'package:gullyeats/core/widgets/app_footer.dart';
 import 'package:gullyeats/core/widgets/app_button.dart';
 import 'package:gullyeats/core/widgets/app_snack_bar.dart';
 import 'package:gullyeats/core/widgets/base_screen.dart';
@@ -73,7 +74,7 @@ class _MenuReviewScreenState extends State<MenuReviewScreen> {
       }
     } catch (e) {
       final message = AppExceptionHandler.getMessage(e);
-      AppSnackBar.show(context, message: message, isError: true);
+      if (mounted) AppSnackBar.show(context, message: message, isError: true);
     } finally {
       if (mounted) setState(() => isLoading = false);
     }
@@ -108,41 +109,21 @@ class _MenuReviewScreenState extends State<MenuReviewScreen> {
   }
 
   Widget _buildFooter() {
-    return SafeArea(
-      top: false,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -4),
-            ),
-          ],
+    return AppFooter(
+      children: [
+        AppButton(
+          label: '+ ADD MORE ITEMS',
+          onPressed: () => Navigator.pop(context, widget.menuItems),
+          backgroundColor: AppColors.white,
+          borderColor: AppColors.primary,
+          textColor: AppColors.primary,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AppButton(
-              label: '+ ADD MORE ITEMS',
-              onPressed: () {
-                Navigator.pop(context, widget.menuItems);
-              },
-              backgroundColor: AppColors.white,
-              borderColor: AppColors.primary,
-              textColor: AppColors.primary,
-            ),
-            AppGaps.h12,
-            AppButton(
-              label: "CONTINUE",
-              isLoading: isLoading,
-              onPressed: widget.menuItems.isEmpty ? null : _handleSaveMenu,
-            ),
-          ],
+        AppButton(
+          label: "CONTINUE",
+          isLoading: isLoading,
+          onPressed: widget.menuItems.isEmpty ? null : _handleSaveMenu,
         ),
-      ),
+      ],
     );
   }
 }

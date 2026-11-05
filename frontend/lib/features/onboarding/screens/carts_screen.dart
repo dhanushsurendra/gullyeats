@@ -3,9 +3,10 @@ import 'package:gullyeats/core/error/app_exceptions.dart';
 import 'package:gullyeats/core/routes/app_routes.dart';
 import 'package:gullyeats/core/theme/app_colors.dart';
 import 'package:gullyeats/core/theme/app_gaps.dart';
-import 'package:gullyeats/core/theme/app_padding.dart';
 import 'package:gullyeats/core/theme/app_text_styles.dart';
 import 'package:gullyeats/core/widgets/app_button.dart';
+import 'package:gullyeats/core/widgets/app_footer.dart';
+import 'package:gullyeats/core/widgets/base_screen.dart';
 import 'package:gullyeats/core/widgets/app_search_bar.dart';
 import 'package:gullyeats/core/widgets/app_snack_bar.dart';
 import 'package:gullyeats/features/auth/providers/auth_provider.dart';
@@ -28,6 +29,7 @@ class _CartsScreenState extends State<CartsScreen> {
 
   List<CartModel> _allCarts = [];
   bool _isLoading = false;
+  bool _loadFailed = false;
 
   List<CartModel> get _filteredCarts {
     if (searchQuery.isEmpty) return _allCarts;
@@ -48,7 +50,10 @@ class _CartsScreenState extends State<CartsScreen> {
   }
 
   Future<void> _loadCarts() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _loadFailed = false;
+    });
 
     try {
       final cartProvider = Provider.of<CartProvider>(context, listen: false);
@@ -61,59 +66,78 @@ class _CartsScreenState extends State<CartsScreen> {
 
       List<CartModel> carts = await cartProvider.loadCarts(auth.token, userId);
 
-      setState(() {
-        _allCarts = carts;
-        _isLoading = false;
-      });
+      if (mounted) setState(() => _allCarts = carts);
     } catch (e) {
       final errorMessage = AppExceptionHandler.getMessage(e);
 
       if (mounted) {
+        setState(() => _loadFailed = true);
         AppSnackBar.show(context, message: errorMessage, isError: true);
       }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
+  /// Opens Cart Details: prefilled for an existing cart (its Continue then
+  /// resumes at the first unfinished step), empty for a new one. Reloads the
+  /// list afterwards so statuses are current.
+  Future<void> _openCart(CartModel? cart) async {
+    await Navigator.pushNamed(context, AppRoutes.cartDetails, arguments: cart);
+    if (mounted) _loadCarts();
+  }
+
+  /// Texts the vendor their login ID and a new PIN. Only the PIN's hash is
+  /// stored, so a PIN can't be sent again; each press issues a new one.
   Future<void> _handleSendCredentials(BuildContext context) async {
     final args =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-
-    final pin = args?['pin'];
-    final userId = args?['userId'];
     final phoneNumber = args?['phoneNumber'];
 
-    if (pin == null || userId == null || phoneNumber == null) {
-      AppSnackBar.show(
-        context,
-        message: "Credential data missing",
-        isError: true,
-      );
+    if (phoneNumber == null) {
+      AppSnackBar.show(context, message: "Vendor phone number missing", isError: true);
       return;
     }
 
-    final message = "Your login credentials:\nUser ID: $userId\nPIN: $pin";
-
-    final Uri smsUri = Uri(
-      scheme: 'sms',
-      path: phoneNumber,
-      queryParameters: {'body': message},
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Send new login PIN?"),
+        content: const Text(
+          "This creates a new PIN and texts it to the vendor with their "
+          "login ID. Their current PIN will stop working.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text("Send"),
+          ),
+        ],
+      ),
     );
+    if (confirmed != true || !context.mounted) return;
 
     try {
-      final canLaunch = await canLaunchUrl(smsUri);
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      final credentials = await auth.resetPin();
+      final message =
+          "Your GullyEats login:\nID: ${credentials['userId']}\nPIN: ${credentials['pin']}";
 
-      if (!context.mounted) return;
-
-      if (canLaunch) {
-        await launchUrl(smsUri);
-      } else {
-        throw 'could_not_launch_sms';
-      }
+      final smsUri = Uri(
+        scheme: 'sms',
+        path: phoneNumber,
+        queryParameters: {'body': message},
+      );
+      if (!await launchUrl(smsUri)) throw 'could_not_launch_sms';
     } catch (e) {
       if (!context.mounted) return;
 
       final errorMessage = (e == 'could_not_launch_sms')
-          ? "Staff added, but couldn't open SMS app."
+          ? "New PIN created, but couldn't open the SMS app. Try again."
           : AppExceptionHandler.getMessage(e);
 
       AppSnackBar.show(context, message: errorMessage, isError: true);
@@ -122,87 +146,91 @@ class _CartsScreenState extends State<CartsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.white,
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: IntrinsicHeight(
-                  child: Padding(
-                    padding: AppPadding.screen,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("Your Carts", style: AppTextStyles.heading1),
-                        AppGaps.h4,
-                        AppGaps.h24,
-                        AppSearchBar(
-                          hintText: "Search outlet name or city...",
-                          onChanged: (value) =>
-                              setState(() => searchQuery = value),
-                        ),
-
-                        AppGaps.h24,
-
-                        if (_isLoading)
-                          const Center(child: CircularProgressIndicator())
-                        else if (_filteredCarts.isEmpty)
-                          _buildEmptyState()
-                        else
-                          ..._filteredCarts.map(
-                            (cart) => Padding(
-                              padding: const EdgeInsets.only(bottom: 16),
-                              child: CartCard(
-                                cart: cart,
-                                isSelected: selectedCartId == cart.id,
-                              ),
-                            ),
-                          ),
-                        const Spacer(),
-                        AppGaps.h16,
-                        AppButton(
-                          label: "Send Credentials",
-                          onPressed: () => _handleSendCredentials(context),
-                        ),
-                        AppGaps.h16,
-                        AppButton(
-                          label: "+ Add New Outlet",
-                          onPressed: () {
-                            Navigator.pushNamed(context, AppRoutes.cartDetails);
-                          },
-                          isDotted: true,
-                          backgroundColor: Colors.transparent,
-                          borderColor: AppColors.grey300,
-                          textColor: AppColors.primary,
-                        ),
-                        AppGaps.h16,
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
+    return BaseScreen(
+      title: "Your Carts",
+      subtitle: "Tap an outlet to continue its setup.",
+      showBackButton: false,
+      expandToFullHeight: true,
+      bottomNavigationBar: AppFooter(
+        children: [
+          AppButton(
+            label: "+ ADD NEW OUTLET",
+            onPressed: () => _openCart(null),
+            isDotted: true,
+            backgroundColor: Colors.transparent,
+            borderColor: AppColors.grey300,
+            textColor: AppColors.primary,
+          ),
+          AppButton(
+            label: "SEND CREDENTIALS",
+            onPressed: () => _handleSendCredentials(context),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          AppSearchBar(
+            hintText: "Search outlet name or city...",
+            onChanged: (value) => setState(() => searchQuery = value),
+          ),
+          AppGaps.h24,
+          Expanded(
+            child: RefreshIndicator(onRefresh: _loadCarts, child: _buildList()),
+          ),
+        ],
       ),
     );
   }
 
+  Widget _buildList() {
+    // Only the first load shows a spinner; reloads keep the list on screen.
+    if (_isLoading && _allCarts.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    final carts = _filteredCarts;
+    return ListView.separated(
+      // Scrollable even when short, so pull-to-refresh always works.
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.only(bottom: 16),
+      itemCount: carts.isEmpty ? 1 : carts.length,
+      separatorBuilder: (_, _) => AppGaps.h16,
+      itemBuilder: (_, i) => carts.isEmpty
+          ? _buildEmptyState()
+          : CartCard(
+              cart: carts[i],
+              isSelected: selectedCartId == carts[i].id,
+              onTap: () => _openCart(carts[i]),
+            ),
+    );
+  }
+
   Widget _buildEmptyState() {
+    final isSearching = searchQuery.isNotEmpty;
     return Center(
       child: Column(
         children: [
           AppGaps.h32,
-          Icon(Icons.search_off_rounded, size: 64, color: AppColors.grey300),
+          Icon(
+            _loadFailed
+                ? Icons.cloud_off_outlined
+                : isSearching
+                ? Icons.search_off_rounded
+                : Icons.storefront_outlined,
+            size: 64,
+            color: AppColors.grey300,
+          ),
           AppGaps.h16,
           Text(
-            "No outlets found matching '$searchQuery'",
+            _loadFailed
+                ? "Couldn't load outlets."
+                : isSearching
+                ? "No outlets found matching '$searchQuery'"
+                : "No outlets yet. Add the vendor's first outlet below.",
+            textAlign: TextAlign.center,
             style: AppTextStyles.body.copyWith(color: AppColors.grey400),
           ),
+          if (_loadFailed)
+            TextButton(onPressed: _loadCarts, child: const Text("Retry")),
         ],
       ),
     );

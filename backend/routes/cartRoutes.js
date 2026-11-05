@@ -58,7 +58,7 @@ router.put('/update-cart/:cartId', auth, updateCart)
 
 router.put('/update-cart-image/:cartId', auth, updateCartImage)
 
-router.get('/get-all-carts/:userId', getAllCarts)
+router.get('/get-all-carts/:userId', auth, getAllCarts)
 
 router.get('/get-cart/:cartId', getCart)
 

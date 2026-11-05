@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; 
+import 'package:gullyeats/core/utils/format_price.dart';
 import 'package:gullyeats/core/theme/app_colors.dart';
 import 'package:gullyeats/core/theme/app_gaps.dart';
 import 'package:gullyeats/core/theme/app_text_styles.dart';
@@ -33,7 +34,7 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
     super.initState();
     _nameController = TextEditingController(text: widget.initialName);
     _priceController = TextEditingController(
-      text: widget.initialPrice.toString(),
+      text: formatPrice(widget.initialPrice),
     );
     _isVeg = widget.initialIsVeg;
   }
@@ -73,74 +74,77 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
         bottom: MediaQuery.of(context).viewInsets.bottom + 20,
         left: 24,
         right: 24,
-        top: 12, 
+        top: 12,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
+      // Scrolls when the keyboard leaves less room than the form needs.
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
-          ),
-          AppGaps.h16,
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text("Edit Item", style: AppTextStyles.heading2),
-              IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.close_rounded),
-                visualDensity: VisualDensity.compact,
-              ),
-            ],
-          ),
-          AppGaps.h24,
-          _buildLabel("ITEM NAME"),
-          _buildTextField(
-            controller: _nameController,
-            hint: "e.g. Chicken Momos",
-            onChanged: (_) => setState(() => _errorText = null),
-          ),
-          AppGaps.h24,
-          _buildLabel("PRICE (₹)"),
-          _buildTextField(
-            controller: _priceController,
-            hint: "0",
-            isNumber: true,
-            onChanged: (_) => setState(() => _errorText = null),
-          ),
-          AppGaps.h24,
-          _buildLabel("CATEGORY"),
-          Row(
-            children: [
-              _categoryChip("Veg", true),
-              AppGaps.w12,
-              _categoryChip("Non-Veg", false),
-            ],
-          ),
-
-          if (_errorText != null) ...[
             AppGaps.h16,
-            Text(
-              _errorText!,
-              style: const TextStyle(
-                color: AppColors.error,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text("Edit Item", style: AppTextStyles.heading2),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close_rounded),
+                  visualDensity: VisualDensity.compact,
+                ),
+              ],
             ),
-          ],
+            AppGaps.h24,
+            _buildLabel("ITEM NAME"),
+            _buildTextField(
+              controller: _nameController,
+              hint: "e.g. Chicken Momos",
+              onChanged: (_) => setState(() => _errorText = null),
+            ),
+            AppGaps.h24,
+            _buildLabel("PRICE (₹)"),
+            _buildTextField(
+              controller: _priceController,
+              hint: "0",
+              isNumber: true,
+              onChanged: (_) => setState(() => _errorText = null),
+            ),
+            AppGaps.h24,
+            _buildLabel("CATEGORY"),
+            Row(
+              children: [
+                _categoryChip("Veg", true),
+                AppGaps.w12,
+                _categoryChip("Non-Veg", false),
+              ],
+            ),
 
-          AppGaps.h32,
-          AppButton(label: "UPDATE ITEM", onPressed: _handleUpdate),
-        ],
+            if (_errorText != null) ...[
+              AppGaps.h16,
+              Text(
+                _errorText!,
+                style: const TextStyle(
+                  color: AppColors.error,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+
+            AppGaps.h32,
+            AppButton(label: "UPDATE ITEM", onPressed: _handleUpdate),
+          ],
+        ),
       ),
     );
   }
