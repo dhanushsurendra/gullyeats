@@ -135,7 +135,8 @@ class CartService {
           },
           body: fileBytes,
         )
-        .timeout(const Duration(seconds: 10));
+        // A photo over mobile data can take a while.
+        .timeout(const Duration(seconds: 60));
 
     if (uploadResponse.statusCode != 200) {
       throw ApiException(

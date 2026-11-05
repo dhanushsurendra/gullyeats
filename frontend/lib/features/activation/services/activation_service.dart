@@ -12,7 +12,8 @@ class CartActivatedService {
         "Content-Type": "application/json",
         "Authorization": "Bearer $token",
       },
-    );
+    // The server renders the QR and uploads it to storage before replying.
+    ).timeout(const Duration(seconds: 30));
 
     final data = response.body.isNotEmpty ? jsonDecode(response.body) : {};
     if (response.statusCode == 200) {

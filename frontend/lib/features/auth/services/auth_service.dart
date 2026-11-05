@@ -9,7 +9,7 @@ class AuthService {
       Uri.parse("${ApiConstants.vendors}/send-otp"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({"phoneNumber": phone, "role": "vendor"}),
-    );
+    ).timeout(const Duration(seconds: 10));
 
     final data = jsonDecode(response.body);
     if (response.statusCode == 200) {
@@ -27,7 +27,7 @@ class AuthService {
       Uri.parse("${ApiConstants.vendors}/verify-otp"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({"phoneNumber": phone, "otp": otp}),
-    );
+    ).timeout(const Duration(seconds: 10));
 
     final data = response.body.isNotEmpty ? jsonDecode(response.body) : {};
 
