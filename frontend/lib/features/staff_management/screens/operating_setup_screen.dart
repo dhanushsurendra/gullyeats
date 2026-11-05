@@ -3,6 +3,7 @@ import 'package:gullyeats/core/utils/responsive.dart';
 import 'package:gullyeats/core/theme/app_colors.dart';
 import 'package:gullyeats/core/theme/app_gaps.dart';
 import 'package:gullyeats/core/theme/app_text_styles.dart';
+import 'package:gullyeats/core/widgets/app_footer.dart';
 import 'package:gullyeats/core/widgets/app_button.dart';
 import 'package:gullyeats/core/widgets/base_screen.dart';
 
@@ -71,15 +72,13 @@ class _OperatingSetupScreenState extends State<OperatingSetupScreen> {
   }
 
   Widget _buildFooter() {
-    return SafeArea(
-      top: false,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        child: AppButton(
+    return AppFooter(
+      children: [
+        AppButton(
           label: _isStaffOption ? "ADD STAFF MEMBERS" : "SAVE & CONTINUE",
           onPressed: _handleContinue,
         ),
-      ),
+      ],
     );
   }
 

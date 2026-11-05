@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gullyeats/core/error/app_exceptions.dart';
 import 'package:gullyeats/core/theme/app_gaps.dart';
 import 'package:gullyeats/core/theme/app_text_styles.dart';
+import 'package:gullyeats/core/widgets/app_footer.dart';
 import 'package:gullyeats/core/widgets/app_button.dart';
 import 'package:gullyeats/core/widgets/app_snack_bar.dart';
 import 'package:gullyeats/core/widgets/base_screen.dart';
@@ -179,25 +180,13 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
   }
 
   Widget _buildFooter() {
-    return SafeArea(
-      top: false,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -4),
-            ),
-          ],
-        ),
-        child: AppButton(
+    return AppFooter(
+      children: [
+        AppButton(
           label: "CONTINUE",
           onPressed: () => Navigator.pushNamed(context, "/cart-activated"),
         ),
-      ),
+      ],
     );
   }
 }

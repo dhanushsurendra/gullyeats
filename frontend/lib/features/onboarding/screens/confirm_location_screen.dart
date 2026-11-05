@@ -5,6 +5,7 @@ import 'package:gullyeats/core/utils/build_address.dart';
 import 'package:gullyeats/core/theme/app_colors.dart';
 import 'package:gullyeats/core/theme/app_gaps.dart';
 import 'package:gullyeats/core/theme/app_text_styles.dart';
+import 'package:gullyeats/core/widgets/app_footer.dart';
 import 'package:gullyeats/core/widgets/app_button.dart';
 import 'package:gullyeats/core/widgets/app_snack_bar.dart';
 import 'package:gullyeats/core/widgets/base_screen.dart';
@@ -216,20 +217,14 @@ class _ConfirmLocationScreenState extends State<ConfirmLocationScreen> {
   }
 
   Widget _buildFooter() {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AppButton(
-              label: "CONFIRM & CONTINUE",
-              isLoading: _isLoading,
-              onPressed: _confirmLocation,
-            ),
-          ],
+    return AppFooter(
+      children: [
+        AppButton(
+          label: "CONFIRM & CONTINUE",
+          isLoading: _isLoading,
+          onPressed: _confirmLocation,
         ),
-      ),
+      ],
     );
   }
 }

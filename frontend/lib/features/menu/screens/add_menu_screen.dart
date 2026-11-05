@@ -4,6 +4,7 @@ import 'package:gullyeats/core/utils/format_price.dart';
 import 'package:gullyeats/core/theme/app_colors.dart';
 import 'package:gullyeats/core/theme/app_gaps.dart';
 import 'package:gullyeats/core/theme/app_text_styles.dart';
+import 'package:gullyeats/core/widgets/app_footer.dart';
 import 'package:gullyeats/core/widgets/app_button.dart';
 import 'package:gullyeats/core/widgets/app_snack_bar.dart';
 import 'package:gullyeats/core/widgets/base_screen.dart';
@@ -337,26 +338,10 @@ class _AddMenuScreenState extends State<AddMenuScreen> {
   }
 
   Widget _buildFooter() {
-    return SafeArea(
-      top: false,
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
-        child: AppButton(
-          label: "SAVE & CONTINUE",
-          // isLoading: _isSaving,
-          onPressed: _saveAndContinue,
-        ),
-      ),
+    return AppFooter(
+      children: [
+        AppButton(label: "SAVE & CONTINUE", onPressed: _saveAndContinue),
+      ],
     );
   }
 }
