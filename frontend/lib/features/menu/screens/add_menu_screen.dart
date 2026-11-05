@@ -309,9 +309,15 @@ class _AddMenuScreenState extends State<AddMenuScreen> {
 
 
   Widget _buildFooter() {
+    final hasItems = _menuItems.isNotEmpty;
     return AppFooter(
+      // Say why the button is disabled.
+      note: hasItems ? null : "Add at least one item to continue.",
       children: [
-        AppButton(label: "SAVE & CONTINUE", onPressed: _saveAndContinue),
+        AppButton(
+          label: "SAVE & CONTINUE",
+          onPressed: hasItems ? _saveAndContinue : null,
+        ),
       ],
     );
   }

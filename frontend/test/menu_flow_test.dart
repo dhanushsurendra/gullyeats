@@ -43,4 +43,20 @@ void main() {
     expect(find.text('Add Menu'), findsOneWidget);
     expect(find.text('Masala Dosa'), findsNothing);
   });
+
+  testWidgets('SAVE & CONTINUE is disabled until an item is added', (tester) async {
+    await tester.pumpWidget(buildApp(TestProviders(), const AddMenuScreen()));
+    ElevatedButton saveButton() => tester.widget<ElevatedButton>(
+      find.ancestor(of: find.text('SAVE & CONTINUE'), matching: find.byType(ElevatedButton)),
+    );
+
+    expect(saveButton().onPressed, isNull);
+    expect(find.text('Add at least one item to continue.'), findsOneWidget);
+
+    await tester.tap(find.text('+ ADD ITEM'));
+    await tester.pump();
+
+    expect(saveButton().onPressed, isNotNull);
+    expect(find.text('Add at least one item to continue.'), findsNothing);
+  });
 }
