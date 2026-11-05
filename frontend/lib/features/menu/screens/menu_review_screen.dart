@@ -73,7 +73,7 @@ class _MenuReviewScreenState extends State<MenuReviewScreen> {
       }
     } catch (e) {
       final message = AppExceptionHandler.getMessage(e);
-      AppSnackBar.show(context, message: message, isError: true);
+      if (mounted) AppSnackBar.show(context, message: message, isError: true);
     } finally {
       if (mounted) setState(() => isLoading = false);
     }

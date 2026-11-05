@@ -70,9 +70,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
       await launchUrl(smsUri);
     } catch (e) {
       final message = AppExceptionHandler.getMessage(e);
-      setState(() {
-        _errorMessage = message;
-      });
+      if (mounted) setState(() => _errorMessage = message);
     }
   }
 
@@ -132,11 +130,11 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
           );
         }
       } else {
-        setState(() => _errorMessage = "Invalid OTP. Please try again.");
+        if (mounted) setState(() => _errorMessage = "Invalid OTP. Please try again.");
       }
     } catch (e) {
       final message = AppExceptionHandler.getMessage(e);
-      setState(() => _errorMessage = message);
+      if (mounted) setState(() => _errorMessage = message);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

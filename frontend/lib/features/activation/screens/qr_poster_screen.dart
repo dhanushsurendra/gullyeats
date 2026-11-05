@@ -4,6 +4,7 @@ import 'package:gullyeats/core/theme/app_colors.dart';
 import 'package:gullyeats/core/theme/app_gaps.dart';
 import 'package:gullyeats/core/theme/app_text_styles.dart';
 import 'package:gullyeats/core/widgets/app_button.dart';
+import 'package:gullyeats/core/widgets/app_snack_bar.dart';
 import 'package:gullyeats/core/widgets/base_screen.dart';
 import 'package:gullyeats/features/activation/providers/activation_provider.dart';
 import 'package:gullyeats/features/activation/services/qr_service.dart';
@@ -57,9 +58,7 @@ class _QrPosterScreenState extends State<QrPosterScreen> {
         cartProvider.cartId!,
       );
 
-      setState(() {
-        qrImageUrl = url;
-      });
+      if (mounted) setState(() => qrImageUrl = url);
     } catch (e) {
       final message = AppExceptionHandler.getMessage(e);
       _showError(message);
@@ -87,9 +86,7 @@ class _QrPosterScreenState extends State<QrPosterScreen> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    if (mounted) AppSnackBar.show(context, message: message, isError: true);
   }
 
   @override

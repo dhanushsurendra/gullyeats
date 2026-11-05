@@ -48,9 +48,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
         cartId!,
       );
 
-      setState(() {
-        _staffList = staffList;
-      });
+      if (mounted) setState(() => _staffList = staffList);
     } catch (e) {
       final message = AppExceptionHandler.getMessage(e);
       if (mounted) {
@@ -106,7 +104,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
         AppSnackBar.show(context, message: errorMessage, isError: true);
       }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -116,10 +114,8 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
       final auth = Provider.of<AuthProvider>(context, listen: false);
       final result = await staffProvider.deleteStaff(auth.token, staffId);
 
-      if (result != '') {
-        if (mounted) {
-          AppSnackBar.show(context, message: result);
-        }
+      if (result != '' && mounted) {
+        AppSnackBar.show(context, message: result);
         setState(() {
           _staffList.removeWhere((staff) => staff.id == staffId);
         });

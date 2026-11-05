@@ -40,9 +40,9 @@ class _CartPhotoScreenState extends State<CartPhotoScreen> {
 
     final status = await Permission.camera.request();
 
+    if (!mounted) return;
     if (status.isDenied || status.isPermanentlyDenied) {
       setState(() => _isLoading = false);
-      if (!mounted) return;
 
       if (status.isPermanentlyDenied) {
         _showSettingsDialog();
@@ -59,6 +59,7 @@ class _CartPhotoScreenState extends State<CartPhotoScreen> {
       imageQuality: 90,
     );
 
+    if (!mounted) return;
     setState(() {
       _isLoading = false;
       if (photo != null) {
