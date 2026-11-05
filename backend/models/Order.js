@@ -97,6 +97,13 @@ const OrderSchema = new mongoose.Schema(
     servedAt: Date,
     paidAt: Date,
 
+    // What the customer has paid so far; updateOrder compares new totals
+    // against it. Unset on orders created before it existed.
+    paidAmount: {
+      type: Number,
+      min: 0,
+    },
+
     feedback: {
       type: String,
       default: null,

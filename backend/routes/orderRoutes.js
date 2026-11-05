@@ -15,33 +15,39 @@ const {
   getTruthLine,
   submitOrderFeedback
 } = require('../controllers/orderController')
+const auth = require('../middlewares/auth')
+const optionalAuth = require('../middlewares/optionalAuth')
 
-router.post('/create-order', createOrder)
+// The customer web app calls create, update, delete, get order, truth line
+// and feedback without logging in; the controllers apply customer rules
+// unless the caller manages the order's cart.
 
-router.delete('/delete-order/:orderId', deleteOrder)
+router.post('/create-order', optionalAuth, createOrder)
 
-router.get('/orders-today/:cartId', getOrdersForToday)
+router.delete('/delete-order/:orderId', optionalAuth, deleteOrder)
 
-router.get('/orders/:cartId', getAllOrders)
+router.get('/orders-today/:cartId', auth, getOrdersForToday)
 
-router.put('/update-order/:orderId', updateOrder)
+router.get('/orders/:cartId', auth, getAllOrders)
+
+router.put('/update-order/:orderId', optionalAuth, updateOrder)
 
 router.get('/get-truth-line', getTruthLine)
 
-router.get('/:cartId', getAllOrders)
+router.get('/:cartId', auth, getAllOrders)
 
 router.get('/order/:orderId', getOrder)
 
-router.put('/serve-order/:orderId', serveOrder)
+router.put('/serve-order/:orderId', auth, serveOrder)
 
-router.put('/serve-order-undo/:orderId', serveOrderUndo)
+router.put('/serve-order-undo/:orderId', auth, serveOrderUndo)
 
 router.put('/submit-feedback/:orderNumber', submitOrderFeedback)
 
-router.put('/mark-order-paid/:orderId', markOrderPaid)
+router.put('/mark-order-paid/:orderId', auth, markOrderPaid)
 
-router.put('/mark-order-unpaid/:orderId', markOrderUnpaid)
+router.put('/mark-order-unpaid/:orderId', auth, markOrderUnpaid)
 
-router.put('/delete-order-undo/:orderId', undoDeleteOrder)
+router.put('/delete-order-undo/:orderId', auth, undoDeleteOrder)
 
 module.exports = router
