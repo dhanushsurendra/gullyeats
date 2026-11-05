@@ -693,12 +693,17 @@ exports.getCart = asyncHandler(async (req, res) => {
 
 
 exports.getAllCarts = asyncHandler(async (req, res) => {
-  // const userId = req.user._id
   const userId = req.params.userId
 
   if (!userId) {
     res.status(400)
     throw new Error('User Id is required')
+  }
+
+  // Users may list only their own carts (both apps pass their own id).
+  if (String(userId) !== String(req.user._id) && req.user.role !== 'admin') {
+    res.status(403)
+    throw new Error('Not allowed to view these carts')
   }
 
   const user = await User.findOne({ _id: userId })
