@@ -40,12 +40,8 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   void _handleOtpSend() async {
-    setState(() {
-      isLoading = true;
-    });
-
     FocusScope.of(context).unfocus();
-    
+
     final phone = _phoneController.text.trim();
     final isValid = RegExp(r'^[6-9]\d{9}$').hasMatch(phone);
 
@@ -55,6 +51,11 @@ class _SignupScreenState extends State<SignupScreen> {
       });
       return;
     }
+
+    setState(() {
+      isLoading = true;
+      _errorMessage = null;
+    });
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
@@ -67,11 +68,9 @@ class _SignupScreenState extends State<SignupScreen> {
       }
     } catch (e) {
       final message = AppExceptionHandler.getMessage(e);
-      setState(() {
-        _errorMessage = message;
-      });
+      if (mounted) setState(() => _errorMessage = message);
     } finally {
-      isLoading = false;
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
