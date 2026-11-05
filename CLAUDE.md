@@ -9,7 +9,7 @@ GullyEats is a QR-based ordering platform for street food carts. It's a monorepo
 | Dir | Stack | Purpose |
 |---|---|---|
 | `backend/` | Node (CommonJS), Express 5, Mongoose, Socket.IO | Single API for all clients |
-| `frontend/` | Flutter (package `gullyeats`) | **Vendor onboarding** app: login, create a cart, set location, build the menu, generate the QR, manage staff |
+| `frontend/` | Flutter (package `gullyeats`) | **Onboarding** app, used by GullyEats staff (not vendors) to onboard a vendor: OTP login for the vendor's number, create or resume a cart, photo, location, menu, staff, QR poster |
 | `ordering/` | Flutter (package `ordering`) | **Vendor ordering** app: live orders, serve/paid toggles, sales charts, platform-fee payment via Razorpay |
 | `customer-app/` | React 19 + Vite 8 + Tailwind 4 + Redux Toolkit (React Compiler enabled) | Customer web app opened from a cart's QR code (`/c/:cartId/...`) |
 | `gullyeats-admin/` | React 18 + Vite 5 + Tailwind 3 + Redux Toolkit, Recharts, Leaflet | Super-admin dashboard |
@@ -62,7 +62,7 @@ Every client points at the deployed backend by default, so check these before te
 
 ## Flutter apps
 
-Both apps use the same structure: `lib/core/` (constants, routes, theme, widgets, utils) and `lib/features/<feature>/{models,providers,services,screens|presentation,widgets}`. State management uses `provider` with `ChangeNotifier`s that are registered in `main.dart`. Services make HTTP calls using `ApiConstants`. Tokens are stored in `shared_preferences`. Both apps are locked to portrait mode and use the Poppins font. In `frontend/`, screens are built on `core/widgets/base_screen.dart`, which caps content at 500px wide. With `expandToFullHeight: true` the child gets a bounded height, so it must scroll itself (a `ListView`, or a `Column` with `Spacer` wrapped in `FillOrScroll`). Only `ordering` uses `socket_io_client` (in `OrderProvider`) and `razorpay_flutter`.
+Both apps use the same structure: `lib/core/` (constants, routes, theme, widgets, utils) and `lib/features/<feature>/{models,providers,services,screens|presentation,widgets}`. State management uses `provider` with `ChangeNotifier`s that are registered in `main.dart`. Services make HTTP calls using `ApiConstants`. Tokens are stored in `shared_preferences`. Both apps are locked to portrait mode and use the Poppins font. In `frontend/`, screens are built on `core/widgets/base_screen.dart`, which caps content at 500px wide. With `expandToFullHeight: true` the child gets a bounded height, so it must scroll itself (a `ListView` or a `SingleChildScrollView`). Step screens put their main buttons in `AppFooter`, passed as `bottomNavigationBar`. **UI rules for both Flutter apps (tokens, layout, feedback, responsive and async rules, and a checklist for porting them to `ordering/`) are in `docs/ui-guidelines.md`.** Only `ordering` uses `socket_io_client` (in `OrderProvider`) and `razorpay_flutter`.
 
 ## Admin dashboard domain mapping (from gullyeats-admin/README.md)
 
