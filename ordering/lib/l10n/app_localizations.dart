@@ -1053,7 +1053,7 @@ abstract class AppLocalizations {
   /// No description provided for @itemPhoto.
   ///
   /// In en, this message translates to:
-  /// **'Item Photo'**
+  /// **'Item Photo (optional)'**
   String get itemPhoto;
 
   /// No description provided for @itemNameAndPriceRequired.

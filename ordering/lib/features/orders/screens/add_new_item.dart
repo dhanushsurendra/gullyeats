@@ -102,7 +102,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
           : null;
     });
 
-    if (_nameError == null && _priceError == null && _imageUrl.isNotEmpty) {
+    if (_nameError == null && _priceError == null) {
       try {
         MenuItemModel data = MenuItemModel.fromJson({
           "name": _nameController.text.trim(),
@@ -422,7 +422,9 @@ class _AddItemScreenState extends State<AddItemScreen> {
               AppGaps.w16,
               Expanded(
                 child: ElevatedButton(
-                  onPressed: !_photoUploaded || _isUploadingPhoto
+                  // The photo is optional, but one that was taken must be uploaded first.
+                  onPressed: _isUploadingPhoto ||
+                          (_capturedPhoto != null && !_photoUploaded)
                       ? null
                       : _handleSave,
                   style: ElevatedButton.styleFrom(

@@ -158,7 +158,7 @@
   "enterPriceInRupees": "விலையை ரூபாயில் உள்ளிடவும்.",
   "category": "வகை",
   "availability": "கிடைக்கும் நிலை",
-  "itemPhoto": "பொருளின் புகைப்படம்",
+  "itemPhoto": "பொருளின் புகைப்படம் (விருப்பத்தேர்வு)",
   "itemNameAndPriceRequired": "பொருளின் பெயரும் விலையும் தேவை.",
   "takeItemPhoto": "பொருளின் புகைப்படம் எடு",
   "uploadPhoto": "புகைப்படத்தைப் பதிவேற்று",

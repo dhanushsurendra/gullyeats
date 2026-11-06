@@ -511,7 +511,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get availability => 'Availability';
 
   @override
-  String get itemPhoto => 'Item Photo';
+  String get itemPhoto => 'Item Photo (optional)';
 
   @override
   String get itemNameAndPriceRequired => 'Item name and price are required.';

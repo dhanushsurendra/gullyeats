@@ -514,7 +514,7 @@ class AppLocalizationsKn extends AppLocalizations {
   String get availability => 'ಲಭ್ಯತೆ';
 
   @override
-  String get itemPhoto => 'ಐಟಂ ಫೋಟೋ';
+  String get itemPhoto => 'ಐಟಂ ಫೋಟೋ (ಐಚ್ಛಿಕ)';
 
   @override
   String get itemNameAndPriceRequired => 'ಐಟಂ ಹೆಸರು ಮತ್ತು ಬೆಲೆ ಅಗತ್ಯವಿದೆ.';

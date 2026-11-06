@@ -158,7 +158,7 @@
   "enterPriceInRupees": "ಬೆಲೆಯನ್ನು ರೂಪಾಯಿಗಳಲ್ಲಿ ನಮೂದಿಸಿ.",
   "category": "ವರ್ಗ",
   "availability": "ಲಭ್ಯತೆ",
-  "itemPhoto": "ಐಟಂ ಫೋಟೋ",
+  "itemPhoto": "ಐಟಂ ಫೋಟೋ (ಐಚ್ಛಿಕ)",
   "itemNameAndPriceRequired": "ಐಟಂ ಹೆಸರು ಮತ್ತು ಬೆಲೆ ಅಗತ್ಯವಿದೆ.",
   "takeItemPhoto": "ಐಟಂ ಫೋಟೋ ತೆಗೆಯಿರಿ",
   "uploadPhoto": "ಫೋಟೋ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ",

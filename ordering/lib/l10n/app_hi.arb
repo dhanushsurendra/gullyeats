@@ -158,7 +158,7 @@
   "enterPriceInRupees": "कीमत रुपयों में डालें।",
   "category": "श्रेणी",
   "availability": "उपलब्धता",
-  "itemPhoto": "आइटम की फ़ोटो",
+  "itemPhoto": "आइटम की फ़ोटो (ज़रूरी नहीं)",
   "itemNameAndPriceRequired": "आइटम का नाम और कीमत ज़रूरी हैं।",
   "takeItemPhoto": "आइटम की फ़ोटो लें",
   "uploadPhoto": "फ़ोटो अपलोड करें",

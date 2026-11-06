@@ -513,7 +513,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get availability => 'उपलब्धता';
 
   @override
-  String get itemPhoto => 'आइटम की फ़ोटो';
+  String get itemPhoto => 'आइटम की फ़ोटो (ज़रूरी नहीं)';
 
   @override
   String get itemNameAndPriceRequired => 'आइटम का नाम और कीमत ज़रूरी हैं।';

@@ -518,7 +518,7 @@ class AppLocalizationsTa extends AppLocalizations {
   String get availability => 'கிடைக்கும் நிலை';
 
   @override
-  String get itemPhoto => 'பொருளின் புகைப்படம்';
+  String get itemPhoto => 'பொருளின் புகைப்படம் (விருப்பத்தேர்வு)';
 
   @override
   String get itemNameAndPriceRequired => 'பொருளின் பெயரும் விலையும் தேவை.';

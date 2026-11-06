@@ -206,7 +206,7 @@
   "enterPriceInRupees": "Enter price in rupees.",
   "category": "Category",
   "availability": "Availability",
-  "itemPhoto": "Item Photo",
+  "itemPhoto": "Item Photo (optional)",
   "itemNameAndPriceRequired": "Item name and price are required.",
   "takeItemPhoto": "Take Item Photo",
   "uploadPhoto": "Upload Photo",
