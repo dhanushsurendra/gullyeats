@@ -28,6 +28,9 @@ const monthStart = (back = 0) => {
 const pct = (a, b) => (b ? +(((a - b) / b) * 100).toFixed(1) : null)
 const is = (s) => ({ $eq: ['$status', s] })
 const notCancelled = { $ne: ['$status', 'CANCELLED'] }
+// Money counts only orders the customer paid for (served orders were paid
+// first), the same rule as the vendor's sales report and fee billing.
+const paid = { $in: ['$status', ['PAID', 'SERVED']] }
 const cnt = (cond) => ({ $sum: { $cond: [cond, 1, 0] } })
 const sumIf = (cond, field) => ({ $sum: { $cond: [cond, field, 0] } })
 const hasLoc = (c) =>
@@ -54,9 +57,9 @@ async function stats(start, end) {
         _id: null,
         orders: { $sum: 1 },
         cancelled: cnt(is('CANCELLED')),
-        valid: cnt(notCancelled),
-        gmv: sumIf(notCancelled, '$totalPrice'),
-        fee: sumIf(notCancelled, '$platformFee'),
+        valid: cnt(paid),
+        gmv: sumIf(paid, '$totalPrice'),
+        fee: sumIf(paid, '$platformFee'),
       },
     },
   ])
@@ -585,7 +588,7 @@ async function buildSeries(period) {
 
         // Restaurant GMV
         // NOT GullyEats revenue.
-        gmv: sumIf(notCancelled, '$totalPrice'),
+        gmv: sumIf(paid, '$totalPrice'),
 
         pending: cnt(is('PENDING')),
 
@@ -1410,16 +1413,16 @@ exports.owners = asyncHandler(async (req, res) => {
         $group: {
           _id: '$cartId',
           orders: { $sum: 1 },
-          valid: cnt(notCancelled),
-          gmv: sumIf(notCancelled, '$totalPrice'),
+          valid: cnt(paid),
+          gmv: sumIf(paid, '$totalPrice'),
           g30: sumIf(
-            { $and: [notCancelled, { $gte: ['$createdAt', d30] }] },
+            { $and: [paid, { $gte: ['$createdAt', d30] }] },
             '$totalPrice',
           ),
           gPrev: sumIf(
             {
               $and: [
-                notCancelled,
+                paid,
                 { $gte: ['$createdAt', d60] },
                 { $lt: ['$createdAt', d30] },
               ],
@@ -1480,7 +1483,7 @@ exports.carts = asyncHandler(async (req, res) => {
           _id: '$cartId',
           last: { $max: '$createdAt' },
           orders: cnt({ $and: [notCancelled, isToday] }),
-          gmv: sumIf({ $and: [notCancelled, isToday] }, '$totalPrice'),
+          gmv: sumIf({ $and: [paid, isToday] }, '$totalPrice'),
           current: cnt({
             $and: [isToday, { $or: [is('PENDING'), is('PAID')] }],
           }),

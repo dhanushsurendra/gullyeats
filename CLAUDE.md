@@ -70,5 +70,5 @@ Both apps use the same structure: `lib/core/` (constants, routes, theme, widgets
 
 - Cart status: LIVE = `isOpen`. PAUSED = closed and `isActive === false`. ATTENTION = the cart has a PENDING platform-fee `Payment`. Anything else is OFFLINE.
 - Order status: PENDING = awaiting payment, PAID = preparing, SERVED, CANCELLED.
-- GMV = the sum of `totalPrice` over non-cancelled orders. Platform revenue = `platformFee`.
+- GMV = the sum of `totalPrice` over paid orders (`PAID` or `SERVED`). Platform revenue = their `platformFee`. Unpaid and cancelled orders count toward order totals only. The vendor sales report and fee billing use the same rule.
 - Orders have no star rating, so the feedback views show counts and rates instead.

@@ -86,3 +86,25 @@ test("the admin cookie works for writes only from the dashboard's origin", () =>
   assert.equal(run('POST', 'https://evil.example'), 401)
   assert.equal(run('POST'), 401)
 })
+
+test('admin GMV, fees and average order count only paid and served orders', async () => {
+  const Order = require('../models/Order')
+  const admin = require('../controllers/adminController')
+  const { call } = require('./helpers')
+  const now = new Date()
+  const o = (status, totalPrice) => ({
+    cartId, orderNumber: Math.random(), status, totalPrice, subtotal: totalPrice - 2,
+    platformFee: 2, orderItems: [], createdAt: now, orderDate: now,
+  })
+  await Order.collection.insertMany([
+    o('PAID', 62), o('SERVED', 102), o('PENDING', 500), o('CANCELLED', 900),
+  ])
+  const r = await call(admin.overview, { query: { range: 'today' }, user: { role: 'admin' } })
+  assert.equal(r.status, 200)
+  const find = (obj, key) =>
+    obj && typeof obj === 'object'
+      ? key in obj ? obj[key] : Object.values(obj).map((v) => find(v, key)).find((v) => v !== undefined)
+      : undefined
+  assert.equal(find(r.body, 'orderGmvRange'), 164)
+  assert.equal(find(find(r.body, 'aov'), 'value'), 82)
+})

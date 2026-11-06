@@ -25,6 +25,6 @@ Login: `admin@gullyeats.com` / `CoolStud*123` (client-side check, dummy token; s
 - Cart coordinates are read as `location.coordinates = [lat, lng]` (how your `updateCartLocation` stores them; GeoJSON normally uses [lng, lat]).
 - Cart status: LIVE = `isOpen`; PAUSED = closed and `isActive === false`; ATTENTION = has a PENDING platform-fee payment; otherwise OFFLINE.
 - Order status mapping: PENDING = awaiting payment, PAID = preparing, SERVED, CANCELLED.
-- GMV = sum of `totalPrice` for non-cancelled orders. Platform revenue = `platformFee`. `Payment` documents are owners paying GullyEats those fees.
+- GMV = sum of `totalPrice` for paid orders (PAID or SERVED). Platform revenue = their `platformFee`. `Payment` documents are owners paying GullyEats those fees.
 - Orders have no star rating, so the feedback card shows feedback count and rate instead of an average rating.
 
