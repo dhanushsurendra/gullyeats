@@ -348,5 +348,11 @@
   "sessionExpired": "ನಿಮ್ಮ ಲಾಗಿನ್ ಅವಧಿ ಮುಗಿದಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಲಾಗಿನ್ ಮಾಡಿ.",
   "checkInternet": "ನಿಮ್ಮ ಇಂಟರ್ನೆಟ್ ಸಂಪರ್ಕ ಪರಿಶೀಲಿಸಿ",
   "requestTimedOut": "ಸಮಯ ಮೀರಿದೆ. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ",
-  "somethingWentWrong": "ಏನೋ ತಪ್ಪಾಗಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ."
+  "somethingWentWrong": "ಏನೋ ತಪ್ಪಾಗಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
+  "newOrderAlert": "ಹೊಸ ಆರ್ಡರ್ #{number}",
+  "justNow": "ಈಗಷ್ಟೇ",
+  "minutesAgo": "{count} ನಿಮಿಷದ ಹಿಂದೆ",
+  "liveStatus": "ಲೈವ್",
+  "reconnecting": "ಮರುಸಂಪರ್ಕಿಸಲಾಗುತ್ತಿದೆ…",
+  "feePaidTitle": "ಪಾವತಿ ಆಯಿತು!"
 }

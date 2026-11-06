@@ -1,4 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
+import 'package:ordering/core/widgets/skeleton.dart';
 import 'package:ordering/core/error/app_exceptions.dart';
 import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
@@ -31,14 +36,44 @@ class _OrdersScreenState extends State<OrdersScreen> {
   bool _loadFailed = false;
   String selectedTab = "Active";
   final tabs = ["All", "Active", "QR Orders", "Manual", "Stock"];
+  // Refreshes the cards' "x min ago".
+  Timer? _clock;
+  OrderProvider? _orderProvider;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_isInit) {
       _isInit = true;
+      _orderProvider = context.read<OrderProvider>()
+        ..incomingOrder.addListener(_onIncomingOrder);
+      _clock = Timer.periodic(const Duration(seconds: 30), (_) {
+        if (mounted) setState(() {});
+      });
       _loadOrders();
     }
+  }
+
+  @override
+  void dispose() {
+    _clock?.cancel();
+    _orderProvider?.incomingOrder.removeListener(_onIncomingOrder);
+    super.dispose();
+  }
+
+  /// A QR order arrived: buzz, chime and say so, whichever tab is open.
+  void _onIncomingOrder() {
+    final order = _orderProvider?.incomingOrder.value;
+    if (order == null || !mounted) return;
+    HapticFeedback.vibrate();
+    // The phone's own notification sound. Flutter's SystemSound has no
+    // alert sound on phones. Errors are ignored: the vibration still runs.
+    FlutterRingtonePlayer().playNotification().catchError((_) {});
+    AppSnackBar.show(
+      context,
+      isInfo: true,
+      message: context.l10n.newOrderAlert(order.orderNumber),
+    );
   }
 
   Future<void> _loadOrders() async {
@@ -285,7 +320,10 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
     Widget orderList() {
       if (provider.isOrdersLoading && provider.orders.isEmpty) {
-        return const Center(child: CircularProgressIndicator());
+        return const Padding(
+          padding: EdgeInsets.only(top: 8),
+          child: Skeleton(heights: [150, 150, 150]),
+        );
       }
       return RefreshIndicator(
         color: AppColors.primary,
@@ -305,8 +343,11 @@ class _OrdersScreenState extends State<OrdersScreen> {
             else
               for (final order in filteredOrders)
                 Padding(
+                  // Keyed, so a new order on top doesn't reuse the cards below.
+                  key: ValueKey(order.id),
                   padding: const EdgeInsets.only(bottom: 12),
                   child: OrderCard(
+                    isFresh: provider.isFresh(order.id),
                     onTap: order.status == 'CANCELLED'
                         ? null
                         : () => showModalBottomSheet(
@@ -352,9 +393,18 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 ],
               ),
               AppGaps.h24,
-              Text(
-                getOrdersTitle(selectedTab, filteredOrders),
-                style: AppTextStyles.heading1,
+              // Wrap: the live badge drops below a long translated title.
+              Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 12,
+                runSpacing: 4,
+                children: [
+                  Text(
+                    getOrdersTitle(selectedTab, filteredOrders),
+                    style: AppTextStyles.heading1,
+                  ),
+                  _LiveBadge(isLive: provider.isLive),
+                ],
               ),
             ],
           ),
@@ -417,6 +467,103 @@ class _OrdersScreenState extends State<OrdersScreen> {
             },
             textAlign: TextAlign.center,
             style: AppTextStyles.body.copyWith(color: AppColors.grey400),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// "● Live" (pulsing green) while new orders stream in, grey
+/// "Reconnecting…" when the connection drops.
+class _LiveBadge extends StatefulWidget {
+  final bool isLive;
+
+  const _LiveBadge({required this.isLive});
+
+  @override
+  State<_LiveBadge> createState() => _LiveBadgeState();
+}
+
+class _LiveBadgeState extends State<_LiveBadge>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1200),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _syncPulse();
+  }
+
+  @override
+  void didUpdateWidget(_LiveBadge oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _syncPulse();
+  }
+
+  void _syncPulse() {
+    if (widget.isLive) {
+      if (!_pulse.isAnimating) _pulse.repeat();
+    } else {
+      _pulse.reset();
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = widget.isLive ? AppColors.success : AppColors.grey400;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 14,
+            height: 14,
+            child: AnimatedBuilder(
+              animation: _pulse,
+              builder: (context, _) => Stack(
+                alignment: Alignment.center,
+                children: [
+                  // The ring that grows and fades around the dot.
+                  Container(
+                    width: 6 + 8 * _pulse.value,
+                    height: 6 + 8 * _pulse.value,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: color.withValues(alpha: 0.4 * (1 - _pulse.value)),
+                    ),
+                  ),
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          AppGaps.w4,
+          Text(
+            widget.isLive ? context.l10n.liveStatus : context.l10n.reconnecting,
+            style: AppTextStyles.caption.copyWith(
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),

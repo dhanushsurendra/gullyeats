@@ -82,4 +82,70 @@ void main() {
       50,
     );
   });
+
+  group('reload after reconnect', () {
+    Map<String, dynamic> order(String id, String number) => {
+      '_id': id,
+      'orderNumber': number,
+      'status': 'PENDING',
+      'totalPrice': 40,
+      'orderItems': [],
+    };
+
+    setUp(() => OrderProvider.liveUpdates = false);
+
+    // The first load, as the Orders screen does it.
+    Future<OrderProvider> loaded(List<Map<String, dynamic>> serverOrders) async {
+      final provider = OrderProvider();
+      final client = MockClient(
+        (request) async => http.Response(jsonEncode({'data': serverOrders}), 200),
+      );
+      await http.runWithClient(
+        () => provider.loadOrders('token', 'cart1'),
+        () => client,
+      );
+      return provider;
+    }
+
+    Future<void> reload(
+      OrderProvider provider,
+      List<Map<String, dynamic>> serverOrders, {
+      bool Function()? isCurrent,
+    }) {
+      final client = MockClient(
+        (request) async => http.Response(jsonEncode({'data': serverOrders}), 200),
+      );
+      return http.runWithClient(
+        () => provider.reloadAfterReconnect('token', 'cart1', isCurrent: isCurrent),
+        () => client,
+      );
+    }
+
+    test('adds missed orders, highlights them and alerts the newest', () async {
+      final provider = await loaded([order('a', '101')]);
+
+      await reload(provider, [order('c', '103'), order('b', '102'), order('a', '101')]);
+
+      expect(provider.orders.map((o) => o.id), ['c', 'b', 'a']);
+      expect(provider.isFresh('c') && provider.isFresh('b'), isTrue);
+      expect(provider.isFresh('a'), isFalse);
+      expect(provider.incomingOrder.value?.id, 'c');
+    });
+
+    test('no missed orders: no alert', () async {
+      final provider = await loaded([order('a', '101')]);
+
+      await reload(provider, [order('a', '101')]);
+
+      expect(provider.incomingOrder.value, isNull);
+    });
+
+    test('ignores the result once the vendor switched carts', () async {
+      final provider = OrderProvider();
+
+      await reload(provider, [order('a', '101')], isCurrent: () => false);
+
+      expect(provider.orders, isEmpty);
+    });
+  });
 }

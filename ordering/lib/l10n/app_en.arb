@@ -531,5 +531,25 @@
   "sessionExpired": "Your login has expired. Please log in again.",
   "checkInternet": "Check your internet connection",
   "requestTimedOut": "Request timed out. Try again",
-  "somethingWentWrong": "Something went wrong. Please try again."
+  "somethingWentWrong": "Something went wrong. Please try again.",
+  "newOrderAlert": "New order #{number}",
+  "@newOrderAlert": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "justNow": "Just now",
+  "minutesAgo": "{count} min ago",
+  "@minutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "liveStatus": "Live",
+  "reconnecting": "Reconnecting…",
+  "feePaidTitle": "Payment done!"
 }

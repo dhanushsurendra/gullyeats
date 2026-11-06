@@ -101,21 +101,32 @@ class AppButton extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(borderRadius),
             side: borderColor != null
-                ? BorderSide(color: borderColor!)
+                ? BorderSide(
+                    color: isDisabled && !isLoading
+                        ? AppColors.grey300
+                        : borderColor!,
+                  )
                 : BorderSide.none,
           ),
         ),
-        child: _buildChild(),
+        // Disabled: the theme's grey text, not the custom color.
+        child: _buildChild(textColor: isDisabled ? null : textColor),
       ),
     );
   }
 
-  Widget _buildChild({bool isDotted = false}) {
+  Widget _buildChild({bool isDotted = false, Color? textColor}) {
     if (isLoading) {
-      return const SizedBox(
+      return SizedBox(
         height: 20,
         width: 20,
-        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+        // On a white button a white spinner would be invisible.
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: backgroundColor == AppColors.white
+              ? AppColors.primary
+              : Colors.white,
+        ),
       );
     }
 

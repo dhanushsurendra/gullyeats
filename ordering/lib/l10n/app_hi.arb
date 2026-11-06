@@ -348,5 +348,11 @@
   "sessionExpired": "आपका लॉगिन खत्म हो गया है। कृपया फिर से लॉगिन करें।",
   "checkInternet": "अपना इंटरनेट कनेक्शन जाँचें",
   "requestTimedOut": "समय खत्म हो गया। फिर से कोशिश करें",
-  "somethingWentWrong": "कुछ गड़बड़ हो गई। कृपया फिर से कोशिश करें।"
+  "somethingWentWrong": "कुछ गड़बड़ हो गई। कृपया फिर से कोशिश करें।",
+  "newOrderAlert": "नया ऑर्डर #{number}",
+  "justNow": "अभी",
+  "minutesAgo": "{count} मिनट पहले",
+  "liveStatus": "लाइव",
+  "reconnecting": "फिर से जुड़ रहा है…",
+  "feePaidTitle": "भुगतान हो गया!"
 }

@@ -37,6 +37,9 @@ class _OrdersOverviewScreenState extends State<OrdersOverviewScreen> {
 
   String? _selectedPreset = 'today';
 
+  // A server status code ("PAID"), or null for every order.
+  String? _statusFilter;
+
   static const List<Map<String, String>> _presets = [
     {'key': 'today'},
     {'key': 'yesterday'},
@@ -288,7 +291,12 @@ class _OrdersOverviewScreenState extends State<OrdersOverviewScreen> {
               onPreset: _applyPreset,
             ),
             AppGaps.h24,
-            _ordersContent(provider, orders),
+            _ordersContent(
+              provider,
+              _statusFilter == null
+                  ? orders
+                  : orders.where((o) => o.status == _statusFilter).toList(),
+            ),
           ],
         ),
       ),
@@ -373,10 +381,10 @@ class _OrdersOverviewScreenState extends State<OrdersOverviewScreen> {
           spacing: 8,
           runSpacing: 8,
           children: [
-            _statusPill(context.l10n.unpaid, unpaidOrders, AppColors.warning),
-            _statusPill(context.l10n.paid, paidOrders, AppColors.primary),
-            _statusPill(context.l10n.served, servedOrders, AppColors.success),
-            _statusPill(context.l10n.cancelled, cancelledOrders, AppColors.error),
+            _statusPill('PENDING', context.l10n.unpaid, unpaidOrders, AppColors.warning),
+            _statusPill('PAID', context.l10n.paid, paidOrders, AppColors.primary),
+            _statusPill('SERVED', context.l10n.served, servedOrders, AppColors.success),
+            _statusPill('CANCELLED', context.l10n.cancelled, cancelledOrders, AppColors.error),
           ],
         ),
       ],
@@ -387,18 +395,31 @@ class _OrdersOverviewScreenState extends State<OrdersOverviewScreen> {
   // STATUS PILL
   // ==========================================================================
 
-  Widget _statusPill(String label, int count, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
+  /// Tapping a pill shows only that status; tapping it again shows all.
+  Widget _statusPill(String status, String label, int count, Color color) {
+    final selected = _statusFilter == status;
+
+    return Semantics(
+      button: true,
+      selected: selected,
+      child: InkWell(
         borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        '$label $count',
-        style: AppTextStyles.caption.copyWith(
-          color: color,
-          fontWeight: FontWeight.w700,
+        onTap: () =>
+            setState(() => _statusFilter = selected ? null : status),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: selected ? color : color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            '$label $count',
+            style: AppTextStyles.caption.copyWith(
+              color: selected ? AppColors.white : color,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ),
       ),
     );

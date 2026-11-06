@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:ordering/core/routes/app_routes.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:ordering/core/theme/app_colors.dart';
@@ -154,6 +155,55 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
     }
   }
 
+  /// A tick that pops in, then closes itself after a moment.
+  Future<void> _showPaidDialog() {
+    HapticFeedback.heavyImpact();
+    final dialog = showDialog<void>(
+      context: context,
+      // Closed only by the timer below, so that pop never hits this screen.
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0, end: 1),
+                duration: const Duration(milliseconds: 600),
+                curve: Curves.elasticOut,
+                builder: (context, scale, child) =>
+                    Transform.scale(scale: scale, child: child),
+                child: const Icon(
+                  Icons.check_circle,
+                  color: AppColors.success,
+                  size: 72,
+                ),
+              ),
+              AppGaps.h16,
+              Text(
+                context.l10n.feePaidTitle,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.heading2,
+              ),
+              AppGaps.h8,
+              Text(
+                context.l10n.paymentVerifiedUnlocked,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.body.copyWith(color: AppColors.grey400),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    Future.delayed(const Duration(milliseconds: 1800), () {
+      if (mounted) Navigator.of(context, rootNavigator: true).maybePop();
+    });
+    return dialog;
+  }
+
   Future<void> _handlePaymentSuccess(PaymentSuccessResponse response) async {
     if (!mounted) return;
 
@@ -200,10 +250,8 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
       if (!mounted) return;
 
       if (verified) {
-        AppSnackBar.show(
-          context,
-          message: context.l10n.paymentVerifiedUnlocked,
-        );
+        await _showPaidDialog();
+        if (!mounted) return;
 
         Navigator.pushNamedAndRemoveUntil(context, AppRoutes.home, (_) => false);
       } else {

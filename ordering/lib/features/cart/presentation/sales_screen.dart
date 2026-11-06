@@ -14,6 +14,7 @@ import 'package:ordering/l10n/l10n.dart';
 import 'package:ordering/core/widgets/base_screen.dart';
 import 'package:ordering/core/widgets/app_card.dart';
 import 'package:ordering/core/widgets/list_message.dart';
+import 'package:ordering/core/widgets/skeleton.dart';
 import 'package:ordering/core/widgets/date_range_filter.dart';
 import 'package:ordering/core/utils/format_price.dart';
 import 'package:ordering/features/cart/widgets/cart_selector.dart';
@@ -211,10 +212,7 @@ class _SalesScreenState extends State<SalesScreen> {
             if (data == null && _error != null)
               ListMessage.failed(message: l10n.couldntLoadSales, onRetry: _loadSales)
             else if (data == null)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 48),
-                child: Center(child: CircularProgressIndicator()),
-              )
+              const Skeleton(heights: [170, 80, 200])
             else
               Stack(
                 children: [
@@ -449,10 +447,10 @@ class _SalesScreenState extends State<SalesScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _heroStat(context.l10n.net, _money(data.netRevenue)),
-              _heroStat(context.l10n.subtotal, _money(data.subtotalRevenue)),
-              _heroStat(context.l10n.platformFee, _money(data.platformFeeRevenue)),
-              _heroStat(context.l10n.parcel, _money(data.parcelRevenue)),
+              _heroStat(context.l10n.net, data.netRevenue),
+              _heroStat(context.l10n.subtotal, data.subtotalRevenue),
+              _heroStat(context.l10n.platformFee, data.platformFeeRevenue),
+              _heroStat(context.l10n.parcel, data.parcelRevenue),
             ],
           ),
         ],
@@ -460,18 +458,23 @@ class _SalesScreenState extends State<SalesScreen> {
     );
   }
 
-  Widget _heroStat(String label, String value) {
+  Widget _heroStat(String label, num amount) {
     return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           FittedBox(
             fit: BoxFit.scaleDown,
-            child: Text(
-              value,
-              style: AppTextStyles.body.copyWith(
-                color: AppColors.white,
-                fontWeight: FontWeight.w700,
+            // Counts up with the total above.
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0, end: amount.toDouble()),
+              duration: const Duration(milliseconds: 800),
+              builder: (context, value, _) => Text(
+                _money(value),
+                style: AppTextStyles.body.copyWith(
+                  color: AppColors.white,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ),

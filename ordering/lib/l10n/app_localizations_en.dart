@@ -1151,4 +1151,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get somethingWentWrong => 'Something went wrong. Please try again.';
+
+  @override
+  String newOrderAlert(String number) {
+    return 'New order #$number';
+  }
+
+  @override
+  String get justNow => 'Just now';
+
+  @override
+  String minutesAgo(int count) {
+    return '$count min ago';
+  }
+
+  @override
+  String get liveStatus => 'Live';
+
+  @override
+  String get reconnecting => 'Reconnecting…';
+
+  @override
+  String get feePaidTitle => 'Payment done!';
 }

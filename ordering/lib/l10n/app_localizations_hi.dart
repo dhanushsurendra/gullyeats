@@ -1150,4 +1150,26 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get somethingWentWrong => 'कुछ गड़बड़ हो गई। कृपया फिर से कोशिश करें।';
+
+  @override
+  String newOrderAlert(String number) {
+    return 'नया ऑर्डर #$number';
+  }
+
+  @override
+  String get justNow => 'अभी';
+
+  @override
+  String minutesAgo(int count) {
+    return '$count मिनट पहले';
+  }
+
+  @override
+  String get liveStatus => 'लाइव';
+
+  @override
+  String get reconnecting => 'फिर से जुड़ रहा है…';
+
+  @override
+  String get feePaidTitle => 'भुगतान हो गया!';
 }

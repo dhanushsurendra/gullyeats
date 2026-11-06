@@ -1165,4 +1165,26 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get somethingWentWrong => 'ஏதோ தவறு நடந்தது. மீண்டும் முயற்சிக்கவும்.';
+
+  @override
+  String newOrderAlert(String number) {
+    return 'புதிய ஆர்டர் #$number';
+  }
+
+  @override
+  String get justNow => 'இப்போது';
+
+  @override
+  String minutesAgo(int count) {
+    return '$count நிமிடம் முன்பு';
+  }
+
+  @override
+  String get liveStatus => 'லைவ்';
+
+  @override
+  String get reconnecting => 'மீண்டும் இணைக்கிறது…';
+
+  @override
+  String get feePaidTitle => 'பணம் செலுத்தப்பட்டது!';
 }

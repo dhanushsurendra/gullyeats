@@ -2195,6 +2195,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Something went wrong. Please try again.'**
   String get somethingWentWrong;
+
+  /// No description provided for @newOrderAlert.
+  ///
+  /// In en, this message translates to:
+  /// **'New order #{number}'**
+  String newOrderAlert(String number);
+
+  /// No description provided for @justNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Just now'**
+  String get justNow;
+
+  /// No description provided for @minutesAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} min ago'**
+  String minutesAgo(int count);
+
+  /// No description provided for @liveStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Live'**
+  String get liveStatus;
+
+  /// No description provided for @reconnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnecting…'**
+  String get reconnecting;
+
+  /// No description provided for @feePaidTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment done!'**
+  String get feePaidTitle;
 }
 
 class _AppLocalizationsDelegate

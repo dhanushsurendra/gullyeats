@@ -515,26 +515,35 @@ class _AddNewOrderState extends State<AddNewOrder> {
           ),
 
           AppGaps.w8,
-          Row(
-            children: [
-              _qtyBtn(
-                Icons.remove,
-                count > 0 ? () => provider.removeItem(item) : null,
-                false,
-              ),
-
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Text(
-                  "$count",
-                  style: AppTextStyles.heading3.copyWith(
-                    color: AppColors.black,
+          // Just "+" until the item is in the order, then the full stepper.
+          AnimatedSize(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOutCubic,
+            alignment: Alignment.centerRight,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (count > 0) ...[
+                  _qtyBtn(Icons.remove, () => provider.removeItem(item), false),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      transitionBuilder: (child, animation) =>
+                          ScaleTransition(scale: animation, child: child),
+                      child: Text(
+                        "$count",
+                        key: ValueKey(count),
+                        style: AppTextStyles.heading3.copyWith(
+                          color: AppColors.black,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-
-              _qtyBtn(Icons.add, () => provider.addItem(item), true),
-            ],
+                ],
+                _qtyBtn(Icons.add, () => provider.addItem(item), true),
+              ],
+            ),
           ),
         ],
       ),
@@ -548,7 +557,12 @@ class _AddNewOrderState extends State<AddNewOrder> {
   Widget _qtyBtn(IconData icon, VoidCallback? onTap, bool isAdd) {
     return InkWell(
       customBorder: const CircleBorder(),
-      onTap: onTap,
+      onTap: onTap == null
+          ? null
+          : () {
+              HapticFeedback.selectionClick();
+              onTap();
+            },
       child: Container(
         width: 36,
         height: 36,

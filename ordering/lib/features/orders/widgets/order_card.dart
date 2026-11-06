@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
 import 'package:ordering/core/theme/app_padding.dart';
@@ -15,6 +17,9 @@ class OrderCard extends StatefulWidget {
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
 
+  /// Just arrived live: the card slides in and glows briefly.
+  final bool isFresh;
+
   const OrderCard({
     super.key,
     required this.order,
@@ -22,6 +27,7 @@ class OrderCard extends StatefulWidget {
     required this.onTap,
     required this.onDelete,
     required this.onMarkPaid,
+    this.isFresh = false,
   });
 
   @override
@@ -29,9 +35,17 @@ class OrderCard extends StatefulWidget {
 }
 
 class _OrderCardState extends State<OrderCard> {
-  @override
-  void initState() {
-    super.initState();
+  // Shows a tick in place of SERVE / MARK PAID while the request runs.
+  bool _done = false;
+
+  void _confirm(VoidCallback action) {
+    HapticFeedback.mediumImpact();
+    setState(() => _done = true);
+    action();
+    // If the request fails the card stays, so bring the button back.
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _done = false);
+    });
   }
 
   Future<bool?> _showDeleteDialog(BuildContext context) {
@@ -107,20 +121,53 @@ class _OrderCardState extends State<OrderCard> {
     final isServed = widget.order.status == "SERVED";
     final isCancelled = widget.order.status == "CANCELLED";
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: widget.onTap,
-      child: AppCard(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+    final isActive =
+        widget.order.status == "PENDING" || widget.order.status == "PAID";
+
+    return TweenAnimationBuilder<double>(
+      // 1 → 0: the fresh-order glow fades out.
+      tween: Tween(begin: widget.isFresh ? 1 : 0, end: 0),
+      duration: const Duration(seconds: 4),
+      curve: Curves.easeIn,
+      builder: (context, glow, child) => TweenAnimationBuilder<double>(
+        tween: Tween(begin: widget.isFresh ? 1 : 0, end: 0),
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOutCubic,
+        builder: (context, slide, _) => Opacity(
+          opacity: 1 - slide,
+          child: Transform.translate(
+            offset: Offset(0, -24 * slide),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: widget.onTap,
+              child: AppCard(
+                padding: const EdgeInsets.all(16),
+                color: Color.lerp(AppColors.white, AppColors.lightOrange, glow),
+                border: Border.all(
+                  color: Color.lerp(AppColors.grey200, AppColors.primary, glow)!,
+                  width: 1 + glow,
+                ),
+                child: child!,
+              ),
+            ),
+          ),
+        ),
+      ),
+      child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    "#${widget.order.orderNumber}",
-                    style: AppTextStyles.heading2,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "#${widget.order.orderNumber}",
+                        style: AppTextStyles.heading2,
+                      ),
+                      if (isActive) _waitTime(),
+                    ],
                   ),
                 ),
                 AppGaps.w8,
@@ -128,13 +175,31 @@ class _OrderCardState extends State<OrderCard> {
                 // the order number.
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 150),
-                  child: isCancelled
-                      ? _statusChip(l10n.cancelled.toUpperCase(), false)
-                      : isServed
-                      ? _statusChip(l10n.served.toUpperCase(), true)
-                      : isPaid
-                      ? _actionButton(l10n.serve.toUpperCase(), widget.onServe)
-                      : _outlineButton(l10n.markPaidCaps, widget.onMarkPaid),
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 250),
+                    transitionBuilder: (child, animation) =>
+                        ScaleTransition(scale: animation, child: child),
+                    child: isCancelled
+                        ? _statusChip(l10n.cancelled.toUpperCase(), false)
+                        : isServed
+                        ? _statusChip(l10n.served.toUpperCase(), true)
+                        : _done
+                        ? const Icon(
+                            Icons.check_circle,
+                            key: ValueKey('done'),
+                            color: AppColors.success,
+                            size: 36,
+                          )
+                        : isPaid
+                        ? _actionButton(
+                            l10n.serve.toUpperCase(),
+                            () => _confirm(widget.onServe),
+                          )
+                        : _outlineButton(
+                            l10n.markPaidCaps,
+                            () => _confirm(widget.onMarkPaid),
+                          ),
+                  ),
                 ),
               ],
             ),
@@ -198,6 +263,44 @@ class _OrderCardState extends State<OrderCard> {
             ],
           ],
         ),
+    );
+  }
+
+  /// How long the customer has waited: grey, then amber after 5 minutes and
+  /// red after 10. Older than an hour shows the clock time instead.
+  Widget _waitTime() {
+    final placed = widget.order.createdAt ?? widget.order.orderDate;
+    if (placed == null) return const SizedBox.shrink();
+
+    final minutes = DateTime.now().difference(placed).inMinutes;
+    final color = minutes >= 10
+        ? AppColors.error
+        : minutes >= 5
+        ? AppColors.warning
+        : AppColors.grey400;
+    final locale = Localizations.localeOf(context).languageCode;
+    final label = minutes < 1
+        ? context.l10n.justNow
+        : minutes < 60
+        ? context.l10n.minutesAgo(minutes)
+        : DateFormat.jm(locale).format(placed.toLocal());
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 2),
+      child: Row(
+        children: [
+          Icon(Icons.schedule, size: 14, color: color),
+          AppGaps.w4,
+          Flexible(
+            child: Text(
+              label,
+              style: AppTextStyles.caption.copyWith(
+                color: color,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

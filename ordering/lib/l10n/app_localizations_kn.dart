@@ -1152,4 +1152,26 @@ class AppLocalizationsKn extends AppLocalizations {
 
   @override
   String get somethingWentWrong => 'ಏನೋ ತಪ್ಪಾಗಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.';
+
+  @override
+  String newOrderAlert(String number) {
+    return 'ಹೊಸ ಆರ್ಡರ್ #$number';
+  }
+
+  @override
+  String get justNow => 'ಈಗಷ್ಟೇ';
+
+  @override
+  String minutesAgo(int count) {
+    return '$count ನಿಮಿಷದ ಹಿಂದೆ';
+  }
+
+  @override
+  String get liveStatus => 'ಲೈವ್';
+
+  @override
+  String get reconnecting => 'ಮರುಸಂಪರ್ಕಿಸಲಾಗುತ್ತಿದೆ…';
+
+  @override
+  String get feePaidTitle => 'ಪಾವತಿ ಆಯಿತು!';
 }

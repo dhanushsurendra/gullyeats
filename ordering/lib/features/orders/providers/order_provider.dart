@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:ordering/core/constants/api_constants.dart';
 import 'package:ordering/features/orders/models/menu_item_model.dart';
@@ -75,6 +77,27 @@ class OrderProvider with ChangeNotifier {
 
   socket_io.Socket? _socket;
 
+  StreamSubscription<List<ConnectivityResult>>? _network;
+
+  bool _isLive = false;
+
+  /// True while the live-order connection is up.
+  bool get isLive => _isLive;
+
+  /// The latest order that arrived live, for the screen's alert.
+  final ValueNotifier<OrderModel?> incomingOrder = ValueNotifier(null);
+
+  // Orders that just arrived; their cards glow for a few seconds.
+  final Set<String> _freshIds = {};
+
+  bool isFresh(String orderId) => _freshIds.contains(orderId);
+
+  void _setLive(bool value) {
+    if (_isLive == value) return;
+    _isLive = value;
+    notifyListeners();
+  }
+
   /// Off in widget tests, which have no server to connect to.
   @visibleForTesting
   static bool liveUpdates = true;
@@ -100,7 +123,7 @@ class OrderProvider with ChangeNotifier {
     }
   }
 
-  void _addOrUpdateOrder(dynamic data) {
+  void _addOrUpdateOrder(dynamic data, {bool isNew = false}) {
     final updatedOrder = OrderModel.fromJson(data);
 
     final existingIndex = _orders.indexWhere(
@@ -110,6 +133,14 @@ class OrderProvider with ChangeNotifier {
     if (existingIndex == -1) {
       // New order → top of the newest-first list.
       _orders.insert(0, updatedOrder);
+
+      if (isNew) {
+        _freshIds.add(updatedOrder.id);
+        incomingOrder.value = updatedOrder;
+        Future.delayed(const Duration(seconds: 6), () {
+          if (_freshIds.remove(updatedOrder.id)) notifyListeners();
+        });
+      }
     } else {
       // Order already exists → update it.
       _orders[existingIndex] = updatedOrder;
@@ -137,17 +168,49 @@ class OrderProvider with ChangeNotifier {
           .build(),
     );
 
-    _socket!.connect();
+    final socket = _socket!;
+    var connectedBefore = false;
 
-    _socket!.onConnect((_) {
+    socket.connect();
+
+    socket.onConnect((_) {
       debugPrint('Connected to Socket.io');
 
-      _socket!.emit('join_vendor', cartId);
+      socket.emit('join_vendor', cartId);
+      _setLive(true);
+
+      // Orders placed while the connection was down never reached us.
+      if (connectedBefore) {
+        reloadAfterReconnect(token, cartId, isCurrent: () => _socket == socket);
+      }
+      connectedBefore = true;
     });
+
+    // The socket only notices a dead connection after a missed heartbeat
+    // (up to ~45s), so a short outage can pass unseen and its orders are
+    // lost. Reconnect as soon as the phone is back online instead.
+    var wentOffline = false;
+    _network?.cancel();
+    _network = Connectivity().onConnectivityChanged.listen((results) {
+      if (results.contains(ConnectivityResult.none)) {
+        wentOffline = true;
+        _setLive(false);
+      } else if (wentOffline) {
+        wentOffline = false;
+        socket
+          ..disconnect()
+          ..connect();
+      }
+    }, onError: (Object e) {
+      // Without network events the socket's own heartbeat still reconnects.
+      debugPrint('Network watch unavailable: $e');
+    });
+
+    _socket!.onConnectError((_) => _setLive(false));
 
     // New order
     _socket!.on('new_order_received', (data) {
-      _addOrUpdateOrder(data);
+      _addOrUpdateOrder(data, isNew: true);
     });
 
     // Existing order updated
@@ -160,9 +223,45 @@ class OrderProvider with ChangeNotifier {
       _addOrUpdateOrder(data);
     });
 
-    _socket!.onDisconnect(
-      (_) => debugPrint('Disconnected from Socket.io'),
-    );
+    _socket!.onDisconnect((_) {
+      debugPrint('Disconnected from Socket.io');
+      _setLive(false);
+    });
+  }
+
+  /// Re-fetches today's orders after the live connection comes back. Orders
+  /// that arrived meanwhile glow, and the newest one raises the alert.
+  /// [isCurrent] is false once the vendor switched carts mid-request.
+  @visibleForTesting
+  Future<void> reloadAfterReconnect(
+    String token,
+    String cartId, {
+    bool Function()? isCurrent,
+  }) async {
+    final List<OrderModel> fetched;
+    try {
+      fetched = await _orderService.fetchOrders(token, cartId);
+    } catch (e) {
+      // The list stays as it was; pull-to-refresh still works.
+      debugPrint('Reload after reconnect failed: $e');
+      return;
+    }
+    if (isCurrent != null && !isCurrent()) return;
+
+    final known = {for (final order in _orders) order.id};
+    final missed = fetched.where((order) => !known.contains(order.id)).toList();
+    _orders = fetched;
+
+    for (final order in missed) {
+      _freshIds.add(order.id);
+      Future.delayed(const Duration(seconds: 6), () {
+        if (_freshIds.remove(order.id)) notifyListeners();
+      });
+    }
+    // The list is newest first.
+    if (missed.isNotEmpty) incomingOrder.value = missed.first;
+
+    notifyListeners();
   }
 
   // ---------------------------------------------------------------------------
@@ -609,6 +708,11 @@ class OrderProvider with ChangeNotifier {
     // Socket
     _socket?.dispose();
     _socket = null;
+    _network?.cancel();
+    _network = null;
+    _isLive = false;
+    _freshIds.clear();
+    incomingOrder.value = null;
 
     notifyListeners();
   }
@@ -620,6 +724,8 @@ class OrderProvider with ChangeNotifier {
   @override
   void dispose() {
     _socket?.dispose();
+    _network?.cancel();
+    incomingOrder.dispose();
 
     super.dispose();
   }
