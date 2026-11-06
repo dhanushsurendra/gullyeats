@@ -112,14 +112,29 @@ export default function Menu() {
 
   const save = async () => {
     // From the draft, not the menu: keeps ordered items that have left the menu.
-    const orderItems = Object.entries(draft).map(([menuItemId, quantity]) => ({ menuItemId, quantity }))
+    // Names, prices and totals are only for backends deployed before the
+    // server priced orders itself (see CustomerCart).
+    const orderItems = Object.entries(draft).map(([menuItemId, quantity]) => {
+      const known = order.orderItems.find((i) => i.menuItemId === menuItemId) || menuItems.find((m) => m._id === menuItemId)
+      return { menuItemId, name: known?.name, price: known?.price, quantity, total: (known?.price || 0) * quantity }
+    })
     if (!orderItems.length) {
       setSaveError('Your order needs at least one item. To cancel it, go back to your order.')
       return
     }
+    const parcelCharge = Number(order.parcelCharge || 0)
     setSaving(true)
     try {
-      await api(`/orders/update-order/${orderId}`, { method: 'PUT', body: { orderItems } })
+      await api(`/orders/update-order/${orderId}`, {
+        method: 'PUT',
+        body: {
+          orderItems,
+          subtotal: total,
+          platformFee: PLATFORM_FEE,
+          parcelCharge,
+          totalPrice: total + PLATFORM_FEE + parcelCharge,
+        },
+      })
       backToOrder()
     } catch (e) {
       setSaveError(e.message)

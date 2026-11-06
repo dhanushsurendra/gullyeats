@@ -40,11 +40,25 @@ export default function CustomerCart() {
     setPlacing(true)
     setError('')
     try {
+      // The server prices the order itself; names, prices and totals are only
+      // for backends deployed before that, which store what they're sent.
       const order = await api('/orders/create-order', {
         method: 'POST',
         body: {
           cartId,
-          orderItems: items.map((item) => ({ menuItemId: item._id, quantity: basket[item._id] })),
+          orderItems: items.map((item) => ({
+            menuItemId: item._id,
+            name: item.name,
+            price: item.price,
+            quantity: basket[item._id],
+            total: item.price * basket[item._id],
+          })),
+          status: 'PENDING',
+          orderType: 'QR',
+          subtotal,
+          parcelCharge: 0,
+          platformFee: PLATFORM_FEE,
+          totalPrice: subtotal + PLATFORM_FEE,
           phoneNumber: phone || null,
         },
       })
