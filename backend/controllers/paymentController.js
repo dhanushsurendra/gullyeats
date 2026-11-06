@@ -2,8 +2,7 @@ const crypto = require('crypto')
 const Razorpay = require('razorpay')
 const asyncHandler = require('../utils/asyncHandler')
 const Payment = require('../models/Payment')
-const Order = require('../models/Order')
-const Cart = require('../models/Cart')
+const { findManagedCart } = require('../utils/cartAccess')
 const {
   getCartPaymentStatus,
   getBillingDate,
@@ -53,12 +52,16 @@ function getAuthenticatedUserId(req) {
   return req.user?._id
 }
 
-async function getOwnedCart(cartId, userId) {
-  const cart = await Cart.findOne({
-    _id: cartId,
-    userId,
-  })
-
+/*
+ * The cart for paying its fee: only the owner pays. Staff can see the lock
+ * (findManagedCart) but are told to ask the owner.
+ */
+async function getCartToPay(req, res, cartId) {
+  const cart = await findManagedCart(req, res, cartId)
+  if (String(cart.userId) !== String(req.user._id)) {
+    res.status(403)
+    throw new Error('Only the cart owner can pay the platform fee')
+  }
   return cart
 }
 
@@ -485,12 +488,7 @@ exports.getPaymentStatus = asyncHandler(async (req, res) => {
     throw new Error('cartId is required')
   }
 
-  const cart = await getOwnedCart(cartId, userId)
-
-  if (!cart) {
-    res.status(404)
-    throw new Error('Cart not found')
-  }
+  await findManagedCart(req, res, cartId)
 
   const status = await getCartPaymentStatus(cartId)
 
@@ -524,17 +522,11 @@ exports.getPaymentOverview = asyncHandler(async (req, res) => {
     throw new Error('cartId is required')
   }
 
-  const cart = await getOwnedCart(cartId, userId)
-
-  if (!cart) {
-    res.status(404)
-    throw new Error('Cart not found')
-  }
+  await findManagedCart(req, res, cartId)
 
   // Existing pending payment always takes priority.
   const currentPayment = await Payment.findOne({
     cartId,
-    userId,
     status: 'PENDING',
   }).sort({ createdAt: -1 })
 
@@ -666,12 +658,7 @@ exports.createRazorpayOrder = asyncHandler(async (req, res) => {
     throw new Error('cartId is required')
   }
 
-  const cart = await getOwnedCart(cartId, userId)
-
-  if (!cart) {
-    res.status(404)
-    throw new Error('Cart not found')
-  }
+  const cart = await getCartToPay(req, res, cartId)
 
   /*
    * If another request already created a pending internal payment,
@@ -768,14 +755,10 @@ exports.createRazorpayOrder = asyncHandler(async (req, res) => {
    *        ↓
    * Payment becomes due
    */
-  const paymentAllowedAt = new Date(
-    billingDate.getTime() +
-      26 * 60 * 60 * 1000,
-  )
-
-  if (new Date() < paymentAllowedAt) {
+  // A day's bill is final, and payable, once that IST day has ended.
+  if (new Date() < getNextISTMidnight(billingDate)) {
     res.status(400)
-    throw new Error('Payment is not due yet')
+    throw new Error("Today's platform fee can be paid after midnight")
   }
 
   const amount = Number(totalPlatformFee)
@@ -1116,16 +1099,13 @@ exports.rejectPayment = asyncHandler(async (req, res) => {
     throw new Error('Authenticated user not found')
   }
 
-  /*
-   * This endpoint is a manual fallback. Do not allow an arbitrary
-   * authenticated user to reject another user's payment.
-   *
-   * If you have a separate admin-role middleware, keep that middleware too.
-   */
-  const payment = await Payment.findOne({
-    _id: paymentId,
-    userId,
-  })
+  // A manual fallback for GullyEats admins only.
+  if (req.user.role !== 'admin') {
+    res.status(403)
+    throw new Error('Only an admin can reject a payment')
+  }
+
+  const payment = await Payment.findById(paymentId)
 
   if (!payment) {
     res.status(404)
@@ -1157,8 +1137,6 @@ exports.getPaymentHistory = asyncHandler(async (req, res) => {
   const { cartId } = req.params
   const { startDate, endDate } = req.query
 
-  console.log(startDate, endDate)
-
   const userId = getAuthenticatedUserId(req)
 
   if (!userId) {
@@ -1166,12 +1144,7 @@ exports.getPaymentHistory = asyncHandler(async (req, res) => {
     throw new Error('Authenticated user not found')
   }
 
-  const cart = await getOwnedCart(cartId, userId)
-
-  if (!cart) {
-    res.status(404)
-    throw new Error('Cart not found')
-  }
+  await findManagedCart(req, res, cartId)
 
   const filter = {
     cartId,

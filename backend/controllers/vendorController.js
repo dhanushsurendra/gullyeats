@@ -173,6 +173,7 @@ exports.vendorLogin = asyncHandler(async (req, res) => {
     user: {
       id: user._id,
       userId: user.userId,
+      role: user.role,
       name: user.name,
       phoneNumber: user.phoneNumber,
     },

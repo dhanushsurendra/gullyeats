@@ -85,7 +85,8 @@ const PaymentSchema = new mongoose.Schema(
     // tickets ("I paid but it shows locked").
     verificationSource: {
       type: String,
-      enum: ['CHECKOUT_CALLBACK', 'WEBHOOK', 'MANUAL', null],
+      // RAZORPAY_RECOVERY: found captured while reconciling after a crash.
+      enum: ['CHECKOUT_CALLBACK', 'WEBHOOK', 'RAZORPAY_RECOVERY', 'MANUAL', null],
       default: null,
     },
 

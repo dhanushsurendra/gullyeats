@@ -2,6 +2,10 @@ const Payment = require('../models/Payment')
 const Order = require('../models/Order')
 const Cart = require('../models/Cart')
 
+// The ₹2 fee is charged only on orders the customer paid for (served orders
+// were paid first). Unpaid and cancelled orders cost the vendor nothing.
+const BILLABLE = { status: { $in: ['PAID', 'SERVED'] } }
+
 const BILLING_LOCK_HOURS = 26
 const BILLING_LOCK_MS =
   BILLING_LOCK_HOURS * 60 * 60 * 1000
@@ -91,10 +95,7 @@ async function getBillingFee(cartId, billingDate) {
 
   const orders = await Order.find({
     cartId,
-
-    status: {
-      $ne: 'CANCELLED',
-    },
+    ...BILLABLE,
 
     orderDate: {
       $gte: start,
@@ -114,15 +115,12 @@ async function getBillingFee(cartId, billingDate) {
 }
 
 /**
- * Get the billing date of the first non-cancelled order.
+ * Get the billing date of the first billable (paid or served) order.
  */
 async function getFirstBillingDate(cartId) {
   const firstOrder = await Order.findOne({
     cartId,
-
-    status: {
-      $ne: 'CANCELLED',
-    },
+    ...BILLABLE,
   })
     .sort({
       orderDate: 1,
@@ -206,6 +204,11 @@ async function getBillingDate(cartId) {
   }
 
   const lastBillingDate = getISTMidnight(lastVerifiedPayment.billingDate)
+  // The next bill starts the day AFTER the paid one. Searching from the
+  // paid day's midnight found that day's own orders, so the paid day was
+  // billed again, the "already paid" check unlocked it, and no later day
+  // was ever billed.
+  const nextDayStart = getNextISTMidnight(lastBillingDate)
 
   /**
    * Find the first order after the last
@@ -216,13 +219,10 @@ async function getBillingDate(cartId) {
    */
   const nextOrder = await Order.findOne({
     cartId,
-
-    status: {
-      $ne: 'CANCELLED',
-    },
+    ...BILLABLE,
 
     orderDate: {
-      $gt: lastBillingDate,
+      $gte: nextDayStart,
     },
   })
     .sort({
@@ -315,8 +315,6 @@ async function getCartPaymentStatus(cartId) {
    */
   const billingDate = await getBillingDate(cartId)
 
-  console.log(billingDate)
-
   /**
    * No unpaid orders.
    */
@@ -368,7 +366,10 @@ async function getCartPaymentStatus(cartId) {
 
   const billingDue = now.getTime() - billingDate.getTime() >= BILLING_LOCK_MS
 
-  console.log(billingDue)
+  // When the cart locks, and whether the bill can be paid yet: a day's bill
+  // is final, and payable, once that IST day has ended.
+  const dueAt = new Date(billingDate.getTime() + BILLING_LOCK_MS)
+  const canPay = now >= getNextISTMidnight(billingDate)
 
   /**
    * Billing exists but isn't due yet.
@@ -377,6 +378,8 @@ async function getCartPaymentStatus(cartId) {
     return {
       isLocked: false,
       billingDate,
+      dueAt,
+      canPay,
       totalOrders,
       totalPending: totalPlatformFee,
       cartName: cart.cartName,
@@ -416,6 +419,8 @@ async function getCartPaymentStatus(cartId) {
     isLocked: true,
     message: 'Payment is required to continue using this cart.',
     billingDate,
+    dueAt,
+    canPay: true,
     totalOrders,
     totalPending: totalPlatformFee,
     cartName: cart.cartName,
