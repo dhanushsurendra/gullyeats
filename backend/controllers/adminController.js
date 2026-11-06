@@ -993,7 +993,6 @@ async function buildSeries(period) {
 // OVERVIEW
 // ============================================================
 exports.overview = asyncHandler(async (req, res) => {
-  console.log('reached')
   const { start, end } = rangeFor(req.query)
   const prevStart = new Date(+start - (end - start))
   const today = todayStart()
