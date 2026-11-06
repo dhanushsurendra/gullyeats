@@ -406,7 +406,7 @@
   "updatePinCaps": "UPDATE PIN",
   "chooseLanguageSubtitle": "Choose your preferred language for the app.",
   "currentLanguage": "Current Language",
-  "supportedLanguages": "Supported: English, ಕನ್ನಡ, हिन्दी",
+  "supportedLanguages": "Supported: English, ಕನ್ನಡ, हिन्दी, தமிழ்",
   "selected": "✓ Selected",
   "searchLanguage": "Search language...",
   "availableLanguages": "Available Languages",
@@ -448,7 +448,7 @@
       }
     }
   },
-  "staffSubtitle": "Add helpers who can run your cart using OTP.",
+  "staffSubtitle": "Add helpers who can log in and run your cart.",
   "nameRequired": "Name is required",
   "enterValidName": "Enter a valid name",
   "phoneRequired": "Phone number is required",

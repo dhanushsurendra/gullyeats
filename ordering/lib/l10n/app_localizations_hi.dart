@@ -919,7 +919,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get currentLanguage => 'अभी की भाषा';
 
   @override
-  String get supportedLanguages => 'उपलब्ध: English, ಕನ್ನಡ, हिन्दी';
+  String get supportedLanguages => 'उपलब्ध: English, ಕನ್ನಡ, हिन्दी, தமிழ்';
 
   @override
   String get selected => '✓ चुनी गई';
@@ -1009,7 +1009,8 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
-  String get staffSubtitle => 'ऐसे सहायक जोड़ें जो OTP से आपकी कार्ट चला सकें।';
+  String get staffSubtitle =>
+      'ऐसे सहायक जोड़ें जो लॉगिन करके आपकी कार्ट चला सकें।';
 
   @override
   String get nameRequired => 'नाम ज़रूरी है';

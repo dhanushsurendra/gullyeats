@@ -922,7 +922,7 @@ class AppLocalizationsKn extends AppLocalizations {
   String get currentLanguage => 'ಪ್ರಸ್ತುತ ಭಾಷೆ';
 
   @override
-  String get supportedLanguages => 'ಲಭ್ಯವಿದೆ: English, ಕನ್ನಡ, हिन्दी';
+  String get supportedLanguages => 'ಲಭ್ಯವಿದೆ: English, ಕನ್ನಡ, हिन्दी, தமிழ்';
 
   @override
   String get selected => '✓ ಆಯ್ಕೆಯಾಗಿದೆ';
@@ -1013,7 +1013,7 @@ class AppLocalizationsKn extends AppLocalizations {
 
   @override
   String get staffSubtitle =>
-      'OTP ಬಳಸಿ ನಿಮ್ಮ ಕಾರ್ಟ್ ನಡೆಸಬಲ್ಲ ಸಹಾಯಕರನ್ನು ಸೇರಿಸಿ.';
+      'ಲಾಗಿನ್ ಮಾಡಿ ನಿಮ್ಮ ಕಾರ್ಟ್ ನಡೆಸಬಲ್ಲ ಸಹಾಯಕರನ್ನು ಸೇರಿಸಿ.';
 
   @override
   String get nameRequired => 'ಹೆಸರು ಅಗತ್ಯವಿದೆ';

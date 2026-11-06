@@ -21,7 +21,12 @@ class LanguagePreferencesScreen extends StatefulWidget {
 class _LanguagePreferencesScreenState
     extends State<LanguagePreferencesScreen> {
   /// English names too, so typing "Hindi" finds हिन्दी.
-  static const _englishNames = {'en': 'English', 'kn': 'Kannada', 'hi': 'Hindi'};
+  static const _englishNames = {
+    'en': 'English',
+    'kn': 'Kannada',
+    'hi': 'Hindi',
+    'ta': 'Tamil',
+  };
 
   String selectedCode = LanguageProvider.current.languageCode;
   String searchQuery = "";

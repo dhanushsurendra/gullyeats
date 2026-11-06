@@ -63,14 +63,16 @@ void main() {
     expect(AppExceptionHandler.getMessage(Exception()), contains('कोशिश'));
   });
 
-  testWidgets('a saved language is used on the next launch', (tester) async {
-    SharedPreferences.setMockInitialValues({'languageCode': 'kn'});
-    final language = LanguageProvider();
-    await language.load();
-    await pumpApp(tester, language);
+  for (final (code, login) in [('kn', 'ಲಾಗಿನ್'), ('ta', 'உள்நுழை')]) {
+    testWidgets('a saved language ($code) is used on the next launch', (tester) async {
+      SharedPreferences.setMockInitialValues({'languageCode': code});
+      final language = LanguageProvider();
+      await language.load();
+      await pumpApp(tester, language);
 
-    expect(find.text('ಲಾಗಿನ್'), findsOneWidget);
-  });
+      expect(find.text(login), findsOneWidget);
+    });
+  }
 
   test('every language on the picker has translations', () {
     for (final code in LanguageProvider.languages.keys) {

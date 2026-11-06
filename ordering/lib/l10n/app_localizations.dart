@@ -8,6 +8,7 @@ import 'package:intl/intl.dart' as intl;
 import 'app_localizations_en.dart';
 import 'app_localizations_hi.dart';
 import 'app_localizations_kn.dart';
+import 'app_localizations_ta.dart';
 
 // ignore_for_file: type=lint
 
@@ -98,6 +99,7 @@ abstract class AppLocalizations {
     Locale('en'),
     Locale('hi'),
     Locale('kn'),
+    Locale('ta'),
   ];
 
   /// No description provided for @sales.
@@ -1771,7 +1773,7 @@ abstract class AppLocalizations {
   /// No description provided for @supportedLanguages.
   ///
   /// In en, this message translates to:
-  /// **'Supported: English, ಕನ್ನಡ, हिन्दी'**
+  /// **'Supported: English, ಕನ್ನಡ, हिन्दी, தமிழ்'**
   String get supportedLanguages;
 
   /// No description provided for @selected.
@@ -1939,7 +1941,7 @@ abstract class AppLocalizations {
   /// No description provided for @staffSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Add helpers who can run your cart using OTP.'**
+  /// **'Add helpers who can log in and run your cart.'**
   String get staffSubtitle;
 
   /// No description provided for @nameRequired.
@@ -2062,7 +2064,7 @@ class _AppLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) =>
-      <String>['en', 'hi', 'kn'].contains(locale.languageCode);
+      <String>['en', 'hi', 'kn', 'ta'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -2077,6 +2079,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
       return AppLocalizationsHi();
     case 'kn':
       return AppLocalizationsKn();
+    case 'ta':
+      return AppLocalizationsTa();
   }
 
   throw FlutterError(

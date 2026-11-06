@@ -7,7 +7,12 @@ class LanguageProvider extends ChangeNotifier {
   static const _key = 'languageCode';
 
   /// Language code → name in its own script, in the order shown to the user.
-  static const languages = {'en': 'English', 'kn': 'ಕನ್ನಡ', 'hi': 'हिन्दी'};
+  static const languages = {
+    'en': 'English',
+    'kn': 'ಕನ್ನಡ',
+    'hi': 'हिन्दी',
+    'ta': 'தமிழ்',
+  };
 
   /// For code that has no BuildContext (the error handler).
   static Locale current = const Locale('en');

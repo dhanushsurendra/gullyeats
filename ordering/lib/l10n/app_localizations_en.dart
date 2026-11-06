@@ -918,7 +918,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get currentLanguage => 'Current Language';
 
   @override
-  String get supportedLanguages => 'Supported: English, ಕನ್ನಡ, हिन्दी';
+  String get supportedLanguages => 'Supported: English, ಕನ್ನಡ, हिन्दी, தமிழ்';
 
   @override
   String get selected => '✓ Selected';
@@ -1006,7 +1006,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get staffSubtitle => 'Add helpers who can run your cart using OTP.';
+  String get staffSubtitle => 'Add helpers who can log in and run your cart.';
 
   @override
   String get nameRequired => 'Name is required';
