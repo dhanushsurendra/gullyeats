@@ -1,10 +1,44 @@
+const mongoose = require('mongoose')
 const Payment = require('../models/Payment')
 const Order = require('../models/Order')
 const Cart = require('../models/Cart')
 
-// The ₹2 fee is charged only on orders the customer paid for (served orders
-// were paid first). Unpaid and cancelled orders cost the vendor nothing.
-const BILLABLE = { status: { $in: ['PAID', 'SERVED'] } }
+/*
+ * The ₹2 fee is charged on orders the customer paid for, on the IST day they
+ * first paid (paidAt), not the day the order was created. A day's bill can
+ * only be paid after that day ends, so no payment can land in a day that is
+ * already billed: an order created at 11:40pm and paid at 12:20am is in the
+ * next day's bill instead of being missed.
+ *
+ * An order edited so the customer owes more goes back to PENDING but keeps
+ * its first paidAt, so it is billed once. Marking an order unpaid clears
+ * paidAt, and cancelled orders are never billed. Older orders that were paid
+ * before paidAt was recorded count on their order day.
+ */
+function billableOrders(cartId) {
+  return [
+    {
+      $match: {
+        cartId: new mongoose.Types.ObjectId(String(cartId)),
+        status: { $ne: 'CANCELLED' },
+        $or: [{ paidAt: { $ne: null } }, { status: { $in: ['PAID', 'SERVED'] } }],
+      },
+    },
+    { $addFields: { billedAt: { $ifNull: ['$paidAt', '$orderDate', '$createdAt'] } } },
+  ]
+}
+
+/** The IST day of the first billable order paid at or after [from]. */
+async function firstBillingDay(cartId, from) {
+  const [first] = await Order.aggregate([
+    ...billableOrders(cartId),
+    ...(from ? [{ $match: { billedAt: { $gte: from } } }] : []),
+    { $sort: { billedAt: 1 } },
+    { $limit: 1 },
+    { $project: { billedAt: 1 } },
+  ])
+  return first ? getISTMidnight(first.billedAt) : null
+}
 
 const BILLING_LOCK_HOURS = 26
 const BILLING_LOCK_MS =
@@ -93,15 +127,11 @@ async function getBillingFee(cartId, billingDate) {
 
   const billingEnd = getNextISTMidnight(start)
 
-  const orders = await Order.find({
-    cartId,
-    ...BILLABLE,
-
-    orderDate: {
-      $gte: start,
-      $lt: billingEnd,
-    },
-  }).lean()
+  const orders = await Order.aggregate([
+    ...billableOrders(cartId),
+    { $match: { billedAt: { $gte: start, $lt: billingEnd } } },
+    { $project: { platformFee: 1 } },
+  ])
 
   const totalPlatformFee = orders.reduce(
     (total, order) => total + Number(order.platformFee || 0),
@@ -115,68 +145,17 @@ async function getBillingFee(cartId, billingDate) {
 }
 
 /**
- * Get the billing date of the first billable (paid or served) order.
+ * The billing date of the first order the customer paid for.
  */
 async function getFirstBillingDate(cartId) {
-  const firstOrder = await Order.findOne({
-    cartId,
-    ...BILLABLE,
-  })
-    .sort({
-      orderDate: 1,
-      createdAt: 1,
-    })
-    .lean()
-
-  if (!firstOrder) {
-    return null
-  }
-
-  const firstOrderDate = firstOrder.orderDate || firstOrder.createdAt
-
-  if (!firstOrderDate) {
-    throw new Error(
-      `Order ${firstOrder._id} does not have orderDate or createdAt`,
-    )
-  }
-
-  return getISTMidnight(firstOrderDate)
+  return firstBillingDay(cartId)
 }
 
 /**
- * Get the next billing date based on the NEXT ORDER,
- * not by scanning calendar days.
- *
- * Logic:
- *
- * First billing:
- *   first order → that order's IST date
- *
- * After payment:
- *   latest paid billingDate
- *          ↓
- *   find first order AFTER that billing date
- *          ↓
- *   that order's IST date = next billing date
- *
- * Example:
- *
- * Thursday order → paid Friday
- *
- * latest paid billingDate = Thursday
- *
- * Friday order exists
- *        ↓
- * next billingDate = Friday
- *
- * If Friday/Saturday/Sunday have no orders
- * and Monday has an order:
- *
- * latest paid billingDate = Thursday
- *        ↓
- * first order after Thursday = Monday
- *        ↓
- * next billingDate = Monday
+ * The next day to bill, found from the orders rather than by stepping
+ * through calendar days: the day of the first paid order, or, after a
+ * payment, of the first order paid after the last paid day. Days without
+ * paid orders are skipped (Thursday paid, nothing until Monday -> Monday).
  */
 async function getBillingDate(cartId) {
   const lastVerifiedPayment = await Payment.findOne({
@@ -210,47 +189,8 @@ async function getBillingDate(cartId) {
   // was ever billed.
   const nextDayStart = getNextISTMidnight(lastBillingDate)
 
-  /**
-   * Find the first order after the last
-   * paid billing day.
-   *
-   * We deliberately query the orders collection
-   * instead of incrementing dates one by one.
-   */
-  const nextOrder = await Order.findOne({
-    cartId,
-    ...BILLABLE,
-
-    orderDate: {
-      $gte: nextDayStart,
-    },
-  })
-    .sort({
-      orderDate: 1,
-      createdAt: 1,
-    })
-    .lean()
-
-  /**
-   * No orders after the last paid billing date.
-   */
-  if (!nextOrder) {
-    return null
-  }
-
-  const nextOrderDate = nextOrder.orderDate || nextOrder.createdAt
-
-  if (!nextOrderDate) {
-    throw new Error(
-      `Order ${nextOrder._id} does not have orderDate or createdAt`,
-    )
-  }
-
-  /**
-   * The next order's IST calendar day is
-   * the next billing date.
-   */
-  return getISTMidnight(nextOrderDate)
+  // The day of the first order paid after the last paid billing day.
+  return firstBillingDay(cartId, nextDayStart)
 }
 
 /**

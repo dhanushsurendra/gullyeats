@@ -62,6 +62,38 @@ test('after a day is paid, the next day with orders is billed and locks', async 
   assert.equal(status.totalPending, 2)
 })
 
+// An order created `createdDaysAgo` at 11:40pm IST, first paid at the given time.
+const lateOrder = (createdDaysAgo, status, paidAt) => {
+  const at = new Date(daysAgo(createdDaysAgo).getTime() + (23 * 60 + 40) * 60e3)
+  return { ...order(0, status), orderDate: at, createdAt: at, paidAt }
+}
+const minutesInto = (n, minutes) => new Date(daysAgo(n).getTime() + minutes * 60e3)
+
+test('an order paid after midnight is billed on the day it was paid, not missed', async () => {
+  // Three days ago is already paid. This order was placed that night and
+  // paid at 12:20am the next day.
+  await Payment.collection.insertOne(paidDay(3))
+  await Order.collection.insertOne(lateOrder(3, 'PAID', minutesInto(2, 20)))
+  const status = await getCartPaymentStatus(cartId)
+  assert.equal(status.billingDate.getTime(), daysAgo(2).getTime())
+  assert.equal(status.totalPending, 2)
+})
+
+test('an order edited back to unpaid stays billed once, on the day it was first paid', async () => {
+  // Paid two days ago, then edited so the customer owes more: PENDING, but
+  // it keeps its first payment time.
+  await Order.collection.insertOne({ ...order(2, 'PENDING'), paidAt: minutesInto(2, 600) })
+  const status = await getCartPaymentStatus(cartId)
+  assert.equal(status.billingDate.getTime(), daysAgo(2).getTime())
+  assert.equal(status.totalPending, 2)
+})
+
+test('an order marked unpaid again is not billed', async () => {
+  await Order.collection.insertOne({ ...order(2, 'PENDING'), paidAt: null })
+  const status = await getCartPaymentStatus(cartId)
+  assert.equal(status.totalPending, 0)
+})
+
 test('the fee counts only paid and served orders', async () => {
   await Order.collection.insertMany([
     order(2, 'SERVED'), order(2, 'PAID'), order(2, 'PENDING'), order(2, 'CANCELLED'),

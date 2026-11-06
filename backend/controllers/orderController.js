@@ -337,7 +337,9 @@ exports.markOrderPaid = asyncHandler(async (req, res) => {
   }
 
   order.status = 'PAID'
-  order.paidAt = new Date()
+  // An order edited back to PENDING keeps its first payment time, so its
+  // platform fee stays on the day it was first billed.
+  order.paidAt = order.paidAt ?? new Date()
   order.paidAmount = order.totalPrice
   order.paymentAdjustment = null
   await order.save()
