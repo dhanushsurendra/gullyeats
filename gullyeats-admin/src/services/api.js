@@ -1,8 +1,9 @@
-const BASE = import.meta.env.API_URL || 'http://localhost:5000'
+// Vite only exposes variables starting with VITE_ (see .env.example).
+const BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
-const ADMIN = import.meta.env.ADMIN_PATH || '/api/admin'
+const ADMIN = import.meta.env.VITE_ADMIN_PATH || '/api/admin'
 
-const CARTS = import.meta.env.CART_PATH || '/api/carts'
+const CARTS = import.meta.env.VITE_CART_PATH || '/api/carts'
 
 async function request(path, params) {
   const clean = Object.entries(params || {}).filter(
@@ -22,6 +23,27 @@ async function request(path, params) {
     throw new Error(
       `Cannot reach the API at ${BASE}. Is the backend running and CORS enabled?`,
     )
+  }
+
+  const body = await res.json().catch(() => ({}))
+
+  if (!res.ok || body.success === false) {
+    throw new Error(body.message || `Request failed (${res.status})`)
+  }
+
+  return body.data ?? body
+}
+
+async function post(path) {
+  let res
+
+  try {
+    res = await fetch(`${BASE}${path}`, {
+      method: 'POST',
+      credentials: 'include',
+    })
+  } catch {
+    throw new Error(`Cannot reach the API at ${BASE}.`)
   }
 
   const body = await res.json().catch(() => ({}))
@@ -154,6 +176,8 @@ export const api = {
   activity: (p) => request(`${ADMIN}/activity`, p),
 
   cartInsights: (cartId, p) => request(`${CARTS}/sales-insights/${cartId}`, p),
+
+  markFeePaid: (cartId) => post(`${ADMIN}/carts/${cartId}/mark-fee-paid`),
 }
 
 export const API_BASE = BASE

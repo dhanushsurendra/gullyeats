@@ -16,6 +16,44 @@ import { api } from '../services/api'
 import { inr, num, ago, istDate, matches } from '../utils/format'
 
 // Side drawer powered by your EXISTING route: GET /sales-insights/:cartId?startDate&endDate (last 30 days)
+// Marks the cart's due platform fee as paid outside Razorpay (e.g. cash to
+// the GullyEats team). Asks first: it unlocks the cart with no payment check.
+function MarkFeePaid({ cart }) {
+  const [state, setState] = useState({})
+  const markPaid = async () => {
+    if (
+      !window.confirm(
+        `Mark ${cart.name}'s due platform fee as paid? Only do this if the ` +
+          'vendor has paid GullyEats another way. The cart will unlock.',
+      )
+    )
+      return
+    setState({ busy: true })
+    try {
+      const p = await api.markFeePaid(cart.id)
+      setState({ done: `Marked ${inr(p.amount)} as paid.` })
+    } catch (e) {
+      setState({ error: e.message })
+    }
+  }
+  return (
+    <div className='mt-5'>
+      <p className='mb-1 text-[11.5px] font-medium text-neutral-500'>
+        PLATFORM FEE
+      </p>
+      <button
+        onClick={markPaid}
+        disabled={state.busy}
+        className='rounded-md border border-line px-3 py-1.5 font-medium hover:bg-neutral-100 disabled:opacity-50'
+      >
+        {state.busy ? 'Marking…' : 'Mark fee paid'}
+      </button>
+      {state.done && <p className='mt-1.5 text-emerald-700'>{state.done}</p>}
+      {state.error && <ErrorNote message={state.error} />}
+    </div>
+  )
+}
+
 function CartDrawer({ cart, onClose }) {
   const [state, setState] = useState({ loading: true })
   useEffect(() => {
@@ -64,6 +102,7 @@ function CartDrawer({ cart, onClose }) {
         <div className='mt-2'>
           <StatusBadge status={cart.status} />
         </div>
+        <MarkFeePaid cart={cart} />
         <p className='mb-2 mt-5 text-[11.5px] font-medium text-neutral-500'>
           LAST 30 DAYS
         </p>
@@ -107,7 +146,6 @@ function CartDrawer({ cart, onClose }) {
 }
 
 export default function RestaurantTable({ carts = [], limit, loading, error }) {
-  console.log('carts', carts)
   const nav = useNavigate()
   const [params] = useSearchParams()
   const q = useSelector((s) => s.admin.search)
