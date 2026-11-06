@@ -17,12 +17,13 @@ const {
 } = require('../controllers/orderController')
 const auth = require('../middlewares/auth')
 const optionalAuth = require('../middlewares/optionalAuth')
+const cartPaymentLock = require('../middlewares/cartPaymentLock')
 
 // The customer web app calls create, update, delete, get order, truth line
 // and feedback without logging in; the controllers apply customer rules
 // unless the caller manages the order's cart.
 
-router.post('/create-order', optionalAuth, createOrder)
+router.post('/create-order', optionalAuth, cartPaymentLock, createOrder)
 
 router.delete('/delete-order/:orderId', optionalAuth, deleteOrder)
 

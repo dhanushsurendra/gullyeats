@@ -13,7 +13,6 @@ const {
 
 // Swap in your real auth middleware here.
 const authMiddleware = require('../middlewares/auth')
-const cartPaymentLockMiddleware = require('../middlewares/cartPaymentLock')
 
 /*
  * NOTE: the Razorpay webhook route is NOT defined here. It's mounted
