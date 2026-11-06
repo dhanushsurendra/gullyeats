@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_gaps.dart';
 import 'package:ordering/core/theme/app_padding.dart';
@@ -11,6 +12,7 @@ import 'package:ordering/features/payment/models/payment_model.dart';
 import 'package:ordering/features/payment/providers/payment_provider.dart';
 import 'package:ordering/features/payment/widgets/payment_history_tile.dart';
 import 'package:provider/provider.dart';
+import 'package:ordering/l10n/l10n.dart';
 
 class PaymentScreen extends StatefulWidget {
   const PaymentScreen({super.key});
@@ -33,26 +35,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
   String? _selectedPreset = 'today';
 
   static const List<Map<String, String>> _presets = [
-    {'key': 'today', 'label': 'Today'},
-    {'key': 'yesterday', 'label': 'Yesterday'},
-    {'key': 'week', 'label': 'Week'},
-    {'key': 'last30days', 'label': 'Last 30 Days'},
+    {'key': 'today'},
+    {'key': 'yesterday'},
+    {'key': 'week'},
+    {'key': 'last30days'},
   ];
 
-  static const List<String> _monthNames = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
 
   // ==========================================================================
   // INIT
@@ -225,12 +213,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
   // DATE FORMAT
   // ==========================================================================
 
-  String _formatDisplayDate(DateTime date) {
-    final month = _monthNames[date.month - 1];
-
-    return '${date.day.toString().padLeft(2, '0')} '
-        '$month ${date.year}';
-  }
+  String _formatDisplayDate(DateTime date) =>
+      DateFormat('dd MMM yyyy', Localizations.localeOf(context).languageCode)
+          .format(date);
 
   // ==========================================================================
   // SWITCH CART
@@ -283,7 +268,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     // ===========================================================
                     // TITLE
                     // ===========================================================
-                    Text('Transaction History', style: AppTextStyles.heading2),
+                    Text(context.l10n.transactionHistory, style: AppTextStyles.heading2),
 
                     AppGaps.h16,
 
@@ -322,7 +307,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Date Range', style: AppTextStyles.heading3),
+        Text(context.l10n.dateRange, style: AppTextStyles.heading3),
 
         AppGaps.h8,
 
@@ -406,7 +391,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
           return Padding(
             padding: EdgeInsets.only(right: isLast ? 0 : 8),
-            child: _presetChip(preset['label']!, preset['key']!),
+            child: _presetChip(context.l10n.rangeLabel(preset['key']!), preset['key']!),
           );
         }).toList(),
       ),
@@ -503,7 +488,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
             TextButton(
               onPressed: _loadPaymentHistory,
-              child: const Text('Try Again'),
+              child: Text(context.l10n.tryAgain),
             ),
           ],
         ),
@@ -523,7 +508,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
           borderRadius: BorderRadius.circular(14),
         ),
         child: Text(
-          'No transactions in this period yet',
+          context.l10n.noTransactionsInPeriod,
           style: AppTextStyles.caption,
         ),
       );
@@ -538,7 +523,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Transactions', style: AppTextStyles.heading3),
+            Text(context.l10n.transactions, style: AppTextStyles.heading3),
 
             AppGaps.h12,
 
@@ -638,7 +623,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 AppGaps.w8,
 
                 Text(
-                  'CURRENT PENDING TRANSACTION',
+                  context.l10n.currentPendingTransactionCaps,
                   style: AppTextStyles.caption.copyWith(
                     color: AppColors.warning,
                     fontWeight: FontWeight.w800,

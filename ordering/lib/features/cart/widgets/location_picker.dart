@@ -8,6 +8,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_gaps.dart';
 import 'package:ordering/core/widgets/app_button.dart';
+import 'package:ordering/l10n/l10n.dart';
 
 class LocationResult {
   final double latitude;
@@ -118,7 +119,8 @@ class _LocationPickerFieldState extends State<LocationPickerField> {
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
 
       if (!serviceEnabled) {
-        _showSnack("Location services are disabled. Please enable them.");
+        if (!mounted) return;
+        _showSnack(context.l10n.locationServicesDisabled);
         await Geolocator.openLocationSettings();
         return;
       }
@@ -130,13 +132,15 @@ class _LocationPickerFieldState extends State<LocationPickerField> {
       }
 
       if (permission == LocationPermission.denied) {
-        _showSnack("Location permission is required.");
+        if (!mounted) return;
+        _showSnack(context.l10n.locationPermissionRequired);
         return;
       }
 
       if (permission == LocationPermission.deniedForever) {
+        if (!mounted) return;
         _showSnack(
-          "Permission permanently denied. Please enable from settings.",
+          context.l10n.permissionPermanentlyDenied,
         );
         await Geolocator.openAppSettings();
         return;
@@ -169,7 +173,7 @@ class _LocationPickerFieldState extends State<LocationPickerField> {
         ),
       );
     } catch (_) {
-      _showSnack("Unable to fetch location. Please try again.");
+      _showSnack(context.l10n.unableToFetchLocation);
     } finally {
       if (mounted) setState(() => _isLocating = false);
     }
@@ -200,7 +204,7 @@ class _LocationPickerFieldState extends State<LocationPickerField> {
               const SizedBox(height: 8),
               TextButton(
                 onPressed: _loadMapStyle,
-                child: const Text("Map unavailable — tap to retry"),
+                child: Text(context.l10n.mapUnavailable),
               ),
             ],
           ),
@@ -282,7 +286,7 @@ class _LocationPickerFieldState extends State<LocationPickerField> {
         SizedBox(
           width: double.infinity,
           child: AppButton(
-            label: _isLocating ? "Locating..." : "Update GPS Location",
+            label: _isLocating ? context.l10n.locating : context.l10n.updateGpsLocation,
             onPressed: _isLocating ? null : _updateLocation,
           ),
         ),

@@ -1,0 +1,477 @@
+{
+  "@@locale": "en",
+  "sales": "Sales",
+  "orders": "Orders",
+  "profile": "Profile",
+  "cancel": "Cancel",
+  "change": "Change",
+  "open": "Open",
+  "closed": "Closed",
+  "delete": "Delete",
+  "remove": "Remove",
+  "subtotal": "Subtotal",
+  "platformFee": "Platform Fee",
+  "parcel": "Parcel",
+  "total": "Total",
+  "paid": "Paid",
+  "served": "Served",
+  "unpaid": "Unpaid",
+  "cancelled": "Cancelled",
+  "pending": "Pending",
+  "veg": "Veg",
+  "nonVeg": "Non-Veg",
+  "inStock": "In Stock",
+  "outOfStock": "Out of Stock",
+  "inStockCaps": "IN STOCK",
+  "outOfStockCaps": "OUT OF STOCK",
+  "stockIn": "In",
+  "stockOut": "Out",
+  "qrOrder": "QR Order",
+  "manual": "Manual",
+  "all": "All",
+  "active": "Active",
+  "qrOrders": "QR Orders",
+  "stock": "Stock",
+  "allItems": "All Items",
+  "noItems": "No items",
+  "searchItems": "Search items...",
+  "dateRange": "Date Range",
+  "noOrdersInPeriod": "No orders in this period yet",
+  "cameraPermissionRequired": "Camera permission is required.",
+  "cameraPermission": "Camera Permission",
+  "cameraAccessDenied": "Camera access was denied. Please enable it from app settings.",
+  "openSettings": "Open Settings",
+  "choosePhoto": "Choose Photo",
+  "takePhoto": "Take Photo",
+  "chooseFromGallery": "Choose from Gallery",
+  "failedToUploadPhoto": "Failed to upload photo",
+  "photoUploaded": "Photo uploaded successfully",
+  "cameraOrGallery": "Camera or gallery",
+  "addItem": "Add Item",
+  "saveChangesCaps": "SAVE CHANGES",
+  "switchCart": "Switch Cart",
+  "switchCartCaps": "SWITCH CART",
+  "vendor": "Vendor",
+  "ordersOverview": "Orders Overview",
+  "languagePreferences": "Language Preferences",
+  "busyHours": "Busy Hours",
+  "unableToCheckPaymentStatus": "Unable to check payment status. Please try again.",
+  "verificationPending": "Verification Pending",
+  "vendorIdRequired": "Vendor ID or Mobile Number is required",
+  "enter4DigitPin": "Please enter a 4-digit PIN",
+  "loginSuccessful": "Login successful",
+  "loginFailed": "Login failed. Please check your credentials.",
+  "welcomeBack": "Welcome Back",
+  "loginSubtitle": "Login to manage your cart and start\nreceiving orders.",
+  "support": "Support",
+  "callSupport": "Please call this number for support:\n9008533182",
+  "phoneOrVendorId": "Phone Number or Vendor ID",
+  "loginHint": "XXXXXXXXXX or VEN-XXXXXX",
+  "fourDigitPin": "4-digit PIN",
+  "forgotPin": "Forgot PIN?",
+  "login": "Login",
+  "newVendor": "New vendor? ",
+  "contactSupport": "Contact Support",
+  "cartNameEmpty": "Cart name can't be empty.",
+  "cityEmpty": "City can't be empty.",
+  "cartDetailsUpdated": "Cart details updated!",
+  "discardChanges": "Discard changes?",
+  "unsavedChanges": "You have unsaved changes. Leave without saving?",
+  "keepEditing": "Keep Editing",
+  "discard": "Discard",
+  "editCartDetails": "Edit Cart Details",
+  "selectCity": "Select City",
+  "cartPhoto": "Cart Photo",
+  "cartPhotoHelp": "Used for verification — no gallery uploads allowed.",
+  "cartInformation": "Cart Information",
+  "cartName": "Cart Name",
+  "cartCity": "Cart City",
+  "address": "Address",
+  "cartId": "Cart ID",
+  "location": "Location",
+  "addressAutoUpdates": "Address above updates automatically when you refresh GPS.",
+  "cartStatus": "Cart Status",
+  "cartActive": "Cart Active",
+  "visibleToCustomers": "Visible to customers",
+  "cartOpen": "Cart Open",
+  "acceptingOrders": "Accepting orders",
+  "salesDashboard": "Sales Dashboard",
+  "salesSubtitle": "Track your earnings and progress",
+  "totalRevenue": "Total Revenue",
+  "net": "Net",
+  "avgOrder": "Avg Order",
+  "highest": "Highest",
+  "lowest": "Lowest",
+  "completionRate": "Completion Rate",
+  "paymentRate": "Payment Rate",
+  "cancellationRate": "Cancellation Rate",
+  "itemsSold": "Items Sold",
+  "totalSold": "Total Sold",
+  "unique": "Unique",
+  "avgPerOrder": "Avg / Order",
+  "maxInOneOrder": "Max in 1 Order",
+  "orderType": "Order Type",
+  "parcelOrders": "Parcel Orders",
+  "avgParcelCharge": "Avg Parcel Charge",
+  "timing": "Timing",
+  "avgPrepTime": "Avg Prep Time",
+  "fastestOrder": "Fastest Order",
+  "slowestOrder": "Slowest Order",
+  "avgPaymentTime": "Avg Payment Time",
+  "avgServeAfterPayment": "Avg Serve After Payment",
+  "avgTimeBetweenOrders": "Avg Time Between Orders",
+  "itemLeaderboard": "Item Leaderboard",
+  "topRevenue": "Top Revenue",
+  "topVolume": "Top Volume",
+  "topSellers": "Top Sellers",
+  "needsAPush": "Needs a Push",
+  "qrOrdersSummary": "QR · {count} orders · {amount}",
+  "@qrOrdersSummary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "manualOrdersSummary": "Manual · {count} orders · {amount}",
+  "@manualOrdersSummary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "peakHour": "Peak: {hour}",
+  "@peakHour": {
+    "placeholders": {
+      "hour": {
+        "type": "String"
+      }
+    }
+  },
+  "soldCount": "{count} sold",
+  "@soldCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "totalCount": "{count} total",
+  "@totalCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "rangeLabel": "{range, select, today{Today} yesterday{Yesterday} last7{Last 7 Days} week{Week} other{Last 30 Days}}",
+  "@rangeLabel": {
+    "placeholders": {
+      "range": {
+        "type": "String"
+      }
+    }
+  },
+  "stockControl": "Stock Control",
+  "chooseCartToSwitch": "Choose which cart to switch",
+  "logout": "Logout",
+  "searchCarts": "Search carts...",
+  "noCartsAssigned": "No carts assigned. Contact your vendor.",
+  "checkingPaymentStatus": "Checking your payment status",
+  "pleaseWait": "Please wait a moment...",
+  "changePhoto": "Change Photo",
+  "addPhoto": "Add Photo",
+  "tapToAddCartPhoto": "Tap to add cart photo",
+  "locationServicesDisabled": "Location services are disabled. Please enable them.",
+  "locationPermissionRequired": "Location permission is required.",
+  "permissionPermanentlyDenied": "Permission permanently denied. Please enable from settings.",
+  "unableToFetchLocation": "Unable to fetch location. Please try again.",
+  "mapUnavailable": "Map unavailable — tap to retry",
+  "locating": "Locating...",
+  "updateGpsLocation": "Update GPS Location",
+  "itemNameRequired": "Item name is required",
+  "itemNameTooShort": "Item name must be at least 2 characters",
+  "priceRequired": "Price is required",
+  "itemAdded": "Added Item Successfully",
+  "addNewItem": "Add New Item",
+  "itemName": "Item Name",
+  "price": "Price",
+  "enterPriceInRupees": "Enter price in rupees.",
+  "category": "Category",
+  "availability": "Availability",
+  "itemPhoto": "Item Photo",
+  "itemNameAndPriceRequired": "Item name and price are required.",
+  "takeItemPhoto": "Take Item Photo",
+  "uploadPhoto": "Upload Photo",
+  "orderCreatedPaid": "Order created and marked as paid.",
+  "orderCreated": "Order created successfully.",
+  "orderDeleted": "Order deleted",
+  "orderUpdated": "Order updated successfully",
+  "menuItems": "Menu Items",
+  "updateOrder": "Update Order",
+  "createOrder": "Create Order",
+  "parcelCharges": "Parcel Charges",
+  "previousTotal": "Previous Total",
+  "newTotalCaps": "NEW TOTAL",
+  "markAsPaidCaps": "MARK AS PAID",
+  "deleteOrderCaps": "DELETE ORDER",
+  "updateOrderCaps": "UPDATE ORDER",
+  "customerNeedsToPay": "Customer needs to pay ₹{amount} more",
+  "@customerNeedsToPay": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "giveBackToCustomer": "Give ₹{amount} back to customer",
+  "@giveBackToCustomer": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "searchMenuItems": "Search menu items",
+  "noMenuItemsFound": "No menu items found",
+  "editMenuItems": "Edit Menu Items",
+  "editMenuSubtitle": "Add, remove or update your cart menu.",
+  "deleteItemQuestion": "Delete Item?",
+  "confirmRemoveItem": "Are you sure you want to remove this item?",
+  "itemDeleted": "Item deleted successfully!",
+  "ordersStatus": "Orders Status",
+  "orderMarkedServed": "Order marked as served",
+  "serveReverted": "Serve reverted",
+  "orderMarkedPaid": "Order marked as paid",
+  "paymentReverted": "Payment reverted",
+  "orderCancelled": "Order cancelled",
+  "orderRestored": "Order restored",
+  "noActiveOrders": "No active orders",
+  "noQrOrdersToday": "No QR orders today",
+  "noManualOrdersToday": "No manual orders today",
+  "noOrdersToday": "No orders today",
+  "ordersTitle": "{tab, select, active{Active Orders} qr{QR Orders} manual{Manual Orders} other{All Orders}} ({count})",
+  "@ordersTitle": {
+    "placeholders": {
+      "tab": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "itemNameEmpty": "Item name cannot be empty",
+  "enterValidPrice": "Please enter a valid price",
+  "itemUpdated": "Item updated successfully!",
+  "editItem": "Edit Item",
+  "itemNameCaps": "ITEM NAME",
+  "priceRupeeCaps": "PRICE (₹)",
+  "itemPhotoCaps": "ITEM PHOTO",
+  "updateItemCaps": "UPDATE ITEM",
+  "uploadNewPhotoCaps": "UPLOAD NEW PHOTO",
+  "addItemPhoto": "Add Item Photo",
+  "deleteOrder": "Delete Order",
+  "confirmDeleteOrder": "Are you sure you want to delete this order?",
+  "markPaidCaps": "MARK PAID",
+  "collectFromCustomer": "Collect ₹{amount} from customer",
+  "@collectFromCustomer": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "returnToCustomer": "Return ₹{amount} to customer",
+  "@returnToCustomer": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "moreItems": "+{count} more",
+  "@moreItems": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "parcelCharge": "Parcel Charge",
+  "paidAt": "Paid {time}",
+  "@paidAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "servedAt": "Served {time}",
+  "@servedAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "cartNotFound": "Unable to find the selected cart.",
+  "unableToStartPayment": "Unable to start payment. Please try again.",
+  "paymentReceivedUnlocked": "Payment received. Your cart is unlocked.",
+  "unableToOpenGateway": "Unable to open payment gateway.",
+  "paymentRecordNotFound": "Payment received, but the payment record could not be found.",
+  "paymentResponseIncomplete": "Payment response was incomplete. Please check payment status.",
+  "paymentVerifiedUnlocked": "Payment verified successfully. Your cart is unlocked.",
+  "paymentVerificationPending": "Payment was received but verification is still pending.",
+  "paymentFailedRetry": "Payment failed. You can retry using the same payment.",
+  "salesOverview": "Sales Overview",
+  "trackEarningsAndFees": "Track earnings & platform fees",
+  "openingGatewayCaps": "OPENING PAYMENT GATEWAY...",
+  "paymentPendingCaps": "PAYMENT PENDING",
+  "payAndUnlockNow": "PAY ₹{amount} & UNLOCK NOW",
+  "@payAndUnlockNow": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "todaySummaryCaps": "TODAY SUMMARY",
+  "ordersCompleted": "Orders Completed",
+  "paymentStatus": "Payment Status",
+  "partiallyPaidCaps": "PARTIALLY PAID",
+  "platformFeePending": "Platform Fee Pending",
+  "storeLockedPayRazorpay": "Your store is locked. Pay securely using Razorpay to unlock it.",
+  "securePaymentsRazorpay": "Secure payments · Powered by Razorpay",
+  "transactionHistory": "Transaction History",
+  "tryAgain": "Try Again",
+  "noTransactionsInPeriod": "No transactions in this period yet",
+  "transactions": "Transactions",
+  "currentPendingTransactionCaps": "CURRENT PENDING TRANSACTION",
+  "payment": "Payment",
+  "billingDate": "Billing date",
+  "paidOn": "Paid on",
+  "verifiedOn": "Verified on",
+  "noOrders": "No orders",
+  "orderCount": "{count, plural, =1{1 order} other{{count} orders}}",
+  "@orderCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "paymentVerified": "Payment Verified",
+  "paymentRejected": "Payment Rejected",
+  "paymentExpired": "Payment Expired",
+  "transactionReference": "Transaction reference",
+  "cartLockedFeePending": "Your cart is currently locked because the platform payment is pending.",
+  "amountDue": "Amount Due",
+  "payAndUnlock": "PAY ₹{amount} & UNLOCK",
+  "@payAndUnlock": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "paymentSubmitted": "Payment Submitted",
+  "paymentSubmittedWaiting": "Your payment has been submitted and is waiting for verification.",
+  "amount": "Amount",
+  "status": "Status",
+  "checkPaymentStatusCaps": "CHECK PAYMENT STATUS",
+  "totalOrders": "Total Orders",
+  "currentPinRequired": "Current PIN is required",
+  "newPinRequired": "New PIN is required",
+  "pinMust4Digits": "PIN must be 4 digits",
+  "confirmYourPin": "Confirm your PIN",
+  "pinMismatch": "PIN does not match",
+  "pinSameAsCurrent": "New PIN cannot be same as current PIN",
+  "pinUpdated": "PIN updated successfully",
+  "changePin": "Change PIN",
+  "changePinSubtitle": "Update your 4-digit login PIN securely.",
+  "currentPin": "Current PIN",
+  "newPin": "New PIN",
+  "contactSupportToResetPin": "Please contact support at 9108735100 to reset your PIN",
+  "forgotCurrentPin": "Forgot current PIN?",
+  "confirmNewPin": "Confirm New PIN",
+  "pinHint": "PIN must be 4 digits. Do not share.",
+  "updatePinCaps": "UPDATE PIN",
+  "chooseLanguageSubtitle": "Choose your preferred language for the app.",
+  "currentLanguage": "Current Language",
+  "supportedLanguages": "Supported: English, ಕನ್ನಡ, हिन्दी",
+  "selected": "✓ Selected",
+  "searchLanguage": "Search language...",
+  "availableLanguages": "Available Languages",
+  "menuItemsUnchanged": "Menu items will remain the same.",
+  "saveLanguageCaps": "SAVE LANGUAGE",
+  "paymentsHistory": "Payments History",
+  "trackPayments": "Track Payments",
+  "menuManagement": "Menu Management",
+  "staffManagement": "Staff Management",
+  "editStaffDetails": "Edit Staff Details",
+  "viewOrderDetails": "View Order Details",
+  "cartDetails": "Cart Details",
+  "cartIdCaps": "CART ID",
+  "viewQrCaps": "VIEW QR",
+  "securityAndLogin": "Security & Login",
+  "logOutCaps": "LOG OUT",
+  "qrCodePoster": "QR Code Poster",
+  "qrPrintTip": "Tip: Print in A4 size and laminate for durability.",
+  "shareQrCaps": "SHARE QR",
+  "noCartSelected": "No cart selected",
+  "staffAdded": "Staff added successfully",
+  "staffAddedNoSms": "Staff added, but couldn't open SMS app.",
+  "staffMovedTo": "Staff moved to {cart}",
+  "@staffMovedTo": {
+    "placeholders": {
+      "cart": {
+        "type": "String"
+      }
+    }
+  },
+  "yourStaff": "Your Staff",
+  "searchStaff": "Search by name or number",
+  "noStaffYet": "No staff added yet",
+  "noStaffMatch": "No staff match \"{query}\"",
+  "@noStaffMatch": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "staffSubtitle": "Add helpers who can run your cart using OTP.",
+  "nameRequired": "Name is required",
+  "enterValidName": "Enter a valid name",
+  "phoneRequired": "Phone number is required",
+  "enterValid10DigitNumber": "Enter a valid 10-digit number",
+  "addHelper": "Add Helper",
+  "staffName": "Staff Name",
+  "enterHelperName": "Enter helper's name",
+  "staffMobileNumber": "Staff Mobile Number",
+  "sendDetailsCaps": "SEND DETAILS",
+  "removeStaffQuestion": "Remove Staff?",
+  "moveStaffToCart": "Move {name} to a different cart",
+  "@moveStaffToCart": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "noCartsAvailable": "No carts available",
+  "confirmSwitchCaps": "CONFIRM SWITCH",
+  "findingBestBites": "Finding the best bites...",
+  "sessionExpired": "Your login has expired. Please log in again.",
+  "checkInternet": "Check your internet connection",
+  "requestTimedOut": "Request timed out. Try again",
+  "somethingWentWrong": "Something went wrong. Please try again."
+}

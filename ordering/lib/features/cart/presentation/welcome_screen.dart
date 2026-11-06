@@ -8,6 +8,7 @@ import 'package:ordering/features/auth/providers/auth_provider.dart';
 import 'package:ordering/features/payment/models/payment_status_model.dart';
 import 'package:ordering/features/payment/providers/payment_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:ordering/l10n/l10n.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -80,7 +81,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
         setState(() {
           _error =
               paymentProvider.error ??
-              'Unable to check payment status. Please try again.';
+              context.l10n.unableToCheckPaymentStatus;
         });
         return;
       }
@@ -102,7 +103,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
       if (!mounted) return;
 
       setState(() {
-        _error = 'Unable to check payment status. Please try again.';
+        _error = context.l10n.unableToCheckPaymentStatus;
       });
     }
   }
@@ -210,7 +211,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                     backgroundColor: Colors.transparent,
                     builder: (_) => const SwitchCartScreen(isDraggable: true),
                   ),
-                  child: const Text('SWITCH CART'),
+                  child: Text(context.l10n.switchCartCaps),
                 ),
               ),
               const SizedBox(width: 8),
@@ -266,7 +267,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
         const SizedBox(height: 10),
 
         Text(
-          cartName ?? 'Vendor',
+          cartName ?? context.l10n.vendor,
           textAlign: TextAlign.center,
           style: const TextStyle(
             color: Colors.white,
@@ -280,7 +281,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
         const SizedBox(height: 12),
 
         Text(
-          'Checking your payment status',
+          context.l10n.checkingPaymentStatus,
           style: TextStyle(
             color: AppColors.white.withAlpha(184),
             fontSize: 14,
@@ -293,7 +294,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
         const SizedBox(height: 4),
 
         Text(
-          'Please wait a moment...',
+          context.l10n.pleaseWait,
           style: TextStyle(
             color: AppColors.white.withAlpha(128),
             fontSize: 12,

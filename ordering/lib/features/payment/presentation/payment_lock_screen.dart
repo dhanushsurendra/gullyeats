@@ -11,6 +11,7 @@ import 'package:ordering/features/cart/presentation/switch_cart_screen.dart';
 import 'package:ordering/features/cart/providers/cart_provider.dart';
 import 'package:ordering/features/payment/providers/payment_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:ordering/l10n/l10n.dart';
 
 class PaymentLockScreen extends StatefulWidget {
   final String cartName;
@@ -75,7 +76,7 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
     if (cartId == null) {
       AppSnackBar.show(
         context,
-        message: 'Unable to find the selected cart.',
+        message: context.l10n.cartNotFound,
         isError: true,
       );
       return;
@@ -95,7 +96,7 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
           context,
           message:
               paymentProvider.error ??
-              'Unable to start payment. Please try again.',
+              context.l10n.unableToStartPayment,
           isError: true,
         );
         return;
@@ -107,7 +108,7 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
       if (checkout == null ||
           result.payment.isVerified ||
           !result.isLocked) {
-        AppSnackBar.show(context, message: 'Payment received. Your cart is unlocked.');
+        AppSnackBar.show(context, message: context.l10n.paymentReceivedUnlocked);
         Navigator.pushReplacementNamed(context, AppRoutes.home);
         return;
       }
@@ -130,7 +131,7 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
 
       AppSnackBar.show(
         context,
-        message: 'Unable to open payment gateway.',
+        message: context.l10n.unableToOpenGateway,
         isError: true,
       );
     } finally {
@@ -154,7 +155,7 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
     if (payment == null) {
       AppSnackBar.show(
         context,
-        message: 'Payment received, but the payment record could not be found.',
+        message: context.l10n.paymentRecordNotFound,
         isError: true,
       );
       return;
@@ -166,7 +167,7 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
       AppSnackBar.show(
         context,
         message:
-            'Payment response was incomplete. Please check payment status.',
+            context.l10n.paymentResponseIncomplete,
         isError: true,
       );
       return;
@@ -190,7 +191,7 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
       if (verified) {
         AppSnackBar.show(
           context,
-          message: 'Payment verified successfully. Your cart is unlocked.',
+          message: context.l10n.paymentVerifiedUnlocked,
         );
 
         Navigator.pushReplacementNamed(context, AppRoutes.home);
@@ -199,7 +200,7 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
           context,
           message:
               paymentProvider.error ??
-              'Payment was received but verification is still pending.',
+              context.l10n.paymentVerificationPending,
           isError: true,
         );
       }
@@ -217,7 +218,7 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
 
     AppSnackBar.show(
       context,
-      message: 'Payment failed. You can retry using the same payment.',
+      message: context.l10n.paymentFailedRetry,
       isError: true,
     );
   }
@@ -285,12 +286,12 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Sales Overview',
+                              context.l10n.salesOverview,
                               style: AppTextStyles.heading2,
                             ),
                             AppGaps.h4,
                             Text(
-                              'Track earnings & platform fees',
+                              context.l10n.trackEarningsAndFees,
                               style: AppTextStyles.caption.copyWith(
                                 color: AppColors.grey500,
                               ),
@@ -314,10 +315,10 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
 
                   AppButton(
                     label: busy
-                        ? 'OPENING PAYMENT GATEWAY...'
+                        ? context.l10n.openingGatewayCaps
                         : widget.amountDue <= 0
-                        ? 'PAYMENT PENDING'
-                        : 'PAY ₹${widget.amountDue.toStringAsFixed(0)} & UNLOCK NOW',
+                        ? context.l10n.paymentPendingCaps
+                        : context.l10n.payAndUnlockNow(widget.amountDue.toStringAsFixed(0)),
                     isLoading: busy,
                     onPressed: widget.amountDue <= 0 || busy
                         ? null
@@ -460,7 +461,7 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
           AppGaps.h16,
 
           Text(
-            'TODAY SUMMARY',
+            context.l10n.todaySummaryCaps,
             style: AppTextStyles.caption.copyWith(
               color: AppColors.grey500,
               fontWeight: FontWeight.w700,
@@ -470,7 +471,7 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
 
           AppGaps.h12,
 
-          _statRow('Orders Completed', '${widget.ordersCompleted}'),
+          _statRow(context.l10n.ordersCompleted, '${widget.ordersCompleted}'),
 
           AppGaps.h12,
 
@@ -479,7 +480,7 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
           AppGaps.h12,
 
           _statRow(
-            'Platform Fee',
+            context.l10n.platformFee,
             '₹${widget.platformFee.toStringAsFixed(0)}',
             valueColor: AppColors.primary,
           ),
@@ -490,7 +491,7 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Payment Status',
+                context.l10n.paymentStatus,
                 style: AppTextStyles.body.copyWith(color: AppColors.grey600),
               ),
               _statusPill(),
@@ -520,7 +521,7 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
   }
 
   Widget _statusPill() {
-    final label = _isPartiallyPaid ? 'PARTIALLY PAID' : 'DUE';
+    final label = _isPartiallyPaid ? context.l10n.partiallyPaidCaps : 'DUE';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -565,7 +566,7 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Platform fee pending',
+                  context.l10n.platformFeePending,
                   style: AppTextStyles.body.copyWith(
                     color: AppColors.warning,
                     fontWeight: FontWeight.w700,
@@ -573,7 +574,7 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
                 ),
                 AppGaps.h4,
                 Text(
-                  'Your store is locked. Pay securely using Razorpay to unlock it.',
+                  context.l10n.storeLockedPayRazorpay,
                   style: AppTextStyles.caption.copyWith(
                     color: AppColors.grey600,
                   ),
@@ -593,7 +594,7 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
         const Icon(Icons.lock_rounded, size: 12, color: AppColors.grey400),
         AppGaps.w4,
         Text(
-          'Secure payments · Powered by Razorpay',
+          context.l10n.securePaymentsRazorpay,
           style: AppTextStyles.caption.copyWith(
             color: AppColors.grey400,
             fontSize: 11,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:ordering/core/error/app_exceptions.dart';
 import 'package:ordering/core/widgets/app_snack_bar.dart';
 import 'package:ordering/core/theme/app_colors.dart';
@@ -11,6 +12,7 @@ import 'package:ordering/features/cart/providers/cart_provider.dart';
 import 'package:ordering/features/auth/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:ordering/l10n/l10n.dart';
 
 class SalesScreen extends StatefulWidget {
   const SalesScreen({super.key});
@@ -30,26 +32,12 @@ class _SalesScreenState extends State<SalesScreen> {
   String? _selectedPreset = 'today';
 
   static const List<Map<String, String>> _presets = [
-    {'key': 'today', 'label': 'Today'},
-    {'key': 'yesterday', 'label': 'Yesterday'},
-    {'key': 'last7', 'label': 'Last 7 Days'},
-    {'key': 'last30', 'label': 'Last 30 Days'},
+    {'key': 'today'},
+    {'key': 'yesterday'},
+    {'key': 'last7'},
+    {'key': 'last30'},
   ];
 
-  static const List<String> _monthNames = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
 
   @override
   void initState() {
@@ -166,10 +154,9 @@ class _SalesScreenState extends State<SalesScreen> {
     _loadSales();
   }
 
-  String _formatDisplayDate(DateTime date) {
-    final month = _monthNames[date.month - 1];
-    return '${date.day.toString().padLeft(2, '0')} $month ${date.year}';
-  }
+  String _formatDisplayDate(DateTime date) =>
+      DateFormat('dd MMM yyyy', Localizations.localeOf(context).languageCode)
+          .format(date);
 
   void openSwitchOutletSheet(BuildContext context) {
     showModalBottomSheet(
@@ -234,10 +221,10 @@ class _SalesScreenState extends State<SalesScreen> {
 
               AppGaps.h16,
 
-              Text("Sales Dashboard", style: AppTextStyles.heading2),
+              Text(context.l10n.salesDashboard, style: AppTextStyles.heading2),
 
               Text(
-                "Track your earnings and progress",
+                context.l10n.salesSubtitle,
                 style: AppTextStyles.caption,
               ),
 
@@ -384,7 +371,7 @@ class _SalesScreenState extends State<SalesScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Date Range", style: AppTextStyles.heading3),
+        Text(context.l10n.dateRange, style: AppTextStyles.heading3),
         AppGaps.h8,
         Row(
           children: [
@@ -408,7 +395,7 @@ class _SalesScreenState extends State<SalesScreen> {
               final isLast = preset == _presets.last;
               return Padding(
                 padding: EdgeInsets.only(right: isLast ? 0 : 8),
-                child: _presetChip(preset['label']!, preset['key']!),
+                child: _presetChip(context.l10n.rangeLabel(preset['key']!), preset['key']!),
               );
             }).toList(),
           ),
@@ -653,7 +640,7 @@ class _SalesScreenState extends State<SalesScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Total Revenue",
+            context.l10n.totalRevenue,
             style: AppTextStyles.caption.copyWith(
               color: AppColors.white.withValues(alpha: 0.85),
             ),
@@ -674,10 +661,10 @@ class _SalesScreenState extends State<SalesScreen> {
           AppGaps.h16,
           Row(
             children: [
-              _heroStat("Net", _money(data.netRevenue)),
-              _heroStat("Subtotal", _money(data.subtotalRevenue)),
-              _heroStat("Platform Fee", _money(data.platformFeeRevenue)),
-              _heroStat("Parcel", _money(data.parcelRevenue)),
+              _heroStat(context.l10n.net, _money(data.netRevenue)),
+              _heroStat(context.l10n.subtotal, _money(data.subtotalRevenue)),
+              _heroStat(context.l10n.platformFee, _money(data.platformFeeRevenue)),
+              _heroStat(context.l10n.parcel, _money(data.parcelRevenue)),
             ],
           ),
         ],
@@ -715,11 +702,11 @@ class _SalesScreenState extends State<SalesScreen> {
   Widget _quickStatsRow(SalesModel data) {
     return Row(
       children: [
-        _statBox("Avg Order", _money(data.avgOrderValue)),
+        _statBox(context.l10n.avgOrder, _money(data.avgOrderValue)),
         AppGaps.w8,
-        _statBox("Highest", _money(data.highestOrder)),
+        _statBox(context.l10n.highest, _money(data.highestOrder)),
         AppGaps.w8,
-        _statBox("Lowest", _money(data.lowestOrder)),
+        _statBox(context.l10n.lowest, _money(data.lowestOrder)),
       ],
     );
   }
@@ -733,26 +720,26 @@ class _SalesScreenState extends State<SalesScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _sectionTitle("Orders", trailing: "${data.totalOrders} total"),
+          _sectionTitle(context.l10n.orders, trailing: context.l10n.totalCount(data.totalOrders)),
           AppGaps.h16,
           Row(
             children: [
               _statBox(
-                "Unpaid",
+                context.l10n.unpaid,
                 "${data.pendingOrders}",
                 valueColor: AppColors.grey500,
               ),
               AppGaps.w8,
-              _statBox("Paid", "${data.paidOrders}"),
+              _statBox(context.l10n.paid, "${data.paidOrders}"),
               AppGaps.w8,
               _statBox(
-                "Served",
+                context.l10n.served,
                 "${data.servedOrders}",
                 valueColor: AppColors.success,
               ),
               AppGaps.w8,
               _statBox(
-                "Cancelled",
+                context.l10n.cancelled,
                 "${data.cancelledOrders}",
                 valueColor: AppColors.error,
               ),
@@ -760,13 +747,13 @@ class _SalesScreenState extends State<SalesScreen> {
           ),
           AppGaps.h16,
           _progressRow(
-            "Completion Rate",
+            context.l10n.completionRate,
             data.completionRate,
             AppColors.success,
           ),
-          _progressRow("Payment Rate", data.paymentRate, AppColors.primary),
+          _progressRow(context.l10n.paymentRate, data.paymentRate, AppColors.primary),
           _progressRow(
-            "Cancellation Rate",
+            context.l10n.cancellationRate,
             data.cancellationRate,
             AppColors.error,
           ),
@@ -784,21 +771,21 @@ class _SalesScreenState extends State<SalesScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _sectionTitle("Items Sold"),
+          _sectionTitle(context.l10n.itemsSold),
           AppGaps.h16,
           Row(
             children: [
-              _statBox("Total Sold", "${data.totalItemsSold}"),
+              _statBox(context.l10n.totalSold, "${data.totalItemsSold}"),
               AppGaps.w8,
-              _statBox("Unique", "${data.uniqueItemsSold}"),
+              _statBox(context.l10n.unique, "${data.uniqueItemsSold}"),
             ],
           ),
           AppGaps.h8,
           Row(
             children: [
-              _statBox("Avg / Order", data.avgItemsPerOrder.toStringAsFixed(1)),
+              _statBox(context.l10n.avgPerOrder, data.avgItemsPerOrder.toStringAsFixed(1)),
               AppGaps.w8,
-              _statBox("Max in 1 Order", "${data.highestItemsInOrder}"),
+              _statBox(context.l10n.maxInOneOrder, "${data.highestItemsInOrder}"),
             ],
           ),
         ],
@@ -820,7 +807,7 @@ class _SalesScreenState extends State<SalesScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _sectionTitle("Order Type"),
+          _sectionTitle(context.l10n.orderType),
           AppGaps.h12,
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
@@ -845,7 +832,7 @@ class _SalesScreenState extends State<SalesScreen> {
             children: [
               _legendDot(
                 AppColors.primary,
-                "QR · ${data.qrOrders} orders · ${_money(data.qrRevenue)}",
+                context.l10n.qrOrdersSummary(data.qrOrders, _money(data.qrRevenue)),
               ),
             ],
           ),
@@ -854,7 +841,7 @@ class _SalesScreenState extends State<SalesScreen> {
             children: [
               _legendDot(
                 AppColors.grey300,
-                "Manual · ${data.manualOrders} orders · ${_money(data.manualRevenue)}",
+                context.l10n.manualOrdersSummary(data.manualOrders, _money(data.manualRevenue)),
               ),
             ],
           ),
@@ -863,9 +850,9 @@ class _SalesScreenState extends State<SalesScreen> {
           AppGaps.h16,
           Row(
             children: [
-              _statBox("Parcel Orders", "${data.parcelOrders}"),
+              _statBox(context.l10n.parcelOrders, "${data.parcelOrders}"),
               AppGaps.w8,
-              _statBox("Avg Parcel Charge", _money(data.avgParcelCharge)),
+              _statBox(context.l10n.avgParcelCharge, _money(data.avgParcelCharge)),
             ],
           ),
         ],
@@ -907,9 +894,9 @@ class _SalesScreenState extends State<SalesScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _sectionTitle("Busy Hours"),
+            _sectionTitle(context.l10n.busyHours),
             AppGaps.h8,
-            Text("No orders in this period yet", style: AppTextStyles.caption),
+            Text(context.l10n.noOrdersInPeriod, style: AppTextStyles.caption),
           ],
         ),
       );
@@ -922,9 +909,9 @@ class _SalesScreenState extends State<SalesScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _sectionTitle(
-            "Busy Hours",
+            context.l10n.busyHours,
             trailing: data.peakHour != null
-                ? "Peak: ${HourCount(hour: data.peakHour!, count: 0).label}"
+                ? context.l10n.peakHour(HourCount(hour: data.peakHour!, count: 0).label)
                 : null,
           ),
           AppGaps.h16,
@@ -996,27 +983,27 @@ class _SalesScreenState extends State<SalesScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _sectionTitle("Timing"),
-          _timingRow(Icons.timer_outlined, "Avg Prep Time", data.avgPrepTime),
-          _timingRow(Icons.bolt_outlined, "Fastest Order", data.fastestOrder),
+          _sectionTitle(context.l10n.timing),
+          _timingRow(Icons.timer_outlined, context.l10n.avgPrepTime, data.avgPrepTime),
+          _timingRow(Icons.bolt_outlined, context.l10n.fastestOrder, data.fastestOrder),
           _timingRow(
             Icons.hourglass_bottom_outlined,
-            "Slowest Order",
+            context.l10n.slowestOrder,
             data.slowestOrder,
           ),
           _timingRow(
             Icons.payments_outlined,
-            "Avg Payment Time",
+            context.l10n.avgPaymentTime,
             data.avgPaymentTime,
           ),
           _timingRow(
             Icons.check_circle_outline,
-            "Avg Serve After Payment",
+            context.l10n.avgServeAfterPayment,
             data.avgServeAfterPaymentTime,
           ),
           _timingRow(
             Icons.swap_horiz,
-            "Avg Time Between Orders",
+            context.l10n.avgTimeBetweenOrders,
             data.averageTimeBetweenOrders,
           ),
         ],
@@ -1033,7 +1020,7 @@ class _SalesScreenState extends State<SalesScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _sectionTitle("Item Leaderboard"),
+          _sectionTitle(context.l10n.itemLeaderboard),
           AppGaps.h12,
           if (data.topRevenueItem != null || data.topVolumeItem != null)
             Row(
@@ -1041,7 +1028,7 @@ class _SalesScreenState extends State<SalesScreen> {
                 if (data.topRevenueItem != null)
                   _badge(
                     Icons.star_rounded,
-                    "Top Revenue",
+                    context.l10n.topRevenue,
                     data.topRevenueItem!,
                     AppColors.primary,
                   ),
@@ -1050,7 +1037,7 @@ class _SalesScreenState extends State<SalesScreen> {
                 if (data.topVolumeItem != null)
                   _badge(
                     Icons.local_fire_department_rounded,
-                    "Top Volume",
+                    context.l10n.topVolume,
                     data.topVolumeItem!,
                     AppColors.success,
                   ),
@@ -1059,7 +1046,7 @@ class _SalesScreenState extends State<SalesScreen> {
           AppGaps.h16,
           if (data.topItems.isNotEmpty) ...[
             Text(
-              "Top Sellers",
+              context.l10n.topSellers,
               style: AppTextStyles.caption.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -1073,7 +1060,7 @@ class _SalesScreenState extends State<SalesScreen> {
           if (data.bottomItems.isNotEmpty) ...[
             AppGaps.h16,
             Text(
-              "Needs a Push",
+              context.l10n.needsAPush,
               style: AppTextStyles.caption.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -1151,7 +1138,7 @@ class _SalesScreenState extends State<SalesScreen> {
               style: AppTextStyles.body,
             ),
           ),
-          Text("${item.qty} sold", style: AppTextStyles.caption),
+          Text(context.l10n.soldCount(item.qty), style: AppTextStyles.caption),
           AppGaps.w8,
           Text(
             _money(item.revenue),

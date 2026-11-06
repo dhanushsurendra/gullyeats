@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:ordering/core/widgets/app_snack_bar.dart';
 import 'package:ordering/core/error/app_exceptions.dart';
 import 'package:ordering/core/theme/app_colors.dart';
@@ -13,6 +14,7 @@ import 'package:ordering/features/auth/providers/auth_provider.dart';
 import 'package:ordering/features/orders/providers/order_provider.dart';
 import 'package:ordering/features/orders/widgets/orders_overview_card.dart';
 import 'package:provider/provider.dart';
+import 'package:ordering/l10n/l10n.dart';
 
 class OrdersOverviewScreen extends StatefulWidget {
   const OrdersOverviewScreen({super.key});
@@ -35,26 +37,12 @@ class _OrdersOverviewScreenState extends State<OrdersOverviewScreen> {
   String? _selectedPreset = 'today';
 
   static const List<Map<String, String>> _presets = [
-    {'key': 'today', 'label': 'Today'},
-    {'key': 'yesterday', 'label': 'Yesterday'},
-    {'key': 'last7', 'label': 'Last 7 Days'},
-    {'key': 'last30', 'label': 'Last 30 Days'},
+    {'key': 'today'},
+    {'key': 'yesterday'},
+    {'key': 'last7'},
+    {'key': 'last30'},
   ];
 
-  static const List<String> _monthNames = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
 
   // ==========================================================================
   // INIT
@@ -261,12 +249,9 @@ class _OrdersOverviewScreenState extends State<OrdersOverviewScreen> {
   // DATE FORMAT
   // ==========================================================================
 
-  String _formatDisplayDate(DateTime date) {
-    final month = _monthNames[date.month - 1];
-
-    return '${date.day.toString().padLeft(2, '0')} '
-        '$month ${date.year}';
-  }
+  String _formatDisplayDate(DateTime date) =>
+      DateFormat('dd MMM yyyy', Localizations.localeOf(context).languageCode)
+          .format(date);
 
   // ==========================================================================
   // SWITCH CART
@@ -319,7 +304,7 @@ class _OrdersOverviewScreenState extends State<OrdersOverviewScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Orders Overview', style: AppTextStyles.heading2),
+                    Text(context.l10n.ordersOverview, style: AppTextStyles.heading2),
 
                     // =============================================================
                     // DATE FILTER
@@ -403,7 +388,7 @@ class _OrdersOverviewScreenState extends State<OrdersOverviewScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Date Range', style: AppTextStyles.heading3),
+        Text(context.l10n.dateRange, style: AppTextStyles.heading3),
 
         AppGaps.h8,
 
@@ -434,7 +419,7 @@ class _OrdersOverviewScreenState extends State<OrdersOverviewScreen> {
 
               return Padding(
                 padding: EdgeInsets.only(right: isLast ? 0 : 8),
-                child: _presetChip(preset['label']!, preset['key']!),
+                child: _presetChip(context.l10n.rangeLabel(preset['key']!), preset['key']!),
               );
             }).toList(),
           ),
@@ -543,7 +528,7 @@ class _OrdersOverviewScreenState extends State<OrdersOverviewScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Orders Status', style: AppTextStyles.heading3),
+        Text(context.l10n.ordersStatus, style: AppTextStyles.heading3),
 
         AppGaps.h8,
 
@@ -552,19 +537,19 @@ class _OrdersOverviewScreenState extends State<OrdersOverviewScreen> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _statusPill('Unpaid', unpaidOrders, AppColors.warning),
+              _statusPill(context.l10n.unpaid, unpaidOrders, AppColors.warning),
 
               AppGaps.w8,
 
-              _statusPill('Paid', paidOrders, AppColors.primary),
+              _statusPill(context.l10n.paid, paidOrders, AppColors.primary),
 
               AppGaps.w8,
 
-              _statusPill('Served', servedOrders, AppColors.success),
+              _statusPill(context.l10n.served, servedOrders, AppColors.success),
 
               AppGaps.w8,
 
-              _statusPill('Cancelled', cancelledOrders, AppColors.error),
+              _statusPill(context.l10n.cancelled, cancelledOrders, AppColors.error),
             ],
           ),
         ),
@@ -601,14 +586,14 @@ class _OrdersOverviewScreenState extends State<OrdersOverviewScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Orders', style: AppTextStyles.heading3),
+        Text(context.l10n.orders, style: AppTextStyles.heading3),
 
         AppGaps.h8,
 
         if (orders.isEmpty)
           _sectionCard(
             child: Text(
-              'No orders in this period yet',
+              context.l10n.noOrdersInPeriod,
               style: AppTextStyles.caption,
             ),
           )

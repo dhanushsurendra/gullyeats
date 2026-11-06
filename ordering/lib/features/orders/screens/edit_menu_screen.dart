@@ -15,6 +15,7 @@ import 'package:ordering/core/widgets/app_search_bar.dart';
 import 'package:ordering/features/orders/providers/menu_provider.dart';
 import 'package:ordering/features/orders/screens/add_new_item.dart';
 import 'package:ordering/features/orders/widgets/edit_menu_dialog.dart';
+import 'package:ordering/l10n/l10n.dart';
 
 class EditMenuScreen extends StatefulWidget {
   const EditMenuScreen({super.key});
@@ -65,7 +66,7 @@ class _EditMenuScreenState extends State<EditMenuScreen> {
               AppGaps.h16,
               AppSearchBar(
                 controller: _searchController,
-                hintText: "Search menu items",
+                hintText: context.l10n.searchMenuItems,
                 onChanged: (value) => setState(() => _query = value),
               ),
               AppGaps.h16,
@@ -81,7 +82,7 @@ class _EditMenuScreenState extends State<EditMenuScreen> {
                     final filteredItems = provider.searchMenuItem(_query);
 
                     if (filteredItems.isEmpty) {
-                      return const Center(child: Text("No menu items found"));
+                      return Center(child: Text(context.l10n.noMenuItemsFound));
                     }
 
                     return ListView.separated(
@@ -120,10 +121,10 @@ class _EditMenuScreenState extends State<EditMenuScreen> {
           children: [AppBackButton(), _addItemButton()],
         ),
         AppGaps.h24,
-        Text("Edit Menu Items", style: AppTextStyles.heading2),
+        Text(context.l10n.editMenuItems, style: AppTextStyles.heading2),
         AppGaps.h4,
         Text(
-          "Add, remove or update your cart menu.",
+          context.l10n.editMenuSubtitle,
           style: AppTextStyles.caption.copyWith(color: AppColors.grey500),
         ),
       ],
@@ -137,7 +138,7 @@ class _EditMenuScreenState extends State<EditMenuScreen> {
         MaterialPageRoute(builder: (context) => const AddItemScreen()),
       ),
       icon: const Icon(Icons.add, size: 16),
-      label: const Text("Add Item", style: TextStyle(fontSize: 14)),
+      label: Text(context.l10n.addItem, style: TextStyle(fontSize: 14)),
       style: OutlinedButton.styleFrom(
         foregroundColor: AppColors.primary,
         side: const BorderSide(color: AppColors.primary),
@@ -239,8 +240,8 @@ class _EditMenuScreenState extends State<EditMenuScreen> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text("Delete Item?", style: AppTextStyles.heading3),
-        content: Text("Are you sure you want to remove this item?"),
+        title: Text(context.l10n.deleteItemQuestion, style: AppTextStyles.heading3),
+        content: Text(context.l10n.confirmRemoveItem),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
@@ -262,7 +263,7 @@ class _EditMenuScreenState extends State<EditMenuScreen> {
 
                 AppSnackBar.show(
                   context,
-                  message: "Item deleted successfully!",
+                  message: context.l10n.itemDeleted,
                   marginBottom: 0,
                 );
               } catch (e) {
@@ -297,7 +298,7 @@ class _EditMenuScreenState extends State<EditMenuScreen> {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
-        isInStock ? "IN STOCK" : "OUT STOCK",
+        isInStock ? context.l10n.inStockCaps : context.l10n.outOfStockCaps,
         style: AppTextStyles.caption.copyWith(
           color: color,
           fontWeight: FontWeight.bold,

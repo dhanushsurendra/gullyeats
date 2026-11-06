@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
 import 'package:ordering/core/widgets/app_button.dart';
+import 'package:ordering/l10n/l10n.dart';
 
 class CartOption {
   final String id;
@@ -72,10 +73,10 @@ class _SwitchStaffCartSheetState extends State<SwitchStaffCartSheet> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("Switch Cart", style: AppTextStyles.heading2),
+                    Text(context.l10n.switchCart, style: AppTextStyles.heading2),
                     const SizedBox(height: 4),
                     Text(
-                      "Move ${widget.staffName} to a different cart",
+                      context.l10n.moveStaffToCart(widget.staffName),
                       style: AppTextStyles.caption.copyWith(
                         color: Colors.grey.shade600,
                       ),
@@ -88,7 +89,7 @@ class _SwitchStaffCartSheetState extends State<SwitchStaffCartSheet> {
                 child: widget.carts.isEmpty
                     ? Center(
                         child: Text(
-                          "No carts available",
+                          context.l10n.noCartsAvailable,
                           style: AppTextStyles.body.copyWith(
                             color: Colors.grey.shade500,
                           ),
@@ -223,7 +224,7 @@ class _SwitchStaffCartSheetState extends State<SwitchStaffCartSheet> {
                     width: double.infinity,
                     height: 50,
                     child: AppButton(
-                      label: "CONFIRM SWITCH",
+                      label: context.l10n.confirmSwitchCaps,
                       isLoading: widget.isLoading,
                       onPressed: (_selectedCartId == null || isSameCart)
                           ? null

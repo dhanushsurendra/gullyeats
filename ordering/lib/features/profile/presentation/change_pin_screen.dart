@@ -11,6 +11,7 @@ import 'package:ordering/core/widgets/app_input.dart';
 import 'package:ordering/core/widgets/app_snack_bar.dart';
 import 'package:ordering/features/auth/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:ordering/l10n/l10n.dart';
 
 class ChangePinScreen extends StatefulWidget {
   const ChangePinScreen({super.key});
@@ -43,30 +44,30 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
     bool isValid = true;
 
     if (_currentPin.text.isEmpty) {
-      currentPinError = "Current PIN is required";
+      currentPinError = context.l10n.currentPinRequired;
       isValid = false;
     }
 
     if (_newPin.text.isEmpty) {
-      newPinError = "New PIN is required";
+      newPinError = context.l10n.newPinRequired;
       isValid = false;
     } else if (!RegExp(r'^\d{4}$').hasMatch(_newPin.text)) {
-      newPinError = "PIN must be 4 digits";
+      newPinError = context.l10n.pinMust4Digits;
       isValid = false;
     }
 
     if (_confirmPin.text.isEmpty) {
-      confirmPinError = "Confirm your PIN";
+      confirmPinError = context.l10n.confirmYourPin;
       isValid = false;
     } 
 
     if (_newPin.text != _confirmPin.text) {
-      confirmPinError = "PIN does not match";
+      confirmPinError = context.l10n.pinMismatch;
       isValid = false;
     }
 
     if (_currentPin.text == _newPin.text) {
-      newPinError = "New PIN cannot be same as current PIN";
+      newPinError = context.l10n.pinSameAsCurrent;
       isValid = false;
     }
 
@@ -84,7 +85,7 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
 
       AppSnackBar.show(
         context,
-        message: "PIN updated successfully",
+        message: context.l10n.pinUpdated,
         marginBottom: 0,
       );
 
@@ -128,7 +129,7 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
         child: Column(
           children: [
             AppGaps.h16,
-            AppHeader(title: "Change Pin", showBack: true),
+            AppHeader(title: context.l10n.changePin, showBack: true),
             Expanded(
               child: SingleChildScrollView(
                 child: Padding(
@@ -137,7 +138,7 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "Update your 4-digit login PIN securely.",
+                        context.l10n.changePinSubtitle,
                         style: AppTextStyles.caption,
                       ),
                       AppGaps.h24,
@@ -151,7 +152,7 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
                         child: Column(
                           children: [
                             _pinField(
-                              label: "Current PIN",
+                              label: context.l10n.currentPin,
                               controller: _currentPin,
                               obscure: _obscureCurrent,
                               toggle: () => setState(
@@ -173,12 +174,12 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
                                   AppSnackBar.show(
                                     context,
                                     message:
-                                        "Please contact support at 9108735100 to reset your PIN",
+                                        context.l10n.contactSupportToResetPin,
                                     marginBottom: 0,
                                   );
                                 },
                                 child: Text(
-                                  "Forgot current PIN?",
+                                  context.l10n.forgotCurrentPin,
                                   style: AppTextStyles.caption.copyWith(
                                     color: AppColors.primary,
                                     fontWeight: FontWeight.w600,
@@ -189,7 +190,7 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
                             AppGaps.h12,
 
                             _pinField(
-                              label: "Current PIN",
+                              label: context.l10n.newPin,
                               controller: _newPin,
                               obscure: _obscureNew,
                               toggle: () =>
@@ -204,7 +205,7 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
 
                             AppGaps.h12,
                             _pinField(
-                              label: "Confirm New PIN",
+                              label: context.l10n.confirmNewPin,
                               controller: _confirmPin,
                               obscure: _obscureConfirm,
                               toggle: () => setState(
@@ -240,7 +241,7 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
                             AppGaps.w8,
                             Expanded(
                               child: Text(
-                                "PIN must be 4 digits. Do not share.",
+                                context.l10n.pinHint,
                                 style: AppTextStyles.caption,
                               ),
                             ),
@@ -256,7 +257,7 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: AppButton(
-                label: "UPDATE PIN",
+                label: context.l10n.updatePinCaps,
                 isLoading: _isLoading,
                 onPressed: _validateAndSubmit
               ),

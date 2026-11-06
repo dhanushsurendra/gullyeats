@@ -21,6 +21,8 @@ import 'package:ordering/core/utils/session.dart';
 import 'package:ordering/core/error/app_exceptions.dart';
 import 'package:ordering/core/widgets/app_snack_bar.dart';
 import 'package:provider/provider.dart';
+import 'package:ordering/features/profile/providers/language_provider.dart';
+import 'package:ordering/l10n/l10n.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -76,7 +78,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final cartProvider = context.watch<CartProvider>();
     final selectedCart = cartProvider.selectedCart;
     final phoneNumber = authProvider.user?['phoneNumber'] ?? '';
-    final vendorName = (authProvider.user?['name'] ?? 'Vendor').toString();
+    final vendorName = (authProvider.user?['name'] ?? context.l10n.vendor).toString();
     final initials = vendorName
         .split(' ')
         .where((e) => e.isNotEmpty)
@@ -125,8 +127,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   AppGaps.h12,
 
                   _sectionCard(
-                    "Payments History",
-                    "Track Payments",
+                    context.l10n.paymentsHistory,
+                    context.l10n.trackPayments,
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const PaymentScreen()),
@@ -136,8 +138,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   AppGaps.h12,
 
                   _sectionCard(
-                    "Menu Management",
-                    "Edit Menu Items",
+                    context.l10n.menuManagement,
+                    context.l10n.editMenuItems,
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const EditMenuScreen()),
@@ -146,8 +148,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   AppGaps.h12,
 
                   _sectionCard(
-                    "Staff Management",
-                    "Edit Staff Details",
+                    context.l10n.staffManagement,
+                    context.l10n.editStaffDetails,
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -158,8 +160,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   AppGaps.h12,
 
                   _sectionCard(
-                    "Orders Overview",
-                    "View Order Details",
+                    context.l10n.ordersOverview,
+                    context.l10n.viewOrderDetails,
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -294,7 +296,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Row(
             children: [
               Expanded(
-                child: Text("Cart Details", style: AppTextStyles.heading3),
+                child: Text(context.l10n.cartDetails, style: AppTextStyles.heading3),
               ),
 
               // Status
@@ -310,7 +312,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  isOpen ? "Open" : "Closed",
+                  isOpen ? context.l10n.open : context.l10n.closed,
                   style: AppTextStyles.caption.copyWith(
                     color: isOpen ? AppColors.success : AppColors.grey600,
                     fontWeight: FontWeight.w600,
@@ -398,7 +400,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "CART ID",
+                  context.l10n.cartIdCaps,
                   style: AppTextStyles.caption.copyWith(
                     color: AppColors.grey600,
                     fontWeight: FontWeight.w600,
@@ -454,7 +456,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   borderRadius: BorderRadius.circular(26),
                 ),
               ),
-              child: const Text("VIEW QR", style: TextStyle(fontSize: 14)),
+              child: Text(context.l10n.viewQrCaps, style: TextStyle(fontSize: 14)),
             ),
           ),
         ],
@@ -488,7 +490,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("Language Preferences", style: AppTextStyles.heading3),
+              Text(context.l10n.languagePreferences, style: AppTextStyles.heading3),
               TextButton(
                 onPressed: () => Navigator.push(
                   context,
@@ -497,16 +499,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 child: Text(
-                  "Change",
+                  context.l10n.change,
                   style: TextStyle(color: AppColors.primary, fontSize: 14),
                 ),
               ),
             ],
           ),
-          Text("English", style: AppTextStyles.body),
+          Text(
+            LanguageProvider.languages[context
+                .watch<LanguageProvider>()
+                .locale
+                .languageCode]!,
+            style: AppTextStyles.body,
+          ),
           AppGaps.h4,
           Text(
-            "Supported: Kannada, Tamil, Hindi, English",
+            context.l10n.supportedLanguages,
             style: AppTextStyles.caption,
           ),
         ],
@@ -521,8 +529,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           ListTile(
             contentPadding: EdgeInsets.zero,
-            title: Text("Security & Login", style: AppTextStyles.heading3),
-            subtitle: Text("Change PIN", style: AppTextStyles.caption),
+            title: Text(context.l10n.securityAndLogin, style: AppTextStyles.heading3),
+            subtitle: Text(context.l10n.changePin, style: AppTextStyles.caption),
             trailing: const Icon(Icons.chevron_right, color: AppColors.grey500),
             onTap: () => Navigator.push(
               context,
@@ -536,7 +544,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             isLoading: _isLoggingOut,
             disabled: _isLoggingOut,
             onPressed: _isLoggingOut ? null : _logout,
-            label: "LOG OUT",
+            label: context.l10n.logOutCaps,
           ),
         ],
       ),

@@ -1,5 +1,6 @@
 import 'package:ordering/core/error/api_exception.dart';
 import 'package:ordering/core/utils/session.dart';
+import 'package:ordering/features/profile/providers/language_provider.dart';
 
 class AppExceptionHandler {
   static String getMessage(Object error) {
@@ -10,19 +11,19 @@ class AppExceptionHandler {
       // that notices an expired login.
       if (error.statusCode == 401) {
         handleUnauthorized();
-        return "Your login has expired. Please log in again.";
+        return LanguageProvider.strings.sessionExpired;
       }
       return error.message;
     }
 
     if (message.contains("SocketException")) {
-      return "Check your internet connection";
+      return LanguageProvider.strings.checkInternet;
     }
 
     if (message.contains("TimeoutException")) {
-      return "Request timed out. Try again";
+      return LanguageProvider.strings.requestTimedOut;
     }
 
-    return "Something went wrong. Please try again.";
+    return LanguageProvider.strings.somethingWentWrong;
   }
 }

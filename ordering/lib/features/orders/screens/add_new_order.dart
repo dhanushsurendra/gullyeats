@@ -16,6 +16,7 @@ import 'package:ordering/features/orders/models/menu_item_model.dart';
 import 'package:ordering/features/orders/models/order_model.dart';
 import 'package:ordering/features/orders/providers/order_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:ordering/l10n/l10n.dart';
 
 class AddNewOrder extends StatefulWidget {
   final OrderModel? existingOrder;
@@ -127,8 +128,8 @@ class _AddNewOrderState extends State<AddNewOrder> {
       AppSnackBar.show(
         context,
         message: isPaid
-            ? "Order created and marked as paid."
-            : "Order created successfully.",
+            ? context.l10n.orderCreatedPaid
+            : context.l10n.orderCreated,
       );
     } catch (e) {
       if (!mounted) return;
@@ -163,7 +164,7 @@ class _AddNewOrderState extends State<AddNewOrder> {
 
       messenger.clearSnackBars();
 
-      AppSnackBar.show(context, isInfo: true, message: "Order deleted");
+      AppSnackBar.show(context, isInfo: true, message: context.l10n.orderDeleted);
 
       Navigator.pop(context);
     } catch (e) {
@@ -239,7 +240,7 @@ class _AddNewOrderState extends State<AddNewOrder> {
 
       Navigator.pop(context, updatedOrder);
 
-      AppSnackBar.show(context, message: "Order updated successfully");
+      AppSnackBar.show(context, message: context.l10n.orderUpdated);
     } catch (e) {
       if (!mounted) return;
 
@@ -333,7 +334,7 @@ class _AddNewOrderState extends State<AddNewOrder> {
                     Padding(
                       padding: const EdgeInsets.all(16),
                       child: AppSearchBar(
-                        hintText: "Search items...",
+                        hintText: context.l10n.searchItems,
                         onChanged: _onSearchChanged,
                       ),
                     ),
@@ -341,7 +342,7 @@ class _AddNewOrderState extends State<AddNewOrder> {
                     Padding(
                       padding: AppPadding.horizontalScreen,
                       child: Text(
-                        "Menu Items",
+                        context.l10n.menuItems,
                         style: AppTextStyles.heading2.copyWith(fontSize: 16),
                       ),
                     ),
@@ -423,7 +424,7 @@ class _AddNewOrderState extends State<AddNewOrder> {
           const Spacer(),
 
           Text(
-            widget.isEditing ? "Update Order" : "Create Order",
+            widget.isEditing ? context.l10n.updateOrder : context.l10n.createOrder,
             style: AppTextStyles.heading2,
           ),
 
@@ -555,7 +556,7 @@ class _AddNewOrderState extends State<AddNewOrder> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            "Parcel Charges",
+            context.l10n.parcelCharges,
             style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w500),
           ),
 
@@ -608,20 +609,20 @@ class _AddNewOrderState extends State<AddNewOrder> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _row("Subtotal", "₹${provider.subtotal.toStringAsFixed(0)}"),
+          _row(context.l10n.subtotal, "₹${provider.subtotal.toStringAsFixed(0)}"),
 
           AppGaps.h4,
 
-          _row("Platform Fee", "₹${provider.platformFee.toStringAsFixed(0)}"),
+          _row(context.l10n.platformFee, "₹${provider.platformFee.toStringAsFixed(0)}"),
 
           AppGaps.h4,
 
-          _row("Parcel", "₹${provider.parcelPrice.toStringAsFixed(0)}"),
+          _row(context.l10n.parcel, "₹${provider.parcelPrice.toStringAsFixed(0)}"),
 
           if (widget.isEditing) ...[
             AppGaps.h8,
 
-            _row("Previous Total", "₹${oldTotal.toStringAsFixed(0)}"),
+            _row(context.l10n.previousTotal, "₹${oldTotal.toStringAsFixed(0)}"),
           ],
 
           AppGaps.h12,
@@ -634,7 +635,7 @@ class _AddNewOrderState extends State<AddNewOrder> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                widget.isEditing ? "NEW TOTAL" : "TOTAL",
+                widget.isEditing ? context.l10n.newTotalCaps : "TOTAL",
                 style: AppTextStyles.heading2.copyWith(fontSize: 16),
               ),
               Text(
@@ -681,7 +682,7 @@ class _AddNewOrderState extends State<AddNewOrder> {
                     height: 48,
                     child: AppButton(
                       disabled: provider.orderItems.isEmpty || _isSubmitting,
-                      label: "MARK AS PAID",
+                      label: context.l10n.markAsPaidCaps,
                       isLoading: _isSubmitting && _isMarkingPaid,
                       onPressed: () async {
                         await _createOrder(true, provider, token, cartId);
@@ -702,8 +703,8 @@ class _AddNewOrderState extends State<AddNewOrder> {
               child: AppButton(
                 disabled: _isSubmitting,
                 label: provider.orderItems.isEmpty
-                    ? "DELETE ORDER"
-                    : "UPDATE ORDER",
+                    ? context.l10n.deleteOrderCaps
+                    : context.l10n.updateOrderCaps,
                 isLoading: _isSubmitting,
                 onPressed: () async {
                   if (provider.orderItems.isEmpty) {
@@ -750,8 +751,8 @@ class _AddNewOrderState extends State<AddNewOrder> {
           Expanded(
             child: Text(
               isCollect
-                  ? "Customer needs to pay ₹${amount.toStringAsFixed(0)} more"
-                  : "Give ₹${amount.toStringAsFixed(0)} back to customer",
+                  ? context.l10n.customerNeedsToPay(amount.toStringAsFixed(0))
+                  : context.l10n.giveBackToCustomer(amount.toStringAsFixed(0)),
               style: AppTextStyles.caption.copyWith(
                 color: color,
                 fontWeight: FontWeight.w700,

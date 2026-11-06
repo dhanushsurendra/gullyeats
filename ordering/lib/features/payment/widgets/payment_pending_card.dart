@@ -3,6 +3,7 @@ import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_gaps.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
 import 'package:ordering/core/widgets/app_button.dart';
+import 'package:ordering/l10n/l10n.dart';
 
 /// Shown after the vendor returns from the UPI app. The backend has not
 /// verified the payment yet — this card never claims success, only that
@@ -42,27 +43,27 @@ class PaymentPendingCard extends StatelessWidget {
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
               AppGaps.w12,
-              Expanded(child: Text("Payment Submitted", style: AppTextStyles.heading3)),
+              Expanded(child: Text(context.l10n.paymentSubmitted, style: AppTextStyles.heading3)),
             ],
           ),
           AppGaps.h8,
           Text(
-            "Your payment has been submitted and is waiting for verification.",
+            context.l10n.paymentSubmittedWaiting,
             style: AppTextStyles.caption.copyWith(color: AppColors.grey600),
           ),
           AppGaps.h16,
           Row(
             children: [
-              Expanded(child: _stat("Amount", "₹${amount.toStringAsFixed(0)}")),
-              Expanded(child: _stat("Orders", "$totalOrders")),
+              Expanded(child: _stat(context.l10n.amount, "₹${amount.toStringAsFixed(0)}")),
+              Expanded(child: _stat(context.l10n.orders, "$totalOrders")),
               Expanded(
-                child: _stat("Status", "Verification Pending", color: AppColors.warning),
+                child: _stat(context.l10n.status, context.l10n.verificationPending, color: AppColors.warning),
               ),
             ],
           ),
           AppGaps.h16,
           AppButton(
-            label: "CHECK PAYMENT STATUS",
+            label: context.l10n.checkPaymentStatusCaps,
             isLoading: isChecking,
             onPressed: isChecking ? null : onCheckStatus,
           ),

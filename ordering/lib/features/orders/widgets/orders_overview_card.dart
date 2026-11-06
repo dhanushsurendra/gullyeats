@@ -4,6 +4,7 @@ import 'package:ordering/core/theme/app_gaps.dart';
 import 'package:ordering/core/theme/app_padding.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
 import 'package:ordering/features/orders/models/order_model.dart';
+import 'package:ordering/l10n/l10n.dart';
 
 class OrdersOverviewCard extends StatefulWidget {
   final OrderModel order;
@@ -160,7 +161,7 @@ class OrdersOverviewCardState extends State<OrdersOverviewCard> {
   }
 
   String _collapsedSummary(OrderModel order) {
-    if (order.orderItems.isEmpty) return "No items";
+    if (order.orderItems.isEmpty) return context.l10n.noItems;
 
     final visible = order.orderItems.take(2);
     final summary = visible
@@ -176,7 +177,7 @@ class OrdersOverviewCardState extends State<OrdersOverviewCard> {
 
   Widget _itemsBill(OrderModel order) {
     if (order.orderItems.isEmpty) {
-      return Text("No items", style: AppTextStyles.caption);
+      return Text(context.l10n.noItems, style: AppTextStyles.caption);
     }
 
     return Column(
@@ -240,19 +241,19 @@ class OrdersOverviewCardState extends State<OrdersOverviewCard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        detailRow("Subtotal", money(order.subtotal)),
+        detailRow(context.l10n.subtotal, money(order.subtotal)),
         if (order.parcelCharge > 0) ...[
           const SizedBox(height: 6),
-          detailRow("Parcel Charge", money(order.parcelCharge)),
+          detailRow(context.l10n.parcelCharge, money(order.parcelCharge)),
         ],
         if (order.platformFee > 0) ...[
           const SizedBox(height: 6),
-          detailRow("Platform Fee", money(order.platformFee)),
+          detailRow(context.l10n.platformFee, money(order.platformFee)),
         ],
         AppGaps.h8,
         Container(height: 1, color: AppColors.grey200),
         AppGaps.h8,
-        detailRow("Total", money(order.totalPrice), isBold: true),
+        detailRow(context.l10n.total, money(order.totalPrice), isBold: true),
       ],
     );
   }
@@ -292,9 +293,9 @@ class OrdersOverviewCardState extends State<OrdersOverviewCard> {
       _metaChip(order.orderType),
       if (order.orderDate != null) _metaChip(formatDateTime(order.orderDate!)),
       if (order.paidAt != null)
-        _metaChip("Paid ${formatDateTimeIST(order.paidAt!)}"),
+        _metaChip(context.l10n.paidAt(formatDateTimeIST(order.paidAt!))),
       if (order.servedAt != null)
-        _metaChip("Served ${formatDateTime(order.servedAt!)}"),
+        _metaChip(context.l10n.servedAt(formatDateTime(order.servedAt!))),
     ];
 
     return Wrap(spacing: 8, runSpacing: 8, children: chips);
@@ -394,14 +395,14 @@ class OrdersOverviewCardState extends State<OrdersOverviewCard> {
   String formatStatus(String status) {
     switch (status) {
       case 'SERVED':
-        return 'Served';
+        return context.l10n.served;
       case 'CANCELLED':
-        return 'Cancelled';
+        return context.l10n.cancelled;
       case 'PAID':
-        return 'Paid';
+        return context.l10n.paid;
       case 'PENDING':
       default:
-        return 'Pending';
+        return context.l10n.pending;
     }
   }
 

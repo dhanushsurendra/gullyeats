@@ -20,6 +20,8 @@ import 'package:ordering/features/orders/providers/menu_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
+import 'package:ordering/features/profile/providers/language_provider.dart';
+import 'package:ordering/l10n/l10n.dart';
 
 class AddItemScreen extends StatefulWidget {
   const AddItemScreen({super.key});
@@ -75,7 +77,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
           _photoUploaded = true;
         });
       } else {
-        throw Exception("Failed to upload photo");
+        throw Exception(LanguageProvider.strings.failedToUploadPhoto);
       }
     } catch (e) {
       final message = AppExceptionHandler.getMessage(e);
@@ -91,12 +93,12 @@ class _AddItemScreenState extends State<AddItemScreen> {
     setState(() {
       final name = _nameController.text.trim();
       _nameError = name.isEmpty
-          ? "Item name is required"
+          ? context.l10n.itemNameRequired
           : name.length < 2
-          ? "Item name must be at least 2 characters"
+          ? context.l10n.itemNameTooShort
           : null;
       _priceError = int.tryParse(_priceController.text.trim()) == null
-          ? "Price is required"
+          ? context.l10n.priceRequired
           : null;
     });
 
@@ -123,7 +125,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
 
         AppSnackBar.show(
           context,
-          message: "Added Item Successfully",
+          message: context.l10n.itemAdded,
           marginBottom: 0,
         );
 
@@ -155,7 +157,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
       } else {
         AppSnackBar.show(
           context,
-          message: "Camera permission is required.",
+          message: context.l10n.cameraPermissionRequired,
           isError: true,
         );
       }
@@ -186,21 +188,21 @@ class _AddItemScreenState extends State<AddItemScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text("Camera Permission"),
-        content: const Text(
-          "Camera access was denied. Please enable it from app settings.",
+        title: Text(context.l10n.cameraPermission),
+        content: Text(
+          context.l10n.cameraAccessDenied,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text("Cancel"),
+            child: Text(context.l10n.cancel),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
               openAppSettings();
             },
-            child: const Text("Open Settings"),
+            child: Text(context.l10n.openSettings),
           ),
         ],
       ),
@@ -221,13 +223,13 @@ class _AddItemScreenState extends State<AddItemScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text("Choose Photo", style: AppTextStyles.heading3),
+                Text(context.l10n.choosePhoto, style: AppTextStyles.heading3),
 
                 AppGaps.h16,
 
                 ListTile(
                   leading: const Icon(Icons.camera_alt_outlined),
-                  title: const Text("Take Photo"),
+                  title: Text(context.l10n.takePhoto),
                   onTap: () {
                     Navigator.pop(context);
                     _openCamera();
@@ -236,7 +238,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
 
                 ListTile(
                   leading: const Icon(Icons.photo_library_outlined),
-                  title: const Text("Choose from Gallery"),
+                  title: Text(context.l10n.chooseFromGallery),
                   onTap: () {
                     Navigator.pop(context);
                     _openGallery();
@@ -276,7 +278,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppHeader(title: "Add New Item", showBack: true),
+      appBar: AppHeader(title: context.l10n.addNewItem, showBack: true),
       body: Column(
         children: [
           Expanded(
@@ -305,7 +307,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
         children: [
           AppInput(
             controller: _nameController,
-            label: "Item Name",
+            label: context.l10n.itemName,
             hint: "e.g. Veg Momos",
             onChanged: (value) {
               if (_nameError != null) setState(() => _nameError = null);
@@ -326,7 +328,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
 
           AppInput(
             controller: _priceController,
-            label: "Price",
+            label: context.l10n.price,
             hint: "99",
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -355,36 +357,36 @@ class _AddItemScreenState extends State<AddItemScreen> {
             Padding(
               padding: const EdgeInsets.only(top: 4, left: 4),
               child: Text(
-                "Enter price in rupees.",
+                context.l10n.enterPriceInRupees,
                 style: AppTextStyles.caption.copyWith(fontSize: 10),
               ),
             ),
 
           AppGaps.h16,
 
-          _buildLabel("Category"),
+          _buildLabel(context.l10n.category),
           Row(
             children: [
-              Expanded(child: _categoryButton("Veg", true)),
+              Expanded(child: _categoryButton(context.l10n.veg, true)),
               AppGaps.w12,
-              Expanded(child: _categoryButton("Non-Veg", false)),
+              Expanded(child: _categoryButton(context.l10n.nonVeg, false)),
             ],
           ),
 
           AppGaps.h16,
 
-          _buildLabel("Availability"),
+          _buildLabel(context.l10n.availability),
           Row(
             children: [
-              Expanded(child: _availabilityButton("In Stock", true)),
+              Expanded(child: _availabilityButton(context.l10n.inStock, true)),
               AppGaps.w12,
-              Expanded(child: _availabilityButton("Out of Stock", false)),
+              Expanded(child: _availabilityButton(context.l10n.outOfStock, false)),
             ],
           ),
 
           AppGaps.h16,
 
-          _buildLabel("Item Photo"),
+          _buildLabel(context.l10n.itemPhoto),
 
           _buildPhotoSection(),
         ],
@@ -414,7 +416,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                       borderRadius: BorderRadius.circular(30),
                     ),
                   ),
-                  child: Text("Cancel", style: AppTextStyles.heading3),
+                  child: Text(context.l10n.cancel, style: AppTextStyles.heading3),
                 ),
               ),
               AppGaps.w16,
@@ -431,7 +433,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                     ),
                   ),
                   child: Text(
-                    "Add Item",
+                    context.l10n.addItem,
                     style: AppTextStyles.heading3.copyWith(color: Colors.white),
                   ),
                 ),
@@ -440,7 +442,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
           ),
           AppGaps.h8,
           Text(
-            "Item name and price are required.",
+            context.l10n.itemNameAndPriceRequired,
             style: AppTextStyles.caption,
           ),
         ],
@@ -496,7 +498,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                             color: Colors.black.withValues(alpha: 0.55),
                             borderRadius: BorderRadius.circular(20),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
@@ -506,7 +508,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                               ),
                               SizedBox(width: 4),
                               Text(
-                                "Change",
+                                context.l10n.change,
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 12,
@@ -532,14 +534,14 @@ class _AddItemScreenState extends State<AddItemScreen> {
                       ),
                       AppGaps.h8,
                       Text(
-                        "Take Item Photo",
+                        context.l10n.takeItemPhoto,
                         style: AppTextStyles.body.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       AppGaps.h4,
                       Text(
-                        "Camera or gallery",
+                        context.l10n.cameraOrGallery,
                         style: AppTextStyles.caption.copyWith(
                           color: AppColors.grey500,
                         ),
@@ -556,7 +558,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
           AppButton(
             onPressed: _isUploadingPhoto ? null : _onContinue,
             isLoading: _isUploadingPhoto,
-            label: "Upload Photo",
+            label: context.l10n.uploadPhoto,
             backgroundColor: AppColors.primary,
             textColor: Colors.white,
           ),
@@ -572,7 +574,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
               ),
               const SizedBox(width: 6),
               Text(
-                "Photo uploaded successfully",
+                context.l10n.photoUploaded,
                 style: AppTextStyles.caption.copyWith(
                   color: AppColors.success,
                   fontWeight: FontWeight.w600,

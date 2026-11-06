@@ -13,6 +13,7 @@ import 'package:ordering/features/orders/models/menu_item_model.dart';
 import 'package:ordering/features/orders/providers/menu_provider.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
+import 'package:ordering/l10n/l10n.dart';
 
 class StockScreen extends StatefulWidget {
   const StockScreen({super.key});
@@ -95,13 +96,13 @@ class _StockScreenState extends State<StockScreen> {
     }).toList();
 
     return Scaffold(
-      appBar: AppHeader(title: "Stock Control", showBack: true),
+      appBar: AppHeader(title: context.l10n.stockControl, showBack: true),
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: AppSearchBar(
-              hintText: "Search items...",
+              hintText: context.l10n.searchItems,
               onChanged: (value) => onSearchChanged(value),
             ),
           ),
@@ -110,6 +111,11 @@ class _StockScreenState extends State<StockScreen> {
             padding: AppPadding.horizontalScreen,
             child: AppTabFilter(
               tabs: tabs,
+              labelOf: (tab) => switch (tab) {
+                "In Stock" => context.l10n.inStock,
+                "Out of Stock" => context.l10n.outOfStock,
+                _ => context.l10n.allItems,
+              },
               selectedTab: selectedTab,
               onTabSelected: onTabSelected,
             ),
@@ -166,7 +172,7 @@ class _StockScreenState extends State<StockScreen> {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    item.isInStock ? "IN STOCK" : "OUT OF STOCK",
+                    item.isInStock ? context.l10n.inStockCaps : context.l10n.outOfStockCaps,
                     style: TextStyle(
                       fontSize: 10,
                       color: item.isInStock
@@ -192,13 +198,13 @@ class _StockScreenState extends State<StockScreen> {
             child: Row(
               children: [
                 _segment(
-                  "In",
+                  context.l10n.stockIn,
                   item.isInStock,
                   () => _setStock(item, true),
                   AppColors.success,
                 ),
                 _segment(
-                  "Out",
+                  context.l10n.stockOut,
                   !item.isInStock,
                   () => _setStock(item, false),
                   AppColors.error,

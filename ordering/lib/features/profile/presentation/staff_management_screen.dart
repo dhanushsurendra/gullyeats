@@ -18,6 +18,7 @@ import 'package:ordering/features/profile/widgets/add_staff_form.dart';
 import 'package:ordering/features/profile/widgets/staff_member_card.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:ordering/l10n/l10n.dart';
 
 class StaffManagementScreen extends StatefulWidget {
   const StaffManagementScreen({super.key});
@@ -100,7 +101,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
       final cartId = cartProvider.selectedCart?.id;
 
       if (cartId == null) {
-        throw Exception("No cart selected");
+        throw Exception(context.l10n.noCartSelected);
       }
 
       final StaffModel result = await staffProvider.addStaff(
@@ -116,7 +117,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
         _staffList.add(result);
       });
 
-      AppSnackBar.show(context, message: "Staff added successfully", marginBottom: 32);
+      AppSnackBar.show(context, message: context.l10n.staffAdded, marginBottom: 32);
 
       final message =
           "Your GullyEats credentials:\n"
@@ -138,7 +139,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
       if (!mounted) return;
 
       final errorMessage = e == 'could_not_launch_sms'
-          ? "Staff added, but couldn't open SMS app."
+          ? context.l10n.staffAddedNoSms
           : AppExceptionHandler.getMessage(e);
 
       AppSnackBar.show(context, message: errorMessage, isError: true, marginBottom: 32);
@@ -222,7 +223,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
           // Staff no longer belongs to the currently viewed cart.
           _staffList.removeWhere((staff) => staff.id == staffId);
         });
-        AppSnackBar.show(context, message: "Staff moved to $newCartName", marginBottom: 32);
+        AppSnackBar.show(context, message: context.l10n.staffMovedTo(newCartName), marginBottom: 32);
       }
     } catch (e) {
       final message = AppExceptionHandler.getMessage(e);
@@ -261,11 +262,11 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
 
                       Row(
                         children: [
-                          Text("Your Staff", style: AppTextStyles.heading3),
+                          Text(context.l10n.yourStaff, style: AppTextStyles.heading3),
                           const Spacer(),
                           if (_staffList.isNotEmpty)
                             Text(
-                              "${_staffList.length} total",
+                              context.l10n.totalCount(_staffList.length),
                               style: AppTextStyles.caption.copyWith(
                                 color: Colors.grey.shade500,
                               ),
@@ -278,7 +279,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
                       if (_staffList.length > 3) ...[
                         AppInput(
                           controller: _searchController,
-                          hint: "Search by name or number",
+                          hint: context.l10n.searchStaff,
                           keyboardType: TextInputType.text,
                           prefix: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -298,9 +299,9 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
                           child: Center(child: CircularProgressIndicator()),
                         )
                       else if (_staffList.isEmpty)
-                        _buildEmptyState("No staff added yet")
+                        _buildEmptyState(context.l10n.noStaffYet)
                       else if (_filteredStaff.isEmpty)
-                        _buildEmptyState("No staff match \"$_query\"")
+                        _buildEmptyState(context.l10n.noStaffMatch(_query))
                       else
                         ..._filteredStaff.map(
                           (staff) => Padding(
@@ -333,10 +334,10 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
       children: [
         Row(children: [AppBackButton()]),
         AppGaps.h24,
-        Text("Staff Management", style: AppTextStyles.heading2),
+        Text(context.l10n.staffManagement, style: AppTextStyles.heading2),
         AppGaps.h4,
         Text(
-          "Add helpers who can run your cart using OTP.",
+          context.l10n.staffSubtitle,
           style: AppTextStyles.caption.copyWith(color: AppColors.grey500),
         ),
       ],

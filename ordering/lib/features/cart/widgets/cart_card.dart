@@ -4,6 +4,7 @@ import 'package:ordering/core/theme/app_gaps.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
 import 'package:ordering/core/widgets/app_card.dart';
 import 'package:ordering/features/cart/models/cart_model.dart';
+import 'package:ordering/l10n/l10n.dart';
 
 class CartCard extends StatelessWidget {
   final CartModel cart;
@@ -104,7 +105,7 @@ class CartCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    cart.isOpen ? "Open" : "Closed",
+                    cart.isOpen ? context.l10n.open : context.l10n.closed,
                     style: AppTextStyles.caption.copyWith(
                       fontWeight: FontWeight.w600,
                       color: cart.isOpen

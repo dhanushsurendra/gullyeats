@@ -5,6 +5,7 @@ import 'package:ordering/core/theme/app_padding.dart';
 import 'package:ordering/core/theme/app_gaps.dart';
 import 'package:ordering/core/widgets/app_card.dart';
 import 'package:ordering/features/orders/models/order_model.dart';
+import 'package:ordering/l10n/l10n.dart';
 
 class OrderCard extends StatefulWidget {
   final OrderModel order;
@@ -37,9 +38,9 @@ class _OrderCardState extends State<OrderCard> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Delete Order', style: AppTextStyles.heading2),
-          content: const Text(
-            'Are you sure you want to delete this order?',
+          title: Text(context.l10n.deleteOrder, style: AppTextStyles.heading2),
+          content: Text(
+            context.l10n.confirmDeleteOrder,
             style: AppTextStyles.body,
           ),
           shape: RoundedRectangleBorder(
@@ -60,7 +61,7 @@ class _OrderCardState extends State<OrderCard> {
                 ),
               ),
               child: Text(
-                'Cancel',
+                context.l10n.cancel,
                 style: AppTextStyles.caption.copyWith(
                   color: Colors.grey[700],
                   fontWeight: FontWeight.w600,
@@ -83,8 +84,8 @@ class _OrderCardState extends State<OrderCard> {
                   borderRadius: BorderRadius.circular(26),
                 ),
               ),
-              child: const Text(
-                'Delete',
+              child: Text(
+                context.l10n.delete,
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
@@ -124,7 +125,7 @@ class _OrderCardState extends State<OrderCard> {
                 else if (isPaid)
                   _actionButton("SERVE", widget.onServe)
                 else
-                  _outlineButton("MARK PAID", widget.onMarkPaid),
+                  _outlineButton(context.l10n.markPaidCaps, widget.onMarkPaid),
               ],
             ),
 
@@ -150,7 +151,7 @@ class _OrderCardState extends State<OrderCard> {
                     if (!isCancelled)
                       _statusChip(isPaid ? "PAID" : "UNPAID", isPaid),
                     AppGaps.w8,
-                    _tagChip(widget.order.isQrOrder ? "QR Order" : "Manual"),
+                    _tagChip(widget.order.isQrOrder ? context.l10n.qrOrder : context.l10n.manual),
                     AppGaps.w8,
                     ((widget.order.status == "CANCELLED") |
                             (widget.order.status == "SERVED"))
@@ -193,8 +194,8 @@ class _OrderCardState extends State<OrderCard> {
       padding: const EdgeInsets.only(top: 4),
       child: Text(
         isCollect
-            ? "Collect ₹${adjustment.amount.toStringAsFixed(0)} from customer"
-            : "Return ₹${adjustment.amount.toStringAsFixed(0)} to customer",
+            ? context.l10n.collectFromCustomer(adjustment.amount.toStringAsFixed(0))
+            : context.l10n.returnToCustomer(adjustment.amount.toStringAsFixed(0)),
         style: AppTextStyles.caption.copyWith(
           color: isCollect ? Colors.orange[800] : AppColors.success,
           fontWeight: FontWeight.w600,
@@ -206,7 +207,7 @@ class _OrderCardState extends State<OrderCard> {
   String _buildItemsText(OrderModel order) {
     final items = order.orderItems;
 
-    if (items.isEmpty) return "No items";
+    if (items.isEmpty) return context.l10n.noItems;
 
     if (items.length <= 2) {
       return items.map((i) => "${i.name} x${i.quantity}").join(" • ");
@@ -214,7 +215,7 @@ class _OrderCardState extends State<OrderCard> {
 
     return "${items[0].name} x${items[0].quantity} • "
         "${items[1].name} x${items[1].quantity}  "
-        "+${items.length - 2} more";
+        "${context.l10n.moreItems(items.length - 2)}";
   }
 
   Widget _actionButton(String text, VoidCallback onTap) {

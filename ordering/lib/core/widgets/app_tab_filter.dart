@@ -9,12 +9,16 @@ class AppTabFilter extends StatelessWidget {
   final Function(String) onTabSelected;
   final List<String>? navTabs;
 
+  /// The text shown for a tab, when the tab value is an internal key.
+  final String Function(String tab)? labelOf;
+
   const AppTabFilter({
     super.key,
     required this.tabs,
     required this.selectedTab,
     required this.onTabSelected,
     this.navTabs,
+    this.labelOf,
   });
 
   @override
@@ -55,7 +59,7 @@ class AppTabFilter extends StatelessWidget {
                   ],
                 ),
                 child: Text(
-                  tab,
+                  labelOf?.call(tab) ?? tab,
                   style: AppTextStyles.body.copyWith(
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                     color: isSelected ? AppColors.white : AppColors.grey600,

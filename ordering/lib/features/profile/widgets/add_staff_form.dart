@@ -4,6 +4,7 @@ import 'package:ordering/core/theme/app_gaps.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
 import 'package:ordering/core/widgets/app_button.dart';
 import 'package:ordering/core/widgets/app_input.dart';
+import 'package:ordering/l10n/l10n.dart';
 
 class AddStaffForm extends StatefulWidget {
   final Future<void> Function(String, String) onAddStaff;
@@ -42,15 +43,15 @@ class _AddStaffFormState extends State<AddStaffForm> {
       final phone = _staffPhoneController.text.trim();
 
       if (name.isEmpty) {
-        _staffNameError = "Name is required";
+        _staffNameError = context.l10n.nameRequired;
       } else if (name.length < 2) {
-        _staffNameError = "Enter a valid name";
+        _staffNameError = context.l10n.enterValidName;
       }
 
       if (phone.isEmpty) {
-        _staffPhoneError = "Phone number is required";
+        _staffPhoneError = context.l10n.phoneRequired;
       } else if (!RegExp(r'^[6-9]\d{9}$').hasMatch(phone)) {
-        _staffPhoneError = "Enter a valid 10-digit number";
+        _staffPhoneError = context.l10n.enterValid10DigitNumber;
       }
     });
 
@@ -81,14 +82,14 @@ class _AddStaffFormState extends State<AddStaffForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Add Helper", style: AppTextStyles.heading2),
+          Text(context.l10n.addHelper, style: AppTextStyles.heading2),
 
           AppGaps.h24,
 
           AppInput(
             controller: _staffNameController,
-            label: "Staff Name",
-            hint: "Enter helper's name",
+            label: context.l10n.staffName,
+            hint: context.l10n.enterHelperName,
             keyboardType: TextInputType.text,
             onChanged: (value) {
               if (_staffNameError != null) {
@@ -112,7 +113,7 @@ class _AddStaffFormState extends State<AddStaffForm> {
 
           AppInput(
             controller: _staffPhoneController,
-            label: "Staff Mobile Number",
+            label: context.l10n.staffMobileNumber,
             hint: "0000000000",
             keyboardType: TextInputType.phone,
             prefix: const SizedBox(
@@ -140,7 +141,7 @@ class _AddStaffFormState extends State<AddStaffForm> {
           AppGaps.h24,
 
           AppButton(
-            label: "SEND DETAILS",
+            label: context.l10n.sendDetailsCaps,
             isLoading: widget.isLoading,
             onPressed: _handleAddStaff,
           ),

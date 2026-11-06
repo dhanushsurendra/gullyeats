@@ -10,6 +10,7 @@ import 'package:ordering/core/widgets/app_snack_bar.dart';
 import 'package:ordering/features/auth/providers/auth_provider.dart';
 import 'package:ordering/features/cart/presentation/switch_cart_screen.dart';
 import 'package:provider/provider.dart';
+import 'package:ordering/l10n/l10n.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -39,10 +40,10 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       setState(() {
         _vendorIdError = _vendorIdController.text.isEmpty
-            ? "Vendor ID or Mobile Number is required"
+            ? context.l10n.vendorIdRequired
             : null;
         _pinError = _pinController.text.length < 4
-            ? "Please enter a 4-digit PIN"
+            ? context.l10n.enter4DigitPin
             : null;
       });
 
@@ -58,7 +59,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (isLoggedIn) {
         if (!mounted) return;
-        AppSnackBar.show(context, message: "Login successful", isError: false);
+        AppSnackBar.show(context, message: context.l10n.loginSuccessful, isError: false);
 
         Navigator.pushReplacement(
           context,
@@ -70,7 +71,7 @@ class _LoginScreenState extends State<LoginScreen> {
         if (!mounted) return;
         AppSnackBar.show(
           context,
-          message: "Login failed. Please check your credentials.",
+          message: context.l10n.loginFailed,
           isError: true,
         );
       }
@@ -100,10 +101,10 @@ class _LoginScreenState extends State<LoginScreen> {
               AppGaps.h40,
               Image.asset("assets/images/logo_text.png", height: 24),
               AppGaps.h40,
-              Text("Welcome Back", style: AppTextStyles.heading1),
+              Text(context.l10n.welcomeBack, style: AppTextStyles.heading1),
               AppGaps.h8,
               Text(
-                "Login to manage your cart and start\nreceiving orders.",
+                context.l10n.loginSubtitle,
                 style: AppTextStyles.body.copyWith(color: Colors.grey[600]),
               ),
               AppGaps.h16,
@@ -127,16 +128,16 @@ class _LoginScreenState extends State<LoginScreen> {
           return Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
-            child: const Column(
+            child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  "Support",
+                  context.l10n.support,
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 16),
                 Text(
-                  "Please call this number for support:\n9008533182",
+                  context.l10n.callSupport,
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 16),
                 ),
@@ -162,8 +163,8 @@ class _LoginScreenState extends State<LoginScreen> {
           children: [
             AppInput(
               controller: _vendorIdController,
-              label: "Phone Number or Vendor ID",
-              hint: "XXXXXXXXXX or VEN-XXXXXX",
+              label: context.l10n.phoneOrVendorId,
+              hint: context.l10n.loginHint,
               keyboardType: TextInputType.text,
               prefix: const Padding(
                 padding: EdgeInsets.only(left: 12, right: 8),
@@ -190,7 +191,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
             AppInput(
               controller: _pinController,
-              label: "4-digit PIN",
+              label: context.l10n.fourDigitPin,
               hint: "• • • •",
               obscureText: _obscurePin,
               keyboardType: TextInputType.number,
@@ -234,8 +235,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   onTap: () {
                     openBottomSheet();
                   },
-                  child: const Text(
-                    "Forgot PIN?",
+                  child: Text(
+                    context.l10n.forgotPin,
                     style: TextStyle(
                       color: AppColors.primary,
                       fontSize: 13,
@@ -247,7 +248,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             AppGaps.h12,
             AppButton(
-              label: "Login",
+              label: context.l10n.login,
               onPressed: () => _handleLogin(),
               isLoading: provider.isLoading,
               width: double.infinity,
@@ -266,16 +267,16 @@ class _LoginScreenState extends State<LoginScreen> {
           return Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
-            child: const Column(
+            child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  "Support",
+                  context.l10n.support,
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 16),
                 Text(
-                  "Please call this number for support:\n9008533182",
+                  context.l10n.callSupport,
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 16),
                 ),
@@ -290,7 +291,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Center(
       child: RichText(
         text: TextSpan(
-          text: "New vendor? ",
+          text: context.l10n.newVendor,
           style: AppTextStyles.body.copyWith(color: Colors.grey),
           children: [
             WidgetSpan(
@@ -300,7 +301,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   openBottomSheet();
                 },
                 child: Text(
-                  "Contact Support",
+                  context.l10n.contactSupport,
                   style: AppTextStyles.body.copyWith(
                     color: AppColors.primary,
                     decoration: TextDecoration.underline,

@@ -3,6 +3,7 @@ import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_gaps.dart';
 import 'package:ordering/core/theme/app_padding.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
+import 'package:ordering/l10n/l10n.dart';
 
 /// Stat grid for the payments overview — same white-card / border / shadow
 /// treatment as the Orders Overview screen's summary card.
@@ -42,19 +43,19 @@ class PaymentSummaryCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Expanded(child: _stat("Total Orders", "$totalOrders")),
-              Expanded(child: _stat("Platform Fee", _money(totalPlatformFee))),
+              Expanded(child: _stat(context.l10n.totalOrders, "$totalOrders")),
+              Expanded(child: _stat(context.l10n.platformFee, _money(totalPlatformFee))),
             ],
           ),
           AppGaps.h16,
           Row(
             children: [
               Expanded(
-                child: _stat("Paid", _money(totalPaid), color: AppColors.success),
+                child: _stat(context.l10n.paid, _money(totalPaid), color: AppColors.success),
               ),
               Expanded(
                 child: _stat(
-                  "Pending",
+                  context.l10n.pending,
                   _money(totalPending),
                   color: totalPending > 0 ? AppColors.warning : AppColors.grey500,
                 ),

@@ -6,6 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
+import 'package:ordering/l10n/l10n.dart';
 
 /// A tappable cart-photo preview + camera launcher.
 ///
@@ -43,7 +44,7 @@ class _CartPhotoFieldState extends State<CartPhotoField> {
         _showSettingsDialog();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Camera permission is required.")),
+          SnackBar(content: Text(context.l10n.cameraPermissionRequired)),
         );
       }
       return;
@@ -70,21 +71,21 @@ class _CartPhotoFieldState extends State<CartPhotoField> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text("Camera Permission"),
-        content: const Text(
-          "Camera access was denied. Please enable it from app settings.",
+        title: Text(context.l10n.cameraPermission),
+        content: Text(
+          context.l10n.cameraAccessDenied,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text("Cancel"),
+            child: Text(context.l10n.cancel),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
               openAppSettings();
             },
-            child: const Text("Open Settings"),
+            child: Text(context.l10n.openSettings),
           ),
         ],
       ),
@@ -150,7 +151,7 @@ class _CartPhotoFieldState extends State<CartPhotoField> {
                       : const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 14),
                   const SizedBox(width: 6),
                   Text(
-                    hasNewPhoto || hasExistingPhoto ? "Change Photo" : "Add Photo",
+                    hasNewPhoto || hasExistingPhoto ? context.l10n.changePhoto : context.l10n.addPhoto,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 12,
@@ -173,7 +174,7 @@ class _CartPhotoFieldState extends State<CartPhotoField> {
         const Icon(Icons.storefront_rounded, size: 40, color: AppColors.grey400),
         const SizedBox(height: 8),
         Text(
-          "Tap to add cart photo",
+          context.l10n.tapToAddCartPhoto,
           style: AppTextStyles.caption.copyWith(color: AppColors.grey400),
         ),
       ],

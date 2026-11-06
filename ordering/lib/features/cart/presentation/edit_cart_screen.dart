@@ -20,6 +20,7 @@ import 'package:ordering/features/auth/providers/auth_provider.dart';
 import 'package:ordering/features/cart/models/cart_model.dart';
 import 'package:ordering/features/cart/providers/cart_provider.dart';
 import 'package:ordering/features/cart/widgets/cart_photo_field.dart';
+import 'package:ordering/l10n/l10n.dart';
 
 class EditCartScreen extends StatefulWidget {
   final CartModel cart;
@@ -116,14 +117,14 @@ class _EditCartScreenState extends State<EditCartScreen> {
     if (_nameController.text.trim().isEmpty) {
       AppSnackBar.show(
         context,
-        message: "Cart name can't be empty.",
+        message: context.l10n.cartNameEmpty,
         isError: true,
       );
       return;
     }
 
     if (_cityController.text.trim().isEmpty) {
-      AppSnackBar.show(context, message: "City can't be empty.", isError: true);
+      AppSnackBar.show(context, message: context.l10n.cityEmpty, isError: true);
       return;
     }
 
@@ -159,7 +160,7 @@ class _EditCartScreenState extends State<EditCartScreen> {
 
       AppSnackBar.show(
         context,
-        message: "Cart details updated!",
+        message: context.l10n.cartDetailsUpdated,
         isError: false,
       );
 
@@ -182,16 +183,16 @@ class _EditCartScreenState extends State<EditCartScreen> {
     final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text("Discard changes?"),
-        content: const Text("You have unsaved changes. Leave without saving?"),
+        title: Text(context.l10n.discardChanges),
+        content: Text(context.l10n.unsavedChanges),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text("Keep Editing"),
+            child: Text(context.l10n.keepEditing),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text("Discard"),
+            child: Text(context.l10n.discard),
           ),
         ],
       ),
@@ -208,14 +209,14 @@ class _EditCartScreenState extends State<EditCartScreen> {
         if (await _confirmDiscard() && mounted) Navigator.pop(context);
       },
       child: Scaffold(
-        appBar: AppHeader(title: "Edit Cart Details", showBack: true),
+        appBar: AppHeader(title: context.l10n.editCartDetails, showBack: true),
         bottomNavigationBar: Container(
           color: AppColors.white,
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
           child: SizedBox(
             height: 56,
             child: AppButton(
-              label: "SAVE CHANGES",
+              label: context.l10n.saveChangesCaps,
               onPressed: _isSaving ? null : _save,
               isLoading: _isSaving,
             ),
@@ -256,7 +257,7 @@ class _EditCartScreenState extends State<EditCartScreen> {
         child: DropdownButton<String>(
           value: _selectedCity,
           hint: Text(
-            "Select City",
+            context.l10n.selectCity,
             style: AppTextStyles.body.copyWith(color: AppColors.grey400),
           ),
           isExpanded: true,
@@ -289,10 +290,10 @@ class _EditCartScreenState extends State<EditCartScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Cart Photo", style: AppTextStyles.heading3),
+          Text(context.l10n.cartPhoto, style: AppTextStyles.heading3),
           AppGaps.h8,
           Text(
-            "Used for verification — no gallery uploads allowed.",
+            context.l10n.cartPhotoHelp,
             style: AppTextStyles.caption.copyWith(color: AppColors.grey500),
           ),
           AppGaps.h16,
@@ -314,21 +315,21 @@ class _EditCartScreenState extends State<EditCartScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Cart Information", style: AppTextStyles.heading3),
+          Text(context.l10n.cartInformation, style: AppTextStyles.heading3),
           AppGaps.h16,
           AppInput(
             controller: _nameController,
-            label: "Cart Name",
+            label: context.l10n.cartName,
             hint: "e.g. Indie Momos",
           ),
           AppGaps.h16,
-          Text("Cart City", style: AppTextStyles.heading3),
+          Text(context.l10n.cartCity, style: AppTextStyles.heading3),
           AppGaps.h8,
           _buildCityDropdown(),
           AppGaps.h16,
           AppInput(
             controller: _addressController,
-            label: "Address",
+            label: context.l10n.address,
             hint: "BTM 2nd Stage",
             maxLines: 4,
             enabled:
@@ -346,7 +347,7 @@ class _EditCartScreenState extends State<EditCartScreen> {
               children: [
                 const Icon(Icons.qr_code_2_rounded, color: AppColors.primary),
                 AppGaps.w8,
-                Expanded(child: Text("Cart ID", style: AppTextStyles.caption)),
+                Expanded(child: Text(context.l10n.cartId, style: AppTextStyles.caption)),
                 Text(
                   widget.cart.cartId,
                   style: AppTextStyles.body.copyWith(
@@ -367,10 +368,10 @@ class _EditCartScreenState extends State<EditCartScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Location", style: AppTextStyles.heading3),
+          Text(context.l10n.location, style: AppTextStyles.heading3),
           AppGaps.h4,
           Text(
-            "Address above updates automatically when you refresh GPS.",
+            context.l10n.addressAutoUpdates,
             style: AppTextStyles.caption.copyWith(color: AppColors.grey500),
           ),
           AppGaps.h16,
@@ -390,17 +391,17 @@ class _EditCartScreenState extends State<EditCartScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Cart Status", style: AppTextStyles.heading3),
+          Text(context.l10n.cartStatus, style: AppTextStyles.heading3),
           AppGaps.h8,
 
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text(
-              "Cart Active",
+            title: Text(
+              context.l10n.cartActive,
               style: TextStyle(fontWeight: FontWeight.w500),
             ),
-            subtitle: const Text(
-              "Visible to customers",
+            subtitle: Text(
+              context.l10n.visibleToCustomers,
               style: TextStyle(fontSize: 13),
             ),
             value: _isActive,
@@ -420,12 +421,12 @@ class _EditCartScreenState extends State<EditCartScreen> {
 
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text(
-              "Cart Open",
+            title: Text(
+              context.l10n.cartOpen,
               style: TextStyle(fontWeight: FontWeight.w500),
             ),
-            subtitle: const Text(
-              "Accepting orders",
+            subtitle: Text(
+              context.l10n.acceptingOrders,
               style: TextStyle(fontSize: 13),
             ),
             value: _isOpen,

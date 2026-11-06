@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_gaps.dart';
 import 'package:ordering/core/theme/app_padding.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
 import 'package:ordering/features/payment/models/payment_model.dart';
+import 'package:ordering/l10n/l10n.dart';
 
 /// A payment history transaction tile.
 ///
@@ -75,7 +77,7 @@ class _PaymentHistoryTileState extends State<PaymentHistoryTile> {
                     Text(
                       payment.cartName.isNotEmpty
                           ? payment.cartName
-                          : 'Payment',
+                          : context.l10n.payment,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AppTextStyles.body.copyWith(
@@ -143,7 +145,7 @@ class _PaymentHistoryTileState extends State<PaymentHistoryTile> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Platform fee',
+                    context.l10n.platformFee,
                     style: AppTextStyles.caption.copyWith(
                       color: AppColors.grey500,
                     ),
@@ -224,7 +226,7 @@ class _PaymentHistoryTileState extends State<PaymentHistoryTile> {
             Expanded(
               child: _InfoItem(
                 icon: Icons.calendar_today_outlined,
-                label: 'Billing date',
+                label: context.l10n.billingDate,
                 value: _formatDate(payment.billingDate),
               ),
             ),
@@ -234,7 +236,7 @@ class _PaymentHistoryTileState extends State<PaymentHistoryTile> {
             Expanded(
               child: _InfoItem(
                 icon: Icons.access_time,
-                label: 'Paid on',
+                label: context.l10n.paidOn,
                 value: _formatDateTime(payment.createdAt),
               ),
             ),
@@ -256,7 +258,7 @@ class _PaymentHistoryTileState extends State<PaymentHistoryTile> {
 
           _InfoItem(
             icon: Icons.verified_outlined,
-            label: 'Verified on',
+            label: context.l10n.verifiedOn,
             value: _formatDateTime(payment.verifiedAt),
           ),
         ],
@@ -270,14 +272,10 @@ class _PaymentHistoryTileState extends State<PaymentHistoryTile> {
 
   String _orderCountLabel(int totalOrders) {
     if (totalOrders == 0) {
-      return 'No orders';
+      return context.l10n.noOrders;
     }
 
-    if (totalOrders == 1) {
-      return '1 order';
-    }
-
-    return '$totalOrders orders';
+    return context.l10n.orderCount(totalOrders);
   }
 
   // ==========================================================================
@@ -319,17 +317,17 @@ class _PaymentHistoryTileState extends State<PaymentHistoryTile> {
   String _statusLabel(String status) {
     switch (status) {
       case 'VERIFIED':
-        return 'Payment Verified';
+        return context.l10n.paymentVerified;
 
       case 'REJECTED':
-        return 'Payment Rejected';
+        return context.l10n.paymentRejected;
 
       case 'EXPIRED':
-        return 'Payment Expired';
+        return context.l10n.paymentExpired;
 
       case 'PENDING':
       default:
-        return 'Verification Pending';
+        return context.l10n.verificationPending;
     }
   }
 
@@ -382,22 +380,9 @@ class _PaymentHistoryTileState extends State<PaymentHistoryTile> {
   }
 
   String _month(int month) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-
-    return months[month - 1];
+    return DateFormat.MMM(
+      Localizations.localeOf(context).languageCode,
+    ).format(DateTime(2000, month));
   }
 }
 
@@ -475,7 +460,7 @@ class _TransactionReference extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Transaction reference',
+                context.l10n.transactionReference,
                 style: AppTextStyles.caption.copyWith(color: AppColors.grey500),
               ),
 

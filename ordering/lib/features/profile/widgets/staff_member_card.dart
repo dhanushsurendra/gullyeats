@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
+import 'package:ordering/l10n/l10n.dart';
 
 class StaffMemberCard extends StatelessWidget {
   final String staffId;
@@ -36,7 +37,7 @@ class StaffMemberCard extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text("Remove Staff?"),
+        title: Text(context.l10n.removeStaffQuestion),
         content: Text(
           "$name will lose access to this cart. This can't be undone.",
           style: AppTextStyles.body,
@@ -164,13 +165,13 @@ class StaffMemberCard extends StatelessWidget {
               }
             },
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'switch',
                 child: Row(
                   children: [
                     Icon(Icons.swap_horiz, size: 18),
                     SizedBox(width: 10),
-                    Text("Switch Cart"),
+                    Text(context.l10n.switchCart),
                   ],
                 ),
               ),
@@ -185,7 +186,7 @@ class StaffMemberCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 10),
                     Text(
-                      "Remove",
+                      context.l10n.remove,
                       style: TextStyle(color: Colors.red.shade600),
                     ),
                   ],

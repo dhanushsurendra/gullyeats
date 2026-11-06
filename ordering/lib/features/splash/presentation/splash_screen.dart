@@ -8,6 +8,7 @@ import 'package:ordering/core/routes/app_routes.dart';
 import 'package:ordering/features/auth/providers/auth_provider.dart';
 import 'package:ordering/features/cart/presentation/switch_cart_screen.dart';
 import 'package:provider/provider.dart';
+import 'package:ordering/l10n/l10n.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -148,7 +149,7 @@ class _SplashScreenState extends State<SplashScreen> {
         ),
         AppGaps.h12,
         Text(
-          "Finding the best bites...",
+          context.l10n.findingBestBites,
           style: AppTextStyles.body.copyWith(
             fontSize: 12,
             color: AppColors.grey400,

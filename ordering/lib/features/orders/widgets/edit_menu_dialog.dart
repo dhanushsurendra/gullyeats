@@ -16,6 +16,8 @@ import 'package:ordering/core/widgets/app_snack_bar.dart';
 import 'package:ordering/features/auth/providers/auth_provider.dart';
 import 'package:ordering/features/orders/models/menu_item_model.dart';
 import 'package:ordering/features/orders/providers/menu_provider.dart';
+import 'package:ordering/features/profile/providers/language_provider.dart';
+import 'package:ordering/l10n/l10n.dart';
 
 class EditMenuDialog extends StatefulWidget {
   final String initialName;
@@ -105,7 +107,7 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
       } else {
         AppSnackBar.show(
           context,
-          message: "Camera permission is required.",
+          message: context.l10n.cameraPermissionRequired,
           isError: true,
         );
       }
@@ -175,13 +177,13 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text("Choose Photo", style: AppTextStyles.heading3),
+                Text(context.l10n.choosePhoto, style: AppTextStyles.heading3),
 
                 AppGaps.h16,
 
                 ListTile(
                   leading: const Icon(Icons.camera_alt_outlined),
-                  title: const Text("Take Photo"),
+                  title: Text(context.l10n.takePhoto),
                   onTap: () {
                     Navigator.pop(context);
                     _openCamera();
@@ -190,7 +192,7 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
 
                 ListTile(
                   leading: const Icon(Icons.photo_library_outlined),
-                  title: const Text("Choose from Gallery"),
+                  title: Text(context.l10n.chooseFromGallery),
                   onTap: () {
                     Navigator.pop(context);
                     _openGallery();
@@ -208,21 +210,21 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text("Camera Permission"),
-        content: const Text(
-          "Camera access was denied. Please enable it from app settings.",
+        title: Text(context.l10n.cameraPermission),
+        content: Text(
+          context.l10n.cameraAccessDenied,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text("Cancel"),
+            child: Text(context.l10n.cancel),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
               openAppSettings();
             },
-            child: const Text("Open Settings"),
+            child: Text(context.l10n.openSettings),
           ),
         ],
       ),
@@ -254,7 +256,7 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
       );
 
       if (result.fileUrl.isEmpty) {
-        throw Exception("Failed to upload photo");
+        throw Exception(LanguageProvider.strings.failedToUploadPhoto);
       }
 
       if (!mounted) return false;
@@ -298,14 +300,14 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
 
     if (name.isEmpty) {
       setState(() {
-        _nameError = "Item name cannot be empty";
+        _nameError = context.l10n.itemNameEmpty;
       });
       hasError = true;
     }
 
     if (price == null || price <= 0) {
       setState(() {
-        _priceError = "Please enter a valid price";
+        _priceError = context.l10n.enterValidPrice;
       });
       hasError = true;
     }
@@ -362,7 +364,7 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
 
       AppSnackBar.show(
         context,
-        message: "Item updated successfully!",
+        message: context.l10n.itemUpdated,
         marginBottom: 0,
       );
     } catch (e) {
@@ -423,7 +425,7 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text("Edit Item", style: AppTextStyles.heading2),
+                Text(context.l10n.editItem, style: AppTextStyles.heading2),
                 IconButton(
                   onPressed: _isLoading ? null : () => Navigator.pop(context),
                   icon: const Icon(Icons.close_rounded),
@@ -437,7 +439,7 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
             // ====================================================
             // ITEM NAME
             // ====================================================
-            _buildLabel("ITEM NAME"),
+            _buildLabel(context.l10n.itemNameCaps),
 
             _buildTextField(
               controller: _nameController,
@@ -457,7 +459,7 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
             // ====================================================
             // PRICE
             // ====================================================
-            _buildLabel("PRICE (₹)"),
+            _buildLabel(context.l10n.priceRupeeCaps),
 
             _buildTextField(
               controller: _priceController,
@@ -483,7 +485,7 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
             Row(
               children: [
                 _categoryChip(
-                  label: "Veg",
+                  label: context.l10n.veg,
                   value: true,
                   currentValue: _isVeg,
                   onChanged: (value) {
@@ -494,7 +496,7 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
                 AppGaps.w12,
 
                 _categoryChip(
-                  label: "Non Veg",
+                  label: context.l10n.nonVeg,
                   value: false,
                   currentValue: _isVeg,
                   onChanged: (value) {
@@ -514,7 +516,7 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
             Row(
               children: [
                 _categoryChip(
-                  label: "In Stock",
+                  label: context.l10n.inStock,
                   value: true,
                   currentValue: _isInStock,
                   onChanged: (value) {
@@ -525,7 +527,7 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
                 AppGaps.w12,
 
                 _categoryChip(
-                  label: "Out of Stock",
+                  label: context.l10n.outOfStock,
                   value: false,
                   currentValue: _isInStock,
                   onChanged: (value) {
@@ -540,7 +542,7 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
             // ====================================================
             // ITEM PHOTO
             // ====================================================
-            _buildLabel("ITEM PHOTO"),
+            _buildLabel(context.l10n.itemPhotoCaps),
 
             _buildPhotoSection(),
 
@@ -550,7 +552,7 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
             // UPDATE BUTTON
             // ====================================================
             AppButton(
-              label: "UPDATE ITEM",
+              label: context.l10n.updateItemCaps,
               disabled:
                   _isLoading || (_selectedPhoto != null && !_photoUploaded),
               onPressed: (_selectedPhoto != null && !_photoUploaded) || _isUploadingPhoto
@@ -630,7 +632,7 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
         AppGaps.h12,
         if (hasNewPhoto && !isPhotoUploaded) ...[
           AppButton(
-            label: "UPLOAD NEW PHOTO",
+            label: context.l10n.uploadNewPhotoCaps,
             onPressed: _isUploadingPhoto
                 ? null
                 : () async {
@@ -651,7 +653,7 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
               ),
               const SizedBox(width: 6),
               Text(
-                "Photo uploaded successfully",
+                context.l10n.photoUploaded,
                 style: AppTextStyles.caption.copyWith(
                   color: AppColors.success,
                   fontWeight: FontWeight.w600,
@@ -675,13 +677,13 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
             color: Colors.black.withValues(alpha: 0.55),
             borderRadius: BorderRadius.circular(20),
           ),
-          child: const Row(
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(Icons.refresh, color: Colors.white, size: 14),
               SizedBox(width: 4),
               Text(
-                "Change",
+                context.l10n.change,
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 12,
@@ -706,14 +708,14 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
           AppGaps.h8,
 
           Text(
-            "Add Item Photo",
+            context.l10n.addItemPhoto,
             style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600),
           ),
 
           AppGaps.h4,
 
           Text(
-            "Camera or gallery",
+            context.l10n.cameraOrGallery,
             style: AppTextStyles.caption.copyWith(color: AppColors.grey500),
           ),
         ],

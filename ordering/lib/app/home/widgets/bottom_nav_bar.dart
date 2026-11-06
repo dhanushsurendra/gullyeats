@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
+import 'package:ordering/l10n/l10n.dart';
 
 class BottomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -40,19 +41,19 @@ class BottomNavBar extends StatelessWidget {
                 index: 0,
                 outlinedIcon: CupertinoIcons.graph_square,
                 filledIcon: CupertinoIcons.graph_square_fill,
-                label: "Sales",
+                label: context.l10n.sales,
               ),
               _navItem(
                 index: 1,
                 outlinedIcon: CupertinoIcons.bag,
                 filledIcon: CupertinoIcons.bag_fill,
-                label: "Orders",
+                label: context.l10n.orders,
               ),
               _navItem(
                 index: 2,
                 outlinedIcon: CupertinoIcons.person,
                 filledIcon: CupertinoIcons.person_fill,
-                label: "Profile",
+                label: context.l10n.profile,
               ),
             ],
           ),

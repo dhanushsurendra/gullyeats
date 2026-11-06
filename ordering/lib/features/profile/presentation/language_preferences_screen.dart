@@ -6,6 +6,9 @@ import 'package:ordering/core/theme/app_gaps.dart';
 import 'package:ordering/core/widgets/app_button.dart';
 import 'package:ordering/core/widgets/app_card.dart';
 import 'package:ordering/core/widgets/app_search_bar.dart';
+import 'package:ordering/features/profile/providers/language_provider.dart';
+import 'package:ordering/l10n/l10n.dart';
+import 'package:provider/provider.dart';
 
 class LanguagePreferencesScreen extends StatefulWidget {
   const LanguagePreferencesScreen({super.key});
@@ -17,21 +20,18 @@ class LanguagePreferencesScreen extends StatefulWidget {
 
 class _LanguagePreferencesScreenState
     extends State<LanguagePreferencesScreen> {
-  final List<String> languages = [
-    "Kannada",
-    "English",
-    "Hindi",
-  ];
+  /// English names too, so typing "Hindi" finds हिन्दी.
+  static const _englishNames = {'en': 'English', 'kn': 'Kannada', 'hi': 'Hindi'};
 
-  String selectedLanguage = "English";
+  String selectedCode = LanguageProvider.current.languageCode;
   String searchQuery = "";
 
   List<String> get filteredLanguages {
-    if (searchQuery.isEmpty) return languages;
-
-    return languages
-        .where((l) =>
-            l.toLowerCase().contains(searchQuery.toLowerCase()))
+    final query = searchQuery.toLowerCase();
+    return LanguageProvider.languages.keys
+        .where((code) =>
+            LanguageProvider.languages[code]!.toLowerCase().contains(query) ||
+            _englishNames[code]!.toLowerCase().contains(query))
         .toList();
   }
 
@@ -55,12 +55,12 @@ class _LanguagePreferencesScreenState
               children: [
                 /// 🔶 TITLE
                 Text(
-                  "Language Preferences",
+                  context.l10n.languagePreferences,
                   style: AppTextStyles.heading1,
                 ),
                 AppGaps.h4,
                 Text(
-                  "Choose your preferred language for the app.",
+                  context.l10n.chooseLanguageSubtitle,
                   style: AppTextStyles.caption,
                 ),
 
@@ -77,16 +77,19 @@ class _LanguagePreferencesScreenState
                         crossAxisAlignment:
                             CrossAxisAlignment.start,
                         children: [
-                          Text("Current Language",
+                          Text(context.l10n.currentLanguage,
                               style: AppTextStyles.caption),
                           AppGaps.h4,
                           Text(
-                            selectedLanguage,
+                            LanguageProvider.languages[context
+                                .watch<LanguageProvider>()
+                                .locale
+                                .languageCode]!,
                             style: AppTextStyles.heading3,
                           ),
                           AppGaps.h4,
                           Text(
-                            "Supported: Kannada, Hindi, English",
+                            context.l10n.supportedLanguages,
                             style: AppTextStyles.caption,
                           ),
                         ],
@@ -100,7 +103,7 @@ class _LanguagePreferencesScreenState
                               BorderRadius.circular(20),
                         ),
                         child: Text(
-                          "✓ Selected",
+                          context.l10n.selected,
                           style:
                               AppTextStyles.caption.copyWith(
                             color: AppColors.success,
@@ -117,14 +120,14 @@ class _LanguagePreferencesScreenState
                 AppSearchBar(
                   onChanged: (val) =>
                       setState(() => searchQuery = val),
-                  hintText: "Search language...",
+                  hintText: context.l10n.searchLanguage,
                 ),
 
                 AppGaps.h16,
 
                 /// 🔶 LIST HEADER
                 Text(
-                  "Available Languages",
+                  context.l10n.availableLanguages,
                   style: AppTextStyles.heading3,
                 ),
 
@@ -150,7 +153,7 @@ class _LanguagePreferencesScreenState
                       AppGaps.w8,
                       Expanded(
                         child: Text(
-                          "Menu items will remain the same.",
+                          context.l10n.menuItemsUnchanged,
                           style: AppTextStyles.caption,
                         ),
                       ),
@@ -167,14 +170,19 @@ class _LanguagePreferencesScreenState
             child: Column(
               children: [
                 AppButton(
-                  onPressed: () {},
-                  label: "SAVE LANGUAGE",
+                  onPressed: () async {
+                    await context
+                        .read<LanguageProvider>()
+                        .setLanguage(selectedCode);
+                    if (context.mounted) Navigator.pop(context);
+                  },
+                  label: context.l10n.saveLanguageCaps,
                 ),
                 AppGaps.h8,
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
                   child: Text(
-                    "Cancel",
+                    context.l10n.cancel,
                     style: AppTextStyles.caption.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -189,11 +197,11 @@ class _LanguagePreferencesScreenState
   }
 
   /// 🔶 LANGUAGE TILE
-  Widget _languageTile(String lang) {
-    final isSelected = selectedLanguage == lang;
+  Widget _languageTile(String code) {
+    final isSelected = selectedCode == code;
 
     return GestureDetector(
-      onTap: () => setState(() => selectedLanguage = lang),
+      onTap: () => setState(() => selectedCode = code),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: AppPadding.card,
@@ -219,7 +227,7 @@ class _LanguagePreferencesScreenState
               MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              lang,
+              LanguageProvider.languages[code]!,
               style: AppTextStyles.body.copyWith(
                 fontWeight: FontWeight.w600,
               ),

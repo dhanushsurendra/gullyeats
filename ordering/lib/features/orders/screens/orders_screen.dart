@@ -15,6 +15,7 @@ import 'package:ordering/features/orders/providers/order_provider.dart';
 import 'package:ordering/features/orders/screens/add_new_order.dart';
 import 'package:ordering/features/orders/widgets/order_card.dart';
 import 'package:provider/provider.dart';
+import 'package:ordering/l10n/l10n.dart';
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
@@ -115,9 +116,25 @@ class _OrdersScreenState extends State<OrdersScreen> {
         filteredOrders = provider.orders;
     }
 
-    // "QR Orders" already ends in "Orders"; the count is the list shown.
+    // The tabs are English keys; these are what the user reads.
+    final l10n = context.l10n;
+    final tabLabels = {
+      "All": l10n.all,
+      "Active": l10n.active,
+      "QR Orders": l10n.qrOrders,
+      "Manual": l10n.manual,
+      "Stock": l10n.stock,
+    };
     String getOrdersTitle(String selectedTab, List<OrderModel> orders) =>
-        "${selectedTab.replaceAll(" Orders", "")} Orders (${filteredOrders.length})";
+        l10n.ordersTitle(
+          switch (selectedTab) {
+            "Active" => "active",
+            "QR Orders" => "qr",
+            "Manual" => "manual",
+            _ => "all",
+          },
+          filteredOrders.length,
+        );
 
     Future<void> markOrderServed(String token, String orderId) async {
       try {
@@ -132,7 +149,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
         AppSnackBar.show(
           context,
           isInfo: true,
-          message: "Order marked as served",
+          message: context.l10n.orderMarkedServed,
           action: SnackBarAction(
             label: 'UNDO',
             textColor: AppColors.primary,
@@ -141,7 +158,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 await provider.serveOrderUndo(token, orderId);
 
                 if (context.mounted) {
-                  AppSnackBar.show(context, message: 'Serve reverted');
+                  AppSnackBar.show(context, message: context.l10n.serveReverted);
                 }
               } catch (e) {
                 final message = AppExceptionHandler.getMessage(e);
@@ -180,7 +197,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
         AppSnackBar.show(
           context,
           isInfo: true,
-          message: "Order marked as paid",
+          message: context.l10n.orderMarkedPaid,
           action: SnackBarAction(
             label: 'UNDO',
             textColor: AppColors.primary,
@@ -189,7 +206,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 await provider.markOrderUnpaid(token, orderId);
 
                 if (context.mounted) {
-                  AppSnackBar.show(context, message: 'Payment reverted');
+                  AppSnackBar.show(context, message: context.l10n.paymentReverted);
                 }
               } catch (e) {
                 final message = AppExceptionHandler.getMessage(e);
@@ -228,7 +245,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
         AppSnackBar.show(
           context,
           isInfo: true,
-          message: "Order cancelled",
+          message: context.l10n.orderCancelled,
           action: SnackBarAction(
             label: 'UNDO',
             textColor: AppColors.primary,
@@ -237,7 +254,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 await provider.deleteOrderUndo(token, orderId);
 
                 if (context.mounted) {
-                  AppSnackBar.show(context, message: 'Order restored');
+                  AppSnackBar.show(context, message: context.l10n.orderRestored);
                 }
               } catch (e) {
                 final message = AppExceptionHandler.getMessage(e);
@@ -299,6 +316,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                       AppGaps.h16,
                       AppTabFilter(
                         tabs: tabs,
+                        labelOf: (tab) => tabLabels[tab]!,
                         selectedTab: selectedTab,
                         onTabSelected: (tab) {
                           if (tab == "Stock") {
@@ -485,10 +503,10 @@ class _OrdersScreenState extends State<OrdersScreen> {
           AppGaps.h12,
           Text(
             switch (selectedTab) {
-              "Active" => "No active orders",
-              "QR Orders" => "No QR orders today",
-              "Manual" => "No manual orders today",
-              _ => "No orders today",
+              "Active" => context.l10n.noActiveOrders,
+              "QR Orders" => context.l10n.noQrOrdersToday,
+              "Manual" => context.l10n.noManualOrdersToday,
+              _ => context.l10n.noOrdersToday,
             },
             style: AppTextStyles.body.copyWith(color: AppColors.grey500),
           ),

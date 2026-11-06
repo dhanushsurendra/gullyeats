@@ -4,9 +4,9 @@ Written 2026-11-06 at the end of a long session, so the next session can start f
 
 ## Progress (branch `ordering-fixes`, 2026-11-06)
 
-Done, one commit per group, not merged or pushed: B1–B4, B6–B15, F1–F21, F23–F29. Also, outside the plan: `/api/admin/*` now needs an admin login (it was public), and `send-otp`/`verify-otp` refuse staff and admin accounts (the OTP in the response let anyone log in as an admin). Backend tests: `npm test` (node:test, stubbed models, 27 pass). Vendor app: `flutter test` (5 pass), `flutter analyze` has no errors or warnings.
+Done, one commit per group, not merged or pushed: B1–B4, B6–B15, F1–F29. F22 is now a real language setting: English, Kannada and Hindi through `flutter gen-l10n` (`ordering/lib/l10n/`, `LanguageProvider`); the Hindi and Kannada text needs a native speaker's check. Also, outside the plan: `/api/admin/*` now needs an admin login (it was public), and `send-otp`/`verify-otp` refuse staff and admin accounts (the OTP in the response let anyone log in as an admin). Backend tests: `npm test` (node:test, stubbed models, 27 pass). Vendor app: `flutter test` (5 pass), `flutter analyze` has no errors or warnings.
 
-Still open, needing a decision: **B5** (what the payment lock should block), **B16** (OTP login design), **F22** (language SAVE), **F27** (should a photo be optional), **F30** (dead code to delete), **F31** (UI pass). Not done: Edit Cart has no parcel-charge field (the backend now saves it), and any client can still join any cart's socket room.
+Still open, needing a decision: **B5** (what the payment lock should block), **B16** (OTP login design), **F27** (should a photo be optional), **F30** (dead code to delete), **F31** (UI pass). Not done: Edit Cart has no parcel-charge field (the backend now saves it), and any client can still join any cart's socket room.
 
 Behaviour changes to know before deploying: customers can only cancel unpaid orders and can't shrink a paid one; QR orders need the cart open and active; serving needs payment; order prices come from the menu. After deploy, the admin dashboard needs its login cookie to work cross-site (`SameSite=None` in production), and `gullyeats-admin/src/services/api.js` reads `import.meta.env.API_URL` where `.env` defines `VITE_API_URL`.
 

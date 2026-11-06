@@ -3,6 +3,7 @@ import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_gaps.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
 import 'package:ordering/core/widgets/app_button.dart';
+import 'package:ordering/l10n/l10n.dart';
 
 /// Warning card shown when the cart's platform fee is unpaid, with the
 /// primary "PAY & UNLOCK" call to action.
@@ -41,7 +42,7 @@ class PaymentLockedCard extends StatelessWidget {
               AppGaps.w8,
               Expanded(
                 child: Text(
-                  "Platform Fee Pending",
+                  context.l10n.platformFeePending,
                   style: AppTextStyles.heading3.copyWith(color: AppColors.warning),
                 ),
               ),
@@ -49,7 +50,7 @@ class PaymentLockedCard extends StatelessWidget {
           ),
           AppGaps.h8,
           Text(
-            "Your cart is currently locked because the platform payment is pending.",
+            context.l10n.cartLockedFeePending,
             style: AppTextStyles.caption.copyWith(color: AppColors.grey600),
           ),
           AppGaps.h16,
@@ -68,7 +69,7 @@ class PaymentLockedCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Amount Due",
+                      context.l10n.amountDue,
                       style: AppTextStyles.caption.copyWith(color: AppColors.grey500),
                     ),
                     Text(
@@ -86,7 +87,7 @@ class PaymentLockedCard extends StatelessWidget {
           ),
           AppGaps.h16,
           AppButton(
-            label: "PAY ₹${amountDue.toStringAsFixed(0)} & UNLOCK",
+            label: context.l10n.payAndUnlock(amountDue.toStringAsFixed(0)),
             isLoading: isLoading,
             onPressed: isLoading ? null : onPayPressed,
           ),

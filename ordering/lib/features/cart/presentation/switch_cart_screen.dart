@@ -13,6 +13,7 @@ import 'package:ordering/features/cart/models/cart_model.dart';
 import 'package:ordering/features/cart/providers/cart_provider.dart';
 import 'package:ordering/features/cart/widgets/cart_card.dart';
 import 'package:provider/provider.dart';
+import 'package:ordering/l10n/l10n.dart';
 
 class SwitchCartScreen extends StatefulWidget {
   final bool isDraggable;
@@ -147,9 +148,9 @@ class _SwitchCartScreenState extends State<SwitchCartScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("Switch Cart", style: AppTextStyles.heading2),
+                    Text(context.l10n.switchCart, style: AppTextStyles.heading2),
                     Text(
-                      "Choose which cart to switch",
+                      context.l10n.chooseCartToSwitch,
                       style: AppTextStyles.caption,
                     ),
                   ],
@@ -163,7 +164,7 @@ class _SwitchCartScreenState extends State<SwitchCartScreen> {
                     : TextButton.icon(
                         onPressed: () => signOut(context),
                         icon: const Icon(Icons.logout, size: 18),
-                        label: const Text("Logout"),
+                        label: Text(context.l10n.logout),
                       ),
               ],
             ),
@@ -175,7 +176,7 @@ class _SwitchCartScreenState extends State<SwitchCartScreen> {
           Padding(
             padding: const EdgeInsets.all(16),
             child: AppSearchBar(
-              hintText: "Search carts...",
+              hintText: context.l10n.searchCarts,
               onChanged: (value) {
                 setState(() {
                   searchQuery = value;
@@ -195,7 +196,7 @@ class _SwitchCartScreenState extends State<SwitchCartScreen> {
                     child: Padding(
                       padding: AppPadding.horizontalScreen,
                       child: Text(
-                        "No carts assigned. Contact your vendor.",
+                        context.l10n.noCartsAssigned,
                         textAlign: TextAlign.center,
                         style: AppTextStyles.body,
                       ),
@@ -231,7 +232,7 @@ class _SwitchCartScreenState extends State<SwitchCartScreen> {
           Padding(
             padding: const EdgeInsets.all(16),
             child: AppButton(
-              label: "SWITCH CART",
+              label: context.l10n.switchCartCaps,
 
               // Disable button when:
               // 1. Nothing is selected

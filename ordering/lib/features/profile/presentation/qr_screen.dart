@@ -12,6 +12,7 @@ import 'package:ordering/features/cart/providers/cart_provider.dart';
 import 'package:ordering/features/profile/providers/profile_provider.dart';
 import 'package:ordering/features/profile/services/qr_service.dart';
 import 'package:provider/provider.dart';
+import 'package:ordering/l10n/l10n.dart';
 
 class QrPosterScreen extends StatefulWidget {
   const QrPosterScreen({super.key});
@@ -88,7 +89,7 @@ class _QrPosterScreenState extends State<QrPosterScreen> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            const AppHeader(title: "QR Code Poster", showBack: true),
+            AppHeader(title: context.l10n.qrCodePoster, showBack: true),
 
             Center(
               child: ConstrainedBox(
@@ -130,7 +131,7 @@ class _QrPosterScreenState extends State<QrPosterScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          "Tip: Print in A4 size and laminate for durability.",
+                          context.l10n.qrPrintTip,
                           style: AppTextStyles.caption.copyWith(
                             color: AppColors.grey600,
                           ),
@@ -141,7 +142,7 @@ class _QrPosterScreenState extends State<QrPosterScreen> {
                       AppGaps.h24,
 
                       AppButton(
-                        label: "SHARE QR",
+                        label: context.l10n.shareQrCaps,
                         isLoading: _isBtnLoading,
                         onPressed: _shareQr,
                       ),
