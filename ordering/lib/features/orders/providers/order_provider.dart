@@ -122,7 +122,9 @@ class OrderProvider with ChangeNotifier {
   // SOCKET
   // ---------------------------------------------------------------------------
 
-  void initSocket(String cartId) {
+  /// Joins the cart's live-order room. The server only lets someone who
+  /// manages the cart in, so the login token goes with the connection.
+  void initSocket(String cartId, String token) {
     _socket?.dispose();
 
     _socket = socket_io.io(
@@ -130,6 +132,7 @@ class OrderProvider with ChangeNotifier {
       socket_io.OptionBuilder()
           .setTransports(['websocket'])
           .setQuery({'cartId': cartId})
+          .setAuth({'token': token})
           .disableAutoConnect()
           .build(),
     );
@@ -178,7 +181,7 @@ class OrderProvider with ChangeNotifier {
       // The screen handles Active filtering.
       _orders = fetchedOrders;
 
-      if (liveUpdates) initSocket(cartId);
+      if (liveUpdates) initSocket(cartId, token);
 
       return _orders;
     } finally {

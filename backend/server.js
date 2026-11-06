@@ -12,6 +12,7 @@ const paymentRoutes = require('./routes/paymentRoutes')
 const adminRoutes = require('./routes/adminRoutes')
 const { razorpayWebhook } = require('./controllers/paymentController')
 const cookieParser = require('cookie-parser')
+const { registerSocketHandlers } = require('./utils/socketRooms')
 
 const app = express()
 const server = http.createServer(app)
@@ -108,21 +109,5 @@ startServer().catch((err) => {
   process.exit(1)
 })
 
-io.on('connection', (socket) => {
-  console.log('Vendor connected:', socket.id)
-
-  socket.on('join_order', (orderNumber) => {
-    socket.join(`order:${orderNumber}`)
-    console.log(`Customer joined room: ${orderNumber}`)
-  })
-
-  socket.on('join_vendor', (cartId) => {
-    socket.join(cartId.toString())
-    console.log(`Vendor joined room: ${cartId}`)
-  })
-
-  socket.on('disconnect', () => {
-    console.log('Vendor disconnected:', socket.id)
-  })
-})
-
+// Who may join which live-update room: see utils/socketRooms.js.
+registerSocketHandlers(io)
