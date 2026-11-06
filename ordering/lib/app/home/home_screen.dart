@@ -70,7 +70,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final status = _status;
-    final showBanner = status != null && status.isFeeComingDue;
+    // Only between midnight (the day's bill is final) and the 2:00am lock,
+    // so vendors aren't interrupted while they serve during the day.
+    final showBanner = status != null && status.isFeeComingDue && status.canPay;
 
     return Scaffold(
       backgroundColor: AppColors.white,
@@ -113,8 +115,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 }
 
-/// "₹X platform fee due. The cart locks at Fri 2:00 AM." with Pay now once
-/// the bill can be paid. Staff see the warning without the button.
+/// "Your cart locks at 2:00 AM. Pay ₹X now…" with Pay now. Shown from
+/// midnight until the lock; staff see the warning without the button.
 class _FeeDueBanner extends StatelessWidget {
   final PaymentStatusModel status;
 
@@ -124,8 +126,8 @@ class _FeeDueBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final locale = Localizations.localeOf(context).languageCode;
-    final lockTime = DateFormat('EEE h:mm a', locale).format(status.dueAt!.toLocal());
-    final canPay = status.canPay && !context.watch<AuthProvider>().isStaff;
+    final lockTime = DateFormat.jm(locale).format(status.dueAt!.toLocal());
+    final canPay = !context.watch<AuthProvider>().isStaff;
 
     return Container(
       width: double.infinity,
@@ -142,7 +144,7 @@ class _FeeDueBanner extends StatelessWidget {
           AppGaps.w12,
           Expanded(
             child: Text(
-              l10n.feeDueBanner(formatPrice(status.totalPending), lockTime),
+              l10n.feeDueBanner(lockTime, formatPrice(status.totalPending)),
               style: AppTextStyles.caption.copyWith(
                 color: AppColors.grey600,
                 fontWeight: FontWeight.w600,

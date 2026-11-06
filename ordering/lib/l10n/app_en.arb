@@ -514,13 +514,13 @@
     }
   },
   "externalWallet": "External wallet",
-  "feeDueBanner": "₹{amount} platform fee due. The cart locks at {time}.",
+  "feeDueBanner": "Your cart locks at {time}. Pay ₹{amount} now to keep taking orders.",
   "@feeDueBanner": {
     "placeholders": {
-      "amount": {
+      "time": {
         "type": "String"
       },
-      "time": {
+      "amount": {
         "type": "String"
       }
     }

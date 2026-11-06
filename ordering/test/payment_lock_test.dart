@@ -86,7 +86,19 @@ void main() {
     await tester.pump(const Duration(seconds: 10));
   }
 
-  testWidgets('a fee coming due shows a warning with Pay now', (tester) async {
+  testWidgets('during the day, the running fee shows no warning', (tester) async {
+    final p = await _session();
+    await http.runWithClient(() async {
+      await tester.pumpWidget(_app(p, const HomeScreen()));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+    }, () => _backend(() => _status(pending: 6, canPay: false)));
+
+    expect(find.textContaining('locks at'), findsNothing);
+    await unmount(tester);
+  });
+
+  testWidgets('after midnight, before the lock, a warning offers Pay now', (tester) async {
     final p = await _session();
     await http.runWithClient(() async {
       await tester.pumpWidget(_app(p, const HomeScreen()));
@@ -94,7 +106,7 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
     }, () => _backend(() => _status(pending: 6, canPay: true)));
 
-    expect(find.textContaining('₹6 platform fee due'), findsOneWidget);
+    expect(find.textContaining('Pay ₹6 now'), findsOneWidget);
     expect(find.text('PAY NOW'), findsOneWidget);
     await unmount(tester);
   });
@@ -107,7 +119,7 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
     }, () => _backend(() => _status(pending: 6, canPay: true)));
 
-    expect(find.textContaining('₹6 platform fee due'), findsOneWidget);
+    expect(find.textContaining('Pay ₹6 now'), findsOneWidget);
     expect(find.text('PAY NOW'), findsNothing);
     await unmount(tester);
   });

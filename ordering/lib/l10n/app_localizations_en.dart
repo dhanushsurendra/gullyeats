@@ -1125,8 +1125,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get externalWallet => 'External wallet';
 
   @override
-  String feeDueBanner(String amount, String time) {
-    return '₹$amount platform fee due. The cart locks at $time.';
+  String feeDueBanner(String time, String amount) {
+    return 'Your cart locks at $time. Pay ₹$amount now to keep taking orders.';
   }
 
   @override

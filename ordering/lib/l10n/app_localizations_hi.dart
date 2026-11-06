@@ -1123,8 +1123,8 @@ class AppLocalizationsHi extends AppLocalizations {
   String get externalWallet => 'बाहरी वॉलेट';
 
   @override
-  String feeDueBanner(String amount, String time) {
-    return '₹$amount प्लेटफ़ॉर्म शुल्क बाकी है। कार्ट $time पर लॉक होगी।';
+  String feeDueBanner(String time, String amount) {
+    return 'आपकी कार्ट $time पर लॉक होगी। ऑर्डर लेते रहने के लिए अभी ₹$amount भरें।';
   }
 
   @override

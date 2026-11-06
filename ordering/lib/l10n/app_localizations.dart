@@ -2151,8 +2151,8 @@ abstract class AppLocalizations {
   /// No description provided for @feeDueBanner.
   ///
   /// In en, this message translates to:
-  /// **'₹{amount} platform fee due. The cart locks at {time}.'**
-  String feeDueBanner(String amount, String time);
+  /// **'Your cart locks at {time}. Pay ₹{amount} now to keep taking orders.'**
+  String feeDueBanner(String time, String amount);
 
   /// No description provided for @payNowCaps.
   ///

@@ -341,7 +341,7 @@
   "ordersTimesFee": "{count} ऑर्डर × ₹{fee}",
   "walletSelected": "{wallet} चुना गया।",
   "externalWallet": "बाहरी वॉलेट",
-  "feeDueBanner": "₹{amount} प्लेटफ़ॉर्म शुल्क बाकी है। कार्ट {time} पर लॉक होगी।",
+  "feeDueBanner": "आपकी कार्ट {time} पर लॉक होगी। ऑर्डर लेते रहने के लिए अभी ₹{amount} भरें।",
   "payNowCaps": "अभी भरें",
   "payEarlySubtitle": "लॉक होने के बाद भी ऑर्डर लेते रहने के लिए अभी भुगतान करें।",
   "askOwnerToPay": "कार्ट अनलॉक करने के लिए कार्ट के मालिक से प्लेटफ़ॉर्म शुल्क भरने को कहें।",

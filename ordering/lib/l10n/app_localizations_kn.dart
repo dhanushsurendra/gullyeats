@@ -1126,8 +1126,8 @@ class AppLocalizationsKn extends AppLocalizations {
   String get externalWallet => 'ಬಾಹ್ಯ ವಾಲೆಟ್';
 
   @override
-  String feeDueBanner(String amount, String time) {
-    return '₹$amount ಪ್ಲಾಟ್‌ಫಾರ್ಮ್ ಶುಲ್ಕ ಬಾಕಿ ಇದೆ. ಕಾರ್ಟ್ $time ಕ್ಕೆ ಲಾಕ್ ಆಗುತ್ತದೆ.';
+  String feeDueBanner(String time, String amount) {
+    return 'ನಿಮ್ಮ ಕಾರ್ಟ್ $time ಕ್ಕೆ ಲಾಕ್ ಆಗುತ್ತದೆ. ಆರ್ಡರ್ ಪಡೆಯುತ್ತಿರಲು ಈಗಲೇ ₹$amount ಪಾವತಿಸಿ.';
   }
 
   @override
