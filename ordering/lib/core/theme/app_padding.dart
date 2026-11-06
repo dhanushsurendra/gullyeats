@@ -9,7 +9,7 @@ class AppPadding {
 
   /// Horizontal screen padding
   static const EdgeInsets horizontalScreen =
-      EdgeInsets.symmetric(horizontal: 16);
+      EdgeInsets.symmetric(horizontal: 24);
 
   /// Vertical spacing
   static const EdgeInsets verticalScreen =

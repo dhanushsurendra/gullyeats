@@ -17,6 +17,8 @@ import 'package:ordering/features/orders/models/order_model.dart';
 import 'package:ordering/features/orders/providers/order_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:ordering/l10n/l10n.dart';
+import 'package:ordering/core/widgets/list_message.dart';
+import 'package:ordering/core/utils/format_price.dart';
 
 class AddNewOrder extends StatefulWidget {
   final OrderModel? existingOrder;
@@ -164,7 +166,11 @@ class _AddNewOrderState extends State<AddNewOrder> {
 
       messenger.clearSnackBars();
 
-      AppSnackBar.show(context, isInfo: true, message: context.l10n.orderDeleted);
+      AppSnackBar.show(
+        context,
+        isInfo: true,
+        message: context.l10n.orderDeleted,
+      );
 
       Navigator.pop(context);
     } catch (e) {
@@ -332,18 +338,18 @@ class _AddNewOrderState extends State<AddNewOrder> {
                     // SEARCH
                     // ------------------------------------------------
                     Padding(
-                      padding: const EdgeInsets.all(16),
+                      padding: AppPadding.horizontalScreen,
                       child: AppSearchBar(
                         hintText: context.l10n.searchItems,
                         onChanged: _onSearchChanged,
                       ),
                     ),
-
+                    AppGaps.h24,
                     Padding(
                       padding: AppPadding.horizontalScreen,
                       child: Text(
                         context.l10n.menuItems,
-                        style: AppTextStyles.heading2.copyWith(fontSize: 16),
+                        style: AppTextStyles.heading2,
                       ),
                     ),
 
@@ -358,6 +364,13 @@ class _AddNewOrderState extends State<AddNewOrder> {
                               padding: EdgeInsets.all(30),
                               child: CircularProgressIndicator(),
                             ),
+                          )
+                        : filteredMenu.isEmpty
+                        ? ListMessage(
+                            icon: searchQuery.isEmpty
+                                ? Icons.restaurant_menu
+                                : Icons.search_off_rounded,
+                            message: context.l10n.noMenuItemsFound,
                           )
                         : ListView.separated(
                             shrinkWrap: true,
@@ -408,41 +421,41 @@ class _AddNewOrderState extends State<AddNewOrder> {
 
   Widget _buildHeader() {
     return Padding(
-      padding: AppPadding.screen.copyWith(bottom: 12),
+      padding: const EdgeInsets.fromLTRB(16, 16, 24, 16),
       child: Row(
         children: [
-          GestureDetector(
-            onTap: _isSubmitting
+          IconButton(
+            onPressed: _isSubmitting
                 ? null
                 : () {
                     context.read<OrderProvider>().clearOrder();
                     Navigator.pop(context);
                   },
-            child: const Icon(Icons.close, size: 20, color: AppColors.grey600),
+            icon: const Icon(Icons.close, color: AppColors.grey600),
           ),
-
-          const Spacer(),
-
-          Text(
-            widget.isEditing ? context.l10n.updateOrder : context.l10n.createOrder,
-            style: AppTextStyles.heading2,
+          AppGaps.w8,
+          Expanded(
+            child: Text(
+              widget.isEditing
+                  ? context.l10n.updateOrder
+                  : context.l10n.createOrder,
+              style: AppTextStyles.heading2,
+            ),
           ),
-
-          const Spacer(),
-
+          AppGaps.w8,
           Container(
             padding: AppPadding.chip,
             decoration: BoxDecoration(
-              color: AppColors.grey200,
-              borderRadius: BorderRadius.circular(26),
+              color: AppColors.grey100,
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
               widget.isEditing
                   ? "#${widget.existingOrder!.orderNumber}"
-                  : "MANUAL",
+                  : context.l10n.manual.toUpperCase(),
               style: AppTextStyles.caption.copyWith(
                 fontWeight: FontWeight.w600,
-                color: AppColors.grey500,
+                color: AppColors.grey600,
               ),
             ),
           ),
@@ -482,15 +495,17 @@ class _AddNewOrderState extends State<AddNewOrder> {
                 AppGaps.h4,
 
                 Text(
-                  "₹${item.price.toStringAsFixed(0)}",
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.grey500,
+                  "₹${formatPrice(item.price)}",
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
             ),
           ),
 
+          AppGaps.w8,
           Row(
             children: [
               _qtyBtn(
@@ -522,11 +537,12 @@ class _AddNewOrderState extends State<AddNewOrder> {
   // ============================================================
 
   Widget _qtyBtn(IconData icon, VoidCallback? onTap, bool isAdd) {
-    return GestureDetector(
+    return InkWell(
+      customBorder: const CircleBorder(),
       onTap: onTap,
       child: Container(
-        width: 32,
-        height: 32,
+        width: 36,
+        height: 36,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: isAdd ? AppColors.primary : AppColors.white,
@@ -547,30 +563,26 @@ class _AddNewOrderState extends State<AddNewOrder> {
 
   Widget _buildParcelToggle(OrderProvider provider) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
+      padding: AppPadding.horizontalScreen,
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            context.l10n.parcelCharges,
-            style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w500),
+          Expanded(
+            child: Text(
+              context.l10n.parcelCharges,
+              style: AppTextStyles.heading3,
+            ),
           ),
-
+          AppGaps.w8,
           SizedBox(
-            width: 100,
+            width: 110,
             child: AppInput(
               controller: parcelChargeController,
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              prefix: const Align(
-                alignment: Alignment.center,
-                widthFactor: 1,
-                heightFactor: 1,
-                child: Text("₹"),
+              hint: "0",
+              prefix: Padding(
+                padding: const EdgeInsets.only(left: 16, right: 8),
+                child: Text("₹", style: AppTextStyles.heading3),
               ),
               onChanged: (value) {
                 provider.setParcelPrice(double.tryParse(value) ?? 0);
@@ -600,86 +612,99 @@ class _AddNewOrderState extends State<AddNewOrder> {
     // Same rule as the server: only money already collected is settled.
     final difference = paidAmount > 0 ? newTotal - paidAmount : 0.0;
 
-    return Container(
-      padding: AppPadding.screen,
+    // The same shape as AppFooter: white, soft top shadow, safe-area padding.
+    return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.white,
-        border: Border(top: BorderSide(color: AppColors.grey200)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _row(context.l10n.subtotal, "₹${provider.subtotal.toStringAsFixed(0)}"),
-
-          AppGaps.h4,
-
-          _row(context.l10n.platformFee, "₹${provider.platformFee.toStringAsFixed(0)}"),
-
-          AppGaps.h4,
-
-          _row(context.l10n.parcel, "₹${provider.parcelPrice.toStringAsFixed(0)}"),
-
-          if (widget.isEditing) ...[
-            AppGaps.h8,
-
-            _row(context.l10n.previousTotal, "₹${oldTotal.toStringAsFixed(0)}"),
-          ],
-
-          AppGaps.h12,
-
-          const Divider(height: 1, color: AppColors.grey200),
-
-          AppGaps.h12,
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                widget.isEditing ? context.l10n.newTotalCaps : context.l10n.total.toUpperCase(),
-                style: AppTextStyles.heading2.copyWith(fontSize: 16),
-              ),
-              Text(
-                "₹${newTotal.toStringAsFixed(0)}",
-                style: AppTextStyles.heading1.copyWith(
-                  color: AppColors.primary,
-                  fontSize: 22,
-                ),
-              ),
-            ],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -4),
           ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _row(context.l10n.subtotal, "₹${formatPrice(provider.subtotal)}"),
 
-          if (widget.isEditing && difference != 0) ...[
+            AppGaps.h4,
+
+            _row(
+              context.l10n.platformFee,
+              "₹${formatPrice(provider.platformFee)}",
+            ),
+
+            AppGaps.h4,
+
+            _row(context.l10n.parcel, "₹${formatPrice(provider.parcelPrice)}"),
+
+            if (widget.isEditing) ...[
+              AppGaps.h8,
+
+              _row(context.l10n.previousTotal, "₹${formatPrice(oldTotal)}"),
+            ],
+
             AppGaps.h12,
-            _buildDifference(difference),
-          ],
 
-          AppGaps.h16,
+            const Divider(height: 1, color: AppColors.grey200),
 
-          // --------------------------------------------------------
-          // CREATE MODE
-          // --------------------------------------------------------
-          if (!widget.isEditing)
+            AppGaps.h12,
+
             Row(
               children: [
                 Expanded(
-                  child: SizedBox(
-                    height: 48,
+                  child: Text(
+                    widget.isEditing
+                        ? context.l10n.newTotalCaps
+                        : context.l10n.total.toUpperCase(),
+                    style: AppTextStyles.heading3,
+                  ),
+                ),
+                Text(
+                  "₹${formatPrice(newTotal)}",
+                  style: AppTextStyles.heading1.copyWith(
+                    color: AppColors.primary,
+                    fontSize: 22,
+                  ),
+                ),
+              ],
+            ),
+
+            if (widget.isEditing && difference != 0) ...[
+              AppGaps.h12,
+              _buildDifference(difference),
+            ],
+
+            AppGaps.h16,
+
+            // --------------------------------------------------------
+            // CREATE MODE
+            // --------------------------------------------------------
+            if (!widget.isEditing)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Side by side: stacked, they'd leave little room for the menu
+                  // on small phones. Creating unpaid is the secondary action.
+                  Expanded(
                     child: AppButton(
                       disabled: provider.orderItems.isEmpty || _isSubmitting,
                       label: context.l10n.skip.toUpperCase(),
                       isLoading: _isSubmitting && !_isMarkingPaid,
+                      backgroundColor: AppColors.white,
+                      borderColor: AppColors.primary,
+                      textColor: AppColors.primary,
                       onPressed: () async {
                         await _createOrder(false, provider, token, cartId);
                       },
                     ),
                   ),
-                ),
-
-                AppGaps.w12,
-
-                Expanded(
-                  child: SizedBox(
-                    height: 48,
+                  AppGaps.w12,
+                  Expanded(
                     child: AppButton(
                       disabled: provider.orderItems.isEmpty || _isSubmitting,
                       label: context.l10n.markAsPaidCaps,
@@ -689,18 +714,11 @@ class _AddNewOrderState extends State<AddNewOrder> {
                       },
                     ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
 
-          // --------------------------------------------------------
-          // EDIT MODE
-          // --------------------------------------------------------
-          if (widget.isEditing)
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: AppButton(
+            if (widget.isEditing)
+              AppButton(
                 disabled: _isSubmitting,
                 label: provider.orderItems.isEmpty
                     ? context.l10n.deleteOrderCaps
@@ -714,8 +732,8 @@ class _AddNewOrderState extends State<AddNewOrder> {
                   }
                 },
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -735,7 +753,7 @@ class _AddNewOrderState extends State<AddNewOrder> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
@@ -751,8 +769,8 @@ class _AddNewOrderState extends State<AddNewOrder> {
           Expanded(
             child: Text(
               isCollect
-                  ? context.l10n.customerNeedsToPay(amount.toStringAsFixed(0))
-                  : context.l10n.giveBackToCustomer(amount.toStringAsFixed(0)),
+                  ? context.l10n.customerNeedsToPay(formatPrice(amount))
+                  : context.l10n.giveBackToCustomer(formatPrice(amount)),
               style: AppTextStyles.caption.copyWith(
                 color: color,
                 fontWeight: FontWeight.w700,
@@ -770,12 +788,14 @@ class _AddNewOrderState extends State<AddNewOrder> {
 
   Widget _row(String title, String value) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          title,
-          style: AppTextStyles.body.copyWith(color: AppColors.grey500),
+        Expanded(
+          child: Text(
+            title,
+            style: AppTextStyles.body.copyWith(color: AppColors.grey500),
+          ),
         ),
+        AppGaps.w8,
         Text(
           value,
           style: AppTextStyles.body.copyWith(

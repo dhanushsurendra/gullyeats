@@ -18,6 +18,8 @@ import 'package:ordering/features/orders/models/menu_item_model.dart';
 import 'package:ordering/features/orders/providers/menu_provider.dart';
 import 'package:ordering/features/profile/providers/language_provider.dart';
 import 'package:ordering/l10n/l10n.dart';
+import 'package:ordering/core/widgets/app_input.dart';
+import 'package:ordering/core/utils/format_price.dart';
 
 class EditMenuDialog extends StatefulWidget {
   final String initialName;
@@ -69,8 +71,9 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
 
     _nameController = TextEditingController(text: widget.initialName);
 
+    // "60", not "60.0", so typing after it doesn't produce "60.05".
     _priceController = TextEditingController(
-      text: widget.initialPrice.toString(),
+      text: formatPrice(widget.initialPrice),
     );
 
     _isVeg = widget.initialIsVeg;
@@ -391,176 +394,132 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Container(
       decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        color: AppColors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
         left: 24,
         right: 24,
         top: 12,
       ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Drag handle
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
+      child: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.grey300,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
               ),
-            ),
-
-            AppGaps.h16,
-
-            // Header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(context.l10n.editItem, style: AppTextStyles.heading2),
-                IconButton(
-                  onPressed: _isLoading ? null : () => Navigator.pop(context),
-                  icon: const Icon(Icons.close_rounded),
-                  visualDensity: VisualDensity.compact,
+              AppGaps.h16,
+              Row(
+                children: [
+                  Expanded(child: Text(l10n.editItem, style: AppTextStyles.heading2)),
+                  IconButton(
+                    onPressed: _isLoading ? null : () => Navigator.pop(context),
+                    icon: const Icon(Icons.close_rounded, color: AppColors.grey600),
+                  ),
+                ],
+              ),
+              AppGaps.h16,
+              // The same fields as the Add Item screen.
+              AppInput(
+                controller: _nameController,
+                label: l10n.itemName,
+                hint: "e.g. Chicken Momos",
+                hasError: _nameError != null,
+                errorText: _nameError,
+                onChanged: (_) {
+                  if (_nameError != null) setState(() => _nameError = null);
+                },
+              ),
+              AppGaps.h16,
+              AppInput(
+                controller: _priceController,
+                label: l10n.price,
+                hint: "0",
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                ],
+                prefix: Padding(
+                  padding: const EdgeInsets.only(left: 16, right: 8),
+                  child: Text("₹", style: AppTextStyles.heading3),
                 ),
-              ],
-            ),
-
-            AppGaps.h24,
-
-            // ====================================================
-            // ITEM NAME
-            // ====================================================
-            _buildLabel(context.l10n.itemNameCaps),
-
-            _buildTextField(
-              controller: _nameController,
-              hint: "e.g. Chicken Momos",
-              hasError: _nameError != null,
-              onChanged: (_) {
-                if (_nameError != null) {
-                  setState(() => _nameError = null);
-                }
-              },
-            ),
-
-            _buildFieldError(_nameError),
-
-            AppGaps.h24,
-
-            // ====================================================
-            // PRICE
-            // ====================================================
-            _buildLabel(context.l10n.priceRupeeCaps),
-
-            _buildTextField(
-              controller: _priceController,
-              hint: "0",
-              isNumber: true,
-              hasError: _priceError != null,
-              onChanged: (_) {
-                if (_priceError != null) {
-                  setState(() => _priceError = null);
-                }
-              },
-            ),
-
-            _buildFieldError(_priceError),
-
-            AppGaps.h24,
-
-            // ====================================================
-            // CATEGORY
-            // ====================================================
-            _buildLabel(context.l10n.category.toUpperCase()),
-
-            Row(
-              children: [
-                _categoryChip(
-                  label: context.l10n.veg,
-                  value: true,
-                  currentValue: _isVeg,
-                  onChanged: (value) {
-                    _isVeg = value;
-                  },
-                ),
-
-                AppGaps.w12,
-
-                _categoryChip(
-                  label: context.l10n.nonVeg,
-                  value: false,
-                  currentValue: _isVeg,
-                  onChanged: (value) {
-                    _isVeg = value;
-                  },
-                ),
-              ],
-            ),
-
-            AppGaps.h24,
-
-            // ====================================================
-            // STOCK
-            // ====================================================
-            _buildLabel(context.l10n.stock.toUpperCase()),
-
-            Row(
-              children: [
-                _categoryChip(
-                  label: context.l10n.inStock,
-                  value: true,
-                  currentValue: _isInStock,
-                  onChanged: (value) {
-                    _isInStock = value;
-                  },
-                ),
-
-                AppGaps.w12,
-
-                _categoryChip(
-                  label: context.l10n.outOfStock,
-                  value: false,
-                  currentValue: _isInStock,
-                  onChanged: (value) {
-                    _isInStock = value;
-                  },
-                ),
-              ],
-            ),
-
-            AppGaps.h24,
-
-            // ====================================================
-            // ITEM PHOTO
-            // ====================================================
-            _buildLabel(context.l10n.itemPhotoCaps),
-
-            _buildPhotoSection(),
-
-            AppGaps.h32,
-
-            // ====================================================
-            // UPDATE BUTTON
-            // ====================================================
-            AppButton(
-              label: context.l10n.updateItemCaps,
-              disabled:
-                  _isLoading || (_selectedPhoto != null && !_photoUploaded),
-              onPressed: (_selectedPhoto != null && !_photoUploaded) || _isUploadingPhoto
-                  ? null
-                  : _handleUpdate,
-              isLoading: _isLoading,
-            ),
-          ],
+                hasError: _priceError != null,
+                errorText: _priceError,
+                onChanged: (_) {
+                  if (_priceError != null) setState(() => _priceError = null);
+                },
+              ),
+              AppGaps.h24,
+              _buildLabel(l10n.category),
+              Row(
+                children: [
+                  _categoryChip(
+                    label: l10n.veg,
+                    value: true,
+                    currentValue: _isVeg,
+                    color: AppColors.success,
+                    onChanged: (value) => _isVeg = value,
+                  ),
+                  AppGaps.w12,
+                  _categoryChip(
+                    label: l10n.nonVeg,
+                    value: false,
+                    currentValue: _isVeg,
+                    color: AppColors.error,
+                    onChanged: (value) => _isVeg = value,
+                  ),
+                ],
+              ),
+              AppGaps.h24,
+              _buildLabel(l10n.availability),
+              Row(
+                children: [
+                  _categoryChip(
+                    label: l10n.inStock,
+                    value: true,
+                    currentValue: _isInStock,
+                    color: AppColors.success,
+                    onChanged: (value) => _isInStock = value,
+                  ),
+                  AppGaps.w12,
+                  _categoryChip(
+                    label: l10n.outOfStock,
+                    value: false,
+                    currentValue: _isInStock,
+                    color: AppColors.success,
+                    onChanged: (value) => _isInStock = value,
+                  ),
+                ],
+              ),
+              AppGaps.h24,
+              _buildLabel(l10n.itemPhoto),
+              _buildPhotoSection(),
+              AppGaps.h32,
+              AppButton(
+                label: l10n.updateItemCaps,
+                disabled: _isLoading || (_selectedPhoto != null && !_photoUploaded),
+                onPressed: (_selectedPhoto != null && !_photoUploaded) || _isUploadingPhoto
+                    ? null
+                    : _handleUpdate,
+                isLoading: _isLoading,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -579,12 +538,12 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          height: 180,
+          constraints: const BoxConstraints(minHeight: 180),
           width: double.infinity,
           decoration: BoxDecoration(
             border: Border.all(color: AppColors.grey200),
             borderRadius: BorderRadius.circular(12),
-            color: AppColors.grey100.withValues(alpha: 0.3),
+            color: AppColors.grey100,
           ),
           clipBehavior: Clip.hardEdge,
           child: hasNewPhoto
@@ -593,7 +552,7 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
                     Image.file(
                       _selectedPhoto!,
                       width: double.infinity,
-                      height: double.infinity,
+                      height: 180,
                       fit: BoxFit.cover,
                     ),
 
@@ -606,7 +565,7 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
                     Image.network(
                       _imageUrl,
                       width: double.infinity,
-                      height: double.infinity,
+                      height: 180,
                       fit: BoxFit.cover,
                       loadingBuilder: (context, child, loadingProgress) {
                         if (loadingProgress == null) {
@@ -652,11 +611,13 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
                 size: 16,
               ),
               const SizedBox(width: 6),
-              Text(
-                context.l10n.photoUploaded,
-                style: AppTextStyles.caption.copyWith(
-                  color: AppColors.success,
-                  fontWeight: FontWeight.w600,
+              Flexible(
+                child: Text(
+                  context.l10n.photoUploaded,
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.success,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
@@ -700,25 +661,26 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
   Widget _emptyPhotoView() {
     return InkWell(
       onTap: _isUploadingPhoto ? null : _showPhotoOptions,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.camera_alt_outlined, size: 36, color: AppColors.primary),
-
-          AppGaps.h8,
-
-          Text(
-            context.l10n.addItemPhoto,
-            style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600),
-          ),
-
-          AppGaps.h4,
-
-          Text(
-            context.l10n.cameraOrGallery,
-            style: AppTextStyles.caption.copyWith(color: AppColors.grey500),
-          ),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.camera_alt_outlined, size: 36, color: AppColors.primary),
+            AppGaps.h8,
+            Text(
+              context.l10n.addItemPhoto,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600),
+            ),
+            AppGaps.h4,
+            Text(
+              context.l10n.cameraOrGallery,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.caption.copyWith(color: AppColors.grey500),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -729,80 +691,8 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
 
   Widget _buildLabel(String text) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Text(
-        text,
-        style: AppTextStyles.caption.copyWith(
-          fontWeight: FontWeight.bold,
-          letterSpacing: 1.1,
-          color: Colors.grey.shade600,
-        ),
-      ),
-    );
-  }
-
-  // ============================================================
-  // FIELD ERROR
-  // ============================================================
-
-  Widget _buildFieldError(String? errorMsg) {
-    if (errorMsg == null) {
-      return const SizedBox.shrink();
-    }
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 6.0, left: 4.0),
-      child: Text(
-        errorMsg,
-        style: const TextStyle(
-          color: AppColors.error,
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
-
-  // ============================================================
-  // TEXT FIELD
-  // ============================================================
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hint,
-    bool isNumber = false,
-    bool hasError = false,
-    void Function(String)? onChanged,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.grey100.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: hasError ? AppColors.error : AppColors.grey200,
-          width: hasError ? 1.5 : 1.0,
-        ),
-      ),
-      child: TextField(
-        controller: controller,
-        onChanged: onChanged,
-        keyboardType: isNumber
-            ? const TextInputType.numberWithOptions(decimal: true)
-            : TextInputType.text,
-        inputFormatters: isNumber
-            ? [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))]
-            : null,
-        style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600),
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: TextStyle(color: Colors.grey.shade400),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
-        ),
-      ),
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(text, style: AppTextStyles.heading3),
     );
   }
 
@@ -814,53 +704,31 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
     required String label,
     required bool value,
     required bool currentValue,
+    required Color color,
     required ValueChanged<bool> onChanged,
   }) {
     final isSelected = currentValue == value;
 
-    final activeColor = value ? Colors.green : Colors.red;
-
     return Expanded(
       child: InkWell(
-        onTap: () {
-          setState(() {
-            onChanged(value);
-          });
-        },
+        onTap: () => setState(() => onChanged(value)),
         borderRadius: BorderRadius.circular(12),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+          alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: isSelected
-                ? activeColor.withValues(alpha: 0.08)
-                : Colors.white,
+            color: isSelected ? color.withValues(alpha: 0.05) : AppColors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected ? activeColor : AppColors.grey200,
-              width: 1.5,
-            ),
+            border: Border.all(color: isSelected ? color : AppColors.grey200),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.circle,
-                size: 10,
-                color: isSelected ? activeColor : Colors.grey.shade300,
-              ),
-
-              AppGaps.w8,
-
-              Text(
-                label,
-                style: TextStyle(
-                  color: isSelected ? activeColor : Colors.grey.shade600,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-            ],
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.body.copyWith(
+              color: isSelected ? color : AppColors.grey500,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            ),
           ),
         ),
       ),

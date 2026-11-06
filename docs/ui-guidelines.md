@@ -78,6 +78,8 @@ Add pull-to-refresh where data can change elsewhere.
 
 ## Porting to `ordering/`
 
+Done on 2026-11-06 (F31): every vendor screen is on `BaseScreen` and the tokens below, and `ordering/test/responsive/` checks them. The vendor app adds `ListMessage` (the list states), `CartSelector`, `DateRangeFilter` and `AppTabFilter.labelOf`. The steps are kept for reference.
+
 `ordering/` has its own copies of `BaseScreen`, `AppButton`, `AppBackButton` and `AppSnackBar` (import paths use `package:ordering`). Its `AppColors` also has a `warning` color. Steps:
 
 1. **`BaseScreen`:** the short-window fallback (`_buildExpanded`, the 480px threshold) and the 500px footer cap.

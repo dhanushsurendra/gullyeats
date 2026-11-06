@@ -4,9 +4,15 @@ Written 2026-11-06 at the end of a long session, so the next session can start f
 
 ## Progress (branch `ordering-fixes`, 2026-11-06)
 
-Done, one commit per group, not merged or pushed: B1–B4, B6–B15, F1–F29. F22 is now a real language setting: English, Kannada, Hindi and Tamil through `flutter gen-l10n` (`ordering/lib/l10n/`, `LanguageProvider`); the Hindi, Kannada and Tamil text needs a native speaker's check. Also, outside the plan: `/api/admin/*` now needs an admin login (it was public), and `send-otp`/`verify-otp` refuse staff and admin accounts (the OTP in the response let anyone log in as an admin). Backend tests: `npm test` (node:test, stubbed models, 27 pass). Vendor app: `flutter test` (5 pass), `flutter analyze` has no errors or warnings.
+Every finding is done, one commit per group, not merged or pushed. Decisions the user made on 2026-11-06:
+- **B5:** a cart with unpaid fees past the grace period refuses new orders (`create-order`), for customers and vendors alike, with a neutral message.
+- **B16:** OTP only works for vendors with no finished outlet (no cart with a QR). Onboarded vendors are reached in the onboarding app with their ID or phone and PIN (new Vendor Login screen).
+- **F22:** a real language setting: English, Kannada, Hindi and Tamil through `flutter gen-l10n` (`ordering/lib/l10n/`, `LanguageProvider`). The Hindi, Kannada and Tamil text needs a native speaker's check.
+- **F27:** the item photo is optional.
+- **F30:** the dead code is deleted, in its own commit.
+- **F31:** every vendor screen follows `docs/ui-guidelines.md`, like the onboarding app. Edit Cart now has its parcel-charge field.
 
-Still open, needing a decision: **B5** (what the payment lock should block), **B16** (OTP login design), **F27** (should a photo be optional), **F30** (dead code to delete), **F31** (UI pass). Not done: Edit Cart has no parcel-charge field (the backend now saves it), and any client can still join any cart's socket room.
+Also, outside the plan: `/api/admin/*` now needs an admin login (it was public), and `send-otp`/`verify-otp` refuse staff and admin accounts. Tests: backend `npm test` (31 pass); vendor app `flutter test` (unit tests plus the `test/responsive` harness, 550 pass); onboarding app `flutter test` (377 pass). Still not done: any client can join any cart's socket room.
 
 Behaviour changes to know before deploying: customers can only cancel unpaid orders and can't shrink a paid one; QR orders need the cart open and active; serving needs payment; order prices come from the menu. After deploy, the admin dashboard needs its login cookie to work cross-site (`SameSite=None` in production), and `gullyeats-admin/src/services/api.js` reads `import.meta.env.API_URL` where `.env` defines `VITE_API_URL`.
 

@@ -6,6 +6,7 @@ import 'package:ordering/core/theme/app_gaps.dart';
 import 'package:ordering/core/widgets/app_card.dart';
 import 'package:ordering/features/orders/models/order_model.dart';
 import 'package:ordering/l10n/l10n.dart';
+import 'package:ordering/core/utils/format_price.dart';
 
 class OrderCard extends StatefulWidget {
   final OrderModel order;
@@ -100,37 +101,44 @@ class _OrderCardState extends State<OrderCard> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final isPaid = widget.order.isPaid;
-    final isServed = widget.order.status == context.l10n.served.toUpperCase();
+    // Status codes from the server, never the translated labels.
+    final isServed = widget.order.status == "SERVED";
     final isCancelled = widget.order.status == "CANCELLED";
 
-    return GestureDetector(
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
       onTap: widget.onTap,
       child: AppCard(
-        padding: AppPadding.card,
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  "#${widget.order.orderNumber}",
-                  style: AppTextStyles.heading2,
+                Expanded(
+                  child: Text(
+                    "#${widget.order.orderNumber}",
+                    style: AppTextStyles.heading2,
+                  ),
                 ),
-                if (isCancelled)
-                  _statusChip(context.l10n.cancelled.toUpperCase(), false)
-                else if (isServed)
-                  _statusChip(context.l10n.served.toUpperCase(), true)
-                else if (isPaid)
-                  _actionButton(context.l10n.serve.toUpperCase(), widget.onServe)
-                else
-                  _outlineButton(context.l10n.markPaidCaps, widget.onMarkPaid),
+                AppGaps.w8,
+                // Capped, so a long translation wraps instead of squeezing
+                // the order number.
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 150),
+                  child: isCancelled
+                      ? _statusChip(l10n.cancelled.toUpperCase(), false)
+                      : isServed
+                      ? _statusChip(l10n.served.toUpperCase(), true)
+                      : isPaid
+                      ? _actionButton(l10n.serve.toUpperCase(), widget.onServe)
+                      : _outlineButton(l10n.markPaidCaps, widget.onMarkPaid),
+                ),
               ],
             ),
-
             AppGaps.h12,
-
             Text(
               _buildItemsText(widget.order),
               style: AppTextStyles.body.copyWith(
@@ -140,39 +148,46 @@ class _OrderCardState extends State<OrderCard> {
             ),
             AppGaps.h16,
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  "₹${widget.order.totalPrice.toStringAsFixed(0)}",
+                  "₹${formatPrice(widget.order.totalPrice)}",
                   style: AppTextStyles.heading2,
                 ),
-                Row(
-                  children: [
-                    if (!isCancelled)
-                      _statusChip(isPaid ? context.l10n.paid.toUpperCase() : context.l10n.unpaid.toUpperCase(), isPaid),
-                    AppGaps.w8,
-                    _tagChip(widget.order.isQrOrder ? context.l10n.qrOrder : context.l10n.manual),
-                    AppGaps.w8,
-                    ((widget.order.status == "CANCELLED") |
-                            (widget.order.status == context.l10n.served.toUpperCase()))
-                        ? SizedBox.shrink()
-                        : InkWell(
+                AppGaps.w12,
+                // Wrap: the chips drop to a new line instead of overflowing.
+                Expanded(
+                  child: Wrap(
+                    alignment: WrapAlignment.end,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      if (!isCancelled)
+                        _statusChip(
+                          isPaid ? l10n.paid.toUpperCase() : l10n.unpaid.toUpperCase(),
+                          isPaid,
+                        ),
+                      _tagChip(widget.order.isQrOrder ? l10n.qrOrder : l10n.manual),
+                      if (!isCancelled && !isServed)
+                        Material(
+                          color: AppColors.grey100,
+                          shape: const CircleBorder(),
+                          child: InkWell(
+                            customBorder: const CircleBorder(),
                             onTap: () => _showDeleteDialog(context),
-                            child: Container(
-                              width: 30,
-                              height: 30,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(30),
-                                color: AppColors.grey100,
-                              ),
+                            child: const SizedBox(
+                              width: 36,
+                              height: 36,
                               child: Icon(
                                 Icons.delete_outline,
-                                color: Colors.red,
+                                color: AppColors.error,
                                 size: 20,
                               ),
                             ),
                           ),
-                  ],
+                        ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -194,10 +209,10 @@ class _OrderCardState extends State<OrderCard> {
       padding: const EdgeInsets.only(top: 4),
       child: Text(
         isCollect
-            ? context.l10n.collectFromCustomer(adjustment.amount.toStringAsFixed(0))
-            : context.l10n.returnToCustomer(adjustment.amount.toStringAsFixed(0)),
+            ? context.l10n.collectFromCustomer(formatPrice(adjustment.amount))
+            : context.l10n.returnToCustomer(formatPrice(adjustment.amount)),
         style: AppTextStyles.caption.copyWith(
-          color: isCollect ? Colors.orange[800] : AppColors.success,
+          color: isCollect ? AppColors.warning : AppColors.success,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -219,16 +234,19 @@ class _OrderCardState extends State<OrderCard> {
   }
 
   Widget _actionButton(String text, VoidCallback onTap) {
-    return GestureDetector(
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
       onTap: onTap,
       child: Container(
-        padding: AppPadding.chip,
+        constraints: const BoxConstraints(minHeight: 36),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: AppColors.primary,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
           text,
+          textAlign: TextAlign.center,
           style: AppTextStyles.caption.copyWith(
             color: AppColors.white,
             fontWeight: FontWeight.w600,
@@ -239,16 +257,19 @@ class _OrderCardState extends State<OrderCard> {
   }
 
   Widget _outlineButton(String text, VoidCallback onTap) {
-    return GestureDetector(
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
       onTap: onTap,
       child: Container(
-        padding: AppPadding.chip,
+        constraints: const BoxConstraints(minHeight: 36),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(color: AppColors.primary),
         ),
         child: Text(
           text,
+          textAlign: TextAlign.center,
           style: AppTextStyles.caption.copyWith(
             color: AppColors.primary,
             fontWeight: FontWeight.w600,

@@ -20,8 +20,10 @@ class BottomNavBar extends StatelessWidget {
       bottom: true,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+        // A minimum height, so the bar grows with large system text.
         child: Container(
-          height: 72,
+          constraints: const BoxConstraints(minHeight: 72),
+          padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
             color: AppColors.white,
             borderRadius: BorderRadius.circular(35),
@@ -86,6 +88,7 @@ class BottomNavBar extends StatelessWidget {
             )!;
 
             return Column(
+              mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Transform.scale(
@@ -110,13 +113,21 @@ class BottomNavBar extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 6),
-                Text(
-                  label,
-                  style: AppTextStyles.body.copyWith(
-                    fontSize: 12,
-                    color: color,
-                    fontWeight: value > 0.5 ? FontWeight.w600 : FontWeight.w400,
-                    letterSpacing: 0.2,
+                // One line: a long translation shrinks rather than wraps.
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      style: AppTextStyles.body.copyWith(
+                        fontSize: 12,
+                        color: color,
+                        fontWeight: value > 0.5 ? FontWeight.w600 : FontWeight.w400,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
                   ),
                 ),
               ],

@@ -2,13 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:ordering/core/error/app_exceptions.dart';
 import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
-import 'package:ordering/core/theme/app_padding.dart';
 import 'package:ordering/core/theme/app_gaps.dart';
 import 'package:ordering/core/widgets/app_snack_bar.dart';
 import 'package:ordering/core/widgets/app_tab_filter.dart';
 import 'package:ordering/features/auth/providers/auth_provider.dart';
 import 'package:ordering/features/cart/presentation/stock_screen.dart';
-import 'package:ordering/features/cart/presentation/switch_cart_screen.dart';
 import 'package:ordering/features/cart/providers/cart_provider.dart';
 import 'package:ordering/features/orders/models/order_model.dart';
 import 'package:ordering/features/orders/providers/order_provider.dart';
@@ -16,6 +14,10 @@ import 'package:ordering/features/orders/screens/add_new_order.dart';
 import 'package:ordering/features/orders/widgets/order_card.dart';
 import 'package:provider/provider.dart';
 import 'package:ordering/l10n/l10n.dart';
+import 'package:ordering/core/widgets/base_screen.dart';
+import 'package:ordering/core/widgets/list_message.dart';
+import 'package:ordering/core/utils/responsive.dart';
+import 'package:ordering/features/cart/widgets/cart_selector.dart';
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
@@ -26,6 +28,7 @@ class OrdersScreen extends StatefulWidget {
 
 class _OrdersScreenState extends State<OrdersScreen> {
   bool _isInit = false;
+  bool _loadFailed = false;
   String selectedTab = "Active";
   final tabs = ["All", "Active", "QR Orders", "Manual", "Stock"];
 
@@ -53,7 +56,18 @@ class _OrdersScreenState extends State<OrdersScreen> {
       return;
     }
 
-    await orderProvider.loadOrders(token, cartId);
+    if (mounted) setState(() => _loadFailed = false);
+    try {
+      await orderProvider.loadOrders(token, cartId);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _loadFailed = true);
+      AppSnackBar.show(
+        context,
+        message: AppExceptionHandler.getMessage(e),
+        isError: true,
+      );
+    }
   }
 
   void _showCreateOrderSheet(BuildContext context) {
@@ -81,22 +95,10 @@ class _OrdersScreenState extends State<OrdersScreen> {
     );
   }
 
-  void openSwitchCartSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return SwitchCartScreen(isDraggable: true);
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<OrderProvider>();
     final authProvider = context.read<AuthProvider>();
-    final cartProvider = context.read<CartProvider>();
 
     List<OrderModel> filteredOrders;
     switch (selectedTab) {
@@ -281,226 +283,131 @@ class _OrdersScreenState extends State<OrdersScreen> {
       }
     }
 
-    return Scaffold(
-      body: SafeArea(
-        child: Stack(
+    Widget orderList() {
+      if (provider.isOrdersLoading && provider.orders.isEmpty) {
+        return const Center(child: CircularProgressIndicator());
+      }
+      return RefreshIndicator(
+        color: AppColors.primary,
+        onRefresh: _loadOrders,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          // Room for the add button and the floating bottom navigation bar.
+          padding: const EdgeInsets.only(top: 8, bottom: 180),
           children: [
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 600),
-                child: Padding(
-                  padding: const EdgeInsets.only(
-                    left: 16.0,
-                    right: 16.0,
-                    top: 16,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Image.asset(
-                            "assets/images/logo_text.png",
-                            height: 24,
-                            fit: BoxFit.contain,
+            if (_loadFailed && provider.orders.isEmpty)
+              ListMessage.failed(
+                message: context.l10n.couldntLoadOrders,
+                onRetry: _loadOrders,
+              )
+            else if (filteredOrders.isEmpty)
+              _buildEmptyState()
+            else
+              for (final order in filteredOrders)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: OrderCard(
+                    onTap: order.status == 'CANCELLED'
+                        ? null
+                        : () => showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (_) => FractionallySizedBox(
+                              heightFactor: 0.95,
+                              child: AddNewOrder(existingOrder: order),
+                            ),
                           ),
-                          const Spacer(),
-                          _buildOutletSelector(context),
-                        ],
-                      ),
-                      AppGaps.h16,
-                      Text(
-                        getOrdersTitle(selectedTab, filteredOrders),
-                        style: AppTextStyles.heading2,
-                      ),
-                      AppGaps.h16,
-                      AppTabFilter(
-                        tabs: tabs,
-                        labelOf: (tab) => tabLabels[tab]!,
-                        selectedTab: selectedTab,
-                        onTabSelected: (tab) {
-                          if (tab == "Stock") {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const StockScreen(),
-                              ),
-                            );
-                            return;
-                          }
-                          setState(() => selectedTab = tab);
-                        },
-                      ),
-                      AppGaps.h16,
-                      Expanded(
-                        child: provider.isOrdersLoading
-                            ? const Center(
-                                child: CircularProgressIndicator(
-                                  color: AppColors.primary,
-                                ),
-                              )
-                            : RefreshIndicator(
-                                color: AppColors.primary,
-                                onRefresh: () => context.read<OrderProvider>().loadOrders(
-                                      authProvider.token ?? "",
-                                      cartProvider.selectedCart?.id ?? "",
-                                    ),
-                                child: filteredOrders.isEmpty
-                                    ? ListView(
-                                        physics: const AlwaysScrollableScrollPhysics(),
-                                        padding: const EdgeInsets.only(bottom: 180),
-                                        children: [
-                                          SizedBox(
-                                            height: MediaQuery.of(context).size.height * 0.55,
-                                            child: _buildEmptyState(),
-                                          ),
-                                        ],
-                                      )
-                                    : ListView.builder(
-                                        padding: const EdgeInsets.only(
-                                          bottom: 180,
-                                          top: 8,
-                                        ),
-                                        physics: const AlwaysScrollableScrollPhysics(),
-                                        itemCount: filteredOrders.length,
-                                        itemBuilder: (context, index) {
-                                          return Padding(
-                                            padding: const EdgeInsets.only(bottom: 12),
-                                            child: OrderCard(
-                                              onTap: filteredOrders[index].status == 'CANCELLED'
-                                                  ? null
-                                                  : () {
-                                                      showModalBottomSheet(
-                                                        context: context,
-                                                        isScrollControlled: true,
-                                                        backgroundColor: Colors.transparent,
-                                                        builder: (_) {
-                                                          return FractionallySizedBox(
-                                                            heightFactor: 0.95,
-                                                            child: AddNewOrder(
-                                                              existingOrder: filteredOrders[index],
-                                                            ),
-                                                          );
-                                                        },
-                                                      );
-                                                    },
-                                              order: filteredOrders[index],
-                                              onServe: () => markOrderServed(
-                                                authProvider.token ?? "",
-                                                filteredOrders[index].id,
-                                              ),
-                                              onMarkPaid: () => markOrderPaid(
-                                                authProvider.token ?? "",
-                                                filteredOrders[index].id,
-                                              ),
-                                              onDelete: () => deleteOrder(
-                                                authProvider.token ?? "",
-                                                filteredOrders[index].id,
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                              ),
-                      )
-                    ],
+                    order: order,
+                    onServe: () =>
+                        markOrderServed(authProvider.token ?? "", order.id),
+                    onMarkPaid: () =>
+                        markOrderPaid(authProvider.token ?? "", order.id),
+                    onDelete: () =>
+                        deleteOrder(authProvider.token ?? "", order.id),
                   ),
                 ),
-              ),
-            ),
-
-            Positioned(
-              right: 16,
-              bottom: 100,
-              child: FloatingActionButton(
-                onPressed: () => _showCreateOrderSheet(context),
-                backgroundColor: AppColors.primary,
-                shape: const CircleBorder(),
-                elevation: 4,
-                child: const Icon(Icons.add, color: AppColors.white),
-              ),
-            ),
           ],
         ),
-      ),
-    );
-  }
+      );
+    }
 
-  Widget _buildOutletSelector(BuildContext context) {
-    return Consumer<CartProvider>(
-      builder: (_, cartProvider, _) {
-        final carts = cartProvider.carts;
-
-        if (carts.isEmpty) {
-          return const SizedBox.shrink();
-        }
-
-        final cart = cartProvider.selectedCart;
-
-        if (cart == null) {
-          return const SizedBox.shrink();
-        }
-
-        return GestureDetector(
-          onTap: () => openSwitchCartSheet(context),
-          child: Container(
-            padding: AppPadding.smallCard,
-            decoration: BoxDecoration(
-              border: Border.all(color: AppColors.grey300),
-              borderRadius: BorderRadius.circular(12),
-              color: AppColors.white,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  width: 120,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        cart.cartName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.heading3.copyWith(fontSize: 14),
-                      ),
-                      Text(
-                        cart.address,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.caption,
-                      ),
-                    ],
+    return Stack(
+      children: [
+        BaseScreen(
+          showBackButton: false,
+          header: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Image.asset("assets/images/logo_text.png", height: 24),
+                  AppGaps.w16,
+                  const Flexible(
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: CartSelector(),
+                    ),
                   ),
-                ),
-
-                AppGaps.w8,
-
-                const Icon(
-                  Icons.keyboard_arrow_down,
-                  size: 18,
-                  color: AppColors.grey500,
-                ),
-              ],
-            ),
+                ],
+              ),
+              AppGaps.h24,
+              Text(
+                getOrdersTitle(selectedTab, filteredOrders),
+                style: AppTextStyles.heading1,
+              ),
+            ],
           ),
-        );
-      },
+          expandToFullHeight: true,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AppTabFilter(
+                tabs: tabs,
+                labelOf: (tab) => tabLabels[tab]!,
+                selectedTab: selectedTab,
+                onTabSelected: (tab) {
+                  if (tab == "Stock") {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const StockScreen()),
+                    );
+                    return;
+                  }
+                  setState(() => selectedTab = tab);
+                },
+              ),
+              AppGaps.h16,
+              Expanded(child: orderList()),
+            ],
+          ),
+        ),
+        Positioned(
+          right: 16,
+          bottom: 100,
+          child: FloatingActionButton(
+            onPressed: () => _showCreateOrderSheet(context),
+            backgroundColor: AppColors.primary,
+            shape: const CircleBorder(),
+            elevation: 4,
+            child: const Icon(Icons.add, color: AppColors.white),
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildEmptyState() {
-    return Center(
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 32),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Image.asset(
             'assets/images/no_orders.png',
-            width: MediaQuery.of(context).size.width * 0.50,
+            height: illustrationHeight(context, 180),
             fit: BoxFit.contain,
           ),
-          AppGaps.h12,
+          AppGaps.h16,
           Text(
             switch (selectedTab) {
               "Active" => context.l10n.noActiveOrders,
@@ -508,7 +415,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
               "Manual" => context.l10n.noManualOrdersToday,
               _ => context.l10n.noOrdersToday,
             },
-            style: AppTextStyles.body.copyWith(color: AppColors.grey500),
+            textAlign: TextAlign.center,
+            style: AppTextStyles.body.copyWith(color: AppColors.grey400),
           ),
         ],
       ),
