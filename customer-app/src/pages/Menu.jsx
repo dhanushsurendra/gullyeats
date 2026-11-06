@@ -1,745 +1,271 @@
 import { useEffect, useState } from 'react'
-import { RiSearchLine } from 'react-icons/ri'
-import { FaRegCheckCircle } from 'react-icons/fa'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate, useParams } from 'react-router-dom'
-import { clearCart } from '../store/cartSlice'
+import { RiArrowRightLine, RiCloseLine, RiSearchLine } from 'react-icons/ri'
 
 import { MenuItem } from '../components/MenuItem'
 import MenuItemShimmer from '../components/MenuItemShimmer'
-import MenuHeader from '../components/MenuHeader'
-import { useLocation } from 'react-router-dom'
+import { Button, Page, StatusScreen, TopBar } from '../components/ui'
+import { api } from '../constants/api'
+import { addItem, removeItem, setCartDetails, setMenuItems } from '../store/cartSlice'
+import { itemCount, itemsTotal, PLATFORM_FEE, rupees, shortAddress } from '../utils/format'
 
-import { setMenuItems, setCart, addItem, removeItem } from '../store/cartSlice'
+const FILTERS = [
+  { id: 'all', label: 'All' },
+  { id: 'veg', label: 'Veg' },
+  { id: 'nonveg', label: 'Non-veg' },
+]
 
-import { API_BASE_URL } from '../constants/api'
-
+/*
+ * The cart's menu. At /order/:id/add it edits an existing order instead:
+ * the order's items start selected and "Save" updates the order.
+ */
 export default function Menu() {
-  const [showAdded, setShowAdded] = useState(false)
-  const [search, setSearch] = useState('')
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [foodFilter, setFoodFilter] = useState('all')
-
-  const [isExistingOrderLoading, setIsExistingOrderLoading] = useState(false)
-  const [existingOrder, setExistingOrder] = useState(null)
-
-  const [existingOrderError, setExistingOrderError] = useState('')
-
   const navigate = useNavigate()
   const dispatch = useDispatch()
+  const { cartId, orderNumber: orderId } = useParams()
+  const isAddMore = Boolean(orderId)
 
-  const location = useLocation()
-
-  const cameFromCart = location.state?.fromCart === true
-
-  const { cartId, orderNumber } = useParams()
-
+  const cart = useSelector((state) => state.cart.details)
   const menuItems = useSelector((state) => state.cart.items)
+  const basket = useSelector((state) => state.cart.cart)
 
-  const cart = useSelector((state) => state.cart.cart)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [attempt, setAttempt] = useState(0)
+  const [search, setSearch] = useState('')
+  const [filter, setFilter] = useState('all')
 
-  const cartDetails = useSelector((state) => state.cart.details)
+  // Add-more mode: the order being edited and its quantities.
+  const [order, setOrder] = useState(null)
+  const [draft, setDraft] = useState({})
+  const [original, setOriginal] = useState({})
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
 
-  const isAddMoreMode = Boolean(orderNumber)
-
-  const [isSaving, setIsSaving] = useState(false)
-
-  // ==================================================
-  // FETCH MENU ITEMS
-  // ==================================================
-
+  // Always refetch, so stock and prices are current even with a saved menu.
   useEffect(() => {
-    const fetchMenuItems = async () => {
-      if (!cartId) {
-        setError('Cart ID is missing')
-        setLoading(false)
-        return
-      }
-
-      // Menu already exists in Redux
-      if (menuItems.length > 0) {
-        setLoading(false)
-        return
-      }
-
-      try {
-        setLoading(true)
+    let live = true
+    Promise.all([
+      api(`/carts/get-cart/${cartId}`),
+      api(`/carts/get-menu-items/${cartId}`),
+      isAddMore ? api(`/orders/order/${orderId}`) : null,
+    ])
+      .then(([cartData, items, existing]) => {
+        if (!live) return
+        dispatch(setCartDetails(cartData))
+        dispatch(setMenuItems(items || []))
+        if (existing) {
+          setOrder(existing)
+          const ordered = Object.fromEntries(
+            (existing.orderItems || [])
+              .filter((i) => i.menuItemId)
+              .map((i) => [i.menuItemId, Number(i.quantity)]),
+          )
+          setOriginal(ordered)
+          setDraft(ordered)
+        }
         setError('')
-
-        const response = await fetch(
-          `${API_BASE_URL}/carts/get-menu-items/${cartId}`,
-        )
-
-        const data = await response.json()
-
-        if (!response.ok) {
-          throw new Error(data?.message || 'Failed to fetch menu items')
-        }
-
-        dispatch(setMenuItems(data?.data || []))
-      } catch (error) {
-
-        setError('Unable to load menu. Please try again.')
-      } finally {
-        setLoading(false)
-      }
+      })
+      .catch((e) => live && setError(e.message))
+      .finally(() => live && setLoading(false))
+    return () => {
+      live = false
     }
+  }, [cartId, orderId, isAddMore, dispatch, attempt])
 
-    fetchMenuItems()
-  }, [cartId, menuItems.length, dispatch])
-
-  useEffect(() => {
-    if (!isAddMoreMode && !cameFromCart) {
-      dispatch(clearCart())
-    }
-  }, [isAddMoreMode, cameFromCart, dispatch])
-
-  // ==================================================
-  // FETCH EXISTING ORDER
-  // ==================================================
-
-  useEffect(() => {
-    if (!isAddMoreMode || !orderNumber) {
-      return
-    }
-
-    const fetchExistingOrder = async () => {
-      try {
-        setIsExistingOrderLoading(true)
-        setExistingOrderError('')
-
-        const response = await fetch(
-          `${API_BASE_URL}/orders/order/${orderNumber}`,
-        )
-
-        const data = await response.json()
-
-        if (!response.ok) {
-          throw new Error(data?.message || 'Unable to fetch existing order.')
-        }
-
-        const orderData = data?.data
-
-        if (!orderData) {
-          throw new Error('Existing order not found.')
-        }
-
-        // Store order in state
-        setExistingOrder(orderData)
-
-        // Build Redux cart from the fetched order
-        const existingCart = {}
-
-        const orderItems = orderData?.orderItems || []
-
-        orderItems.forEach((item) => {
-          const itemId = item.menuItemId
-
-          if (!itemId) {
-            return
-          }
-
-          existingCart[itemId] = Number(item.quantity || 0)
-        })
-
-        // Replace Redux cart with existing order
-        dispatch(setCart(existingCart))
-      } catch (error) {
-
-        setExistingOrderError(
-          error?.message || 'Unable to load your existing order.',
-        )
-      } finally {
-        setIsExistingOrderLoading(false)
-      }
-    }
-
-    fetchExistingOrder()
-  }, [isAddMoreMode, orderNumber, dispatch])
-
-  // ==================================================
-  // ADD ITEM
-  // ==================================================
-
-  const handleAdd = (id) => {
-    dispatch(addItem(id))
-
-    setShowAdded(true)
-
-    setTimeout(() => {
-      setShowAdded(false)
-    }, 1200)
+  const quantities = isAddMore ? draft : basket
+  const change = (id, delta) => {
+    if (!isAddMore) return dispatch(delta > 0 ? addItem(id) : removeItem(id))
+    setSaveError('')
+    setDraft((d) => {
+      const next = { ...d, [id]: Math.max(0, (d[id] || 0) + delta) }
+      if (!next[id]) delete next[id]
+      return next
+    })
   }
 
-  // ==================================================
-  // REMOVE ITEM
-  // ==================================================
-
-  const handleRemove = (id) => {
-    dispatch(removeItem(id))
-  }
-
-  // ==================================================
-  // SEARCH + FOOD FILTER
-  // ==================================================
-
-  const filteredItems = menuItems.filter((item) => {
-    const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase())
-
-    const matchesFoodType =
-      foodFilter === 'all' ||
-      (foodFilter === 'veg' && item.isVeg) ||
-      (foodFilter === 'nonveg' && !item.isVeg)
-
-    return matchesSearch && matchesFoodType
-  })
-
-  // ==================================================
-  // TOTALS
-  // ==================================================
-
-  const totalItems = Object.values(cart).reduce(
-    (total, quantity) => total + Number(quantity || 0),
-    0,
-  )
-
-  const totalPrice = menuItems.reduce(
-    (total, item) =>
-      total + Number(item.price || 0) * Number(cart[item._id] || 0),
-    0,
-  )
-
-  // ==================================================
-  // NORMAL ORDER
-  // ==================================================
-
-  const handleViewCart = () => {
-    navigate(`/c/${cartId}/cart`)
-  }
-
-  // ==================================================
-  // EXISTING ORDER
-  // ==================================================
-
-  const handleSaveAndGoBack = async () => {
-    if (!existingOrder?._id) {
-      return
-    }
-
-    try {
-      setIsSaving(true)
-      setExistingOrderError('')
-
-      // Build the COMPLETE updated order items
-      const updatedOrderItems = menuItems
-        .filter((item) => Number(cart[item._id] || 0) > 0)
-        .map((item) => {
-          const quantity = Number(cart[item._id] || 0)
-
-          return {
-            menuItemId: item._id,
-            name: item.name,
-            price: Number(item.price),
-            quantity,
-            total: Number(item.price) * quantity,
-          }
-        })
-
-      if (updatedOrderItems.length === 0) {
-        throw new Error('Your order cannot be empty.')
-      }
-
-      // Calculate updated subtotal
-      const subtotal = updatedOrderItems.reduce(
-        (total, item) => total + Number(item.price) * Number(item.quantity),
+  const isOpen = cart?._id === cartId && cart.isOpen && cart.isActive !== false
+  const canOrder = isAddMore ? ['PENDING', 'PAID'].includes(order?.status) : isOpen
+  const count = itemCount(quantities)
+  const changed = Object.keys({ ...draft, ...original }).some((id) => draft[id] !== original[id])
+  // Items already in the order keep the price they were ordered at.
+  const orderPrices = Object.fromEntries((order?.orderItems || []).map((i) => [i.menuItemId, i.price]))
+  const total = isAddMore
+    ? Object.entries(draft).reduce(
+        (sum, [id, q]) => sum + q * (orderPrices[id] ?? menuItems.find((m) => m._id === id)?.price ?? 0),
         0,
       )
+    : itemsTotal(menuItems, quantities)
 
-      // Keep existing charges
-      const platformFee = Number(existingOrder.platformFee || 0)
+  const query = search.trim().toLowerCase()
+  const shown = menuItems
+    .filter(
+      (item) =>
+        item.name.toLowerCase().includes(query) &&
+        (filter === 'all' || (filter === 'veg') === Boolean(item.isVeg)),
+    )
+    // Sold-out items sink to the bottom.
+    .sort((a, b) => (b.isInStock !== false) - (a.isInStock !== false))
 
-      const parcelCharge = Number(existingOrder.parcelCharge || 0)
+  const backToOrder = () => navigate(`/c/${cartId}/order/${orderId}`)
 
-      const totalPrice = subtotal + platformFee + parcelCharge
-
-      const payload = {
-        orderItems: updatedOrderItems,
-        subtotal,
-        platformFee,
-        parcelCharge,
-        totalPrice,
-      }
-
-      const response = await fetch(
-        `${API_BASE_URL}/orders/update-order/${existingOrder._id}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        },
-      )
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data?.message || 'Failed to update order.')
-      }
-
-      // Only navigate after successful update
-      navigate(`/c/${cartId}/order/${orderNumber}`)
-    } catch (error) {
-
-      setExistingOrderError(error.message || 'Unable to update your order.')
-    } finally {
-      setIsSaving(false)
+  const save = async () => {
+    // From the draft, not the menu: keeps ordered items that have left the menu.
+    const orderItems = Object.entries(draft).map(([menuItemId, quantity]) => ({ menuItemId, quantity }))
+    if (!orderItems.length) {
+      setSaveError('Your order needs at least one item. To cancel it, go back to your order.')
+      return
+    }
+    setSaving(true)
+    try {
+      await api(`/orders/update-order/${orderId}`, { method: 'PUT', body: { orderItems } })
+      backToOrder()
+    } catch (e) {
+      setSaveError(e.message)
+      setSaving(false)
     }
   }
 
-  // ==================================================
-  // ADDRESS
-  // ==================================================
-
-  const getDisplayAddress = (address) => {
-    if (!address) {
-      return 'Location unavailable'
-    }
-
-    const parts = address
-      .split(',')
-      .map((part) => part.trim())
-      .filter(Boolean)
-
-    if (parts.length >= 4) {
-      return `${parts[2]}, ${parts[3]}`
-    }
-
-    return address
-  }
-
-  // ==================================================
-  // ERROR
-  // ==================================================
-
-  if (error) {
+  if (error && !menuItems.length) {
     return (
-      <div className='min-h-screen bg-white flex items-center justify-center font-poppins px-4'>
-        <div className='text-center'>
-          <p className='text-h2 text-black'>Something went wrong</p>
-
-          <p className='text-body text-grey-500 mt-2'>{error}</p>
-
-          <button
-            onClick={() => window.location.reload()}
-            className='
-              mt-6
-              bg-primary
-              text-white
-              px-6
-              py-3
-              rounded-pill
-              font-semibold
-            '
-          >
-            TRY AGAIN
-          </button>
-        </div>
-      </div>
+      <Page>
+        <TopBar title='Menu' onBack={() => navigate(-1)} />
+        <StatusScreen icon='🍽️' title="Couldn't load the menu" message={error}>
+          <Button onClick={() => setAttempt((n) => n + 1)}>Try again</Button>
+        </StatusScreen>
+      </Page>
     )
   }
 
-  // ==================================================
-  // EXISTING ORDER ERROR
-  // ==================================================
-
-  if (isAddMoreMode && existingOrderError) {
-    return (
-      <div
-        className='
-          min-h-screen
-          bg-white
-          flex
-          items-center
-          justify-center
-          font-poppins
-          px-4
-        '
-      >
-        <div className='text-center'>
-          <p className='text-h2 text-black'>Unable to load order</p>
-
-          <p className='text-body text-grey-500 mt-2'>{existingOrderError}</p>
-
-          <button
-            onClick={() => navigate(`/c/${cartId}/order/${orderNumber}`)}
-            className='
-              mt-6
-              bg-primary
-              text-white
-              px-6
-              py-3
-              rounded-pill
-              font-semibold
-            '
-          >
-            BACK TO ORDER
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  // ==================================================
-  // MAIN UI
-  // ==================================================
+  const paidAmount = Number(order?.paidAmount || 0)
 
   return (
-    <div className='min-h-screen bg-white font-poppins pb-30'>
-      {/* ==================================================
-          HEADER
-      ================================================== */}
-
-      <MenuHeader
-        title={
-          isAddMoreMode
-            ? 'Add More Items'
-            : cartDetails?.cartName || 'Restaurant'
-        }
-        subtitle={
-          isAddMoreMode
-            ? 'Edit your order and add more items.'
-            : getDisplayAddress(cartDetails?.address)
-        }
-        showLive={!isAddMoreMode && cartDetails?.isOpen}
-        showInfo={!isAddMoreMode}
-        showToken={isAddMoreMode}
-        token={isAddMoreMode ? orderNumber : undefined}
-        onBack={() =>
-          isAddMoreMode
-            ? navigate(`/c/${cartId}/order/${orderNumber}`)
-            : navigate(`/c/${cartId}/welcome`)
-        }
+    <Page>
+      <TopBar
+        title={isAddMore ? `Edit token #${order?.orderNumber ?? ''}` : cart?.cartName || 'Menu'}
+        subtitle={isAddMore ? 'Add or change items' : shortAddress(cart?.address)}
+        onBack={isAddMore ? backToOrder : () => navigate(`/c/${cartId}/welcome`)}
       />
 
-      {/* ==================================================
-          MAIN
-      ================================================== */}
-
-      <main className='px-4 py-6'>
-        {/* Existing order loading */}
-
-        {isAddMoreMode && isExistingOrderLoading && (
-          <div
-            className='
-                mb-4
-                bg-lightOrange
-                p-2
-                rounded-lg
-                text-center
-              '
-          >
-            <p className='text-[11px] text-primary font-medium'>
-              Loading your current order...
-            </p>
-          </div>
-        )}
-
-        {/* Add more message */}
-
-        {isAddMoreMode && !isExistingOrderLoading && (
-          <div className='mb-4'>
-            <p className='text-[10px] text-grey-500'>
-              Your current items are already selected. Add or remove items
-              before saving.
-            </p>
-          </div>
-        )}
-
-        {/* Normal order message */}
-
-        {!isAddMoreMode && (
-          <div className='mb-1 bg-lightOrange p-2 rounded-lg text-center'>
-            <p className='text-[11px] text-primary font-medium'>
-              Pay at the counter. Your order starts preparing after payment.
-            </p>
-          </div>
-        )}
-
-        {/* ==================================================
-            SEARCH
-        ================================================== */}
-
-        <div className='relative mb-6'>
-          <RiSearchLine
-            className='
-              absolute
-              left-4
-              top-1/2
-              -translate-y-1/2
-              text-grey-400
-            '
-            size={18}
-          />
-
+      <div className='sticky top-16 z-20 space-y-3 bg-grey-50/95 px-4 pb-3 pt-4 backdrop-blur-md'>
+        <label className='flex h-12 items-center gap-3 rounded-2xl bg-white px-4 shadow-card ring-1 ring-grey-200/60 focus-within:ring-2 focus-within:ring-primary/40'>
+          <RiSearchLine size={20} className='shrink-0 text-grey-400' />
           <input
-            type='text'
+            type='search'
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder='Search food items...'
-            className='
-              w-full
-              bg-grey-100
-              border
-              border-grey-200
-              rounded-xl
-              py-3
-              pl-12
-              pr-4
-              focus:outline-none
-              focus:border-primary/50
-              text-body
-            '
+            placeholder='Search dishes'
+            aria-label='Search dishes'
+            className='w-full bg-transparent text-[15px] outline-none placeholder:text-grey-400 [&::-webkit-search-cancel-button]:hidden'
           />
+          {search && (
+            <button type='button' onClick={() => setSearch('')} aria-label='Clear search' className='text-grey-400'>
+              <RiCloseLine size={20} />
+            </button>
+          )}
+        </label>
+        <div className='flex gap-2' role='group' aria-label='Filter'>
+          {FILTERS.map((f) => (
+            <button
+              key={f.id}
+              type='button'
+              onClick={() => setFilter(f.id)}
+              aria-pressed={filter === f.id}
+              className={`flex h-9 items-center gap-2 rounded-full px-4 text-sm font-medium transition ${
+                filter === f.id
+                  ? 'bg-grey-900 text-white'
+                  : 'bg-white text-grey-600 ring-1 ring-grey-200'
+              }`}
+            >
+              {f.id !== 'all' && (
+                <span className={`h-2 w-2 rounded-full ${f.id === 'veg' ? 'bg-veg' : 'bg-nonveg'}`} />
+              )}
+              {f.label}
+            </button>
+          ))}
         </div>
+      </div>
 
-        {/* ==================================================
-            FOOD FILTER
-        ================================================== */}
-
-        <div className='flex gap-2 mb-6'>
-          <button
-            onClick={() => setFoodFilter('all')}
-            className={`
-              px-4
-              py-2
-              rounded-pill
-              text-sm
-              font-semibold
-              border
-              transition
-              ${
-                foodFilter === 'all'
-                  ? 'bg-black text-white border-black'
-                  : 'bg-white text-grey-500 border-grey-200'
-              }
-            `}
-          >
-            All
-          </button>
-
-          <button
-            onClick={() => setFoodFilter('veg')}
-            className={`
-              flex
-              items-center
-              gap-2
-              px-4
-              py-2
-              rounded-pill
-              text-sm
-              font-semibold
-              border
-              transition
-              ${
-                foodFilter === 'veg'
-                  ? 'bg-green-50 text-green-600 border-green-500'
-                  : 'bg-white text-grey-500 border-grey-200'
-              }
-            `}
-          >
-            <span className='w-2 h-2 rounded-full bg-green-500' />
-            Veg
-          </button>
-
-          <button
-            onClick={() => setFoodFilter('nonveg')}
-            className={`
-              flex
-              items-center
-              gap-2
-              px-4
-              py-2
-              rounded-pill
-              text-sm
-              font-semibold
-              border
-              transition
-              ${
-                foodFilter === 'nonveg'
-                  ? 'bg-red-50 text-red-600 border-red-500'
-                  : 'bg-white text-grey-500 border-grey-200'
-              }
-            `}
-          >
-            <span className='w-2 h-2 rounded-full bg-red-500' />
-            Non-Veg
-          </button>
-        </div>
-
-        {/* ==================================================
-            MENU TITLE
-        ================================================== */}
-
-        <h2 className='text-h2 mb-4'>Menu</h2>
-
-        {/* ==================================================
-            MENU ITEMS
-        ================================================== */}
+      <main className='flex-1 px-4 pb-6'>
+        {!loading && !isAddMore && !isOpen && (
+          <p className='mb-4 rounded-2xl bg-grey-100 px-4 py-3 text-sm text-grey-600'>
+            This cart is closed right now, so ordering is paused. Here's what they serve.
+          </p>
+        )}
+        {!loading && !isAddMore && isOpen && (
+          <p className='mb-4 rounded-2xl bg-primary-soft px-4 py-3 text-sm text-primary'>
+            Order here, then pay at the counter. Cooking starts once you pay.
+          </p>
+        )}
+        {isAddMore && paidAmount > 0 && (
+          <p className='mb-4 rounded-2xl bg-primary-soft px-4 py-3 text-sm text-primary'>
+            You've paid {rupees(paidAmount)}. Pay for new items at the counter. To remove paid
+            items, ask the vendor.
+          </p>
+        )}
 
         <div className='space-y-3'>
-          {loading || (isAddMoreMode && isExistingOrderLoading) ? (
-            <>
-              <MenuItemShimmer />
-              <MenuItemShimmer />
-              <MenuItemShimmer />
-              <MenuItemShimmer />
-            </>
-          ) : filteredItems.length > 0 ? (
-            filteredItems.map((item, index) => (
-              <div
-                key={item._id}
-                className='menu-item-enter'
-                style={{
-                  animationDelay: `${index * 50}ms`,
-                }}
-              >
+          {loading && !menuItems.length ? (
+            [0, 1, 2, 3].map((i) => <MenuItemShimmer key={i} />)
+          ) : shown.length ? (
+            shown.map((item, i) => (
+              <div key={item._id} className='animate-fade-up' style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}>
                 <MenuItem
                   item={item}
-                  quantity={cart[item._id] || 0}
-                  onAdd={handleAdd}
-                  onRemove={handleRemove}
-                  disabled={!cartDetails?.isOpen}
+                  quantity={quantities[item._id] || 0}
+                  onAdd={(id) => change(id, 1)}
+                  onRemove={(id) => change(id, -1)}
+                  canOrder={canOrder}
                 />
               </div>
             ))
           ) : (
-            <div className='text-center py-10'>
-              <p className='text-body text-grey-500'>No menu items found.</p>
-            </div>
+            <StatusScreen
+              icon='🔍'
+              tone='grey'
+              title={menuItems.length ? 'No dishes match' : 'The menu is empty'}
+              message={menuItems.length ? 'Try another name or filter.' : 'This cart hasn\'t added any dishes yet.'}
+            />
           )}
         </div>
-
-        {/* ==================================================
-            ADDED TO CART
-        ================================================== */}
-
-        {showAdded && (
-          <div className='fixed bottom-30 left-0 right-0 z-50 flex justify-center pointer-events-none'>
-            <div
-              className='
-                toast-enter
-                inline-flex
-                items-center
-                gap-2
-                bg-[#E7F7EF]
-                text-success
-                font-medium
-                px-4
-                py-2
-                rounded-pill
-                text-caption
-                border
-                border-success/10
-                whitespace-nowrap
-                shadow-lg
-              '
-            >
-              <FaRegCheckCircle size={16} />
-              Added to cart
-            </div>
-          </div>
-        )}
       </main>
 
-      {/* ==================================================
-          BOTTOM CART BAR
-      ================================================== */}
-
-      {totalItems > 0 && (
-        <div className='fixed bottom-6 left-4 right-4 z-50 cart-bar-enter'>
-          <div
-            className='
-              bg-[#0B121F]
-              rounded-pill
-              p-2
-              flex
-              items-center
-              justify-between
-              shadow-xl
-            '
-          >
-            {/* Cart information */}
-
-            <div className='pl-4'>
-              <p
-                className='
-                  text-[10px]
-                  text-grey-400
-                  uppercase
-                  tracking-widest
-                  font-bold
-                '
-              >
-                {isAddMoreMode ? 'Updated Order' : 'Your Cart'}
-              </p>
-
-              <p className='text-white text-body font-bold'>
-                {totalItems} Items
-              </p>
-            </div>
-
-            {/* Price + action */}
-
-            <div className='flex items-center gap-4'>
-              <span className='text-h2 text-white'>₹{totalPrice}</span>
-
-              {isAddMoreMode ? (
-                <button
-                  onClick={handleSaveAndGoBack}
-                  disabled={isExistingOrderLoading || isSaving}
-                  className='
-                    bg-primary
-                    text-white
-                    px-6
-                    py-3
-                    rounded-pill
-                    font-bold
-                    text-body
-                    transition-all
-                    duration-200
-                    hover:opacity-90
-                    active:scale-95
-                    disabled:opacity-50
-                    disabled:cursor-not-allowed
-                  '
-                >
-                  {isSaving ? 'SAVING...' : 'SAVE CHANGES'}
-                </button>
-              ) : (
-                <button
-                  onClick={handleViewCart}
-                  className='
-                    bg-primary
-                    text-white
-                    px-6
-                    py-3
-                    rounded-pill
-                    font-bold
-                    text-body
-                    transition-all
-                    duration-200
-                    active:scale-95
-                  '
-                >
-                  {cartDetails?.isOpen ? 'VIEW CART' : 'VIEW MENU'}
-                </button>
-              )}
-            </div>
+      {isAddMore ? (
+        <div className='sticky bottom-0 z-30 pb-safe border-t border-grey-200/70 bg-white/95 px-4 pt-3 backdrop-blur-md'>
+          {saveError && <p className='mb-2 text-sm text-danger'>{saveError}</p>}
+          <div className='mb-3 flex items-center justify-between text-sm'>
+            <span className='text-grey-500'>
+              {count} {count === 1 ? 'item' : 'items'}
+            </span>
+            <span className='font-semibold'>New total {rupees(total + PLATFORM_FEE + Number(order?.parcelCharge || 0))}</span>
           </div>
+          <Button onClick={save} loading={saving} disabled={!order || !changed}>
+            {changed ? 'Save changes' : 'No changes yet'}
+          </Button>
         </div>
+      ) : (
+        count > 0 && (
+          <div className='pb-safe sticky bottom-0 z-30 px-4'>
+            <button
+              key={count}
+              type='button'
+              onClick={() => navigate(`/c/${cartId}/cart`)}
+              className='animate-bump flex h-15 w-full items-center justify-between rounded-2xl bg-grey-900 px-5 text-white shadow-float transition active:scale-[0.98]'
+            >
+              <span className='text-left'>
+                <span className='block text-xs text-white/60'>
+                  {count} {count === 1 ? 'item' : 'items'}
+                </span>
+                <span className='block text-base font-semibold'>{rupees(total)}</span>
+              </span>
+              <span className='flex items-center gap-1.5 font-semibold'>
+                View cart <RiArrowRightLine size={20} />
+              </span>
+            </button>
+          </div>
+        )
       )}
-    </div>
+    </Page>
   )
 }

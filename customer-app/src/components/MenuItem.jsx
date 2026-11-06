@@ -1,188 +1,45 @@
 import defaultFoodImage from '../assets/default-food.png'
+import { rupees } from '../utils/format'
+import { Stepper, VegMark } from './ui'
 
-export function MenuItem({
-  item,
-  quantity,
-  onAdd,
-  onRemove,
-  disabled = false,
-}) {
-  const outOfStock = !item.isInStock || disabled
+export function MenuItem({ item, quantity, onAdd, onRemove, canOrder = true }) {
+  const available = item.isInStock !== false
 
   return (
-    <div
-      className={`
-        group
-        flex items-center gap-4
-        border border-grey-200
-        rounded-xl
-        p-3
-        bg-white
-        transition-all
-        duration-200
-        ease-out
-        ${
-          outOfStock
-            ? 'opacity-50'
-            : 'hover:border-primary/30 hover:shadow-md active:scale-[0.99]'
-        }
-      `}
+    <article
+      className={`flex gap-4 rounded-card bg-white p-3 shadow-card transition ${
+        available ? '' : 'opacity-60'
+      }`}
     >
-      {/* ==========================================
-          FOOD IMAGE
-      ========================================== */}
+      <div className='min-w-0 flex-1 py-1'>
+        <VegMark isVeg={item.isVeg} />
+        <h3 className='mt-1.5 line-clamp-2 text-[15px] font-semibold leading-snug'>{item.name}</h3>
+        <p className='mt-1 text-sm font-medium text-grey-700'>{rupees(item.price)}</p>
+        {!available && <p className='mt-1 text-xs font-medium text-danger'>Sold out for now</p>}
+      </div>
 
-      <div className='w-20 h-20 shrink-0 overflow-hidden rounded-xl bg-grey-100'>
+      <div className='relative flex w-28 shrink-0 flex-col items-center'>
         <img
           src={item.imageUrl || defaultFoodImage}
-          alt={item.name}
-          className='
-            w-full h-full
-            object-cover
-            transition-transform
-            duration-300
-            ease-out
-            group-hover:scale-105
-          '
+          alt=''
+          loading='lazy'
+          className={`h-24 w-28 rounded-2xl bg-grey-100 object-cover ${available ? '' : 'grayscale'}`}
           onError={(e) => {
             e.currentTarget.onerror = null
             e.currentTarget.src = defaultFoodImage
           }}
         />
-      </div>
-
-      {/* ==========================================
-          ITEM DETAILS
-      ========================================== */}
-
-      <div className='flex-1 min-w-0 self-stretch flex flex-col justify-center'>
-        {/* Item name */}
-        <div className='flex items-start gap-2'>
-          <span
-            className={`
-              w-2 h-2
-              shrink-0
-              rounded-full
-              mt-1.5
-              ${item.isVeg ? 'bg-green-500' : 'bg-red-500'}
-            `}
-          />
-
-          <p className='text-sm font-semibold text-black leading-snug line-clamp-2'>
-            {item.name}
-          </p>
-        </div>
-
-        {/* Price */}
-        <p className='text-sm font-semibold text-grey-700 mt-1'>
-          ₹{item.price}
-        </p>
-        
-        {/* Out of stock */}
-        {outOfStock && !disabled && (
-          <p className='text-caption text-red-500 mt-1'>Out of stock</p>
+        {available && canOrder && (
+          <div className='-mt-5'>
+            <Stepper
+              name={item.name}
+              quantity={quantity}
+              onAdd={() => onAdd(item._id)}
+              onRemove={() => onRemove(item._id)}
+            />
+          </div>
         )}
       </div>
-
-      {/* ==========================================
-          ACTION
-      ========================================== */}
-
-      {!outOfStock && (
-        <div className='shrink-0'>
-          {quantity === 0 ? (
-            /* ADD */
-            <button
-              onClick={() => onAdd(item._id)}
-              className='
-                flex items-center justify-center
-                gap-1
-                border border-primary
-                text-primary
-                bg-white
-                px-4 py-2
-                rounded-pill
-                font-semibold
-                text-sm
-                transition-all
-                duration-200
-                hover:bg-primary
-                hover:text-white
-                active:scale-95
-              '
-            >
-              <span className='text-base leading-none'>+</span>
-              ADD
-            </button>
-          ) : (
-            <div
-              className='
-    flex items-center
-    gap-1
-    border border-primary/30
-    bg-white
-    rounded-pill
-    px-1
-    py-1
-    shadow-sm
-  '
-            >
-              {/* Minus */}
-              <button
-                onClick={() => onRemove(item._id)}
-                className='
-      w-7 h-7
-      rounded-full
-      flex items-center justify-center
-      text-primary
-      text-base
-      font-semibold
-      leading-none
-      transition-all
-      duration-150
-      hover:bg-lightOrange
-      active:scale-90
-    '
-              >
-                −
-              </button>
-
-              {/* Quantity */}
-              <span
-                className='
-      min-w-7
-      text-center
-      text-sm
-      font-semibold
-      text-black
-    '
-              >
-                {quantity}
-              </span>
-
-              {/* Plus */}
-              <button
-                onClick={() => onAdd(item._id)}
-                className='
-                  w-7 h-7
-                  rounded-full
-                  flex items-center justify-center
-                  text-primary
-                  text-base
-                  font-semibold
-                  leading-none
-                  transition-all
-                  duration-150
-                  hover:bg-lightOrange
-                  active:scale-90
-                '
-              >
-                +
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+    </article>
   )
 }

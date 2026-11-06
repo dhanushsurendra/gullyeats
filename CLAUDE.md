@@ -48,7 +48,7 @@ Flutter work uses the official `dart-flutter` Claude Code plugin (`claude plugin
 
 Every client points at the deployed backend by default, so check these before testing locally:
 - `frontend/lib/core/constants/api_constants.dart` and `ordering/lib/core/constants/api_constants.dart` (`baseUrl`)
-- `customer-app/src/constants/api.js` (`API_BASE_URL`; the Socket.IO URL comes from stripping `/api` off it)
+- `customer-app/src/constants/api.js` (`API_BASE_URL`, overridable with `VITE_API_BASE_URL`; the Socket.IO URL comes from stripping `/api` off it)
 - `gullyeats-admin/.env` (`VITE_API_URL`, `VITE_ADMIN_PATH`, `VITE_CART_PATH`; see `.env.example`)
 
 ## Backend architecture

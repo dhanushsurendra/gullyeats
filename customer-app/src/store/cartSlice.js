@@ -14,6 +14,11 @@ const cartSlice = createSlice({
 
   reducers: {
     setCartDetails: (state, action) => {
+      // Scanning a different cart: drop the old cart's menu and basket.
+      if (state.details?._id !== action.payload?._id) {
+        state.items = []
+        state.cart = {}
+      }
       state.details = action.payload
     },
 
