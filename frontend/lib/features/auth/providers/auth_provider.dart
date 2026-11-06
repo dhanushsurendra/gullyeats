@@ -39,6 +39,21 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  /// Returns the outlet list's arguments: the vendor's `userId` (database ID)
+  /// and `phoneNumber`.
+  Future<Map<String, dynamic>> loginWithPin(String identifier, String pin) async {
+    final res = await _api.loginWithPin(identifier, pin);
+    final user = res['user'] as Map<String, dynamic>;
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('token', res['token']);
+    await prefs.setString('userId', user['id']);
+
+    _token = res['token'];
+    notifyListeners();
+    return {'userId': user['id'], 'phoneNumber': user['phoneNumber']};
+  }
+
   Future<Map<String, dynamic>> resetPin() => _api.resetPin(_token);
 
   Future<void> loadToken() async {

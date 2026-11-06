@@ -42,6 +42,24 @@ class AuthService {
     }
   }
 
+  /// Logs in an already-onboarded vendor with their Vendor ID or phone number
+  /// and PIN (the server refuses OTP for them).
+  Future<Map<String, dynamic>> loginWithPin(String identifier, String pin) async {
+    final response = await http.post(
+      Uri.parse("${ApiConstants.vendors}/login"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({"vendorIdentifier": identifier, "pin": pin}),
+    ).timeout(const Duration(seconds: 10));
+
+    final data = response.body.isNotEmpty ? jsonDecode(response.body) : {};
+
+    if (response.statusCode == 200) {
+      return data as Map<String, dynamic>;
+    } else {
+      throw ApiException(data["message"] ?? "Login failed", response.statusCode);
+    }
+  }
+
   Future<Map<String, dynamic>> verifyOtp(String phone, String otp) async {
     final response = await http.post(
       Uri.parse("${ApiConstants.vendors}/verify-otp"),

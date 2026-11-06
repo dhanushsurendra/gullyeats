@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:gullyeats/features/activation/screens/cart_activated_screen.dart';
 import 'package:gullyeats/features/activation/screens/qr_poster_screen.dart';
+import 'package:gullyeats/features/auth/screens/pin_login_screen.dart';
 import 'package:gullyeats/features/auth/screens/signup_screen.dart';
 import 'package:gullyeats/features/auth/screens/verify_otp_screen.dart';
 import 'package:gullyeats/features/menu/models/menu_item_model.dart';
@@ -69,6 +70,7 @@ final _menuItems = [
 final screens = <ScreenCase>[
   ScreenCase('splash', () => const SplashScreen()),
   ScreenCase('signup', () => const SignupScreen(), hasInputs: true),
+  ScreenCase('pin_login', () => const PinLoginScreen(), hasInputs: true),
   ScreenCase(
     'verify_otp',
     () => const VerifyOtpScreen(),

@@ -3,6 +3,7 @@ class AppRoutes {
 
   static const String signup = '/signup';
   static const String verifyOtp = '/verify-otp';
+  static const String pinLogin = '/pin-login';
 
   static const String carts = '/choose-outlet';
   static const String cartDetails = '/cart-details';

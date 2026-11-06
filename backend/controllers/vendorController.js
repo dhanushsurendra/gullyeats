@@ -1,9 +1,26 @@
 const User = require('../models/User')
+const Cart = require('../models/Cart')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const asyncHandler = require('../utils/asyncHandler')
 const { validatePhone, validateRole } = require('../utils/validators')
 const generatePin = require('../utils/generatePin')
+
+// The OTP comes back in the send-otp response, so it only works while a
+// vendor is being onboarded. Once one of their outlets is finished (QR poster
+// made) they have been sent a PIN, and staff log in with that instead.
+async function refuseIfOnboarded(res, user) {
+  const finished = await Cart.exists({
+    userId: user._id,
+    qrImageUrl: { $nin: [null, ''] },
+  })
+  if (finished) {
+    res.status(409)
+    throw new Error(
+      'This vendor is already onboarded. Log in with their Vendor ID or phone number and PIN.',
+    )
+  }
+}
 
 exports.sendOtp = asyncHandler(async (req, res) => {
   let { phoneNumber, role } = req.body
@@ -28,6 +45,8 @@ exports.sendOtp = asyncHandler(async (req, res) => {
     res.status(403)
     throw new Error('This number belongs to a staff or admin account')
   }
+
+  await refuseIfOnboarded(res, user)
 
   const otp = Math.floor(100000 + Math.random() * 900000).toString()
   const hash = await bcrypt.hash(otp, 10)
@@ -65,6 +84,8 @@ exports.verifyOtp = asyncHandler(async (req, res) => {
     res.status(404)
     throw new Error('User not found')
   }
+
+  await refuseIfOnboarded(res, user)
 
   if (!user.otpExpiresAt || user.otpExpiresAt < new Date()) {
     res.status(400)

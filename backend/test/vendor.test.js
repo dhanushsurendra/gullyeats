@@ -4,9 +4,10 @@ const express = require('express')
 const jwt = require('jsonwebtoken')
 const { call, stub, restoreAll, q } = require('./helpers')
 const User = require('../models/User')
+const Cart = require('../models/Cart')
 const errorHandler = require('../middlewares/errorHandler')
 const vendorRoutes = require('../routes/vendorRoutes')
-const { sendOtp, changePin } = require('../controllers/vendorController')
+const { sendOtp, verifyOtp, changePin } = require('../controllers/vendorController')
 
 afterEach(restoreAll)
 process.env.JWT_SECRET = 'test-secret'
@@ -69,6 +70,27 @@ test('OTP login is refused for admin and staff accounts', async () => {
   const r = await call(sendOtp, { body: { phoneNumber: '9999999999', role: 'vendor' } })
   assert.strictEqual(r.status, 403)
   assert.strictEqual(r.body.otp, undefined)
+})
+
+test('OTP is refused once a vendor has a finished outlet, but works while onboarding', async () => {
+  const user = { _id: 'v1', role: 'vendor', save: async () => {} }
+  stub(User, 'findOne', () => q(user))
+  let finished = true
+  stub(Cart, 'exists', async (filter) => {
+    assert.strictEqual(filter.userId, 'v1')
+    return finished ? { _id: 'c1' } : null
+  })
+
+  let r = await call(sendOtp, { body: { phoneNumber: '9999999999', role: 'vendor' } })
+  assert.strictEqual(r.status, 409)
+  assert.strictEqual(r.body.otp, undefined)
+  r = await call(verifyOtp, { body: { phoneNumber: '9999999999', otp: '123456' } })
+  assert.strictEqual(r.status, 409)
+
+  finished = false
+  r = await call(sendOtp, { body: { phoneNumber: '9999999999', role: 'vendor' } })
+  assert.strictEqual(r.status, 200)
+  assert.match(r.body.otp, /^\d{6}$/)
 })
 
 test('vendor login tokens expire', async () => {

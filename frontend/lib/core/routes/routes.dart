@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gullyeats/features/auth/screens/pin_login_screen.dart';
 import 'package:gullyeats/features/auth/screens/signup_screen.dart';
 import 'package:gullyeats/features/auth/screens/verify_otp_screen.dart';
 import 'package:gullyeats/features/menu/screens/add_menu_screen.dart';
@@ -24,6 +25,7 @@ class Routes {
       // auth
       AppRoutes.signup: (context) => const SignupScreen(),
       AppRoutes.verifyOtp: (context) => const VerifyOtpScreen(),
+      AppRoutes.pinLogin: (context) => const PinLoginScreen(),
 
       // onboarding
       AppRoutes.carts: (context) => const CartsScreen(),

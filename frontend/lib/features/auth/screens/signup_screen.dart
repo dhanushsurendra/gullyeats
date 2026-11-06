@@ -131,7 +131,22 @@ class _SignupScreenState extends State<SignupScreen> {
               isLoading: isLoading,
               onPressed: _handleOtpSend,
             ),
-            AppGaps.h32,
+            AppGaps.h8,
+            // OTP is only for new vendors; onboarded ones log in with a PIN.
+            Center(
+              child: TextButton(
+                onPressed: () => Navigator.pushNamed(context, AppRoutes.pinLogin),
+                child: Text(
+                  "Vendor already onboarded? Log in with PIN",
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+            AppGaps.h24,
             const _TermsAndConditionFooter(),
           ],
         ),
