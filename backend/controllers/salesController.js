@@ -3,8 +3,7 @@ const asyncHandler = require('../utils/asyncHandler')
 const Order = require('../models/Order')
 const { findManagedCart } = require('../utils/cartAccess')
 
-// Money the vendor actually received: orders are served only after payment.
-const PAID_STATUSES = new Set(['PAID', 'SERVED'])
+const TZ = 'Asia/Kolkata'
 
 function formatDuration(seconds) {
   if (seconds === null || seconds === undefined || Number.isNaN(seconds)) {
@@ -31,172 +30,237 @@ function safeDivide(numerator, denominator) {
   return numerator / denominator
 }
 
-const sum = (values) => values.reduce((total, v) => total + (Number(v) || 0), 0)
-const avg = (values) => (values.length ? sum(values) / values.length : null)
-const seconds = (from, to) => (new Date(to) - new Date(from)) / 1000
-
-const istParts = new Intl.DateTimeFormat('en-CA', {
-  timeZone: 'Asia/Kolkata',
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-  hour: '2-digit',
-  hourCycle: 'h23',
+// Money the vendor actually received: orders are served only after payment.
+const paidOnly = { status: { $in: ['PAID', 'SERVED'] } }
+const notCancelled = { status: { $ne: 'CANCELLED' } }
+const secondsBetween = (from, to) => ({
+  $divide: [{ $subtract: [to, from] }, 1000],
 })
 
-function istDayAndHour(date) {
-  const parts = Object.fromEntries(
-    istParts.formatToParts(new Date(date)).map((p) => [p.type, p.value]),
-  )
-  return { day: `${parts.year}-${parts.month}-${parts.day}`, hour: Number(parts.hour) }
-}
+// One row per menu item, so a renamed item stays one row under its latest
+// name. Old lines without an ID fall back to their name.
+const itemsByMenuItem = [
+  { $match: paidOnly },
+  { $sort: { createdAt: 1 } },
+  { $unwind: '$orderItems' },
+  {
+    $group: {
+      _id: { $ifNull: ['$orderItems.menuItemId', '$orderItems.name'] },
+      name: { $last: '$orderItems.name' },
+      revenue: {
+        $sum: { $multiply: ['$orderItems.price', '$orderItems.quantity'] },
+      },
+      qty: { $sum: '$orderItems.quantity' },
+    },
+  },
+]
+const itemFields = { $project: { _id: 0, name: 1, revenue: 1, qty: 1 } }
 
 /**
- * The sales dashboard numbers for one cart's orders in the chosen period.
+ * The sales dashboard pipeline for one cart's orders in [start, end].
  * Revenue, items and order values count only paid orders (PAID or SERVED);
  * order counts and rates count every order, so cancellations show up.
  */
-function buildSalesReport(orders) {
-  const paid = orders.filter((o) => PAID_STATUSES.has(o.status))
-  const notCancelled = orders.filter((o) => o.status !== 'CANCELLED')
-  const count = (status) => orders.filter((o) => o.status === status).length
+function salesPipeline(cartId, start, end) {
+  return [
+    {
+      $match: {
+        cartId: new mongoose.Types.ObjectId(cartId),
+        createdAt: { $gte: start, $lte: end },
+      },
+    },
+    {
+      $facet: {
+        statusMetrics: [
+          {
+            $group: {
+              _id: null,
+              totalOrders: { $sum: 1 },
+              pendingOrders: { $sum: { $cond: [{ $eq: ['$status', 'PENDING'] }, 1, 0] } },
+              paidOrders: { $sum: { $cond: [{ $eq: ['$status', 'PAID'] }, 1, 0] } },
+              servedOrders: { $sum: { $cond: [{ $eq: ['$status', 'SERVED'] }, 1, 0] } },
+              cancelledOrders: { $sum: { $cond: [{ $eq: ['$status', 'CANCELLED'] }, 1, 0] } },
+            },
+          },
+        ],
 
-  const totalOrders = orders.length
-  const pendingOrders = count('PENDING')
-  const paidOrders = count('PAID')
-  const servedOrders = count('SERVED')
-  const cancelledOrders = count('CANCELLED')
+        // Revenue and order values, with each order's total item count, so
+        // "max in one order" is the biggest order rather than the biggest line.
+        paidOrders: [
+          { $match: paidOnly },
+          {
+            $group: {
+              _id: null,
+              orders: { $sum: 1 },
+              revenue: { $sum: '$totalPrice' },
+              highestOrder: { $max: '$totalPrice' },
+              lowestOrder: { $min: '$totalPrice' },
+              subtotalRevenue: { $sum: '$subtotal' },
+              parcelRevenue: { $sum: { $ifNull: ['$parcelCharge', 0] } },
+              platformFeeRevenue: { $sum: '$platformFee' },
+              qrRevenue: { $sum: { $cond: [{ $eq: ['$orderType', 'QR'] }, '$totalPrice', 0] } },
+              manualRevenue: { $sum: { $cond: [{ $eq: ['$orderType', 'MANUAL'] }, '$totalPrice', 0] } },
+              qrOrders: { $sum: { $cond: [{ $eq: ['$orderType', 'QR'] }, 1, 0] } },
+              manualOrders: { $sum: { $cond: [{ $eq: ['$orderType', 'MANUAL'] }, 1, 0] } },
+              parcelOrders: { $sum: { $cond: [{ $gt: ['$parcelCharge', 0] }, 1, 0] } },
+              totalItemsSold: { $sum: { $sum: '$orderItems.quantity' } },
+              highestItemsInOrder: { $max: { $sum: '$orderItems.quantity' } },
+              avgPrepTime: {
+                $avg: {
+                  $cond: ['$servedAt', secondsBetween('$createdAt', '$servedAt'), null],
+                },
+              },
+              fastestOrderTime: {
+                $min: {
+                  $cond: ['$servedAt', secondsBetween('$createdAt', '$servedAt'), null],
+                },
+              },
+              slowestOrderTime: {
+                $max: {
+                  $cond: ['$servedAt', secondsBetween('$createdAt', '$servedAt'), null],
+                },
+              },
+              avgPaymentTime: {
+                $avg: {
+                  $cond: ['$paidAt', secondsBetween('$createdAt', '$paidAt'), null],
+                },
+              },
+              avgServeTimeAfterPayment: {
+                $avg: {
+                  $cond: [
+                    { $and: ['$paidAt', '$servedAt'] },
+                    secondsBetween('$paidAt', '$servedAt'),
+                    null,
+                  ],
+                },
+              },
+            },
+          },
+        ],
 
-  const revenue = sum(paid.map((o) => o.totalPrice))
-  const subtotalRevenue = sum(paid.map((o) => o.subtotal))
-  const parcelRevenue = sum(paid.map((o) => o.parcelCharge))
-  const platformFeeRevenue = sum(paid.map((o) => o.platformFee))
-  const totals = paid.map((o) => Number(o.totalPrice) || 0)
+        topItems: [...itemsByMenuItem, { $sort: { revenue: -1, name: 1 } }, { $limit: 5 }, itemFields],
+        bottomItems: [...itemsByMenuItem, { $sort: { revenue: 1, name: 1 } }, { $limit: 5 }, itemFields],
+        topVolumeItem: [...itemsByMenuItem, { $sort: { qty: -1, name: 1 } }, { $limit: 1 }, itemFields],
+        uniqueItems: [...itemsByMenuItem, { $count: 'count' }],
 
-  const qr = paid.filter((o) => o.orderType === 'QR')
-  const manual = paid.filter((o) => o.orderType === 'MANUAL')
-  const parcel = paid.filter((o) => Number(o.parcelCharge) > 0)
+        // Busy hours count every order that wasn't cancelled: it is about
+        // traffic. Busiest first, so the first row is the peak.
+        busyHours: [
+          { $match: notCancelled },
+          {
+            $group: {
+              _id: { $hour: { date: '$createdAt', timezone: TZ } },
+              count: { $sum: 1 },
+            },
+          },
+          { $sort: { count: -1, _id: 1 } },
+          { $limit: 5 },
+          { $project: { _id: 0, hour: '$_id', count: 1 } },
+        ],
 
-  // Items are grouped by menu item, so a renamed item stays one row (under
-  // its latest name). Old lines without an ID fall back to their name.
-  const items = new Map()
-  const itemsPerOrder = []
-  for (const order of paid) {
-    let inOrder = 0
-    for (const line of order.orderItems || []) {
-      const qty = Number(line.quantity) || 0
-      const key = line.menuItemId ? String(line.menuItemId) : `name:${line.name}`
-      const item = items.get(key) || { name: line.name, revenue: 0, qty: 0 }
-      item.name = line.name
-      item.revenue += (Number(line.price) || 0) * qty
-      item.qty += qty
-      items.set(key, item)
-      inOrder += qty
-    }
-    itemsPerOrder.push(inOrder)
-  }
-  const itemList = [...items.values()]
-  const byRevenue = [...itemList].sort((a, b) => b.revenue - a.revenue)
-  const byVolume = [...itemList].sort((a, b) => b.qty - a.qty)
-  const totalItemsSold = sum(itemsPerOrder)
+        // Gaps between consecutive orders on the same IST day; the overnight
+        // gap isn't time between orders.
+        orderGaps: [
+          { $match: notCancelled },
+          {
+            $setWindowFields: {
+              partitionBy: {
+                $dateToString: { format: '%Y-%m-%d', date: '$createdAt', timezone: TZ },
+              },
+              sortBy: { createdAt: 1 },
+              output: {
+                previous: { $shift: { output: '$createdAt', by: -1, default: null } },
+              },
+            },
+          },
+          { $match: { previous: { $ne: null } } },
+          {
+            $group: {
+              _id: null,
+              averageGap: { $avg: secondsBetween('$previous', '$createdAt') },
+            },
+          },
+        ],
+      },
+    },
+  ]
+}
 
-  const served = paid.filter((o) => o.servedAt)
-  const prepTimes = served.map((o) => seconds(o.createdAt, o.servedAt))
-  const paidAt = paid.filter((o) => o.paidAt)
-  const paymentTimes = paidAt.map((o) => seconds(o.createdAt, o.paidAt))
-  const serveAfterPayment = paidAt
-    .filter((o) => o.servedAt)
-    .map((o) => seconds(o.paidAt, o.servedAt))
+/** Turns the pipeline's single result document into the dashboard fields. */
+function toSalesReport(result) {
+  const status = result.statusMetrics[0] || {}
+  const paid = result.paidOrders[0] || {}
+  const n = (value) => value || 0
 
-  // Busy hours count every order that wasn't cancelled: it is about traffic.
-  const hourCounts = new Map()
-  for (const order of notCancelled) {
-    const { hour } = istDayAndHour(order.createdAt)
-    hourCounts.set(hour, (hourCounts.get(hour) || 0) + 1)
-  }
-  const busiest = [...hourCounts]
-    .map(([hour, count]) => ({ hour, count }))
-    .sort((a, b) => b.count - a.count || a.hour - b.hour)
-    .slice(0, 5)
-  // The peak is the busiest hour (the earliest, on a tie), taken before the
-  // list is put back in time order for the chart.
-  const peakHour = busiest.length ? busiest[0].hour : null
-  const busyHours = [...busiest].sort((a, b) => a.hour - b.hour)
-
-  // Gaps only within a day: the overnight gap isn't time between orders.
-  const gaps = []
-  const times = notCancelled
-    .map((o) => new Date(o.createdAt))
-    .sort((a, b) => a - b)
-  for (let i = 1; i < times.length; i++) {
-    if (istDayAndHour(times[i]).day === istDayAndHour(times[i - 1]).day) {
-      gaps.push(seconds(times[i - 1], times[i]))
-    }
-  }
+  const totalOrders = n(status.totalOrders)
+  const paidCount = n(paid.orders)
+  const revenue = n(paid.revenue)
+  const platformFeeRevenue = n(paid.platformFeeRevenue)
+  const parcelRevenue = n(paid.parcelRevenue)
+  const busiest = result.busyHours || []
 
   return {
     // revenue
     revenue: Math.round(revenue),
-    subtotalRevenue,
+    subtotalRevenue: n(paid.subtotalRevenue),
     parcelRevenue,
     platformFeeRevenue,
     netRevenue: revenue - platformFeeRevenue,
 
     // order counts
     totalOrders,
-    pendingOrders,
-    paidOrders,
-    servedOrders,
-    cancelledOrders,
+    pendingOrders: n(status.pendingOrders),
+    paidOrders: n(status.paidOrders),
+    servedOrders: n(status.servedOrders),
+    cancelledOrders: n(status.cancelledOrders),
 
-    // rates
-    completionRate: safeDivide(servedOrders, totalOrders) * 100,
-    cancellationRate: safeDivide(cancelledOrders, totalOrders) * 100,
-    paymentRate: safeDivide(paid.length, totalOrders) * 100,
+    // rates; served orders were paid first, so they count as paid
+    completionRate: safeDivide(n(status.servedOrders), totalOrders) * 100,
+    cancellationRate: safeDivide(n(status.cancelledOrders), totalOrders) * 100,
+    paymentRate: safeDivide(paidCount, totalOrders) * 100,
 
     // order value
-    avgOrderValue: safeDivide(revenue, paid.length),
-    highestOrder: totals.length ? Math.max(...totals) : 0,
-    lowestOrder: totals.length ? Math.min(...totals) : 0,
+    avgOrderValue: safeDivide(revenue, paidCount),
+    highestOrder: n(paid.highestOrder),
+    lowestOrder: n(paid.lowestOrder),
     revenuePerOrder: safeDivide(revenue, totalOrders),
 
     // items
-    totalItemsSold,
-    avgItemsPerOrder: safeDivide(totalItemsSold, paid.length),
-    highestItemsInOrder: itemsPerOrder.length ? Math.max(...itemsPerOrder) : 0,
-    uniqueItemsSold: itemList.length,
+    totalItemsSold: n(paid.totalItemsSold),
+    avgItemsPerOrder: safeDivide(n(paid.totalItemsSold), paidCount),
+    highestItemsInOrder: n(paid.highestItemsInOrder),
+    uniqueItemsSold: result.uniqueItems[0]?.count || 0,
 
     // prep / payment timings
-    avgPrepTime: formatDuration(avg(prepTimes)),
-    fastestOrder: formatDuration(prepTimes.length ? Math.min(...prepTimes) : null),
-    slowestOrder: formatDuration(prepTimes.length ? Math.max(...prepTimes) : null),
-    avgPaymentTime: formatDuration(avg(paymentTimes)),
-    avgServeAfterPaymentTime: formatDuration(avg(serveAfterPayment)),
+    avgPrepTime: formatDuration(paid.avgPrepTime),
+    fastestOrder: formatDuration(paid.fastestOrderTime),
+    slowestOrder: formatDuration(paid.slowestOrderTime),
+    avgPaymentTime: formatDuration(paid.avgPaymentTime),
+    avgServeAfterPaymentTime: formatDuration(paid.avgServeTimeAfterPayment),
 
-    // timing patterns
-    peakHour,
-    busyHours,
-    averageTimeBetweenOrders: formatDuration(avg(gaps)),
+    // timing patterns: the peak is the busiest hour; the chart wants the
+    // hours in time order
+    peakHour: busiest.length ? busiest[0].hour : null,
+    busyHours: [...busiest].sort((a, b) => a.hour - b.hour),
+    averageTimeBetweenOrders: formatDuration(result.orderGaps[0]?.averageGap),
 
     // order type breakdown
-    qrOrders: qr.length,
-    manualOrders: manual.length,
-    qrRevenue: sum(qr.map((o) => o.totalPrice)),
-    manualRevenue: sum(manual.map((o) => o.totalPrice)),
+    qrOrders: n(paid.qrOrders),
+    manualOrders: n(paid.manualOrders),
+    qrRevenue: n(paid.qrRevenue),
+    manualRevenue: n(paid.manualRevenue),
 
     // parcel
-    parcelOrders: parcel.length,
-    avgParcelCharge: safeDivide(parcelRevenue, parcel.length),
+    parcelOrders: n(paid.parcelOrders),
+    avgParcelCharge: safeDivide(parcelRevenue, n(paid.parcelOrders)),
 
     // top/bottom items
-    topRevenueItem: byRevenue[0]?.name ?? null,
-    topVolumeItem: byVolume[0]?.name ?? null,
-    topItems: byRevenue.slice(0, 5),
-    bottomItems: [...itemList].sort((a, b) => a.revenue - b.revenue).slice(0, 5),
+    topRevenueItem: result.topItems[0]?.name ?? null,
+    topVolumeItem: result.topVolumeItem[0]?.name ?? null,
+    topItems: result.topItems,
+    bottomItems: result.bottomItems,
   }
 }
-
-exports.buildSalesReport = buildSalesReport
 
 exports.getSalesDashboard = asyncHandler(async (req, res) => {
   const cartId = req.params.cartId
@@ -227,17 +291,7 @@ exports.getSalesDashboard = asyncHandler(async (req, res) => {
 
   await findManagedCart(req, res, cartId)
 
-  // shortcut: loads the period's orders and adds them up in Node, fine for a
-  // street-food cart's volume; move the totals back into an aggregation if
-  // a cart ever has tens of thousands of orders in a range.
-  const orders = await Order.find({
-    cartId,
-    createdAt: { $gte: start, $lte: end },
-  })
-    .select(
-      'status totalPrice subtotal parcelCharge platformFee orderType orderItems createdAt paidAt servedAt',
-    )
-    .lean()
+  const [result] = await Order.aggregate(salesPipeline(cartId, start, end))
 
-  res.json({ success: true, data: buildSalesReport(orders) })
+  res.json({ success: true, data: toSalesReport(result) })
 })
