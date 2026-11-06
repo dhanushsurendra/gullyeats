@@ -1118,6 +1118,14 @@ class AppLocalizationsKn extends AppLocalizations {
   }
 
   @override
+  String walletSelected(String wallet) {
+    return '$wallet ಆಯ್ಕೆಮಾಡಲಾಗಿದೆ.';
+  }
+
+  @override
+  String get externalWallet => 'ಬಾಹ್ಯ ವಾಲೆಟ್';
+
+  @override
   String get sessionExpired =>
       'ನಿಮ್ಮ ಲಾಗಿನ್ ಅವಧಿ ಮುಗಿದಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಲಾಗಿನ್ ಮಾಡಿ.';
 

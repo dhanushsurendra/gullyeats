@@ -1115,6 +1115,14 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String walletSelected(String wallet) {
+    return '$wallet चुना गया।';
+  }
+
+  @override
+  String get externalWallet => 'बाहरी वॉलेट';
+
+  @override
   String get sessionExpired =>
       'आपका लॉगिन खत्म हो गया है। कृपया फिर से लॉगिन करें।';
 

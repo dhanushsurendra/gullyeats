@@ -2136,6 +2136,18 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 order} other{{count} orders}} × ₹{fee}'**
   String ordersTimesFee(int count, String fee);
 
+  /// No description provided for @walletSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'{wallet} selected.'**
+  String walletSelected(String wallet);
+
+  /// No description provided for @externalWallet.
+  ///
+  /// In en, this message translates to:
+  /// **'External wallet'**
+  String get externalWallet;
+
   /// No description provided for @sessionExpired.
   ///
   /// In en, this message translates to:

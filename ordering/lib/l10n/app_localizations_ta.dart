@@ -1130,6 +1130,14 @@ class AppLocalizationsTa extends AppLocalizations {
   }
 
   @override
+  String walletSelected(String wallet) {
+    return '$wallet தேர்ந்தெடுக்கப்பட்டது.';
+  }
+
+  @override
+  String get externalWallet => 'வெளிப்புற வாலெட்';
+
+  @override
   String get sessionExpired =>
       'உங்கள் உள்நுழைவு காலாவதியானது. மீண்டும் உள்நுழையவும்.';
 

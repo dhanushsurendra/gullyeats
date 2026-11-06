@@ -9,6 +9,7 @@ import 'package:ordering/features/payment/models/payment_status_model.dart';
 import 'package:ordering/features/payment/providers/payment_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:ordering/l10n/l10n.dart';
+import 'package:ordering/core/utils/responsive.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -80,8 +81,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
       if (paymentStatus == null) {
         setState(() {
           _error =
-              paymentProvider.error ??
-              context.l10n.unableToCheckPaymentStatus;
+              paymentProvider.error ?? context.l10n.unableToCheckPaymentStatus;
         });
         return;
       }
@@ -128,41 +128,45 @@ class _WelcomeScreenState extends State<WelcomeScreen>
             duration: const Duration(milliseconds: 600),
             offset: _offset,
             curve: Curves.easeOut,
-            child: Column(
-              children: [
-                const SizedBox(height: 40),
-
-                _topDecor(),
-
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _illustration(),
-
-                      const SizedBox(height: 40),
-
-                      _bottomText(selectedCart?.cartName),
-                    ],
+            // Fills the screen, and scrolls when it can't fit (small phones,
+            // large text, landscape, the error buttons).
+            child: LayoutBuilder(
+              builder: (context, constraints) => SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: IntrinsicHeight(
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 40),
+                        _topDecor(),
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              _illustration(),
+                              const SizedBox(height: 40),
+                              _bottomText(selectedCart?.cartName),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 28),
+                        if (_error == null)
+                          SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.white.withAlpha(204),
+                            ),
+                          )
+                        else
+                          _errorActions(),
+                        const SizedBox(height: 20),
+                      ],
+                    ),
                   ),
                 ),
-
-                const SizedBox(height: 28),
-
-                if (_error == null)
-                  SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppColors.white.withAlpha(204),
-                    ),
-                  )
-                else
-                  _errorActions(),
-
-                const SizedBox(height: 20),
-              ],
+              ),
             ),
           ),
         ),
@@ -172,8 +176,8 @@ class _WelcomeScreenState extends State<WelcomeScreen>
 
   Widget _errorActions() {
     final buttonStyle = OutlinedButton.styleFrom(
-      foregroundColor: Colors.white,
-      side: const BorderSide(color: Colors.white70),
+      foregroundColor: AppColors.white,
+      side: const BorderSide(color: AppColors.white),
       minimumSize: const Size(0, 48),
     );
 
@@ -243,66 +247,71 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   }
 
   Widget _illustration() {
-    return Container(
-      height: 220,
-      width: 220,
-      alignment: Alignment.center,
+    final size = illustrationHeight(context, 220);
+    return SizedBox(
+      height: size,
+      width: size,
       child: Image.asset('assets/images/cart.png', fit: BoxFit.contain),
     );
   }
 
   Widget _bottomText(String? cartName) {
-    return Column(
-      children: [
-        Text(
-          context.l10n.welcome.toUpperCase(),
-          style: TextStyle(
-            color: AppColors.white.withAlpha(166),
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 2.4,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        children: [
+          Text(
+            context.l10n.welcome.toUpperCase(),
+            style: TextStyle(
+              color: AppColors.white.withAlpha(166),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 2.4,
+            ),
           ),
-        ),
 
-        const SizedBox(height: 10),
+          const SizedBox(height: 10),
 
-        Text(
-          cartName ?? context.l10n.vendor,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 32,
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.5,
-            height: 1.1,
+          Text(
+            cartName ?? context.l10n.vendor,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 32,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.5,
+              height: 1.1,
+            ),
           ),
-        ),
 
-        const SizedBox(height: 12),
+          const SizedBox(height: 12),
 
-        Text(
-          context.l10n.checkingPaymentStatus,
-          style: TextStyle(
-            color: AppColors.white.withAlpha(184),
-            fontSize: 14,
-            fontWeight: FontWeight.w400,
-            letterSpacing: 0.2,
-            height: 1.4,
+          Text(
+            context.l10n.checkingPaymentStatus,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.white.withAlpha(184),
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+              letterSpacing: 0.2,
+              height: 1.4,
+            ),
           ),
-        ),
 
-        const SizedBox(height: 4),
+          const SizedBox(height: 4),
 
-        Text(
-          context.l10n.pleaseWait,
-          style: TextStyle(
-            color: AppColors.white.withAlpha(128),
-            fontSize: 12,
-            fontWeight: FontWeight.w400,
-            letterSpacing: 0.1,
+          Text(
+            context.l10n.pleaseWait,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.white.withAlpha(128),
+              fontSize: 12,
+              fontWeight: FontWeight.w400,
+              letterSpacing: 0.1,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

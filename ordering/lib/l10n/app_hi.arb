@@ -339,6 +339,8 @@
   "couldntLoadSales": "बिक्री लोड नहीं हो सकी।",
   "staffWillLoseAccess": "{name} इस कार्ट को अब नहीं चला पाएँगे। इसे वापस नहीं किया जा सकता।",
   "ordersTimesFee": "{count} ऑर्डर × ₹{fee}",
+  "walletSelected": "{wallet} चुना गया।",
+  "externalWallet": "बाहरी वॉलेट",
   "sessionExpired": "आपका लॉगिन खत्म हो गया है। कृपया फिर से लॉगिन करें।",
   "checkInternet": "अपना इंटरनेट कनेक्शन जाँचें",
   "requestTimedOut": "समय खत्म हो गया। फिर से कोशिश करें",

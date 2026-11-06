@@ -1117,6 +1117,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String walletSelected(String wallet) {
+    return '$wallet selected.';
+  }
+
+  @override
+  String get externalWallet => 'External wallet';
+
+  @override
   String get sessionExpired => 'Your login has expired. Please log in again.';
 
   @override

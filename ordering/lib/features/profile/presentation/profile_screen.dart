@@ -8,7 +8,6 @@ import 'package:ordering/core/widgets/app_card.dart';
 import 'package:ordering/features/auth/providers/auth_provider.dart';
 import 'package:ordering/features/cart/models/cart_model.dart';
 import 'package:ordering/features/cart/presentation/edit_cart_screen.dart';
-import 'package:ordering/features/cart/presentation/switch_cart_screen.dart';
 import 'package:ordering/features/cart/providers/cart_provider.dart';
 import 'package:ordering/features/orders/screens/edit_menu_screen.dart';
 import 'package:ordering/features/orders/screens/orders_overview_screen.dart';
@@ -23,6 +22,8 @@ import 'package:ordering/core/widgets/app_snack_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:ordering/features/profile/providers/language_provider.dart';
 import 'package:ordering/l10n/l10n.dart';
+import 'package:ordering/core/widgets/base_screen.dart';
+import 'package:ordering/features/cart/widgets/cart_selector.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -32,37 +33,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final ScrollController _scrollController = ScrollController();
-  bool isScrolled = false;
   bool _isLoggingOut = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(() {
-      final scrolled = _scrollController.offset > 0;
-      if (scrolled != isScrolled) {
-        setState(() {
-          isScrolled = scrolled;
-        });
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void openSwitchCartSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const SwitchCartScreen(isDraggable: true),
-    );
-  }
 
   Future<void> _logout() async {
     if (_isLoggingOut) return;
@@ -78,7 +49,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final cartProvider = context.watch<CartProvider>();
     final selectedCart = cartProvider.selectedCart;
     final phoneNumber = authProvider.user?['phoneNumber'] ?? '';
-    final vendorName = (authProvider.user?['name'] ?? context.l10n.vendor).toString();
+    final vendorName = (authProvider.user?['name'] ?? context.l10n.vendor)
+        .toString();
     final initials = vendorName
         .split(' ')
         .where((e) => e.isNotEmpty)
@@ -86,103 +58,79 @@ class _ProfileScreenState extends State<ProfileScreen> {
         .map((e) => e[0].toUpperCase())
         .join();
 
-    return Scaffold(
-      backgroundColor: AppColors.white,
-      appBar: AppBar(
-        backgroundColor: AppColors.white,
-        elevation: 0,
-        scrolledUnderElevation: 2,
-        surfaceTintColor: Colors.transparent,
-        automaticallyImplyLeading: false,
-        titleSpacing: 0,
-        toolbarHeight: 80,
-        title: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Row(
-            children: [
-              Image.asset(
-                "assets/images/logo_text.png",
-                height: 24,
-                fit: BoxFit.contain,
-              ),
-              const Spacer(),
-              _buildOutletSelector(context),
-            ],
-          ),
-        ),
-      ),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 600),
-            child: SingleChildScrollView(
-              padding: AppPadding.screen,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _profileCard(context, initials, vendorName, phoneNumber),
-                  AppGaps.h12,
-
-                  _outletCard(context, selectedCart),
-                  AppGaps.h12,
-
-                  _sectionCard(
-                    context.l10n.paymentsHistory,
-                    context.l10n.trackPayments,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const PaymentScreen()),
-                    ),
-                  ),
-
-                  AppGaps.h12,
-
-                  _sectionCard(
-                    context.l10n.menuManagement,
-                    context.l10n.editMenuItems,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const EditMenuScreen()),
-                    ),
-                  ),
-                  AppGaps.h12,
-
-                  _sectionCard(
-                    context.l10n.staffManagement,
-                    context.l10n.editStaffDetails,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const StaffManagementScreen(),
-                      ),
-                    ),
-                  ),
-                  AppGaps.h12,
-
-                  _sectionCard(
-                    context.l10n.ordersOverview,
-                    context.l10n.viewOrderDetails,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const OrdersOverviewScreen(),
-                      ),
-                    ),
-                  ),
-
-                  AppGaps.h12,
-
-                  _languageCard(context),
-                  AppGaps.h12,
-
-                  _securityCard(context),
-
-                  const SizedBox(height: 80),
-                ],
-              ),
+    return BaseScreen(
+      showBackButton: false,
+      header: Row(
+        children: [
+          Image.asset("assets/images/logo_text.png", height: 24),
+          AppGaps.w16,
+          const Flexible(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: CartSelector(),
             ),
           ),
-        ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _profileCard(context, initials, vendorName, phoneNumber),
+          AppGaps.h12,
+
+          _outletCard(context, selectedCart),
+          AppGaps.h12,
+
+          _sectionCard(
+            context.l10n.paymentsHistory,
+            context.l10n.trackPayments,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const PaymentScreen()),
+            ),
+          ),
+
+          AppGaps.h12,
+
+          _sectionCard(
+            context.l10n.menuManagement,
+            context.l10n.editMenuItems,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const EditMenuScreen()),
+            ),
+          ),
+          AppGaps.h12,
+
+          _sectionCard(
+            context.l10n.staffManagement,
+            context.l10n.editStaffDetails,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const StaffManagementScreen()),
+            ),
+          ),
+          AppGaps.h12,
+
+          _sectionCard(
+            context.l10n.ordersOverview,
+            context.l10n.viewOrderDetails,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const OrdersOverviewScreen()),
+            ),
+          ),
+
+          AppGaps.h12,
+
+          _languageCard(context),
+          AppGaps.h12,
+
+          _securityCard(context),
+
+          // Room for the floating bottom navigation bar.
+          const SizedBox(height: 40),
+        ],
       ),
     );
   }
@@ -210,77 +158,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(vendorName, style: AppTextStyles.heading3),
-                Text(phoneNumber, style: AppTextStyles.caption),
+                Text(
+                  vendorName,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.heading3,
+                ),
+                if (phoneNumber.toString().isNotEmpty)
+                  Text(phoneNumber, style: AppTextStyles.caption),
               ],
             ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildOutletSelector(BuildContext context) {
-    return Consumer<CartProvider>(
-      builder: (_, cartProvider, _) {
-        final carts = cartProvider.carts;
-
-        if (carts.isEmpty) {
-          return const SizedBox.shrink();
-        }
-
-        final cart = cartProvider.selectedCart;
-
-        if (cart == null) {
-          return const SizedBox.shrink();
-        }
-
-        return GestureDetector(
-          onTap: () => openSwitchCartSheet(context),
-          child: Container(
-            padding: AppPadding.smallCard,
-            decoration: BoxDecoration(
-              border: Border.all(color: AppColors.grey300),
-              borderRadius: BorderRadius.circular(12),
-              color: AppColors.white,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  width: 120,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        cart.cartName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.heading3.copyWith(fontSize: 14),
-                      ),
-                      Text(
-                        cart.address,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.caption,
-                      ),
-                    ],
-                  ),
-                ),
-
-                AppGaps.w8,
-
-                const Icon(
-                  Icons.keyboard_arrow_down,
-                  size: 18,
-                  color: AppColors.grey500,
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 
@@ -292,92 +182,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           Row(
             children: [
               Expanded(
-                child: Text(context.l10n.cartDetails, style: AppTextStyles.heading3),
-              ),
-
-              // Status
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: isOpen
-                      ? AppColors.success.withValues(alpha: 0.10)
-                      : AppColors.grey100,
-                  borderRadius: BorderRadius.circular(20),
-                ),
                 child: Text(
-                  isOpen ? context.l10n.open : context.l10n.closed,
-                  style: AppTextStyles.caption.copyWith(
-                    color: isOpen ? AppColors.success : AppColors.grey600,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  context.l10n.cartDetails,
+                  style: AppTextStyles.heading3,
                 ),
               ),
-
-              const SizedBox(width: 8),
-
-              // Simple switch
-              SizedBox(
-                height: 32,
-                child: Switch(
-                  value: isOpen,
-                  onChanged: (value) async {
-                    if (selectedCart == null) return;
-                    try {
-                      await context.read<CartProvider>().toggleCartStatus(
-                        context.read<AuthProvider>().token ?? '',
-                        selectedCart.id,
-                        value,
-                      );
-                    } catch (e) {
-                      if (!context.mounted) return;
-                      AppSnackBar.show(
-                        context,
-                        message: AppExceptionHandler.getMessage(e),
-                        isError: true,
-                      );
-                    }
-                  },
-                  activeTrackColor: AppColors.primary,
-                  inactiveTrackColor: AppColors.grey300,
-                  thumbColor: WidgetStateProperty.all(Colors.white),
-                  trackOutlineColor: WidgetStateProperty.all(
-                    Colors.transparent,
-                  ),
-                ),
-              ),
-
-              const SizedBox(width: 4),
-
-              // Edit button
               Material(
                 color: AppColors.grey100,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(12),
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                   onTap: selectedCart == null
                       ? null
-                      : () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  EditCartScreen(cart: selectedCart),
-                            ),
-                          );
-                        },
+                      : () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => EditCartScreen(cart: selectedCart),
+                          ),
+                        ),
                   child: const SizedBox(
-                    width: 38,
-                    height: 38,
+                    width: 40,
+                    height: 40,
                     child: Icon(
                       Icons.edit_outlined,
-                      size: 19,
+                      size: 20,
                       color: AppColors.primary,
                     ),
                   ),
@@ -385,8 +216,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ],
           ),
+          AppGaps.h8,
+          // Open/closed on its own row, so a long label never squeezes the title.
+          Row(
+            children: [
+              Icon(
+                Icons.circle,
+                size: 10,
+                color: isOpen ? AppColors.success : AppColors.grey400,
+              ),
+              AppGaps.w8,
+              Expanded(
+                child: Text(
+                  isOpen ? context.l10n.cartOpen : context.l10n.closed,
+                  style: AppTextStyles.body.copyWith(
+                    color: isOpen ? AppColors.success : AppColors.grey600,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              Switch(
+                value: isOpen,
+                onChanged: (value) async {
+                  if (selectedCart == null) return;
+                  try {
+                    await context.read<CartProvider>().toggleCartStatus(
+                      context.read<AuthProvider>().token ?? '',
+                      selectedCart.id,
+                      value,
+                    );
+                  } catch (e) {
+                    if (!context.mounted) return;
+                    AppSnackBar.show(
+                      context,
+                      message: AppExceptionHandler.getMessage(e),
+                      isError: true,
+                    );
+                  }
+                },
+                activeTrackColor: AppColors.primary,
+                inactiveTrackColor: AppColors.grey300,
+                thumbColor: WidgetStateProperty.all(Colors.white),
+                trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+              ),
+            ],
+          ),
 
           AppGaps.h16,
+
+          // Cart information          AppGaps.h16,
 
           // Cart information
           Container(
@@ -430,33 +308,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                 const SizedBox(height: 3),
 
-                Text(selectedCart?.address ?? context.l10n.notAvailable, style: AppTextStyles.body),
+                Text(
+                  selectedCart?.address ?? context.l10n.notAvailable,
+                  style: AppTextStyles.body,
+                ),
               ],
             ),
           ),
 
           AppGaps.h16,
 
-          // Keep VIEW QR exactly as it is
-          SizedBox(
-            width: 100,
-            child: ElevatedButton(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const QrPosterScreen()),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(26),
-                ),
-              ),
-              child: Text(context.l10n.viewQrCaps, style: TextStyle(fontSize: 14)),
+          AppButton(
+            label: context.l10n.viewQrCaps,
+            backgroundColor: AppColors.white,
+            borderColor: AppColors.primary,
+            textColor: AppColors.primary,
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const QrPosterScreen()),
             ),
           ),
         ],
@@ -488,9 +357,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(context.l10n.languagePreferences, style: AppTextStyles.heading3),
+              Expanded(
+                child: Text(
+                  context.l10n.languagePreferences,
+                  style: AppTextStyles.heading3,
+                ),
+              ),
               TextButton(
                 onPressed: () => Navigator.push(
                   context,
@@ -500,7 +373,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 child: Text(
                   context.l10n.change,
-                  style: TextStyle(color: AppColors.primary, fontSize: 14),
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
@@ -513,10 +389,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             style: AppTextStyles.body,
           ),
           AppGaps.h4,
-          Text(
-            context.l10n.supportedLanguages,
-            style: AppTextStyles.caption,
-          ),
+          Text(context.l10n.supportedLanguages, style: AppTextStyles.caption),
         ],
       ),
     );
@@ -529,17 +402,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           ListTile(
             contentPadding: EdgeInsets.zero,
-            title: Text(context.l10n.securityAndLogin, style: AppTextStyles.heading3),
-            subtitle: Text(context.l10n.changePin, style: AppTextStyles.caption),
+            title: Text(
+              context.l10n.securityAndLogin,
+              style: AppTextStyles.heading3,
+            ),
+            subtitle: Text(
+              context.l10n.changePin,
+              style: AppTextStyles.caption,
+            ),
             trailing: const Icon(Icons.chevron_right, color: AppColors.grey500),
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const ChangePinScreen()),
             ),
           ),
-          AppGaps.h12,
-          const Divider(color: AppColors.grey300),
-          AppGaps.h12,
+          AppGaps.h8,
+          const Divider(color: AppColors.grey200),
+          AppGaps.h16,
           AppButton(
             isLoading: _isLoggingOut,
             disabled: _isLoggingOut,

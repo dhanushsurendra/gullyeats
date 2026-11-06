@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:ordering/core/error/app_exceptions.dart';
 import 'package:ordering/core/widgets/app_snack_bar.dart';
 import 'package:ordering/core/theme/app_colors.dart';
@@ -7,12 +6,17 @@ import 'package:ordering/core/theme/app_text_styles.dart';
 import 'package:ordering/core/theme/app_padding.dart';
 import 'package:ordering/core/theme/app_gaps.dart';
 import 'package:ordering/features/cart/models/sales_model.dart';
-import 'package:ordering/features/cart/presentation/switch_cart_screen.dart';
 import 'package:ordering/features/cart/providers/cart_provider.dart';
 import 'package:ordering/features/auth/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:ordering/l10n/l10n.dart';
+import 'package:ordering/core/widgets/base_screen.dart';
+import 'package:ordering/core/widgets/app_card.dart';
+import 'package:ordering/core/widgets/list_message.dart';
+import 'package:ordering/core/widgets/date_range_filter.dart';
+import 'package:ordering/core/utils/format_price.dart';
+import 'package:ordering/features/cart/widgets/cart_selector.dart';
 
 class SalesScreen extends StatefulWidget {
   const SalesScreen({super.key});
@@ -154,136 +158,86 @@ class _SalesScreenState extends State<SalesScreen> {
     _loadSales();
   }
 
-  String _formatDisplayDate(DateTime date) =>
-      DateFormat('dd MMM yyyy', Localizations.localeOf(context).languageCode)
-          .format(date);
-
-  void openSwitchOutletSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const SwitchCartScreen(isDraggable: true),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final provider = context.watch<CartProvider>();
     final data = provider.sales;
 
-    if (data == null && _error != null) {
-      return Scaffold(
-        body: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(_error!, textAlign: TextAlign.center),
-                  const SizedBox(height: 16),
-                  TextButton(
-                    onPressed: _loadSales,
-                    child: Text(context.l10n.retry.toUpperCase()),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
-    // Initial loading: no data exists yet.
-    if (data == null) {
-      return const Scaffold(
-        body: SafeArea(
-          child: Center(
-            child: CircularProgressIndicator(color: AppColors.primary),
-          ),
-        ),
-      );
-    }
-
-    return Scaffold(
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _loadSales,
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: AppPadding.screen,
+    return BaseScreen(
+      showBackButton: false,
+      header: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              // ================================================================
-              // HEADER
-              // ================================================================
-              _header(),
-
-              AppGaps.h16,
-
-              Text(context.l10n.salesDashboard, style: AppTextStyles.heading2),
-
-              Text(
-                context.l10n.salesSubtitle,
-                style: AppTextStyles.caption,
+              Image.asset("assets/images/logo_text.png", height: 24),
+              AppGaps.w16,
+              // Shrinks on narrow phones so it never pushes past the edge.
+              const Flexible(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: CartSelector(),
+                ),
               ),
-
-              AppGaps.h16,
-
-              // ================================================================
-              // FILTERS
-              // ================================================================
-              _dateFilter(),
-
-              AppGaps.h16,
-
-              // ================================================================
-              // SALES CONTENT
-              //
-              // Only this section gets the loading overlay when the filter
-              // changes. The header + filters remain visible.
-              // ================================================================
+            ],
+          ),
+          AppGaps.h24,
+          Text(l10n.salesDashboard, style: AppTextStyles.heading1),
+          AppGaps.h4,
+          Text(
+            l10n.salesSubtitle,
+            style: AppTextStyles.body.copyWith(color: AppColors.grey400),
+          ),
+        ],
+      ),
+      expandToFullHeight: true,
+      child: RefreshIndicator(
+        onRefresh: _loadSales,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          // Room for the floating bottom navigation bar.
+          padding: const EdgeInsets.only(bottom: 120),
+          children: [
+            DateRangeFilter(
+              start: _startDate,
+              end: _endDate,
+              presets: [for (final p in _presets) p['key']!],
+              selectedPreset: _selectedPreset,
+              onPickDate: (isStart) => _pickDate(isStart: isStart),
+              onPreset: _applyPreset,
+            ),
+            AppGaps.h24,
+            if (data == null && _error != null)
+              ListMessage.failed(message: l10n.couldntLoadSales, onRetry: _loadSales)
+            else if (data == null)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 48),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else
               Stack(
                 children: [
                   Column(
                     children: [
                       _revenueHero(data),
-
                       AppGaps.h16,
-
                       _quickStatsRow(data),
-
                       AppGaps.h16,
-
                       _orderFunnelCard(data),
-
                       AppGaps.h16,
-
                       _itemsCard(data),
-
                       AppGaps.h16,
-
                       _orderTypeCard(data),
-
                       AppGaps.h16,
-
                       _busyHoursCard(data),
-
                       AppGaps.h16,
-
                       _timingCard(data),
-
                       AppGaps.h16,
-
                       _leaderboardCard(data),
-
-                      const SizedBox(height: 100),
                     ],
                   ),
-
-                  // ============================================================
-                  // FILTER LOADING OVERLAY
-                  // ============================================================
+                  // Changing the dates keeps the old numbers under a veil.
                   if (provider.isLoading)
                     Positioned.fill(
                       child: Container(
@@ -291,180 +245,12 @@ class _SalesScreenState extends State<SalesScreen> {
                           color: AppColors.white.withValues(alpha: 0.7),
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: const Center(
-                          child: CircularProgressIndicator(
-                            color: AppColors.primary,
-                          ),
-                        ),
+                        child: const Center(child: CircularProgressIndicator()),
                       ),
                     ),
                 ],
               ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ---------------------------------------------------------------------
-  // Header
-  // ---------------------------------------------------------------------
-
-  Widget _header() {
-    return Row(
-      children: [
-        Image.asset(
-          "assets/images/logo_text.png",
-          height: 24,
-          fit: BoxFit.contain,
-        ),
-        const Spacer(),
-        _buildOutletSelector(context),
-      ],
-    );
-  }
-
-  Widget _buildOutletSelector(BuildContext context) {
-    return GestureDetector(
-      onTap: () => openSwitchOutletSheet(context),
-      child: Container(
-        padding: AppPadding.smallCard,
-        decoration: BoxDecoration(
-          border: Border.all(color: AppColors.grey300),
-          borderRadius: BorderRadius.circular(12),
-          color: AppColors.white,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Flexible(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    "Raju Momos",
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.heading3.copyWith(fontSize: 14),
-                  ),
-                  Text(
-                    "BTM 2nd Stage",
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.caption,
-                  ),
-                ],
-              ),
-            ),
-            AppGaps.w8,
-            const Icon(
-              Icons.keyboard_arrow_down,
-              size: 18,
-              color: AppColors.grey500,
-            ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _dateFilter() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(context.l10n.dateRange, style: AppTextStyles.heading3),
-        AppGaps.h8,
-        Row(
-          children: [
-            Expanded(
-              child: _dateBox(
-                _startDate,
-                onTap: () => _pickDate(isStart: true),
-              ),
-            ),
-            AppGaps.w8,
-            Expanded(
-              child: _dateBox(_endDate, onTap: () => _pickDate(isStart: false)),
-            ),
-          ],
-        ),
-        AppGaps.h12,
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: _presets.map((preset) {
-              final isLast = preset == _presets.last;
-              return Padding(
-                padding: EdgeInsets.only(right: isLast ? 0 : 8),
-                child: _presetChip(context.l10n.rangeLabel(preset['key']!), preset['key']!),
-              );
-            }).toList(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _dateBox(DateTime date, {required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          border: Border.all(color: AppColors.grey200),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            const Icon(
-              Icons.calendar_today_outlined,
-              size: 16,
-              color: AppColors.grey500,
-            ),
-            AppGaps.w8,
-            Flexible(
-              child: Text(
-                _formatDisplayDate(date),
-                overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.body,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _presetChip(String label, String presetKey) {
-    final isSelected = _selectedPreset == presetKey;
-
-    return GestureDetector(
-      onTap: () => _applyPreset(presetKey),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.grey200,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: isSelected
-                  ? AppColors.primary.withValues(alpha: 0.25)
-                  : Colors.black.withValues(alpha: 0.05),
-              blurRadius: isSelected ? 12 : 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Text(
-          label,
-          style: AppTextStyles.body.copyWith(
-            color: isSelected ? AppColors.white : AppColors.black,
-            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-          ),
         ),
       ),
     );
@@ -474,45 +260,53 @@ class _SalesScreenState extends State<SalesScreen> {
   // Shared building blocks
   // ---------------------------------------------------------------------
 
-  BoxDecoration _card() => BoxDecoration(
-    color: AppColors.white,
-    borderRadius: BorderRadius.circular(16),
-    border: Border.all(color: AppColors.grey200, width: 1),
-    boxShadow: [
-      BoxShadow(
-        color: AppColors.black.withValues(alpha: 0.05),
-        blurRadius: 10,
-        offset: const Offset(0, 4),
-      ),
-    ],
-  );
-
   Widget _sectionCard({required Widget child}) {
-    return Container(
-      padding: AppPadding.card,
-      decoration: _card(),
-      child: child,
-    );
+    return AppCard(padding: const EdgeInsets.all(16), child: child);
   }
 
   Widget _sectionTitle(String title, {String? trailing, Color? trailingColor}) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: AppTextStyles.heading3),
-        if (trailing != null)
-          Text(
-            trailing,
-            style: AppTextStyles.caption.copyWith(
-              color: trailingColor ?? AppColors.primary,
-              fontWeight: FontWeight.w600,
+        Expanded(child: Text(title, style: AppTextStyles.heading3)),
+        if (trailing != null) ...[
+          AppGaps.w8,
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 140),
+            child: Text(
+              trailing,
+              textAlign: TextAlign.end,
+              style: AppTextStyles.caption.copyWith(
+                color: trailingColor ?? AppColors.primary,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
+        ],
       ],
     );
   }
 
-  String _money(num value) => "₹${value.toStringAsFixed(0)}";
+  /// Boxes two per row, so four of them don't squeeze on a phone.
+  Widget _statGrid(List<Widget> boxes) {
+    return Column(
+      children: [
+        for (var i = 0; i < boxes.length; i += 2) ...[
+          if (i > 0) AppGaps.h8,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              boxes[i],
+              AppGaps.w8,
+              if (i + 1 < boxes.length) boxes[i + 1] else const Spacer(),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+
+  String _money(num value) => "₹${formatPrice(value.round())}";
 
   String _pct(num value) => "${value.toStringAsFixed(1)}%";
 
@@ -522,21 +316,21 @@ class _SalesScreenState extends State<SalesScreen> {
         padding: AppPadding.smallCard,
         decoration: BoxDecoration(
           color: AppColors.grey100,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            // Labels wrap; numbers shrink to fit rather than overflow.
+            Text(title, textAlign: TextAlign.center, style: AppTextStyles.caption),
+            AppGaps.h4,
             FittedBox(
               fit: BoxFit.scaleDown,
-              child: Text(title, style: AppTextStyles.caption),
-            ),
-            AppGaps.h4,
-            Text(
-              value,
-              style: AppTextStyles.heading2.copyWith(
-                fontSize: 18,
-                color: valueColor ?? AppColors.black,
+              child: Text(
+                value,
+                style: AppTextStyles.heading2.copyWith(
+                  color: valueColor ?? AppColors.black,
+                ),
               ),
             ),
           ],
@@ -554,9 +348,9 @@ class _SalesScreenState extends State<SalesScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(label, style: AppTextStyles.caption),
+              Expanded(child: Text(label, style: AppTextStyles.caption)),
+              AppGaps.w8,
               Text(
                 _pct(clamped),
                 style: AppTextStyles.caption.copyWith(
@@ -595,7 +389,7 @@ class _SalesScreenState extends State<SalesScreen> {
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: AppColors.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, size: 16, color: AppColors.primary),
           ),
@@ -619,7 +413,7 @@ class _SalesScreenState extends State<SalesScreen> {
       width: double.infinity,
       padding: AppPadding.card,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -628,13 +422,6 @@ class _SalesScreenState extends State<SalesScreen> {
             AppColors.primary.withValues(alpha: 0.75),
           ],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.25),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -651,7 +438,7 @@ class _SalesScreenState extends State<SalesScreen> {
             duration: const Duration(milliseconds: 800),
             builder: (context, value, _) {
               return Text(
-                "₹${value.toInt()}",
+                _money(value),
                 style: AppTextStyles.heading1.copyWith(color: AppColors.white),
               );
             },
@@ -660,6 +447,7 @@ class _SalesScreenState extends State<SalesScreen> {
           Container(height: 1, color: AppColors.white.withValues(alpha: 0.2)),
           AppGaps.h16,
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _heroStat(context.l10n.net, _money(data.netRevenue)),
               _heroStat(context.l10n.subtotal, _money(data.subtotalRevenue)),
@@ -677,15 +465,19 @@ class _SalesScreenState extends State<SalesScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text(
-            value,
-            style: AppTextStyles.body.copyWith(
-              color: AppColors.white,
-              fontWeight: FontWeight.w700,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              style: AppTextStyles.body.copyWith(
+                color: AppColors.white,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
           Text(
             label,
+            textAlign: TextAlign.center,
             style: AppTextStyles.caption.copyWith(
               color: AppColors.white.withValues(alpha: 0.8),
             ),
@@ -722,29 +514,24 @@ class _SalesScreenState extends State<SalesScreen> {
         children: [
           _sectionTitle(context.l10n.orders, trailing: context.l10n.totalCount(data.totalOrders)),
           AppGaps.h16,
-          Row(
-            children: [
-              _statBox(
-                context.l10n.unpaid,
-                "${data.pendingOrders}",
-                valueColor: AppColors.grey500,
-              ),
-              AppGaps.w8,
-              _statBox(context.l10n.paid, "${data.paidOrders}"),
-              AppGaps.w8,
-              _statBox(
-                context.l10n.served,
-                "${data.servedOrders}",
-                valueColor: AppColors.success,
-              ),
-              AppGaps.w8,
-              _statBox(
-                context.l10n.cancelled,
-                "${data.cancelledOrders}",
-                valueColor: AppColors.error,
-              ),
-            ],
-          ),
+          _statGrid([
+            _statBox(
+              context.l10n.unpaid,
+              "${data.pendingOrders}",
+              valueColor: AppColors.grey500,
+            ),
+            _statBox(context.l10n.paid, "${data.paidOrders}"),
+            _statBox(
+              context.l10n.served,
+              "${data.servedOrders}",
+              valueColor: AppColors.success,
+            ),
+            _statBox(
+              context.l10n.cancelled,
+              "${data.cancelledOrders}",
+              valueColor: AppColors.error,
+            ),
+          ]),
           AppGaps.h16,
           _progressRow(
             context.l10n.completionRate,
@@ -773,21 +560,12 @@ class _SalesScreenState extends State<SalesScreen> {
         children: [
           _sectionTitle(context.l10n.itemsSold),
           AppGaps.h16,
-          Row(
-            children: [
-              _statBox(context.l10n.totalSold, "${data.totalItemsSold}"),
-              AppGaps.w8,
-              _statBox(context.l10n.unique, "${data.uniqueItemsSold}"),
-            ],
-          ),
-          AppGaps.h8,
-          Row(
-            children: [
-              _statBox(context.l10n.avgPerOrder, data.avgItemsPerOrder.toStringAsFixed(1)),
-              AppGaps.w8,
-              _statBox(context.l10n.maxInOneOrder, "${data.highestItemsInOrder}"),
-            ],
-          ),
+          _statGrid([
+            _statBox(context.l10n.totalSold, "${data.totalItemsSold}"),
+            _statBox(context.l10n.unique, "${data.uniqueItemsSold}"),
+            _statBox(context.l10n.avgPerOrder, data.avgItemsPerOrder.toStringAsFixed(1)),
+            _statBox(context.l10n.maxInOneOrder, "${data.highestItemsInOrder}"),
+          ]),
         ],
       ),
     );
@@ -848,13 +626,10 @@ class _SalesScreenState extends State<SalesScreen> {
           AppGaps.h16,
           Container(height: 1, color: AppColors.grey200),
           AppGaps.h16,
-          Row(
-            children: [
-              _statBox(context.l10n.parcelOrders, "${data.parcelOrders}"),
-              AppGaps.w8,
-              _statBox(context.l10n.avgParcelCharge, _money(data.avgParcelCharge)),
-            ],
-          ),
+          _statGrid([
+            _statBox(context.l10n.parcelOrders, "${data.parcelOrders}"),
+            _statBox(context.l10n.avgParcelCharge, _money(data.avgParcelCharge)),
+          ]),
         ],
       ),
     );
@@ -1082,7 +857,7 @@ class _SalesScreenState extends State<SalesScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1091,9 +866,11 @@ class _SalesScreenState extends State<SalesScreen> {
               children: [
                 Icon(icon, size: 14, color: color),
                 AppGaps.w4,
-                Text(
-                  label,
-                  style: AppTextStyles.caption.copyWith(color: color),
+                Flexible(
+                  child: Text(
+                    label,
+                    style: AppTextStyles.caption.copyWith(color: color),
+                  ),
                 ),
               ],
             ),
@@ -1138,6 +915,7 @@ class _SalesScreenState extends State<SalesScreen> {
               style: AppTextStyles.body,
             ),
           ),
+          // Two narrow lines: count above revenue, so the name keeps room.
           Text(context.l10n.soldCount(item.qty), style: AppTextStyles.caption),
           AppGaps.w8,
           Text(

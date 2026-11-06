@@ -7,11 +7,15 @@ import 'package:ordering/core/theme/app_text_styles.dart';
 import 'package:ordering/core/widgets/app_button.dart';
 import 'package:ordering/core/widgets/app_snack_bar.dart';
 import 'package:ordering/features/auth/providers/auth_provider.dart';
-import 'package:ordering/features/cart/presentation/switch_cart_screen.dart';
 import 'package:ordering/features/cart/providers/cart_provider.dart';
 import 'package:ordering/features/payment/providers/payment_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:ordering/l10n/l10n.dart';
+import 'package:ordering/core/widgets/base_screen.dart';
+import 'package:ordering/core/widgets/app_footer.dart';
+import 'package:ordering/core/widgets/app_card.dart';
+import 'package:ordering/core/utils/format_price.dart';
+import 'package:ordering/features/cart/widgets/cart_selector.dart';
 
 class PaymentLockScreen extends StatefulWidget {
   final String cartName;
@@ -228,16 +232,9 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
 
     AppSnackBar.show(
       context,
-      message: '${response.walletName ?? 'External wallet'} selected.',
-    );
-  }
-
-  void _openSwitchCartSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const SwitchCartScreen(isDraggable: true),
+      message: context.l10n.walletSelected(
+        response.walletName ?? context.l10n.externalWallet,
+      ),
     );
   }
 
@@ -246,6 +243,7 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
   @override
   Widget build(BuildContext context) {
     final paymentProvider = context.watch<PaymentProvider>();
+    final l10n = context.l10n;
 
     final busy =
         widget.isLoading ||
@@ -254,169 +252,44 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
         paymentProvider.isCreatingPayment ||
         paymentProvider.isVerifyingPayment;
 
-    return Scaffold(
-      backgroundColor: AppColors.white,
-      body: Stack(
+    return BaseScreen(
+      showBackButton: false,
+      header: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Positioned(
-            top: -70,
-            right: -60,
-            child: _blob(220, AppColors.primary.withValues(alpha: 0.07)),
+          Image.asset("assets/images/logo_text.png", height: 24),
+          AppGaps.h40,
+          Text(l10n.platformFeePending, style: AppTextStyles.heading1),
+          AppGaps.h4,
+          Text(
+            l10n.storeLockedPayRazorpay,
+            style: AppTextStyles.body.copyWith(color: AppColors.grey400),
           ),
-          Positioned(
-            top: 60,
-            left: -80,
-            child: _blob(180, AppColors.warning.withValues(alpha: 0.09)),
-          ),
-          SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _brand(),
-
-                  AppGaps.h32,
-
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              context.l10n.salesOverview,
-                              style: AppTextStyles.heading2,
-                            ),
-                            AppGaps.h4,
-                            Text(
-                              context.l10n.trackEarningsAndFees,
-                              style: AppTextStyles.caption.copyWith(
-                                color: AppColors.grey500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      _outletChip(),
-                    ],
-                  ),
-
-                  AppGaps.h24,
-
-                  _summaryCard(),
-
-                  AppGaps.h16,
-
-                  _warningBanner(),
-
-                  AppGaps.h16,
-
-                  AppButton(
-                    label: busy
-                        ? context.l10n.openingGatewayCaps
-                        : widget.amountDue <= 0
-                        ? context.l10n.paymentPendingCaps
-                        : context.l10n.payAndUnlockNow(widget.amountDue.toStringAsFixed(0)),
-                    isLoading: busy,
-                    onPressed: widget.amountDue <= 0 || busy
-                        ? null
-                        : _startPaymentFlow,
-                  ),
-
-                  AppGaps.h16,
-
-                  _trustRow(),
-                ],
-              ),
-            ),
+          AppGaps.h12,
+          const CartSelector(),
+        ],
+      ),
+      bottomNavigationBar: AppFooter(
+        note: l10n.securePaymentsRazorpay,
+        children: [
+          AppButton(
+            label: busy
+                ? l10n.openingGatewayCaps
+                : widget.amountDue <= 0
+                ? l10n.paymentPendingCaps
+                : l10n.payAndUnlockNow(formatPrice(widget.amountDue)),
+            isLoading: busy,
+            onPressed: widget.amountDue <= 0 || busy ? null : _startPaymentFlow,
           ),
         ],
       ),
-    );
-  }
-
-  Widget _blob(double size, Color color) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-    );
-  }
-
-  Widget _brand() {
-    return Center(
-      child: RichText(
-        text: TextSpan(
-          style: AppTextStyles.heading2.copyWith(fontWeight: FontWeight.w800),
-          children: const [
-            TextSpan(
-              text: 'Gully',
-              style: TextStyle(color: AppColors.primary),
-            ),
-            TextSpan(
-              text: 'Eats',
-              style: TextStyle(color: AppColors.black),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _outletChip() {
-    return GestureDetector(
-      onTap: _openSwitchCartSheet,
-      child: Container(
-        margin: const EdgeInsets.only(left: 12, top: 2),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.grey300),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Flexible(
-              child: Text(
-                widget.cartName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.caption.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-            AppGaps.w4,
-            const Icon(
-              Icons.keyboard_arrow_down,
-              size: 16,
-              color: AppColors.grey500,
-            ),
-          ],
-        ),
-      ),
+      child: _summaryCard(),
     );
   }
 
   Widget _summaryCard() {
-    return Container(
-      width: double.infinity,
+    return AppCard(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.grey200),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.black.withValues(alpha: 0.06),
-            blurRadius: 24,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -426,7 +299,7 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: AppColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
                   Icons.storefront_rounded,
@@ -436,12 +309,7 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
               ),
               AppGaps.w8,
               Expanded(
-                child: Text(
-                  widget.cartName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.heading3,
-                ),
+                child: Text(widget.cartName, style: AppTextStyles.heading3),
               ),
             ],
           ),
@@ -481,19 +349,21 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
 
           _statRow(
             context.l10n.platformFee,
-            '₹${widget.platformFee.toStringAsFixed(0)}',
+            '₹${formatPrice(widget.platformFee)}',
             valueColor: AppColors.primary,
           ),
 
           AppGaps.h12,
 
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                context.l10n.paymentStatus,
-                style: AppTextStyles.body.copyWith(color: AppColors.grey600),
+              Expanded(
+                child: Text(
+                  context.l10n.paymentStatus,
+                  style: AppTextStyles.body.copyWith(color: AppColors.grey600),
+                ),
               ),
+              AppGaps.w8,
               _statusPill(),
             ],
           ),
@@ -504,12 +374,14 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
 
   Widget _statRow(String label, String value, {Color? valueColor}) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: AppTextStyles.body.copyWith(color: AppColors.grey600),
+        Expanded(
+          child: Text(
+            label,
+            style: AppTextStyles.body.copyWith(color: AppColors.grey600),
+          ),
         ),
+        AppGaps.w8,
         Text(
           value,
           style: AppTextStyles.heading3.copyWith(
@@ -544,63 +416,6 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
           const Icon(Icons.warning_rounded, size: 12, color: AppColors.error),
         ],
       ),
-    );
-  }
-
-  Widget _warningBanner() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.warning.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.warning.withValues(alpha: 0.25)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.error_rounded, color: AppColors.warning, size: 18),
-          AppGaps.w8,
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  context.l10n.platformFeePending,
-                  style: AppTextStyles.body.copyWith(
-                    color: AppColors.warning,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                AppGaps.h4,
-                Text(
-                  context.l10n.storeLockedPayRazorpay,
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.grey600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _trustRow() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Icon(Icons.lock_rounded, size: 12, color: AppColors.grey400),
-        AppGaps.w4,
-        Text(
-          context.l10n.securePaymentsRazorpay,
-          style: AppTextStyles.caption.copyWith(
-            color: AppColors.grey400,
-            fontSize: 11,
-          ),
-        ),
-      ],
     );
   }
 }
