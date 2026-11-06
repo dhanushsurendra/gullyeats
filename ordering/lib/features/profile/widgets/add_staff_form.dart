@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_gaps.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
@@ -76,8 +77,8 @@ class _AddStaffFormState extends State<AddStaffForm> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey.shade100),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.grey200),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -91,23 +92,14 @@ class _AddStaffFormState extends State<AddStaffForm> {
             label: context.l10n.staffName,
             hint: context.l10n.enterHelperName,
             keyboardType: TextInputType.text,
+            hasError: _staffNameError != null,
+            errorText: _staffNameError,
             onChanged: (value) {
               if (_staffNameError != null) {
                 setState(() => _staffNameError = null);
               }
             },
           ),
-
-          if (_staffNameError != null) ...[
-            AppGaps.h8,
-            Text(
-              _staffNameError!,
-              style: AppTextStyles.body.copyWith(
-                color: Colors.red,
-                fontSize: 13,
-              ),
-            ),
-          ],
 
           AppGaps.h24,
 
@@ -116,27 +108,22 @@ class _AddStaffFormState extends State<AddStaffForm> {
             label: context.l10n.staffMobileNumber,
             hint: "0000000000",
             keyboardType: TextInputType.phone,
-            prefix: const SizedBox(
-              width: 48,
-              child: Center(child: Text("+91", style: AppTextStyles.heading3)),
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(10),
+            ],
+            prefix: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              child: Text("+91", style: AppTextStyles.heading3),
             ),
+            hasError: _staffPhoneError != null,
+            errorText: _staffPhoneError,
             onChanged: (value) {
               if (_staffPhoneError != null) {
                 setState(() => _staffPhoneError = null);
               }
             },
           ),
-
-          if (_staffPhoneError != null) ...[
-            AppGaps.h8,
-            Text(
-              _staffPhoneError!,
-              style: AppTextStyles.body.copyWith(
-                color: Colors.red,
-                fontSize: 13,
-              ),
-            ),
-          ],
 
           AppGaps.h24,
 

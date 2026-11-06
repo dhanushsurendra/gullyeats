@@ -48,15 +48,6 @@ class AppTabFilter extends StatelessWidget {
                   border: Border.all(
                     color: isSelected ? AppColors.primary : AppColors.grey200,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: isSelected 
-                          ? AppColors.primary.withValues(alpha: 0.25)
-                          : Colors.black.withValues(alpha: 0.05),
-                      blurRadius: isSelected ? 12 : 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
                 ),
                 child: Text(
                   labelOf?.call(tab) ?? tab,

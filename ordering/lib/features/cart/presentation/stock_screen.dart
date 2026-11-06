@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:ordering/core/theme/app_gaps.dart';
 import 'package:ordering/core/theme/app_padding.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
-import 'package:ordering/core/widgets/app_header.dart';
 import 'package:ordering/core/widgets/app_search_bar.dart';
 import 'package:ordering/core/widgets/app_tab_filter.dart';
 import 'package:ordering/core/error/app_exceptions.dart';
@@ -14,6 +13,9 @@ import 'package:ordering/features/orders/providers/menu_provider.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
 import 'package:ordering/l10n/l10n.dart';
+import 'package:ordering/core/widgets/base_screen.dart';
+import 'package:ordering/core/widgets/list_message.dart';
+import 'package:ordering/core/utils/format_price.dart';
 
 class StockScreen extends StatefulWidget {
   const StockScreen({super.key});
@@ -25,23 +27,31 @@ class StockScreen extends StatefulWidget {
 class _StockScreenState extends State<StockScreen> {
   String selectedTab = "All Items";
   String searchQuery = "";
+  bool _loadFailed = false;
 
   final List<String> tabs = ["All Items", "In Stock", "Out of Stock"];
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+  }
+
+  Future<void> _load() async {
+    if (!mounted) return;
+    final cartId = context.read<CartProvider>().selectedCart?.id;
+    if (cartId == null) return;
+    setState(() => _loadFailed = false);
+    try {
+      await context.read<MenuProvider>().fetchMenuItems(
+        context.read<AuthProvider>().token,
+        cartId,
+      );
+    } catch (e) {
       if (!mounted) return;
-      final cartId = context.read<CartProvider>().selectedCart?.id;
-      if (cartId == null) return;
-      context
-          .read<MenuProvider>()
-          .fetchMenuItems(context.read<AuthProvider>().token, cartId)
-          .catchError((Object e) {
-            if (mounted) _showError(e);
-          });
-    });
+      setState(() => _loadFailed = true);
+      _showError(e);
+    }
   }
 
   void _showError(Object e) {
@@ -95,41 +105,51 @@ class _StockScreenState extends State<StockScreen> {
       return matchesSearch && matchesStock;
     }).toList();
 
-    return Scaffold(
-      appBar: AppHeader(title: context.l10n.stockControl, showBack: true),
-      body: Column(
+    return BaseScreen(
+      title: context.l10n.stockControl,
+      onBack: () => Navigator.pop(context),
+      expandToFullHeight: true,
+      child: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: AppSearchBar(
-              hintText: context.l10n.searchItems,
-              onChanged: (value) => onSearchChanged(value),
-            ),
+          AppSearchBar(
+            hintText: context.l10n.searchItems,
+            onChanged: onSearchChanged,
           ),
-
-          Padding(
-            padding: AppPadding.horizontalScreen,
-            child: AppTabFilter(
-              tabs: tabs,
-              labelOf: (tab) => switch (tab) {
-                "In Stock" => context.l10n.inStock,
-                "Out of Stock" => context.l10n.outOfStock,
-                _ => context.l10n.allItems,
-              },
-              selectedTab: selectedTab,
-              onTabSelected: onTabSelected,
-            ),
+          AppGaps.h16,
+          AppTabFilter(
+            tabs: tabs,
+            labelOf: (tab) => switch (tab) {
+              "In Stock" => context.l10n.inStock,
+              "Out of Stock" => context.l10n.outOfStock,
+              _ => context.l10n.allItems,
+            },
+            selectedTab: selectedTab,
+            onTabSelected: onTabSelected,
           ),
-
-          AppGaps.h12,
+          AppGaps.h16,
           Expanded(
-            child: provider.isLoading
+            child: provider.isLoading && provider.menuItems.isEmpty
                 ? const Center(child: CircularProgressIndicator())
-                : ListView.builder(
-                    padding: AppPadding.horizontalScreen,
-                    itemCount: filteredMenu.length,
-                    itemBuilder: (_, i) =>
-                        _itemCard(filteredMenu[i], provider),
+                : RefreshIndicator(
+                    onRefresh: _load,
+                    child: ListView(
+                      children: [
+                        if (_loadFailed && provider.menuItems.isEmpty)
+                          ListMessage.failed(
+                            message: context.l10n.couldntLoadMenu,
+                            onRetry: _load,
+                          )
+                        else if (filteredMenu.isEmpty)
+                          ListMessage(
+                            icon: searchQuery.isEmpty
+                                ? Icons.restaurant_menu
+                                : Icons.search_off_rounded,
+                            message: context.l10n.noMenuItemsFound,
+                          )
+                        else
+                          for (final item in filteredMenu) _itemCard(item, provider),
+                      ],
+                    ),
                   ),
           ),
         ],
@@ -169,11 +189,11 @@ class _StockScreenState extends State<StockScreen> {
                     color: item.isInStock
                         ? AppColors.success.withAlpha(26)
                         : AppColors.error.withAlpha(26),
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     item.isInStock ? context.l10n.inStockCaps : context.l10n.outOfStockCaps,
-                    style: TextStyle(
+                    style: AppTextStyles.caption.copyWith(
                       fontSize: 10,
                       color: item.isInStock
                           ? AppColors.success
@@ -184,16 +204,17 @@ class _StockScreenState extends State<StockScreen> {
                 ),
 
                 AppGaps.h4,
-                Text("₹${item.price}", style: AppTextStyles.caption),
+                Text("₹${formatPrice(item.price)}", style: AppTextStyles.caption),
               ],
             ),
           ),
 
+          AppGaps.w8,
           Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               color: AppColors.grey200,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
               children: [

@@ -1087,6 +1087,34 @@ class AppLocalizationsHi extends AppLocalizations {
   String get qrPosterSubtitle => 'इसे प्रिंट करके अपनी कार्ट पर चिपकाएँ।';
 
   @override
+  String get couldntLoadMenu => 'मेन्यू लोड नहीं हो सका।';
+
+  @override
+  String get couldntLoadOrders => 'ऑर्डर लोड नहीं हो सके।';
+
+  @override
+  String get couldntLoadStaff => 'स्टाफ़ लोड नहीं हो सका।';
+
+  @override
+  String get couldntLoadCarts => 'आपकी कार्ट लोड नहीं हो सकीं।';
+
+  @override
+  String get couldntLoadPayments => 'भुगतान लोड नहीं हो सके।';
+
+  @override
+  String get couldntLoadSales => 'बिक्री लोड नहीं हो सकी।';
+
+  @override
+  String staffWillLoseAccess(String name) {
+    return '$name इस कार्ट को अब नहीं चला पाएँगे। इसे वापस नहीं किया जा सकता।';
+  }
+
+  @override
+  String ordersTimesFee(int count, String fee) {
+    return '$count ऑर्डर × ₹$fee';
+  }
+
+  @override
   String get sessionExpired =>
       'आपका लॉगिन खत्म हो गया है। कृपया फिर से लॉगिन करें।';
 

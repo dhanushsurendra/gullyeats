@@ -1102,6 +1102,34 @@ class AppLocalizationsTa extends AppLocalizations {
   String get qrPosterSubtitle => 'இதை அச்சிட்டு உங்கள் கார்ட்டில் ஒட்டவும்.';
 
   @override
+  String get couldntLoadMenu => 'மெனுவை ஏற்ற முடியவில்லை.';
+
+  @override
+  String get couldntLoadOrders => 'ஆர்டர்களை ஏற்ற முடியவில்லை.';
+
+  @override
+  String get couldntLoadStaff => 'பணியாளர்களை ஏற்ற முடியவில்லை.';
+
+  @override
+  String get couldntLoadCarts => 'உங்கள் கார்ட்டுகளை ஏற்ற முடியவில்லை.';
+
+  @override
+  String get couldntLoadPayments => 'பணம் செலுத்தல்களை ஏற்ற முடியவில்லை.';
+
+  @override
+  String get couldntLoadSales => 'விற்பனையை ஏற்ற முடியவில்லை.';
+
+  @override
+  String staffWillLoseAccess(String name) {
+    return '$name இந்த கார்ட்டை இனி அணுக முடியாது. இதைத் திரும்பப் பெற முடியாது.';
+  }
+
+  @override
+  String ordersTimesFee(int count, String fee) {
+    return '$count ஆர்டர்கள் × ₹$fee';
+  }
+
+  @override
   String get sessionExpired =>
       'உங்கள் உள்நுழைவு காலாவதியானது. மீண்டும் உள்நுழையவும்.';
 

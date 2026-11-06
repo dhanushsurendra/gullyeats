@@ -2088,6 +2088,54 @@ abstract class AppLocalizations {
   /// **'Print and paste this on your cart.'**
   String get qrPosterSubtitle;
 
+  /// No description provided for @couldntLoadMenu.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the menu.'**
+  String get couldntLoadMenu;
+
+  /// No description provided for @couldntLoadOrders.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load orders.'**
+  String get couldntLoadOrders;
+
+  /// No description provided for @couldntLoadStaff.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load staff.'**
+  String get couldntLoadStaff;
+
+  /// No description provided for @couldntLoadCarts.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load your carts.'**
+  String get couldntLoadCarts;
+
+  /// No description provided for @couldntLoadPayments.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load payments.'**
+  String get couldntLoadPayments;
+
+  /// No description provided for @couldntLoadSales.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load sales.'**
+  String get couldntLoadSales;
+
+  /// No description provided for @staffWillLoseAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} will lose access to this cart. This can\'t be undone.'**
+  String staffWillLoseAccess(String name);
+
+  /// No description provided for @ordersTimesFee.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 order} other{{count} orders}} × ₹{fee}'**
+  String ordersTimesFee(int count, String fee);
+
   /// No description provided for @sessionExpired.
   ///
   /// In en, this message translates to:

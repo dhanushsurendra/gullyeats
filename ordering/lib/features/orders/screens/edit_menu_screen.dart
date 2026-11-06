@@ -7,15 +7,18 @@ import 'package:ordering/features/orders/models/menu_item_model.dart';
 import 'package:provider/provider.dart';
 import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
-import 'package:ordering/core/theme/app_padding.dart';
 import 'package:ordering/core/theme/app_gaps.dart';
-import 'package:ordering/core/widgets/app_back_button.dart';
 import 'package:ordering/core/widgets/app_card.dart';
 import 'package:ordering/core/widgets/app_search_bar.dart';
 import 'package:ordering/features/orders/providers/menu_provider.dart';
 import 'package:ordering/features/orders/screens/add_new_item.dart';
 import 'package:ordering/features/orders/widgets/edit_menu_dialog.dart';
 import 'package:ordering/l10n/l10n.dart';
+import 'package:ordering/core/widgets/base_screen.dart';
+import 'package:ordering/core/widgets/app_footer.dart';
+import 'package:ordering/core/widgets/app_button.dart';
+import 'package:ordering/core/widgets/list_message.dart';
+import 'package:ordering/core/utils/format_price.dart';
 
 class EditMenuScreen extends StatefulWidget {
   const EditMenuScreen({super.key});
@@ -29,209 +32,173 @@ class _EditMenuScreenState extends State<EditMenuScreen> {
   String _query = "";
   bool _isInit = false;
 
+  bool _loadFailed = false;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_isInit) {
       _isInit = true;
-      final authProvider = context.read<AuthProvider>();
-      final cartProvider = context.read<CartProvider>();
+      _load();
+    }
+  }
 
-      context
-          .read<MenuProvider>()
-          .fetchMenuItems(
-            authProvider.token,
-            cartProvider.selectedCart?.id ?? "",
-          )
-          .catchError((Object e) {
-            if (!mounted) return;
-            AppSnackBar.show(
-              context,
-              message: AppExceptionHandler.getMessage(e),
-              isError: true,
-            );
-          });
+  Future<void> _load() async {
+    setState(() => _loadFailed = false);
+    try {
+      await context.read<MenuProvider>().fetchMenuItems(
+        context.read<AuthProvider>().token,
+        context.read<CartProvider>().selectedCart?.id ?? "",
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _loadFailed = true);
+      AppSnackBar.show(
+        context,
+        message: AppExceptionHandler.getMessage(e),
+        marginBottom: 0,
+        isError: true,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: AppPadding.screen,
-          child: Column(
-            children: [
-              _buildHeader(context),
-              AppGaps.h16,
-              AppSearchBar(
-                controller: _searchController,
-                hintText: context.l10n.searchMenuItems,
-                onChanged: (value) => setState(() => _query = value),
-              ),
-              AppGaps.h16,
-              Expanded(
-                child: Consumer<MenuProvider>(
-                  builder: (context, provider, child) {
-                    if (provider.isLoading) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
+    final l10n = context.l10n;
+    final provider = context.watch<MenuProvider>();
+    // Derived on every build so edits, adds and deletes show up while a
+    // search is active.
+    final items = provider.searchMenuItem(_query);
 
-                    // Derived on every build so edits, adds and deletes show
-                    // up while a search is active.
-                    final filteredItems = provider.searchMenuItem(_query);
-
-                    if (filteredItems.isEmpty) {
-                      return Center(child: Text(context.l10n.noMenuItemsFound));
-                    }
-
-                    return ListView.separated(
-                      itemCount: filteredItems.length,
-                      separatorBuilder: (_, _) => AppGaps.h12,
-                      itemBuilder: (context, index) {
-                        final item = filteredItems[index];
-
-                        return _buildMenuItem(
-                          name: item.name,
-                          price: item.price.toString(),
-                          isInStock: item.isInStock,
-                          id: item.id,
-                          isVeg: item.isVeg,
-                          cartId: item.cartId,
-                          imageUrl: item.imageUrl
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [AppBackButton(), _addItemButton()],
-        ),
-        AppGaps.h24,
-        Text(context.l10n.editMenuItems, style: AppTextStyles.heading2),
-        AppGaps.h4,
-        Text(
-          context.l10n.editMenuSubtitle,
-          style: AppTextStyles.caption.copyWith(color: AppColors.grey500),
-        ),
-      ],
-    );
-  }
-
-  Widget _addItemButton() {
-    return OutlinedButton.icon(
-      onPressed: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const AddItemScreen()),
-      ),
-      icon: const Icon(Icons.add, size: 16),
-      label: Text(context.l10n.addItem, style: TextStyle(fontSize: 14)),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: AppColors.primary,
-        side: const BorderSide(color: AppColors.primary),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      ),
-    );
-  }
-
-  Widget _buildMenuItem({
-    required String name,
-    required String price,
-    required bool isInStock,
-    required String id,
-    required String cartId,
-    required String imageUrl,
-    bool isVeg = true,
-  }) {
-    return AppCard(
-      padding: AppPadding.card,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return BaseScreen(
+      title: l10n.editMenuItems,
+      subtitle: l10n.editMenuSubtitle,
+      onBack: () => Navigator.pop(context),
+      expandToFullHeight: true,
+      bottomNavigationBar: AppFooter(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(name, style: AppTextStyles.heading3),
-              _buildStockBadge(isInStock),
-            ],
+          AppButton(
+            label: "+ ${l10n.addItem.toUpperCase()}",
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const AddItemScreen()),
+            ),
           ),
-          AppGaps.h12,
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "₹$price",
-                style: AppTextStyles.heading3.copyWith(
-                  color: AppColors.grey600,
-                ),
-              ),
-              Row(
-                children: [
-                  _actionIcon(
-                    Icons.edit_outlined,
-                    AppColors.grey500,
-                    () => _openEditDialog(
-                      context,
-                      name,
-                      price,
-                      isVeg,
-                      isInStock,
-                      id,
-                      cartId,
-                      imageUrl
+        ],
+      ),
+      child: Column(
+        children: [
+          AppSearchBar(
+            controller: _searchController,
+            hintText: l10n.searchMenuItems,
+            onChanged: (value) => setState(() => _query = value),
+          ),
+          AppGaps.h16,
+          Expanded(
+            child: provider.isLoading && provider.menuItems.isEmpty
+                ? const Center(child: CircularProgressIndicator())
+                : RefreshIndicator(
+                    onRefresh: _load,
+                    child: ListView(
+                      children: [
+                        if (_loadFailed && provider.menuItems.isEmpty)
+                          ListMessage.failed(
+                            message: l10n.couldntLoadMenu,
+                            onRetry: _load,
+                          )
+                        else if (items.isEmpty)
+                          ListMessage(
+                            icon: _query.isEmpty
+                                ? Icons.restaurant_menu
+                                : Icons.search_off_rounded,
+                            message: l10n.noMenuItemsFound,
+                          )
+                        else
+                          for (final item in items) ...[
+                            _buildMenuItem(item),
+                            AppGaps.h12,
+                          ],
+                      ],
                     ),
                   ),
-                  AppGaps.w12,
-                  _actionIcon(
-                    Icons.delete_outline,
-                    AppColors.error,
-                    () => _confirmDelete(context, id, cartId),
-                  ),
-                ],
-              ),
-            ],
           ),
         ],
       ),
     );
   }
 
-  void _openEditDialog(
-    BuildContext context,
-    String name,
-    String price,
-    bool isVeg,
-    bool isInStock,
-    String id,
-    String cartId,
-    String imageUrl
-  ) async {
+  // Same card as the onboarding app's menu review, plus the stock badge.
+  Widget _buildMenuItem(MenuItemModel item) {
+    final vegColor = item.isVeg ? AppColors.success : AppColors.error;
+    return AppCard(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(item.name, style: AppTextStyles.heading3),
+                AppGaps.h4,
+                // Wrap: the tags move under the price on narrow cards.
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      "₹${formatPrice(item.price)}",
+                      style: AppTextStyles.heading3.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.circle, size: 8, color: vegColor),
+                        AppGaps.w4,
+                        Text(
+                          item.isVeg ? context.l10n.veg : context.l10n.nonVeg,
+                          style: AppTextStyles.caption.copyWith(
+                            color: vegColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                    _buildStockBadge(item.isInStock),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          AppGaps.w8,
+          _actionIcon(Icons.edit_outlined, AppColors.grey500, () => _openEditDialog(item)),
+          AppGaps.w8,
+          _actionIcon(
+            Icons.delete_outline,
+            AppColors.error,
+            () => _confirmDelete(context, item.id, item.cartId),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openEditDialog(MenuItemModel item) async {
     await showModalBottomSheet<MenuItemModel>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => EditMenuDialog(
-        initialName: name,
-        initialPrice: double.tryParse(price) ?? 0.0,
-        initialIsVeg: isVeg,
-        initialInStock: isInStock,
-        id: id,
-        cartId: cartId,
-        initialImageUrl: imageUrl
+        initialName: item.name,
+        initialPrice: item.price,
+        initialIsVeg: item.isVeg,
+        initialInStock: item.isInStock,
+        id: item.id,
+        cartId: item.cartId,
+        initialImageUrl: item.imageUrl,
       ),
     );
   }
@@ -245,7 +212,7 @@ class _EditMenuScreenState extends State<EditMenuScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: Text(context.l10n.cancel.toUpperCase(), style: TextStyle(color: AppColors.grey500)),
+            child: Text(context.l10n.cancel.toUpperCase(), style: AppTextStyles.button.copyWith(fontSize: 14, color: AppColors.grey500)),
           ),
           TextButton(
             onPressed: () async {
@@ -281,7 +248,7 @@ class _EditMenuScreenState extends State<EditMenuScreen> {
             },
             child: Text(
               context.l10n.delete.toUpperCase(),
-              style: TextStyle(color: AppColors.error),
+              style: AppTextStyles.button.copyWith(fontSize: 14, color: AppColors.error),
             ),
           ),
         ],
@@ -294,7 +261,7 @@ class _EditMenuScreenState extends State<EditMenuScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.2),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
@@ -310,12 +277,13 @@ class _EditMenuScreenState extends State<EditMenuScreen> {
 
   Widget _actionIcon(IconData icon, Color color, VoidCallback onTap) {
     return InkWell(
+      borderRadius: BorderRadius.circular(12),
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(6),
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(icon, size: 20, color: color),
       ),

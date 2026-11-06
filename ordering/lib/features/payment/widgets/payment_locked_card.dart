@@ -4,6 +4,7 @@ import 'package:ordering/core/theme/app_gaps.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
 import 'package:ordering/core/widgets/app_button.dart';
 import 'package:ordering/l10n/l10n.dart';
+import 'package:ordering/core/utils/format_price.dart';
 
 /// Warning card shown when the cart's platform fee is unpaid, with the
 /// primary "PAY & UNLOCK" call to action.
@@ -79,7 +80,7 @@ class PaymentLockedCard extends StatelessWidget {
                   ],
                 ),
                 Text(
-                  "$totalOrders orders x ₹${feePerOrder.toStringAsFixed(0)}",
+                  context.l10n.ordersTimesFee(totalOrders, formatPrice(feePerOrder)),
                   style: AppTextStyles.caption.copyWith(color: AppColors.grey500),
                 ),
               ],

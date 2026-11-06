@@ -3,11 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:ordering/core/error/app_exceptions.dart';
 import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_gaps.dart';
-import 'package:ordering/core/theme/app_padding.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
-import 'package:ordering/core/widgets/app_back_button.dart';
-import 'package:ordering/core/widgets/app_button.dart';
-import 'package:ordering/core/widgets/app_input.dart';
 import 'package:ordering/core/widgets/app_snack_bar.dart';
 import 'package:ordering/features/auth/providers/auth_provider.dart';
 import 'package:ordering/features/cart/models/staff_model.dart';
@@ -19,6 +15,9 @@ import 'package:ordering/features/profile/widgets/staff_member_card.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:ordering/l10n/l10n.dart';
+import 'package:ordering/core/widgets/base_screen.dart';
+import 'package:ordering/core/widgets/app_search_bar.dart';
+import 'package:ordering/core/widgets/list_message.dart';
 
 class StaffManagementScreen extends StatefulWidget {
   const StaffManagementScreen({super.key});
@@ -30,6 +29,7 @@ class StaffManagementScreen extends StatefulWidget {
 class _StaffManagementScreenState extends State<StaffManagementScreen> {
   bool _isLoading = false; // adding staff
   bool _isStaffLoading = false; // initial list load
+  bool _loadFailed = false;
   String? _switchingStaffId; // staff currently being moved (for sheet spinner)
   String _query = '';
 
@@ -64,7 +64,10 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
   }
 
   Future<void> _loadStaff() async {
-    setState(() => _isStaffLoading = true);
+    setState(() {
+      _isStaffLoading = true;
+      _loadFailed = false;
+    });
 
     try {
       final staffProvider = Provider.of<StaffProvider>(context, listen: false);
@@ -77,13 +80,12 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
         cartId!,
       );
 
-      setState(() {
-        _staffList = staffList;
-      });
+      if (mounted) setState(() => _staffList = staffList);
     } catch (e) {
       final message = AppExceptionHandler.getMessage(e);
       if (mounted) {
-        AppSnackBar.show(context, message: message, isError: true, marginBottom: 32);
+        setState(() => _loadFailed = true);
+        AppSnackBar.show(context, message: message, isError: true, marginBottom: 0);
       }
     } finally {
       if (mounted) setState(() => _isStaffLoading = false);
@@ -117,7 +119,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
         _staffList.add(result);
       });
 
-      AppSnackBar.show(context, message: context.l10n.staffAdded, marginBottom: 32);
+      AppSnackBar.show(context, message: context.l10n.staffAdded, marginBottom: 0);
 
       final message =
           "Your GullyEats credentials:\n"
@@ -142,7 +144,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
           ? context.l10n.staffAddedNoSms
           : AppExceptionHandler.getMessage(e);
 
-      AppSnackBar.show(context, message: errorMessage, isError: true, marginBottom: 32);
+      AppSnackBar.show(context, message: errorMessage, isError: true, marginBottom: 0);
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -159,7 +161,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
 
       if (result != '') {
         if (mounted) {
-          AppSnackBar.show(context, message: result, marginBottom: 32);
+          AppSnackBar.show(context, message: result, marginBottom: 0);
         }
         setState(() {
           _staffList.removeWhere((staff) => staff.id == staffId);
@@ -168,7 +170,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
     } catch (e) {
       final message = AppExceptionHandler.getMessage(e);
       if (mounted) {
-        AppSnackBar.show(context, message: message, isError: true, marginBottom: 32);
+        AppSnackBar.show(context, message: message, isError: true, marginBottom: 0);
       }
     }
   }
@@ -223,12 +225,12 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
           // Staff no longer belongs to the currently viewed cart.
           _staffList.removeWhere((staff) => staff.id == staffId);
         });
-        AppSnackBar.show(context, message: context.l10n.staffMovedTo(newCartName), marginBottom: 32);
+        AppSnackBar.show(context, message: context.l10n.staffMovedTo(newCartName), marginBottom: 0);
       }
     } catch (e) {
       final message = AppExceptionHandler.getMessage(e);
       if (mounted) {
-        AppSnackBar.show(context, message: message, isError: true, marginBottom: 32);
+        AppSnackBar.show(context, message: message, isError: true, marginBottom: 0);
       }
     } finally {
       if (mounted) setState(() => _switchingStaffId = null);
@@ -237,149 +239,73 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: AppPadding.screen,
-          child: Column(
-            children: [
-              _buildHeader(context),
+    final l10n = context.l10n;
+    return BaseScreen(
+      title: l10n.staffManagement,
+      subtitle: l10n.staffSubtitle,
+      onBack: () => Navigator.pop(context),
+      expandToFullHeight: true,
+      child: RefreshIndicator(
+        color: AppColors.primary,
+        onRefresh: _loadStaff,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            AddStaffForm(
+              onAddStaff: (staffName, staffPhone) =>
+                  _addStaff(staffName, staffPhone),
+              isLoading: _isLoading,
+            ),
+            AppGaps.h32,
+            Row(
+              children: [
+                Expanded(
+                  child: Text(l10n.yourStaff, style: AppTextStyles.heading2),
+                ),
+                if (_staffList.isNotEmpty)
+                  Text(
+                    l10n.totalCount(_staffList.length),
+                    style: AppTextStyles.caption.copyWith(color: AppColors.grey500),
+                  ),
+              ],
+            ),
+            AppGaps.h16,
+            if (_staffList.length > 3) ...[
+              AppSearchBar(
+                controller: _searchController,
+                hintText: l10n.searchStaff,
+                onChanged: (value) => setState(() => _query = value),
+              ),
               AppGaps.h16,
-              Expanded(
-                child: RefreshIndicator(
-                  color: AppColors.primary,
-                  onRefresh: _loadStaff,
-                  child: ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    children: [
-                      AddStaffForm(
-                        onAddStaff: (staffName, staffPhone) =>
-                            _addStaff(staffName, staffPhone),
-                        isLoading: _isLoading,
-                      ),
-
-                      AppGaps.h32,
-
-                      Row(
-                        children: [
-                          Text(context.l10n.yourStaff, style: AppTextStyles.heading3),
-                          const Spacer(),
-                          if (_staffList.isNotEmpty)
-                            Text(
-                              context.l10n.totalCount(_staffList.length),
-                              style: AppTextStyles.caption.copyWith(
-                                color: Colors.grey.shade500,
-                              ),
-                            ),
-                        ],
-                      ),
-
-                      AppGaps.h16,
-
-                      if (_staffList.length > 3) ...[
-                        AppInput(
-                          controller: _searchController,
-                          hint: context.l10n.searchStaff,
-                          keyboardType: TextInputType.text,
-                          prefix: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            child: Icon(
-                              Icons.search,
-                              color: Colors.grey.shade500,
-                            ),
-                          ),
-                          onChanged: (value) => setState(() => _query = value),
-                        ),
-                        AppGaps.h16,
-                      ],
-
-                      if (_isStaffLoading)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 32),
-                          child: Center(child: CircularProgressIndicator()),
-                        )
-                      else if (_staffList.isEmpty)
-                        _buildEmptyState(context.l10n.noStaffYet)
-                      else if (_filteredStaff.isEmpty)
-                        _buildEmptyState(context.l10n.noStaffMatch(_query))
-                      else
-                        ..._filteredStaff.map(
-                          (staff) => Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: StaffMemberCard(
-                              staffId: staff.id,
-                              name: staff.name,
-                              phone: staff.phoneNumber,
-                              role: staff.role,
-                              onDelete: _onDelete,
-                              onSwitchCart: _openSwitchCartSheet,
-                            ),
-                          ),
-                        ),
-                    ],
+            ],
+            if (_isStaffLoading && _staffList.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 32),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (_loadFailed && _staffList.isEmpty)
+              ListMessage.failed(message: l10n.couldntLoadStaff, onRetry: _loadStaff)
+            else if (_staffList.isEmpty)
+              ListMessage(icon: Icons.people_outline, message: l10n.noStaffYet)
+            else if (_filteredStaff.isEmpty)
+              ListMessage(
+                icon: Icons.search_off_rounded,
+                message: l10n.noStaffMatch(_query),
+              )
+            else
+              for (final staff in _filteredStaff)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: StaffMemberCard(
+                    staffId: staff.id,
+                    name: staff.name,
+                    phone: staff.phoneNumber,
+                    role: staff.role,
+                    onDelete: _onDelete,
+                    onSwitchCart: _openSwitchCartSheet,
                   ),
                 ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      bottomNavigationBar: _buildFooter(),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(children: [AppBackButton()]),
-        AppGaps.h24,
-        Text(context.l10n.staffManagement, style: AppTextStyles.heading2),
-        AppGaps.h4,
-        Text(
-          context.l10n.staffSubtitle,
-          style: AppTextStyles.caption.copyWith(color: AppColors.grey500),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildEmptyState(String message) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      child: Center(
-        child: Column(
-          children: [
-            Icon(Icons.people_outline, size: 48, color: Colors.grey.shade300),
-            const SizedBox(height: 12),
-            Text(
-              message,
-              style: AppTextStyles.body.copyWith(color: Colors.grey),
-            ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFooter() {
-    return SafeArea(
-      top: false,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -4),
-            ),
-          ],
-        ),
-        child: AppButton(
-          label: context.l10n.continueLabel.toUpperCase(),
-          onPressed: () => Navigator.pushNamed(context, "/cart-activated"),
         ),
       ),
     );

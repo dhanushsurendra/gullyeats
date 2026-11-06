@@ -480,6 +480,31 @@
   "continueLabel": "Continue",
   "current": "Current",
   "qrPosterSubtitle": "Print and paste this on your cart.",
+  "couldntLoadMenu": "Couldn't load the menu.",
+  "couldntLoadOrders": "Couldn't load orders.",
+  "couldntLoadStaff": "Couldn't load staff.",
+  "couldntLoadCarts": "Couldn't load your carts.",
+  "couldntLoadPayments": "Couldn't load payments.",
+  "couldntLoadSales": "Couldn't load sales.",
+  "staffWillLoseAccess": "{name} will lose access to this cart. This can't be undone.",
+  "@staffWillLoseAccess": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "ordersTimesFee": "{count, plural, =1{1 order} other{{count} orders}} × ₹{fee}",
+  "@ordersTimesFee": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "fee": {
+        "type": "String"
+      }
+    }
+  },
   "sessionExpired": "Your login has expired. Please log in again.",
   "checkInternet": "Check your internet connection",
   "requestTimedOut": "Request timed out. Try again",

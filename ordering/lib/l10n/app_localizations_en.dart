@@ -1083,6 +1083,40 @@ class AppLocalizationsEn extends AppLocalizations {
   String get qrPosterSubtitle => 'Print and paste this on your cart.';
 
   @override
+  String get couldntLoadMenu => 'Couldn\'t load the menu.';
+
+  @override
+  String get couldntLoadOrders => 'Couldn\'t load orders.';
+
+  @override
+  String get couldntLoadStaff => 'Couldn\'t load staff.';
+
+  @override
+  String get couldntLoadCarts => 'Couldn\'t load your carts.';
+
+  @override
+  String get couldntLoadPayments => 'Couldn\'t load payments.';
+
+  @override
+  String get couldntLoadSales => 'Couldn\'t load sales.';
+
+  @override
+  String staffWillLoseAccess(String name) {
+    return '$name will lose access to this cart. This can\'t be undone.';
+  }
+
+  @override
+  String ordersTimesFee(int count, String fee) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count orders',
+      one: '1 order',
+    );
+    return '$_temp0 × ₹$fee';
+  }
+
+  @override
   String get sessionExpired => 'Your login has expired. Please log in again.';
 
   @override

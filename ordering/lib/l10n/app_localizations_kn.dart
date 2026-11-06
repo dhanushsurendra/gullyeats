@@ -1090,6 +1090,34 @@ class AppLocalizationsKn extends AppLocalizations {
   String get qrPosterSubtitle => 'ಇದನ್ನು ಮುದ್ರಿಸಿ ನಿಮ್ಮ ಕಾರ್ಟ್ ಮೇಲೆ ಅಂಟಿಸಿ.';
 
   @override
+  String get couldntLoadMenu => 'ಮೆನು ಲೋಡ್ ಆಗಲಿಲ್ಲ.';
+
+  @override
+  String get couldntLoadOrders => 'ಆರ್ಡರ್‌ಗಳು ಲೋಡ್ ಆಗಲಿಲ್ಲ.';
+
+  @override
+  String get couldntLoadStaff => 'ಸಿಬ್ಬಂದಿ ಪಟ್ಟಿ ಲೋಡ್ ಆಗಲಿಲ್ಲ.';
+
+  @override
+  String get couldntLoadCarts => 'ನಿಮ್ಮ ಕಾರ್ಟ್‌ಗಳು ಲೋಡ್ ಆಗಲಿಲ್ಲ.';
+
+  @override
+  String get couldntLoadPayments => 'ಪಾವತಿಗಳು ಲೋಡ್ ಆಗಲಿಲ್ಲ.';
+
+  @override
+  String get couldntLoadSales => 'ಮಾರಾಟ ಲೋಡ್ ಆಗಲಿಲ್ಲ.';
+
+  @override
+  String staffWillLoseAccess(String name) {
+    return '$name ಅವರಿಗೆ ಈ ಕಾರ್ಟ್‌ನ ಪ್ರವೇಶ ಇರುವುದಿಲ್ಲ. ಇದನ್ನು ರದ್ದುಮಾಡಲು ಸಾಧ್ಯವಿಲ್ಲ.';
+  }
+
+  @override
+  String ordersTimesFee(int count, String fee) {
+    return '$count ಆರ್ಡರ್ × ₹$fee';
+  }
+
+  @override
   String get sessionExpired =>
       'ನಿಮ್ಮ ಲಾಗಿನ್ ಅವಧಿ ಮುಗಿದಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಲಾಗಿನ್ ಮಾಡಿ.';
 

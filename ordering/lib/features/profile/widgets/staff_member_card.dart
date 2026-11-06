@@ -39,7 +39,7 @@ class StaffMemberCard extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(context.l10n.removeStaffQuestion),
         content: Text(
-          "$name will lose access to this cart. This can't be undone.",
+          context.l10n.staffWillLoseAccess(name),
           style: AppTextStyles.body,
         ),
         actions: [
@@ -47,7 +47,7 @@ class StaffMemberCard extends StatelessWidget {
             onPressed: () => Navigator.pop(ctx),
             child: Text(
               context.l10n.cancel.toUpperCase(),
-              style: AppTextStyles.body.copyWith(color: Colors.grey.shade600),
+              style: AppTextStyles.body.copyWith(color: AppColors.grey600),
             ),
           ),
           TextButton(
@@ -58,7 +58,7 @@ class StaffMemberCard extends StatelessWidget {
             child: Text(
               context.l10n.remove.toUpperCase(),
               style: AppTextStyles.body.copyWith(
-                color: Colors.red.shade600,
+                color: AppColors.error,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -71,16 +71,16 @@ class StaffMemberCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade100),
+        border: Border.all(color: AppColors.grey200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -99,38 +99,11 @@ class StaffMemberCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.heading3.copyWith(fontSize: 15),
-                      ),
-                    ),
-                    if (role.isNotEmpty) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          role.toUpperCase(),
-                          style: AppTextStyles.caption.copyWith(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
+                Text(
+                  name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.heading3,
                 ),
                 const SizedBox(height: 4),
                 Row(
@@ -138,13 +111,13 @@ class StaffMemberCard extends StatelessWidget {
                     Icon(
                       Icons.phone_outlined,
                       size: 14,
-                      color: Colors.grey.shade500,
+                      color: AppColors.grey500,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       "+91 $phone",
                       style: AppTextStyles.caption.copyWith(
-                        color: Colors.grey.shade600,
+                        color: AppColors.grey600,
                       ),
                     ),
                   ],
@@ -153,7 +126,7 @@ class StaffMemberCard extends StatelessWidget {
             ),
           ),
           PopupMenuButton<String>(
-            icon: Icon(Icons.more_vert, color: Colors.grey.shade600),
+            icon: Icon(Icons.more_vert, color: AppColors.grey600),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
@@ -182,12 +155,12 @@ class StaffMemberCard extends StatelessWidget {
                     Icon(
                       Icons.delete_outline,
                       size: 18,
-                      color: Colors.red.shade600,
+                      color: AppColors.error,
                     ),
                     const SizedBox(width: 10),
                     Text(
                       context.l10n.remove,
-                      style: TextStyle(color: Colors.red.shade600),
+                      style: TextStyle(color: AppColors.error),
                     ),
                   ],
                 ),
