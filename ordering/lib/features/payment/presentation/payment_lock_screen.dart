@@ -16,6 +16,8 @@ import 'package:ordering/core/widgets/app_footer.dart';
 import 'package:ordering/core/widgets/app_card.dart';
 import 'package:ordering/core/utils/format_price.dart';
 import 'package:ordering/features/cart/widgets/cart_selector.dart';
+import 'package:ordering/core/widgets/info_box.dart';
+import 'package:ordering/core/utils/session.dart';
 
 class PaymentLockScreen extends StatefulWidget {
   final String cartName;
@@ -26,8 +28,13 @@ class PaymentLockScreen extends StatefulWidget {
   final num totalPaid;
   final bool isLoading;
 
+  /// False when paying early from the home banner: the cart still works,
+  /// so the screen can be closed.
+  final bool isLocked;
+
   const PaymentLockScreen({
     super.key,
+    this.isLocked = true,
     this.cartName = '',
     this.cartAddress = '',
     this.ordersCompleted = 0,
@@ -113,7 +120,7 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
           result.payment.isVerified ||
           !result.isLocked) {
         AppSnackBar.show(context, message: context.l10n.paymentReceivedUnlocked);
-        Navigator.pushReplacementNamed(context, AppRoutes.home);
+        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.home, (_) => false);
         return;
       }
 
@@ -198,7 +205,7 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
           message: context.l10n.paymentVerifiedUnlocked,
         );
 
-        Navigator.pushReplacementNamed(context, AppRoutes.home);
+        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.home, (_) => false);
       } else {
         AppSnackBar.show(
           context,
@@ -252,37 +259,56 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
         paymentProvider.isCreatingPayment ||
         paymentProvider.isVerifyingPayment;
 
+    final isStaff = context.watch<AuthProvider>().isStaff;
+
     return BaseScreen(
-      showBackButton: false,
+      showBackButton: !widget.isLocked,
+      onBack: widget.isLocked ? null : () => Navigator.pop(context),
       header: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Image.asset("assets/images/logo_text.png", height: 24),
-          AppGaps.h40,
+          if (widget.isLocked) ...[
+            Image.asset("assets/images/logo_text.png", height: 24),
+            AppGaps.h40,
+          ],
           Text(l10n.platformFeePending, style: AppTextStyles.heading1),
           AppGaps.h4,
           Text(
-            l10n.storeLockedPayRazorpay,
+            widget.isLocked ? l10n.storeLockedPayRazorpay : l10n.payEarlySubtitle,
             style: AppTextStyles.body.copyWith(color: AppColors.grey400),
           ),
           AppGaps.h12,
           const CartSelector(),
         ],
       ),
-      bottomNavigationBar: AppFooter(
-        note: l10n.securePaymentsRazorpay,
-        children: [
-          AppButton(
-            label: busy
-                ? l10n.openingGatewayCaps
-                : widget.amountDue <= 0
-                ? l10n.paymentPendingCaps
-                : l10n.payAndUnlockNow(formatPrice(widget.amountDue)),
-            isLoading: busy,
-            onPressed: widget.amountDue <= 0 || busy ? null : _startPaymentFlow,
-          ),
-        ],
-      ),
+      // Only the owner can pay; staff are told who to ask, and can log out.
+      bottomNavigationBar: isStaff
+          ? AppFooter(
+              children: [
+                InfoBox(lines: [l10n.askOwnerToPay], icon: Icons.person_outline),
+                AppButton(
+                  label: l10n.logOutCaps,
+                  backgroundColor: AppColors.white,
+                  borderColor: AppColors.primary,
+                  textColor: AppColors.primary,
+                  onPressed: () => signOut(context),
+                ),
+              ],
+            )
+          : AppFooter(
+              note: l10n.securePaymentsRazorpay,
+              children: [
+                AppButton(
+                  label: busy
+                      ? l10n.openingGatewayCaps
+                      : widget.amountDue <= 0
+                      ? l10n.paymentPendingCaps
+                      : l10n.payAndUnlockNow(formatPrice(widget.amountDue)),
+                  isLoading: busy,
+                  onPressed: widget.amountDue <= 0 || busy ? null : _startPaymentFlow,
+                ),
+              ],
+            ),
       child: _summaryCard(),
     );
   }

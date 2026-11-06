@@ -1123,6 +1123,22 @@ class AppLocalizationsHi extends AppLocalizations {
   String get externalWallet => 'बाहरी वॉलेट';
 
   @override
+  String feeDueBanner(String amount, String time) {
+    return '₹$amount प्लेटफ़ॉर्म शुल्क बाकी है। कार्ट $time पर लॉक होगी।';
+  }
+
+  @override
+  String get payNowCaps => 'अभी भरें';
+
+  @override
+  String get payEarlySubtitle =>
+      'लॉक होने के बाद भी ऑर्डर लेते रहने के लिए अभी भुगतान करें।';
+
+  @override
+  String get askOwnerToPay =>
+      'कार्ट अनलॉक करने के लिए कार्ट के मालिक से प्लेटफ़ॉर्म शुल्क भरने को कहें।';
+
+  @override
   String get sessionExpired =>
       'आपका लॉगिन खत्म हो गया है। कृपया फिर से लॉगिन करें।';
 

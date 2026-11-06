@@ -514,6 +514,20 @@
     }
   },
   "externalWallet": "External wallet",
+  "feeDueBanner": "₹{amount} platform fee due. The cart locks at {time}.",
+  "@feeDueBanner": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "payNowCaps": "PAY NOW",
+  "payEarlySubtitle": "Pay now to keep taking orders after the lock time.",
+  "askOwnerToPay": "Ask the cart owner to pay the platform fee to unlock the cart.",
   "sessionExpired": "Your login has expired. Please log in again.",
   "checkInternet": "Check your internet connection",
   "requestTimedOut": "Request timed out. Try again",

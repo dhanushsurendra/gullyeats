@@ -2148,6 +2148,30 @@ abstract class AppLocalizations {
   /// **'External wallet'**
   String get externalWallet;
 
+  /// No description provided for @feeDueBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'₹{amount} platform fee due. The cart locks at {time}.'**
+  String feeDueBanner(String amount, String time);
+
+  /// No description provided for @payNowCaps.
+  ///
+  /// In en, this message translates to:
+  /// **'PAY NOW'**
+  String get payNowCaps;
+
+  /// No description provided for @payEarlySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay now to keep taking orders after the lock time.'**
+  String get payEarlySubtitle;
+
+  /// No description provided for @askOwnerToPay.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask the cart owner to pay the platform fee to unlock the cart.'**
+  String get askOwnerToPay;
+
   /// No description provided for @sessionExpired.
   ///
   /// In en, this message translates to:

@@ -1125,6 +1125,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get externalWallet => 'External wallet';
 
   @override
+  String feeDueBanner(String amount, String time) {
+    return '₹$amount platform fee due. The cart locks at $time.';
+  }
+
+  @override
+  String get payNowCaps => 'PAY NOW';
+
+  @override
+  String get payEarlySubtitle =>
+      'Pay now to keep taking orders after the lock time.';
+
+  @override
+  String get askOwnerToPay =>
+      'Ask the cart owner to pay the platform fee to unlock the cart.';
+
+  @override
   String get sessionExpired => 'Your login has expired. Please log in again.';
 
   @override

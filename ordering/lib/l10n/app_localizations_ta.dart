@@ -1138,6 +1138,22 @@ class AppLocalizationsTa extends AppLocalizations {
   String get externalWallet => 'வெளிப்புற வாலெட்';
 
   @override
+  String feeDueBanner(String amount, String time) {
+    return '₹$amount பிளாட்ஃபார்ம் கட்டணம் நிலுவையில் உள்ளது. கார்ட் $time-க்கு பூட்டப்படும்.';
+  }
+
+  @override
+  String get payNowCaps => 'இப்போது செலுத்து';
+
+  @override
+  String get payEarlySubtitle =>
+      'பூட்டும் நேரத்திற்குப் பிறகும் ஆர்டர்களைப் பெற இப்போதே செலுத்தவும்.';
+
+  @override
+  String get askOwnerToPay =>
+      'கார்ட்டைத் திறக்க பிளாட்ஃபார்ம் கட்டணத்தைச் செலுத்துமாறு கார்ட் உரிமையாளரிடம் கேளுங்கள்.';
+
+  @override
   String get sessionExpired =>
       'உங்கள் உள்நுழைவு காலாவதியானது. மீண்டும் உள்நுழையவும்.';
 

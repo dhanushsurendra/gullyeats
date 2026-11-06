@@ -16,6 +16,12 @@ class AuthProvider extends ChangeNotifier {
   Map<String, dynamic>? _user;
   Map<String, dynamic>? get user => _user;
 
+  /// Staff can't pay the platform fee; only the cart owner can. Sessions
+  /// saved before the login reported a role fall back to the STF- ID.
+  bool get isStaff =>
+      _user?['role'] == 'staff' ||
+      (_user?['userId']?.toString() ?? '').startsWith('STF-');
+
   Future<bool> login(String identifier, String pin) async {
     try {
       _isLoading = true;

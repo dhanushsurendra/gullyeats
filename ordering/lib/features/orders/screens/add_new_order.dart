@@ -19,6 +19,8 @@ import 'package:provider/provider.dart';
 import 'package:ordering/l10n/l10n.dart';
 import 'package:ordering/core/widgets/list_message.dart';
 import 'package:ordering/core/utils/format_price.dart';
+import 'package:ordering/core/error/api_exception.dart';
+import 'package:ordering/core/utils/payment_lock.dart';
 
 class AddNewOrder extends StatefulWidget {
   final OrderModel? existingOrder;
@@ -135,6 +137,13 @@ class _AddNewOrderState extends State<AddNewOrder> {
       );
     } catch (e) {
       if (!mounted) return;
+
+      // 403: the server refused the order because the cart is locked for an
+      // unpaid fee. Show the lock screen instead of only an error.
+      if (e is ApiException && e.statusCode == 403) {
+        await checkPaymentLock(context);
+        if (!mounted) return;
+      }
 
       AppSnackBar.show(
         context,

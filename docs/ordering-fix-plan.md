@@ -12,6 +12,8 @@ Every finding is done, one commit per group, not merged or pushed. Decisions the
 - **F30:** the dead code is deleted, in its own commit.
 - **F31:** every vendor screen follows `docs/ui-guidelines.md`, like the onboarding app. Edit Cart now has its parcel-charge field.
 
+**Platform fee (2026-11-06, the user's choices):** still billed day by day; one payment per day. Fixed: carts stopped locking after their first payment (the next bill re-found the paid day); fees count only paid and served orders; staff see the lock (only the owner pays); crash recovery saved an invalid status; the app re-checks the lock on resume, every 10 minutes and when an order is refused. A banner warns while a fee is due and before the 2:00am lock, with Pay now once the day has ended. No AutoPay or prepaid wallet.
+
 Also, outside the plan: `/api/admin/*` now needs an admin login (it was public), and `send-otp`/`verify-otp` refuse staff and admin accounts. Tests: backend `npm test` (31 pass); vendor app `flutter test` (unit tests plus the `test/responsive` harness, 550 pass); onboarding app `flutter test` (377 pass). Still not done: any client can join any cart's socket room.
 
 Behaviour changes to know before deploying: customers can only cancel unpaid orders and can't shrink a paid one; QR orders need the cart open and active; serving needs payment; order prices come from the menu. After deploy, the admin dashboard needs its login cookie to work cross-site (`SameSite=None` in production), and `gullyeats-admin/src/services/api.js` reads `import.meta.env.API_URL` where `.env` defines `VITE_API_URL`.
