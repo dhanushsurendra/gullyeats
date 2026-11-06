@@ -6,6 +6,7 @@ const User = require('../models/User')
 const Cart = require('../models/Cart')
 const Order = require('../models/Order')
 const Payment = require('../models/Payment')
+const { getCartPaymentStatus, createBillPayment } = require('../utils/cartPaymentLock')
 
 const TZ = 'Asia/Kolkata'
 const DAY = 864e5
@@ -1749,4 +1750,46 @@ exports.activity = asyncHandler(async (req, res) => {
     .sort((a, b) => new Date(b.at) - new Date(a.at))
     .slice(0, 12)
   res.json({ success: true, data: items })
+})
+
+/*
+ * Marks a cart's platform fee as paid without Razorpay, e.g. paid in cash to
+ * the GullyEats team, or to unlock a cart urgently. Confirms the cart's
+ * pending payment if there is one; otherwise records the bill that's due as
+ * paid. The cart unlocks on its next lock check.
+ */
+exports.markFeePaid = asyncHandler(async (req, res) => {
+  const { cartId } = req.params
+  if (!mongoose.isValidObjectId(cartId)) {
+    return res.status(400).json({ success: false, message: 'Invalid cartId' })
+  }
+
+  const cart = await Cart.findById(cartId).lean()
+  if (!cart) {
+    return res.status(404).json({ success: false, message: 'Cart not found' })
+  }
+
+  let payment = await Payment.findOne({ cartId, status: 'PENDING' })
+  if (payment) {
+    payment.status = 'VERIFIED'
+    payment.verificationSource = 'MANUAL'
+    payment.verifiedAt = new Date()
+    await payment.save()
+  } else {
+    const status = await getCartPaymentStatus(cartId)
+    if (!status.billingDate || !status.canPay || !(status.totalPending > 0)) {
+      return res
+        .status(400)
+        .json({ success: false, message: 'No platform fee is due for this cart' })
+    }
+    payment = await createBillPayment(cart, status.billingDate, {
+      status: 'VERIFIED',
+      verificationSource: 'MANUAL',
+    })
+  }
+
+  res.json({
+    success: true,
+    data: { id: String(payment._id), amount: payment.amount, billingDate: payment.billingDate },
+  })
 })

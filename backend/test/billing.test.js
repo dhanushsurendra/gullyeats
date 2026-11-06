@@ -44,7 +44,7 @@ const order = (n, status = 'SERVED') => {
   const at = new Date(daysAgo(n).getTime() + 10 * 3600e3)
   return {
     cartId, orderNumber: ++orderNumber, status, platformFee: 2, subtotal: 60,
-    totalPrice: 62, orderItems: [{ name: 'Dosa', price: 60, quantity: 1 }],
+    totalPrice: 62, orderItems: [{ menuItemId: new mongoose.Types.ObjectId(), name: 'Dosa', price: 60, quantity: 1 }],
     orderDate: at, createdAt: at,
   }
 }
@@ -150,4 +150,124 @@ test('only an admin can reject a payment', async () => {
   assert.equal(r.status, 403)
   r = await call(pay.rejectPayment, { params: { paymentId: String(p._id) }, user: { _id: new mongoose.Types.ObjectId(), role: 'admin' } })
   assert.equal(r.status, 200)
+})
+
+// ---- credits, re-billing and manual payments ----
+
+const orderController = require('../controllers/orderController')
+const admin = require('../controllers/adminController')
+
+// A verified bill for `n` days ago that charged [orders].
+const billFor = (n, orders) =>
+  Payment.create({ ...paidDay(n), orderIds: orders.map((o) => o._id), amount: 2 * orders.length })
+
+test('a billed order cancelled later is credited on the next bill, once', async () => {
+  const billed = order(3, 'PAID')
+  await Order.collection.insertMany([billed, order(2), order(2)])
+  await billFor(3, [billed])
+  await Order.collection.updateOne({ _id: billed._id }, { $set: { status: 'CANCELLED' } })
+
+  let status = await getCartPaymentStatus(cartId)
+  assert.equal(status.billingDate.getTime(), daysAgo(2).getTime())
+  assert.equal(status.totalPending, 2) // 2 orders x ₹2, minus the ₹2 credit
+
+  // Paying that bill uses the credit up.
+  const owner = await Cart.findById(cartId).lean()
+  const { createBillPayment } = require('../utils/cartPaymentLock')
+  const payment = await createBillPayment(owner, daysAgo(2), { status: 'PENDING' })
+  payment.status = 'VERIFIED'
+  await payment.save()
+  assert.equal((await Order.findById(billed._id)).feeCredited, true)
+
+  await Order.collection.insertOne(order(1))
+  status = await getCartPaymentStatus(cartId)
+  assert.equal(status.totalPending, 2) // no second credit
+})
+
+test('a credited order restored later is charged again', async () => {
+  const restored = { ...order(3, 'PAID'), feeCredited: true }
+  await Order.collection.insertMany([restored, order(2)])
+  await billFor(3, [])
+  const status = await getCartPaymentStatus(cartId)
+  assert.equal(status.totalPending, 4)
+})
+
+test('a day that credits fully cover is settled at ₹0, and billing moves on', async () => {
+  const billed = order(4, 'PAID')
+  await Order.collection.insertMany([billed, order(3), order(2)])
+  await billFor(4, [billed])
+  await Order.collection.updateOne({ _id: billed._id }, { $set: { status: 'CANCELLED' } })
+
+  const status = await getCartPaymentStatus(cartId)
+  const settled = await Payment.findOne({ billingDate: daysAgo(3) }).lean()
+  assert.equal(settled.verificationSource, 'CREDIT')
+  assert.equal(settled.amount, 0)
+  assert.equal(status.billingDate.getTime(), daysAgo(2).getTime())
+  assert.equal(status.totalPending, 2)
+})
+
+test('marking an order unpaid keeps its payment time when its day is billed', async () => {
+  const paidAt = minutesInto(2, 600)
+  const billed = { ...order(2, 'PAID'), paidAt }
+  const notYet = { ...order(1, 'PAID'), paidAt: minutesInto(1, 600) }
+  await Order.collection.insertMany([billed, notYet])
+  await billFor(2, [billed])
+  const asOwner = { _id: ownerId, role: 'vendor' }
+
+  const r0 = await call(orderController.markOrderUnpaid, { params: { orderId: String(billed._id) }, user: asOwner })
+  assert.equal(r0.status, 200)
+  const r1 = await call(orderController.markOrderUnpaid, { params: { orderId: String(notYet._id) }, user: asOwner })
+  assert.equal(r1.status, 200)
+
+  assert.equal((await Order.findById(billed._id)).paidAt.getTime(), paidAt.getTime())
+  assert.equal((await Order.findById(notYet._id)).paidAt, null)
+})
+
+test('a payment Razorpay already captured unlocks instead of reopening checkout', async () => {
+  await Order.collection.insertOne(order(2))
+  await Payment.create({
+    ...paidDay(2), status: 'PENDING', amount: 2, razorpayOrderId: 'order_abc',
+  })
+  const original = pay.razorpay.orders.fetchPayments
+  pay.razorpay.orders.fetchPayments = async () => ({
+    items: [{ id: 'pay_1', status: 'captured', amount: 200, currency: 'INR' }],
+  })
+  try {
+    const r = await call(pay.createRazorpayOrder, {
+      params: { cartId: String(cartId) },
+      user: { _id: ownerId, role: 'vendor' },
+    })
+    assert.equal(r.status, 200)
+    assert.equal(r.body.isLocked, false)
+    assert.equal(r.body.checkout, null)
+    const p = await Payment.findOne({ razorpayOrderId: 'order_abc' }).lean()
+    assert.equal(p.status, 'VERIFIED')
+    assert.equal(p.verificationSource, 'RAZORPAY_RECOVERY')
+  } finally {
+    pay.razorpay.orders.fetchPayments = original
+  }
+})
+
+test('an admin can mark the due fee paid, which unlocks the cart', async () => {
+  await Order.collection.insertMany([order(2), order(2)])
+  assert.equal((await getCartPaymentStatus(cartId)).isLocked, true)
+
+  const r = await call(admin.markFeePaid, {
+    params: { cartId: String(cartId) },
+    user: { _id: new mongoose.Types.ObjectId(), role: 'admin' },
+  })
+  assert.equal(r.status, 200)
+  assert.equal(r.body.data.amount, 4)
+  const p = await Payment.findById(r.body.data.id).lean()
+  assert.equal(p.verificationSource, 'MANUAL')
+  assert.equal((await getCartPaymentStatus(cartId)).isLocked, false)
+})
+
+test('an admin gets a clear error when nothing is due', async () => {
+  await Order.collection.insertOne(order(0)) // today: not payable yet
+  const r = await call(admin.markFeePaid, {
+    params: { cartId: String(cartId) },
+    user: { _id: new mongoose.Types.ObjectId(), role: 'admin' },
+  })
+  assert.equal(r.status, 400)
 })

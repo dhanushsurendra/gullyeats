@@ -86,7 +86,8 @@ const PaymentSchema = new mongoose.Schema(
     verificationSource: {
       type: String,
       // RAZORPAY_RECOVERY: found captured while reconciling after a crash.
-      enum: ['CHECKOUT_CALLBACK', 'WEBHOOK', 'RAZORPAY_RECOVERY', 'MANUAL', null],
+      // MANUAL: an admin marked it paid. CREDIT: credits covered the bill.
+      enum: ['CHECKOUT_CALLBACK', 'WEBHOOK', 'RAZORPAY_RECOVERY', 'MANUAL', 'CREDIT', null],
       default: null,
     },
 
@@ -119,6 +120,15 @@ const PaymentSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+
+    /*
+     * What this bill charged (orders first paid on billingDate), credited
+     * (charged earlier, cancelled since) and charged again (credited, then
+     * restored). Applied to the orders when the payment is verified.
+     */
+    orderIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Order' }],
+    creditOrderIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Order' }],
+    rechargeOrderIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Order' }],
 
     // When this payment record was created
     createdAt: {
@@ -168,6 +178,26 @@ PaymentSchema.index({
 PaymentSchema.index({
   cartId: 1,
   billingDate: -1,
+})
+
+/*
+ * However a payment becomes VERIFIED (checkout callback, webhook, recovery,
+ * admin, credits), mark its credited orders so they aren't credited again,
+ * and unmark recharged ones.
+ */
+PaymentSchema.pre('save', function () {
+  this.$locals.justVerified = this.isModified('status') && this.status === 'VERIFIED'
+})
+
+PaymentSchema.post('save', async function (payment) {
+  if (!payment.$locals.justVerified) return
+  const Order = mongoose.model('Order')
+  if (payment.creditOrderIds?.length) {
+    await Order.updateMany({ _id: { $in: payment.creditOrderIds } }, { $set: { feeCredited: true } })
+  }
+  if (payment.rechargeOrderIds?.length) {
+    await Order.updateMany({ _id: { $in: payment.rechargeOrderIds } }, { $set: { feeCredited: false } })
+  }
 })
 
 module.exports = mongoose.model('Payment', PaymentSchema)

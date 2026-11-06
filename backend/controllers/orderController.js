@@ -6,6 +6,19 @@ const MenuItem = require('../models/Menu')
 const TruthLine = require('../models/TruthLine')
 const getNextOrderNumber = require('../utils/getNextOrderNumber')
 const { canManageCart, findManagedCart, findManagedOrder } = require('../utils/cartAccess')
+const Payment = require('../models/Payment')
+const { getISTMidnight } = require('../utils/cartPaymentLock')
+
+/** Whether a bill already covers the day [order] was paid on. */
+async function isPaidDayBilled(order) {
+  return Boolean(
+    await Payment.exists({
+      cartId: order.cartId,
+      status: { $in: ['VERIFIED', 'PENDING'] },
+      billingDate: getISTMidnight(order.paidAt),
+    }),
+  )
+}
 
 // GullyEats' fee per order, charged on top of the items.
 const PLATFORM_FEE = 2
@@ -361,7 +374,10 @@ exports.markOrderUnpaid = asyncHandler(async (req, res) => {
   }
 
   order.status = 'PENDING'
-  order.paidAt = null
+  // If the day this order was paid is already billed, its fee was charged:
+  // keep the payment time, so paying it again doesn't charge it a second
+  // time on a later day.
+  if (!(order.paidAt && (await isPaidDayBilled(order)))) order.paidAt = null
   order.paidAmount = 0
   order.paymentAdjustment = null
   await order.save()

@@ -113,6 +113,13 @@ const OrderSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+
+    // Set once a platform-fee bill has given this cancelled order's fee back,
+    // so it's credited only once (see utils/cartPaymentLock.js).
+    feeCredited: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true },
 )

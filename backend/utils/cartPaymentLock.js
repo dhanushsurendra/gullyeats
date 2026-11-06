@@ -1,3 +1,4 @@
+const crypto = require('crypto')
 const mongoose = require('mongoose')
 const Payment = require('../models/Payment')
 const Order = require('../models/Order')
@@ -108,7 +109,15 @@ function getNextISTMidnight(billingDate) {
 }
 
 /**
- * Calculate fees for exactly ONE billing day.
+ * The bill for ONE billing day: the fee of every order first paid that day,
+ * adjusted for earlier bills.
+ *
+ * - Credit: an order an earlier bill charged, cancelled since, gives its fee
+ *   back (once: it's marked feeCredited when this bill is verified).
+ * - Recharge: a credited order whose cancellation was undone is charged
+ *   again (and unmarked when this bill is verified).
+ *
+ * Credits never take the bill below zero; any left over wait for the next.
  */
 async function getBillingFee(cartId, billingDate) {
   if (!cartId) {
@@ -126,22 +135,72 @@ async function getBillingFee(cartId, billingDate) {
   }
 
   const billingEnd = getNextISTMidnight(start)
+  const cart = new mongoose.Types.ObjectId(String(cartId))
+  const fee = (order) => Number(order.platformFee || 0)
 
-  const orders = await Order.aggregate([
-    ...billableOrders(cartId),
-    { $match: { billedAt: { $gte: start, $lt: billingEnd } } },
-    { $project: { platformFee: 1 } },
+  const [orders, billedIds, recharges] = await Promise.all([
+    Order.aggregate([
+      ...billableOrders(cartId),
+      { $match: { billedAt: { $gte: start, $lt: billingEnd } } },
+      { $project: { platformFee: 1 } },
+    ]),
+    Payment.distinct('orderIds', { cartId: cart, status: 'VERIFIED' }),
+    Order.find({ cartId: cart, status: { $ne: 'CANCELLED' }, feeCredited: true })
+      .select('platformFee')
+      .lean(),
   ])
+  const cancelledSinceBilled = billedIds.length
+    ? await Order.find({
+        _id: { $in: billedIds },
+        status: 'CANCELLED',
+        feeCredited: { $ne: true },
+      })
+        .select('platformFee')
+        .sort({ updatedAt: 1 })
+        .lean()
+    : []
 
-  const totalPlatformFee = orders.reduce(
-    (total, order) => total + Number(order.platformFee || 0),
-    0,
-  )
+  const charged = orders.reduce((t, o) => t + fee(o), 0) + recharges.reduce((t, o) => t + fee(o), 0)
+  const credits = []
+  let creditTotal = 0
+  for (const order of cancelledSinceBilled) {
+    if (creditTotal + fee(order) > charged) break
+    credits.push(order)
+    creditTotal += fee(order)
+  }
 
   return {
     totalOrders: orders.length,
-    totalPlatformFee,
+    totalPlatformFee: charged - creditTotal,
+    orderIds: orders.map((o) => o._id),
+    creditOrderIds: credits.map((o) => o._id),
+    rechargeOrderIds: recharges.map((o) => o._id),
   }
+}
+
+/**
+ * Creates the Payment for [cart]'s bill on [billingDate] with [status]
+ * (PENDING to pay through Razorpay; VERIFIED for an admin's manual payment
+ * or a bill credits fully cover). The bill records which orders it charged,
+ * credited and recharged.
+ */
+async function createBillPayment(cart, billingDate, { status, verificationSource = null }) {
+  const bill = await getBillingFee(cart._id, billingDate)
+  return Payment.create({
+    cartId: cart._id,
+    userId: cart.userId,
+    cartName: cart.cartName,
+    totalOrders: bill.totalOrders,
+    amount: bill.totalPlatformFee,
+    status,
+    verificationSource,
+    verifiedAt: status === 'VERIFIED' ? new Date() : null,
+    paymentReference: `GUL-${crypto.randomUUID()}`,
+    billingDate,
+    orderIds: bill.orderIds,
+    creditOrderIds: bill.creditOrderIds,
+    rechargeOrderIds: bill.rechargeOrderIds,
+  })
 }
 
 /**
@@ -252,8 +311,23 @@ async function getCartPaymentStatus(cartId) {
    * ---------------------------------------------------------
    * 2. DETERMINE NEXT BILLING DATE
    * ---------------------------------------------------------
+   * A finished day that credits bring to ₹0 is settled here (there is
+   * nothing to pay), then the next day is looked at.
    */
-  const billingDate = await getBillingDate(cartId)
+  let billingDate = await getBillingDate(cartId)
+  let bill = billingDate ? await getBillingFee(cartId, billingDate) : null
+  for (
+    let settled = 0;
+    bill && bill.totalPlatformFee <= 0 && new Date() >= getNextISTMidnight(billingDate) && settled < 30;
+    settled++
+  ) {
+    await createBillPayment(cart, billingDate, {
+      status: 'VERIFIED',
+      verificationSource: 'CREDIT',
+    })
+    billingDate = await getBillingDate(cartId)
+    bill = billingDate ? await getBillingFee(cartId, billingDate) : null
+  }
 
   /**
    * No unpaid orders.
@@ -274,10 +348,7 @@ async function getCartPaymentStatus(cartId) {
    * 3. CALCULATE FEE FOR THIS EXACT DAY
    * ---------------------------------------------------------
    */
-  const { totalOrders, totalPlatformFee } = await getBillingFee(
-    cartId,
-    billingDate,
-  )
+  const { totalOrders, totalPlatformFee } = bill
 
   /**
    * This should normally not happen because
@@ -286,7 +357,7 @@ async function getCartPaymentStatus(cartId) {
    * But if all orders on that day have zero fee,
    * don't lock the cart.
    */
-  if (totalOrders === 0 || totalPlatformFee <= 0) {
+  if (totalPlatformFee <= 0) {
     return {
       isLocked: false,
       billingDate,
@@ -369,6 +440,7 @@ async function getCartPaymentStatus(cartId) {
 }
 
 module.exports = {
+  createBillPayment,
   getCartPaymentStatus,
   getBillingDate,
   getBillingFee,

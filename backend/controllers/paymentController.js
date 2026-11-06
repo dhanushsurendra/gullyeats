@@ -4,6 +4,7 @@ const asyncHandler = require('../utils/asyncHandler')
 const Payment = require('../models/Payment')
 const { findManagedCart } = require('../utils/cartAccess')
 const {
+  createBillPayment,
   getCartPaymentStatus,
   getBillingDate,
   getBillingFee,
@@ -28,25 +29,10 @@ const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 })
+// Exposed so tests can stand in for Razorpay's API.
+exports.razorpay = razorpay
 
 const PAYMENT_MERCHANT_NAME = process.env.PAYMENT_MERCHANT_NAME || 'GullyEats'
-
-/*
- * Get the current IST date.
- *
- * We don't actually need to change the Date object to IST.
- * We only need the correct calendar date.
- */
-/*
- * Generate a unique internal payment reference.
- * Used as the Razorpay order `receipt`.
- *
- * Example:
- * GUL-8e4c8f...
- */
-function generatePaymentReference() {
-  return `GUL-${crypto.randomUUID()}`
-}
 
 function getAuthenticatedUserId(req) {
   return req.user?._id
@@ -316,8 +302,38 @@ async function claimRazorpayOrderCreation(paymentId) {
  *   2. Server crash after Razorpay creation -> recover by receipt.
  *   3. Concurrent requests -> only one request creates the order.
  */
+/*
+ * If Razorpay already captured this order's payment (the app was closed
+ * before it could report back, and no webhook arrived), marks the payment
+ * VERIFIED. Otherwise the vendor would be shown checkout again for a bill
+ * they had paid. A Razorpay outage here doesn't block reopening checkout.
+ */
+async function markVerifiedIfAlreadyPaid(payment) {
+  try {
+    const expectedAmountPaise = Math.round(Number(payment.amount) * 100)
+    const paymentsResponse = await razorpay.orders.fetchPayments(payment.razorpayOrderId)
+    const captured = paymentsResponse?.items?.find(
+      (item) =>
+        item.status === 'captured' &&
+        Number(item.amount) === expectedAmountPaise &&
+        item.currency === 'INR',
+    )
+    if (captured && payment.status === 'PENDING') {
+      payment.status = 'VERIFIED'
+      payment.razorpayPaymentId = captured.id
+      payment.verificationSource = 'RAZORPAY_RECOVERY'
+      payment.verifiedAt = new Date()
+      await payment.save()
+    }
+  } catch (error) {
+    console.error('Could not check Razorpay for an existing payment:', error)
+  }
+  return payment
+}
+
 async function ensureRazorpayOrder(payment) {
   if (isRealRazorpayOrderId(payment.razorpayOrderId)) {
+    await markVerifiedIfAlreadyPaid(payment)
     return {
       payment,
       razorpayOrderId: payment.razorpayOrderId,
@@ -724,22 +740,12 @@ exports.createRazorpayOrder = asyncHandler(async (req, res) => {
    * CALCULATE FEE FOR THIS EXACT BILLING DATE
    * ---------------------------------------------------------
    */
-  const {
-    totalOrders,
-    totalPlatformFee,
-  } = await getBillingFee(
-    cartId,
-    billingDate,
-  )
+  // The bill, with any credits from cancelled orders taken off.
+  const { totalPlatformFee } = await getBillingFee(cartId, billingDate)
 
-  if (
-    totalOrders === 0 ||
-    totalPlatformFee <= 0
-  ) {
+  if (totalPlatformFee <= 0) {
     res.status(400)
-    throw new Error(
-      'There is no pending platform fee',
-    )
+    throw new Error('There is no pending platform fee')
   }
 
   /*
@@ -761,17 +767,6 @@ exports.createRazorpayOrder = asyncHandler(async (req, res) => {
     throw new Error("Today's platform fee can be paid after midnight")
   }
 
-  const amount = Number(totalPlatformFee)
-  const paymentReference =
-    generatePaymentReference()
-
-  if (!Number.isFinite(amount) || amount <= 0) {
-    res.status(400)
-    throw new Error(
-      'Invalid platform fee amount',
-    )
-  }
-
   let payment
 
   try {
@@ -782,16 +777,7 @@ exports.createRazorpayOrder = asyncHandler(async (req, res) => {
      * If Thursday's bill is paid on Friday,
      * billingDate remains Thursday.
      */
-    payment = await Payment.create({
-      cartId: cart._id,
-      userId: cart.userId,
-      cartName: cart.cartName,
-      totalOrders,
-      amount,
-      status: 'PENDING',
-      paymentReference,
-      billingDate,
-    })
+    payment = await createBillPayment(cart, billingDate, { status: 'PENDING' })
   } catch (error) {
     /*
      * Concurrent requests can calculate the same
