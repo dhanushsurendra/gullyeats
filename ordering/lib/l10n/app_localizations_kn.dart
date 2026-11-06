@@ -1087,6 +1087,9 @@ class AppLocalizationsKn extends AppLocalizations {
   String get current => 'ಪ್ರಸ್ತುತ';
 
   @override
+  String get qrPosterSubtitle => 'ಇದನ್ನು ಮುದ್ರಿಸಿ ನಿಮ್ಮ ಕಾರ್ಟ್ ಮೇಲೆ ಅಂಟಿಸಿ.';
+
+  @override
   String get sessionExpired =>
       'ನಿಮ್ಮ ಲಾಗಿನ್ ಅವಧಿ ಮುಗಿದಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಲಾಗಿನ್ ಮಾಡಿ.';
 

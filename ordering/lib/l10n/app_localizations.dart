@@ -2082,6 +2082,12 @@ abstract class AppLocalizations {
   /// **'Current'**
   String get current;
 
+  /// No description provided for @qrPosterSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Print and paste this on your cart.'**
+  String get qrPosterSubtitle;
+
   /// No description provided for @sessionExpired.
   ///
   /// In en, this message translates to:

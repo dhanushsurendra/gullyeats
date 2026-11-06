@@ -66,6 +66,10 @@ class AppInput extends StatelessWidget {
             hintStyle: AppTextStyles.body.copyWith(
               color: AppColors.grey400,
             ),
+            prefixIconConstraints: const BoxConstraints(
+              minWidth: 0,
+              minHeight: 0,
+            ),
             prefixIcon: prefix,
             suffixIcon: suffix,
             filled: true,

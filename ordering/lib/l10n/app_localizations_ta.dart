@@ -1099,6 +1099,9 @@ class AppLocalizationsTa extends AppLocalizations {
   String get current => 'தற்போதைய';
 
   @override
+  String get qrPosterSubtitle => 'இதை அச்சிட்டு உங்கள் கார்ட்டில் ஒட்டவும்.';
+
+  @override
   String get sessionExpired =>
       'உங்கள் உள்நுழைவு காலாவதியானது. மீண்டும் உள்நுழையவும்.';
 

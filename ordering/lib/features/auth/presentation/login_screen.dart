@@ -11,6 +11,8 @@ import 'package:ordering/features/auth/providers/auth_provider.dart';
 import 'package:ordering/features/cart/presentation/switch_cart_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:ordering/l10n/l10n.dart';
+import 'package:ordering/core/widgets/base_screen.dart';
+import 'package:ordering/core/theme/app_padding.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -89,28 +91,22 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+  void _showSupport() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: AppPadding.screen,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              AppGaps.h40,
-              Image.asset("assets/images/logo_text.png", height: 24),
-              AppGaps.h40,
-              Text(context.l10n.welcomeBack, style: AppTextStyles.heading1),
-              AppGaps.h8,
+              Text(context.l10n.support, style: AppTextStyles.heading2),
+              AppGaps.h16,
               Text(
-                context.l10n.loginSubtitle,
-                style: AppTextStyles.body.copyWith(color: Colors.grey[600]),
+                context.l10n.callSupport,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.body,
               ),
-              AppGaps.h16,
-              _buildLoginForm(),
-              AppGaps.h16,
-              _buildFooter(),
             ],
           ),
         ),
@@ -118,43 +114,25 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildLoginForm() {
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final provider = Provider.of<AuthProvider>(context);
 
-    void openBottomSheet() {
-      showModalBottomSheet(
-        context: context,
-        builder: (context) {
-          return Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  context.l10n.support,
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 16),
-                Text(
-                  context.l10n.callSupport,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16),
-                ),
-                SizedBox(height: 20),
-              ],
-            ),
-          );
-        },
-      );
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.grey.shade200),
+    return BaseScreen(
+      showBackButton: false,
+      header: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Image.asset("assets/images/logo_text.png", height: 24),
+          AppGaps.h40,
+          Text(l10n.welcomeBack, style: AppTextStyles.heading1),
+          AppGaps.h4,
+          Text(
+            l10n.loginSubtitle,
+            style: AppTextStyles.body.copyWith(color: AppColors.grey400),
+          ),
+        ],
       ),
       child: Form(
         key: _formKey,
@@ -163,35 +141,25 @@ class _LoginScreenState extends State<LoginScreen> {
           children: [
             AppInput(
               controller: _vendorIdController,
-              label: context.l10n.phoneOrVendorId,
-              hint: context.l10n.loginHint,
+              label: l10n.phoneOrVendorId,
+              hint: l10n.loginHint,
               keyboardType: TextInputType.text,
               prefix: const Padding(
                 padding: EdgeInsets.only(left: 12, right: 8),
-                child: Icon(Icons.person_outline, color: Colors.grey, size: 22),
+                child: Icon(Icons.person_outline, color: AppColors.grey400, size: 22),
               ),
+              hasError: _vendorIdError != null,
+              errorText: _vendorIdError,
               onChanged: (v) {
                 if (_vendorIdError != null) {
                   setState(() => _vendorIdError = null);
                 }
               },
             ),
-            if (_vendorIdError != null) ...[
-              AppGaps.h8,
-              Text(
-                _vendorIdError!,
-                style: AppTextStyles.body.copyWith(
-                  color: Colors.red,
-                  fontSize: 13,
-                ),
-              ),
-            ],
-
-            AppGaps.h24,
-
+            AppGaps.h16,
             AppInput(
               controller: _pinController,
-              label: context.l10n.fourDigitPin,
+              label: l10n.fourDigitPin,
               hint: "• • • •",
               obscureText: _obscurePin,
               keyboardType: TextInputType.number,
@@ -201,114 +169,66 @@ class _LoginScreenState extends State<LoginScreen> {
               ],
               prefix: const Padding(
                 padding: EdgeInsets.only(left: 12, right: 8),
-                child: Icon(Icons.lock_outline, color: Colors.grey, size: 22),
+                child: Icon(Icons.lock_outline, color: AppColors.grey400, size: 22),
               ),
               suffix: IconButton(
                 icon: Icon(
                   _obscurePin
                       ? Icons.visibility_outlined
                       : Icons.visibility_off_outlined,
-                  color: Colors.grey,
+                  color: AppColors.grey400,
                 ),
                 onPressed: () => setState(() => _obscurePin = !_obscurePin),
               ),
+              hasError: _pinError != null,
+              errorText: _pinError,
               onChanged: (v) {
                 if (_pinError != null) setState(() => _pinError = null);
               },
             ),
-            if (_pinError != null) ...[
-              AppGaps.h8,
-              Text(
-                _pinError!,
-                style: AppTextStyles.body.copyWith(
-                  color: Colors.red,
-                  fontSize: 13,
-                ),
-              ),
-            ],
-            AppGaps.h12,
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                SizedBox(),
-                GestureDetector(
-                  onTap: () {
-                    openBottomSheet();
-                  },
-                  child: Text(
-                    context.l10n.forgotPin,
-                    style: TextStyle(
-                      color: AppColors.primary,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            AppGaps.h12,
-            AppButton(
-              label: context.l10n.login,
-              onPressed: () => _handleLogin(),
-              isLoading: provider.isLoading,
-              width: double.infinity,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFooter() {
-    void openBottomSheet() {
-      showModalBottomSheet(
-        context: context,
-        builder: (context) {
-          return Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  context.l10n.support,
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 16),
-                Text(
-                  context.l10n.callSupport,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16),
-                ),
-                SizedBox(height: 20),
-              ],
-            ),
-          );
-        },
-      );
-    }
-
-    return Center(
-      child: RichText(
-        text: TextSpan(
-          text: context.l10n.newVendor,
-          style: AppTextStyles.body.copyWith(color: Colors.grey),
-          children: [
-            WidgetSpan(
-              alignment: PlaceholderAlignment.middle,
-              child: InkWell(
-                onTap: () {
-                  openBottomSheet();
-                },
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: _showSupport,
                 child: Text(
-                  context.l10n.contactSupport,
-                  style: AppTextStyles.body.copyWith(
+                  l10n.forgotPin,
+                  style: AppTextStyles.caption.copyWith(
                     color: AppColors.primary,
-                    decoration: TextDecoration.underline,
-                    decorationColor: AppColors.primary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
+              ),
+            ),
+            AppGaps.h8,
+            // Right after typing, so under the fields rather than in a footer.
+            AppButton(
+              label: l10n.login.toUpperCase(),
+              onPressed: () => _handleLogin(),
+              isLoading: provider.isLoading,
+            ),
+            AppGaps.h24,
+            Center(
+              child: Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Text(
+                    l10n.newVendor,
+                    style: AppTextStyles.body.copyWith(color: AppColors.grey400),
+                  ),
+                  InkWell(
+                    onTap: _showSupport,
+                    child: Text(
+                      l10n.contactSupport,
+                      style: AppTextStyles.body.copyWith(
+                        color: AppColors.primary,
+                        decoration: TextDecoration.underline,
+                        decorationColor: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

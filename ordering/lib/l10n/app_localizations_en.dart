@@ -1080,6 +1080,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get current => 'Current';
 
   @override
+  String get qrPosterSubtitle => 'Print and paste this on your cart.';
+
+  @override
   String get sessionExpired => 'Your login has expired. Please log in again.';
 
   @override

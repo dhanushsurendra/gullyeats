@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:ordering/core/widgets/app_button.dart';
 import 'package:ordering/features/cart/widgets/location_picker.dart';
@@ -13,7 +14,6 @@ import 'package:ordering/core/theme/app_padding.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
 import 'package:ordering/core/utils/build_address.dart';
 import 'package:ordering/core/widgets/app_card.dart';
-import 'package:ordering/core/widgets/app_header.dart';
 import 'package:ordering/core/widgets/app_input.dart';
 import 'package:ordering/core/widgets/app_snack_bar.dart';
 import 'package:ordering/features/auth/providers/auth_provider.dart';
@@ -21,6 +21,9 @@ import 'package:ordering/features/cart/models/cart_model.dart';
 import 'package:ordering/features/cart/providers/cart_provider.dart';
 import 'package:ordering/features/cart/widgets/cart_photo_field.dart';
 import 'package:ordering/l10n/l10n.dart';
+import 'package:ordering/core/widgets/base_screen.dart';
+import 'package:ordering/core/widgets/app_footer.dart';
+import 'package:ordering/core/utils/format_price.dart';
 
 class EditCartScreen extends StatefulWidget {
   final CartModel cart;
@@ -67,7 +70,7 @@ class _EditCartScreenState extends State<EditCartScreen> {
       ..addListener(_markDirty);
 
     _parcelController = TextEditingController(
-      text: widget.cart.parcelCharge.toString(),
+      text: formatPrice(widget.cart.parcelCharge),
     )..addListener(_markDirty);
 
     _selectedCity = widget.cart.cartCity;
@@ -208,34 +211,29 @@ class _EditCartScreenState extends State<EditCartScreen> {
         if (didPop) return;
         if (await _confirmDiscard() && mounted) Navigator.pop(context);
       },
-      child: Scaffold(
-        appBar: AppHeader(title: context.l10n.editCartDetails, showBack: true),
-        bottomNavigationBar: Container(
-          color: AppColors.white,
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-          child: SizedBox(
-            height: 56,
-            child: AppButton(
+      child: BaseScreen(
+        title: context.l10n.editCartDetails,
+        // maybePop, so unsaved changes still ask before leaving.
+        onBack: () => Navigator.maybePop(context),
+        bottomNavigationBar: AppFooter(
+          children: [
+            AppButton(
               label: context.l10n.saveChangesCaps,
               onPressed: _isSaving ? null : _save,
               isLoading: _isSaving,
             ),
-          ),
+          ],
         ),
-        body: SingleChildScrollView(
-          padding: AppPadding.screen,
-          child: Column(
-            children: [
-              _photoCard(),
-              AppGaps.h16,
-              _basicInfoCard(),
-              AppGaps.h16,
-              _locationCard(),
-              // AppGaps.h16,
-              _statusCard(),
-              AppGaps.h32,
-            ],
-          ),
+        child: Column(
+          children: [
+            _photoCard(),
+            AppGaps.h16,
+            _basicInfoCard(),
+            AppGaps.h16,
+            _locationCard(),
+            AppGaps.h16,
+            _statusCard(),
+          ],
         ),
       ),
     );
@@ -247,11 +245,7 @@ class _EditCartScreenState extends State<EditCartScreen> {
       decoration: BoxDecoration(
         color: AppColors.grey100,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: _selectedCity != null
-              ? AppColors.primary.withValues(alpha: 0.3)
-              : Colors.transparent,
-        ),
+        border: Border.all(color: AppColors.grey200),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
@@ -269,7 +263,7 @@ class _EditCartScreenState extends State<EditCartScreen> {
               value: city,
               child: Text(
                 city,
-                style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600),
+                style: AppTextStyles.body.copyWith(color: AppColors.black),
               ),
             );
           }).toList(),
@@ -336,6 +330,18 @@ class _EditCartScreenState extends State<EditCartScreen> {
                 false, // Address is derived from GPS location; vendor can't edit it directly.
           ),
           AppGaps.h16,
+          AppInput(
+            controller: _parcelController,
+            label: context.l10n.parcelCharge,
+            hint: "0",
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            prefix: Padding(
+              padding: const EdgeInsets.only(left: 16, right: 8),
+              child: Text("₹", style: AppTextStyles.heading3),
+            ),
+          ),
+          AppGaps.h16,
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(12),
@@ -347,11 +353,20 @@ class _EditCartScreenState extends State<EditCartScreen> {
               children: [
                 const Icon(Icons.qr_code_2_rounded, color: AppColors.primary),
                 AppGaps.w8,
-                Expanded(child: Text(context.l10n.cartId, style: AppTextStyles.caption)),
-                Text(
-                  widget.cart.cartId,
-                  style: AppTextStyles.body.copyWith(
-                    fontWeight: FontWeight.w600,
+                // Wrap, so a long ID drops below the label instead of overflowing.
+                Expanded(
+                  child: Wrap(
+                    spacing: 8,
+                    alignment: WrapAlignment.spaceBetween,
+                    children: [
+                      Text(context.l10n.cartId, style: AppTextStyles.caption),
+                      Text(
+                        widget.cart.cartId,
+                        style: AppTextStyles.body.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -398,11 +413,11 @@ class _EditCartScreenState extends State<EditCartScreen> {
             contentPadding: EdgeInsets.zero,
             title: Text(
               context.l10n.cartActive,
-              style: TextStyle(fontWeight: FontWeight.w500),
+              style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w500),
             ),
             subtitle: Text(
               context.l10n.visibleToCustomers,
-              style: TextStyle(fontSize: 13),
+              style: AppTextStyles.caption,
             ),
             value: _isActive,
             activeTrackColor: AppColors.primary,
@@ -423,11 +438,11 @@ class _EditCartScreenState extends State<EditCartScreen> {
             contentPadding: EdgeInsets.zero,
             title: Text(
               context.l10n.cartOpen,
-              style: TextStyle(fontWeight: FontWeight.w500),
+              style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w500),
             ),
             subtitle: Text(
               context.l10n.acceptingOrders,
-              style: TextStyle(fontSize: 13),
+              style: AppTextStyles.caption,
             ),
             value: _isOpen,
             activeTrackColor: AppColors.primary,

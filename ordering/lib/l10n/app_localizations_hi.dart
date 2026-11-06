@@ -1084,6 +1084,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get current => 'मौजूदा';
 
   @override
+  String get qrPosterSubtitle => 'इसे प्रिंट करके अपनी कार्ट पर चिपकाएँ।';
+
+  @override
   String get sessionExpired =>
       'आपका लॉगिन खत्म हो गया है। कृपया फिर से लॉगिन करें।';
 

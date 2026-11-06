@@ -39,7 +39,7 @@ void main() {
       final fields = find.byType(TextField);
       await tester.enterText(fields.at(0), 'Masala Dosa');
       await tester.enterText(fields.at(1), '60');
-      final add = find.text('Add Item');
+      final add = find.text('ADD ITEM');
       await tester.ensureVisible(add);
       await tester.tap(add);
       await tester.pumpAndSettle();

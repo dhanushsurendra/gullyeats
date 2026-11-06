@@ -2,17 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:ordering/core/error/app_exceptions.dart';
 import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_gaps.dart';
-import 'package:ordering/core/theme/app_padding.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
 import 'package:ordering/core/widgets/app_button.dart';
-import 'package:ordering/core/widgets/app_header.dart';
+import 'package:ordering/core/widgets/app_footer.dart';
 import 'package:ordering/core/widgets/app_snack_bar.dart';
+import 'package:ordering/core/widgets/base_screen.dart';
+import 'package:ordering/core/widgets/info_box.dart';
 import 'package:ordering/features/auth/providers/auth_provider.dart';
 import 'package:ordering/features/cart/providers/cart_provider.dart';
 import 'package:ordering/features/profile/providers/profile_provider.dart';
 import 'package:ordering/features/profile/services/qr_service.dart';
-import 'package:provider/provider.dart';
 import 'package:ordering/l10n/l10n.dart';
+import 'package:provider/provider.dart';
 
 class QrPosterScreen extends StatefulWidget {
   const QrPosterScreen({super.key});
@@ -23,6 +24,7 @@ class QrPosterScreen extends StatefulWidget {
 
 class _QrPosterScreenState extends State<QrPosterScreen> {
   bool _isBtnLoading = false;
+  bool _isLoading = true;
   final GlobalKey _qrKey = GlobalKey();
 
   @override
@@ -39,7 +41,10 @@ class _QrPosterScreenState extends State<QrPosterScreen> {
     final token = context.read<AuthProvider>().token;
     final cartId = context.read<CartProvider>().selectedCart?.id;
 
-    if (cartId == null) return;
+    if (cartId == null) {
+      setState(() => _isLoading = false);
+      return;
+    }
 
     try {
       await provider.loadQrDetails(token, cartId);
@@ -52,6 +57,8 @@ class _QrPosterScreenState extends State<QrPosterScreen> {
         marginBottom: 0,
         isError: true,
       );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -85,85 +92,64 @@ class _QrPosterScreenState extends State<QrPosterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            AppHeader(title: context.l10n.qrCodePoster, showBack: true),
+    final l10n = context.l10n;
+    final profile = context.watch<ProfileProvider>();
 
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 600),
-                child: Padding(
-                  padding: AppPadding.screen,
-                  child: Column(
-                    children: [
-                      RepaintBoundary(
-                        key: _qrKey,
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            final width = constraints.maxWidth;
-                            final height = width * 1.3;
-
-                            final profileProvider = Provider.of<ProfileProvider>(
-                              context,
-                              listen: true,
-                            );
-
-                            return _QrPosterCard(
-                              width: width,
-                              height: height,
-                              cartId: profileProvider.cartId ?? "",
-                              cartName: profileProvider.cartName ?? "",
-                              qrImageUrl: profileProvider.qrImageUrl ?? "",
-                            );
-                          },
-                        ),
-                      ),
-
-                      AppGaps.h24,
-
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.grey100,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          context.l10n.qrPrintTip,
-                          style: AppTextStyles.caption.copyWith(
-                            color: AppColors.grey600,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-
-                      AppGaps.h24,
-
-                      AppButton(
-                        label: context.l10n.shareQrCaps,
-                        isLoading: _isBtnLoading,
-                        onPressed: _shareQr,
-                      ),
-                    ],
+    return BaseScreen(
+      title: l10n.qrCodePoster,
+      subtitle: l10n.qrPosterSubtitle,
+      onBack: () => Navigator.pop(context),
+      expandToFullHeight: true,
+      bottomNavigationBar: AppFooter(
+        children: [
+          AppButton(
+            label: l10n.shareQrCaps,
+            isLoading: _isBtnLoading,
+            onPressed: _shareQr,
+          ),
+        ],
+      ),
+      child: ListView(
+        padding: const EdgeInsets.only(bottom: 16),
+        children: [
+          RepaintBoundary(
+            key: _qrKey,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final width = constraints.maxWidth;
+                // The poster is a printable graphic sized from its width, so
+                // it ignores the phone's text size; otherwise the shared PDF
+                // would change (and overflow) with each vendor's settings.
+                return MediaQuery.withNoTextScaling(
+                  child: _QrPosterCard(
+                    width: width,
+                    height: width * 1.3,
+                    cartId: profile.cartId ?? "",
+                    cartName: profile.cartName ?? "",
+                    qrImageUrl: profile.qrImageUrl ?? "",
+                    isLoading: _isLoading,
                   ),
-                ),
-              ),
+                );
+              },
             ),
-          ],
-        ),
+          ),
+          AppGaps.h24,
+          InfoBox(icon: Icons.lightbulb_outline, lines: [l10n.qrPrintTip]),
+        ],
       ),
     );
   }
 }
 
-class _QrPosterCard extends StatefulWidget {
+// Same poster as the onboarding app's, so both share identical PDFs. It stays
+// in English: customers read it, whatever language the vendor uses.
+class _QrPosterCard extends StatelessWidget {
   final double width;
   final double height;
   final String cartId;
   final String cartName;
   final String qrImageUrl;
+  final bool isLoading;
 
   const _QrPosterCard({
     required this.width,
@@ -171,30 +157,22 @@ class _QrPosterCard extends StatefulWidget {
     required this.cartId,
     required this.cartName,
     required this.qrImageUrl,
+    required this.isLoading,
   });
 
   @override
-  State<_QrPosterCard> createState() => _QrPosterCardState();
-}
-
-class _QrPosterCardState extends State<_QrPosterCard> {
-  bool _imageLoaded = false;
-
-  @override
   Widget build(BuildContext context) {
-    final width = widget.width;
-
     return Container(
-      width: widget.width,
-      height: widget.height,
+      width: width,
+      height: height,
       padding: EdgeInsets.symmetric(vertical: width * 0.05),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: Colors.white,
         border: Border.all(color: AppColors.primary, width: 2),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: AppColors.black.withAlpha(13),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -216,13 +194,16 @@ class _QrPosterCardState extends State<_QrPosterCard> {
                   text: "Eats",
                   style: AppTextStyles.heading2.copyWith(
                     fontSize: width * 0.07,
-                    color: AppColors.black,
+                    color: Colors.black,
                   ),
                 ),
               ],
             ),
           ),
-          Text("The Street Food Revolution", style: AppTextStyles.caption),
+          Text(
+            "The Street Food Revolution",
+            style: TextStyle(color: AppColors.grey500, fontSize: width * 0.03),
+          ),
           AppGaps.h16,
           Container(
             width: double.infinity,
@@ -231,68 +212,48 @@ class _QrPosterCardState extends State<_QrPosterCard> {
             child: Text(
               "SCAN & ORDER",
               textAlign: TextAlign.center,
-              style: AppTextStyles.heading3.copyWith(color: AppColors.white),
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: width * 0.06,
+              ),
             ),
           ),
           const Spacer(),
-          SizedBox(
-            width: width * 0.6,
-            height: width * 0.6,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: widget.qrImageUrl.isEmpty
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.primary,
-                      ),
-                    )
-                  : Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Image.network(
-                          widget.qrImageUrl,
-                          fit: BoxFit.contain,
-
-                          /// detect load
-                          frameBuilder: (context, child, frame, _) {
-                            if (frame != null && !_imageLoaded) {
-                              WidgetsBinding.instance.addPostFrameCallback((_) {
-                                if (mounted) {
-                                  setState(() {
-                                    _imageLoaded = true;
-                                  });
-                                }
-                              });
-                            }
-                            return child;
-                          },
-
-                          errorBuilder: (_, _, _) => Icon(
-                            Icons.broken_image,
-                            size: width * 0.4,
-                            color: AppColors.grey400,
-                          ),
-                        ),
-
-                        if (!_imageLoaded)
-                          const CircularProgressIndicator(
-                            color: AppColors.primary,
-                          ),
-                      ],
+          if (isLoading)
+            SizedBox(
+              height: width * 0.6,
+              child: const Center(child: CircularProgressIndicator()),
+            )
+          else if (qrImageUrl.isEmpty)
+            Icon(Icons.broken_image, size: width * 0.6, color: AppColors.grey400)
+          else
+            Image.network(
+              qrImageUrl,
+              width: width * 0.6,
+              height: width * 0.6,
+              loadingBuilder: (context, child, progress) => progress == null
+                  ? child
+                  : SizedBox(
+                      width: width * 0.6,
+                      height: width * 0.6,
+                      child: const Center(child: CircularProgressIndicator()),
                     ),
+              errorBuilder: (_, _, _) => Icon(
+                Icons.broken_image,
+                size: width * 0.6,
+                color: AppColors.grey400,
+              ),
             ),
-          ),
-
           const Spacer(),
-
           Text.rich(
             TextSpan(
               text: "Powered by ",
-              style: AppTextStyles.caption,
-              children: [
+              style: TextStyle(fontSize: width * 0.03, color: AppColors.grey600),
+              children: const [
                 TextSpan(
                   text: "GullyEats",
-                  style: AppTextStyles.caption.copyWith(
+                  style: TextStyle(
                     color: AppColors.primary,
                     fontWeight: FontWeight.w600,
                   ),
@@ -300,15 +261,20 @@ class _QrPosterCardState extends State<_QrPosterCard> {
               ],
             ),
           ),
-
-          Text(
-            widget.cartName,
-            style: AppTextStyles.heading2.copyWith(fontSize: width * 0.06),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          // Padded so a long name doesn't run into the border.
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: width * 0.05),
+            child: Text(
+              cartName,
+              style: AppTextStyles.heading2.copyWith(fontSize: width * 0.06),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
-
-          Text("Cart ID: ${widget.cartId}", style: AppTextStyles.caption),
+          Text(
+            "Cart ID: $cartId",
+            style: TextStyle(color: AppColors.grey400, fontSize: width * 0.03),
+          ),
         ],
       ),
     );

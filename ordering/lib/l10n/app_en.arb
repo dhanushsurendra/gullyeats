@@ -479,6 +479,7 @@
   "notAvailable": "N/A",
   "continueLabel": "Continue",
   "current": "Current",
+  "qrPosterSubtitle": "Print and paste this on your cart.",
   "sessionExpired": "Your login has expired. Please log in again.",
   "checkInternet": "Check your internet connection",
   "requestTimedOut": "Request timed out. Try again",

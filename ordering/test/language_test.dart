@@ -50,7 +50,7 @@ void main() {
 
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('हिन्दी'));
+    await tester.scrollUntilVisible(find.text('हिन्दी'), 100, scrollable: find.byType(Scrollable).first);
     await tester.tap(find.text('हिन्दी'));
     await tester.pump();
     await tester.tap(find.text('SAVE LANGUAGE'));

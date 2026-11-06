@@ -5,12 +5,9 @@ import 'package:flutter/services.dart';
 import 'package:ordering/core/error/app_exceptions.dart';
 import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
-import 'package:ordering/core/theme/app_padding.dart';
 import 'package:ordering/core/theme/app_gaps.dart';
 import 'package:ordering/core/utils/compress_image.dart';
 import 'package:ordering/core/widgets/app_button.dart';
-import 'package:ordering/core/widgets/app_card.dart';
-import 'package:ordering/core/widgets/app_header.dart';
 import 'package:ordering/core/widgets/app_input.dart';
 import 'package:ordering/core/widgets/app_snack_bar.dart';
 import 'package:ordering/features/auth/providers/auth_provider.dart';
@@ -22,6 +19,8 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:ordering/features/profile/providers/language_provider.dart';
 import 'package:ordering/l10n/l10n.dart';
+import 'package:ordering/core/widgets/base_screen.dart';
+import 'package:ordering/core/widgets/app_footer.dart';
 
 class AddItemScreen extends StatefulWidget {
   const AddItemScreen({super.key});
@@ -109,7 +108,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
           "price": double.parse(_priceController.text.trim()),
           "isInStock": _isInStock,
           "isVeg": _isVeg,
-          "imageUrl": _imageUrl
+          "imageUrl": _imageUrl,
         });
 
         final authProvider = context.read<AuthProvider>();
@@ -189,9 +188,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(context.l10n.cameraPermission),
-        content: Text(
-          context.l10n.cameraAccessDenied,
-        ),
+        content: Text(context.l10n.cameraAccessDenied),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -277,177 +274,79 @@ class _AddItemScreenState extends State<AddItemScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppHeader(title: context.l10n.addNewItem, showBack: true),
-      body: Column(
+    final l10n = context.l10n;
+    return BaseScreen(
+      title: l10n.addNewItem,
+      onBack: () => Navigator.pop(context),
+      bottomNavigationBar: AppFooter(
+        note: l10n.itemNameAndPriceRequired,
         children: [
-          Expanded(
-            child: SingleChildScrollView(
-              padding: AppPadding.screen,
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [_buildFormCard(), AppGaps.h24],
-                ),
-              ),
-            ),
+          AppButton(
+            label: l10n.addItem.toUpperCase(),
+            isLoading: _isLoading,
+            // The photo is optional, but one that was taken must be uploaded first.
+            onPressed:
+                _isUploadingPhoto || (_capturedPhoto != null && !_photoUploaded)
+                ? null
+                : _handleSave,
           ),
-          _buildBottomAction(context),
         ],
       ),
-    );
-  }
-
-  Widget _buildFormCard() {
-    return AppCard(
-      padding: AppPadding.card,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          AppInput(
-            controller: _nameController,
-            label: context.l10n.itemName,
-            hint: "e.g. Veg Momos",
-            onChanged: (value) {
-              if (_nameError != null) setState(() => _nameError = null);
-            },
-          ),
-          if (_nameError != null) ...[
-            AppGaps.h8,
-            Text(
-              _nameError!,
-              style: AppTextStyles.body.copyWith(
-                color: Colors.red,
-                fontSize: 13,
-              ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AppInput(
+              controller: _nameController,
+              label: l10n.itemName,
+              hint: "e.g. Veg Momos",
+              hasError: _nameError != null,
+              errorText: _nameError,
+              onChanged: (value) {
+                if (_nameError != null) setState(() => _nameError = null);
+              },
             ),
+            AppGaps.h16,
+            AppInput(
+              controller: _priceController,
+              label: l10n.price,
+              hint: "0",
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              prefix: Padding(
+                padding: const EdgeInsets.only(left: 16, right: 8),
+                child: Text("₹", style: AppTextStyles.heading3),
+              ),
+              hasError: _priceError != null,
+              errorText: _priceError,
+              onChanged: (value) {
+                if (_priceError != null) setState(() => _priceError = null);
+              },
+            ),
+            AppGaps.h24,
+            _buildLabel(l10n.category),
+            Row(
+              children: [
+                Expanded(child: _categoryButton(l10n.veg, true)),
+                AppGaps.w12,
+                Expanded(child: _categoryButton(l10n.nonVeg, false)),
+              ],
+            ),
+            AppGaps.h24,
+            _buildLabel(l10n.availability),
+            Row(
+              children: [
+                Expanded(child: _availabilityButton(l10n.inStock, true)),
+                AppGaps.w12,
+                Expanded(child: _availabilityButton(l10n.outOfStock, false)),
+              ],
+            ),
+            AppGaps.h24,
+            _buildLabel(l10n.itemPhoto),
+            _buildPhotoSection(),
           ],
-
-          AppGaps.h16,
-
-          AppInput(
-            controller: _priceController,
-            label: context.l10n.price,
-            hint: "99",
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            prefix: const Padding(
-              padding: EdgeInsets.only(left: 12, right: 8),
-              child: Icon(
-                Icons.currency_rupee,
-                size: 18,
-                color: AppColors.grey500,
-              ),
-            ),
-            onChanged: (value) {
-              if (_priceError != null) setState(() => _priceError = null);
-            },
-          ),
-          if (_priceError != null) ...[
-            AppGaps.h8,
-            Text(
-              _priceError!,
-              style: AppTextStyles.body.copyWith(
-                color: Colors.red,
-                fontSize: 13,
-              ),
-            ),
-          ] else
-            Padding(
-              padding: const EdgeInsets.only(top: 4, left: 4),
-              child: Text(
-                context.l10n.enterPriceInRupees,
-                style: AppTextStyles.caption.copyWith(fontSize: 10),
-              ),
-            ),
-
-          AppGaps.h16,
-
-          _buildLabel(context.l10n.category),
-          Row(
-            children: [
-              Expanded(child: _categoryButton(context.l10n.veg, true)),
-              AppGaps.w12,
-              Expanded(child: _categoryButton(context.l10n.nonVeg, false)),
-            ],
-          ),
-
-          AppGaps.h16,
-
-          _buildLabel(context.l10n.availability),
-          Row(
-            children: [
-              Expanded(child: _availabilityButton(context.l10n.inStock, true)),
-              AppGaps.w12,
-              Expanded(child: _availabilityButton(context.l10n.outOfStock, false)),
-            ],
-          ),
-
-          AppGaps.h16,
-
-          _buildLabel(context.l10n.itemPhoto),
-
-          _buildPhotoSection(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomAction(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        border: Border(top: BorderSide(color: AppColors.grey100)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    side: const BorderSide(color: AppColors.grey300),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                  ),
-                  child: Text(context.l10n.cancel, style: AppTextStyles.heading3),
-                ),
-              ),
-              AppGaps.w16,
-              Expanded(
-                child: ElevatedButton(
-                  // The photo is optional, but one that was taken must be uploaded first.
-                  onPressed: _isUploadingPhoto ||
-                          (_capturedPhoto != null && !_photoUploaded)
-                      ? null
-                      : _handleSave,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                  ),
-                  child: Text(
-                    context.l10n.addItem,
-                    style: AppTextStyles.heading3.copyWith(color: Colors.white),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          AppGaps.h8,
-          Text(
-            context.l10n.itemNameAndPriceRequired,
-            style: AppTextStyles.caption,
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -455,7 +354,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
   Widget _buildLabel(String label) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: Text(label, style: AppTextStyles.heading3.copyWith(fontSize: 14)),
+      child: Text(label, style: AppTextStyles.heading3),
     );
   }
 
@@ -466,14 +365,14 @@ class _AddItemScreenState extends State<AddItemScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          height: 180,
+          constraints: const BoxConstraints(minHeight: 180),
           width: double.infinity,
           decoration: BoxDecoration(
             border: Border.all(
               color: _photoUploaded ? AppColors.success : AppColors.grey200,
             ),
             borderRadius: BorderRadius.circular(12),
-            color: AppColors.grey100.withValues(alpha: 0.3),
+            color: AppColors.grey100,
           ),
           clipBehavior: Clip.hardEdge,
           child: hasPhoto
@@ -482,73 +381,80 @@ class _AddItemScreenState extends State<AddItemScreen> {
                     Image.file(
                       _capturedPhoto!,
                       width: double.infinity,
-                      height: double.infinity,
+                      height: 180,
                       fit: BoxFit.cover,
                     ),
-                    _photoUploaded ? const SizedBox.shrink() :
-                    Positioned(
-                      top: 10,
-                      right: 10,
-                      child: GestureDetector(
-                        onTap: _isUploadingPhoto ? null : _showPhotoOptions,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.55),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.refresh,
-                                color: Colors.white,
-                                size: 14,
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                context.l10n.change,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
+                    _photoUploaded
+                        ? const SizedBox.shrink()
+                        : Positioned(
+                            top: 10,
+                            right: 10,
+                            child: GestureDetector(
+                              onTap: _isUploadingPhoto
+                                  ? null
+                                  : _showPhotoOptions,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.55),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.refresh,
+                                      color: Colors.white,
+                                      size: 14,
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      context.l10n.change,
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ],
+                            ),
                           ),
-                        ),
-                      ),
-                    ),
                   ],
                 )
               : InkWell(
                   onTap: _isLoading ? null : _showPhotoOptions,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.camera_alt_outlined,
-                        size: 36,
-                        color: AppColors.primary,
-                      ),
-                      AppGaps.h8,
-                      Text(
-                        context.l10n.takeItemPhoto,
-                        style: AppTextStyles.body.copyWith(
-                          fontWeight: FontWeight.w600,
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.camera_alt_outlined,
+                          size: 36,
+                          color: AppColors.primary,
                         ),
-                      ),
-                      AppGaps.h4,
-                      Text(
-                        context.l10n.cameraOrGallery,
-                        style: AppTextStyles.caption.copyWith(
-                          color: AppColors.grey500,
+                        AppGaps.h8,
+                        Text(
+                          context.l10n.takeItemPhoto,
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.body.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                    ],
+                        AppGaps.h4,
+                        Text(
+                          context.l10n.cameraOrGallery,
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.grey500,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
         ),
@@ -575,11 +481,13 @@ class _AddItemScreenState extends State<AddItemScreen> {
                 size: 16,
               ),
               const SizedBox(width: 6),
-              Text(
-                context.l10n.photoUploaded,
-                style: AppTextStyles.caption.copyWith(
-                  color: AppColors.success,
-                  fontWeight: FontWeight.w600,
+              Flexible(
+                child: Text(
+                  context.l10n.photoUploaded,
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.success,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
@@ -588,54 +496,43 @@ class _AddItemScreenState extends State<AddItemScreen> {
     );
   }
 
-  Widget _availabilityButton(String label, bool value) {
-    bool isSelected = _isInStock == value;
-    return GestureDetector(
-      onTap: () => setState(() => _isInStock = value),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.success.withValues(alpha: 0.05)
-              : AppColors.grey100.withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(30),
-          border: Border.all(
-            color: isSelected ? AppColors.success : AppColors.grey200,
-          ),
-        ),
-        child: Text(
-          label,
-          style: AppTextStyles.body.copyWith(
-            color: isSelected ? AppColors.success : AppColors.grey500,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
-      ),
-    );
-  }
+  Widget _availabilityButton(String label, bool value) => _optionChip(
+    label,
+    _isInStock == value,
+    AppColors.success,
+    () => setState(() => _isInStock = value),
+  );
 
-  Widget _categoryButton(String label, bool value) {
-    bool isVeg = _isVeg == value;
-    return GestureDetector(
-      onTap: () => setState(() => _isVeg = value),
+  Widget _categoryButton(String label, bool value) => _optionChip(
+    label,
+    _isVeg == value,
+    value ? AppColors.success : AppColors.error,
+    () => setState(() => _isVeg = value),
+  );
+
+  Widget _optionChip(
+    String label,
+    bool isSelected,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: isVeg
-              ? AppColors.success.withValues(alpha: 0.05)
-              : AppColors.grey100.withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(30),
-          border: Border.all(
-            color: isVeg ? AppColors.success : AppColors.grey200,
-          ),
+          color: isSelected ? color.withValues(alpha: 0.05) : AppColors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: isSelected ? color : AppColors.grey200),
         ),
         child: Text(
           label,
+          textAlign: TextAlign.center,
           style: AppTextStyles.body.copyWith(
-            color: isVeg ? AppColors.success : AppColors.grey500,
-            fontWeight: isVeg ? FontWeight.bold : FontWeight.normal,
+            color: isSelected ? color : AppColors.grey500,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
           ),
         ),
       ),
