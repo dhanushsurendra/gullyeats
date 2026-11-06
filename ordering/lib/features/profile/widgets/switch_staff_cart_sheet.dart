@@ -169,7 +169,7 @@ class _SwitchStaffCartSheetState extends State<SwitchStaffCartSheet> {
                                                         ),
                                                   ),
                                                   child: Text(
-                                                    "CURRENT",
+                                                    context.l10n.current.toUpperCase(),
                                                     style: AppTextStyles.caption
                                                         .copyWith(
                                                           color:

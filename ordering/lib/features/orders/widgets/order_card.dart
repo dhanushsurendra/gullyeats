@@ -101,7 +101,7 @@ class _OrderCardState extends State<OrderCard> {
   @override
   Widget build(BuildContext context) {
     final isPaid = widget.order.isPaid;
-    final isServed = widget.order.status == "SERVED";
+    final isServed = widget.order.status == context.l10n.served.toUpperCase();
     final isCancelled = widget.order.status == "CANCELLED";
 
     return GestureDetector(
@@ -119,11 +119,11 @@ class _OrderCardState extends State<OrderCard> {
                   style: AppTextStyles.heading2,
                 ),
                 if (isCancelled)
-                  _statusChip("CANCELED", false)
+                  _statusChip(context.l10n.cancelled.toUpperCase(), false)
                 else if (isServed)
-                  _statusChip("SERVED", true)
+                  _statusChip(context.l10n.served.toUpperCase(), true)
                 else if (isPaid)
-                  _actionButton("SERVE", widget.onServe)
+                  _actionButton(context.l10n.serve.toUpperCase(), widget.onServe)
                 else
                   _outlineButton(context.l10n.markPaidCaps, widget.onMarkPaid),
               ],
@@ -149,12 +149,12 @@ class _OrderCardState extends State<OrderCard> {
                 Row(
                   children: [
                     if (!isCancelled)
-                      _statusChip(isPaid ? "PAID" : "UNPAID", isPaid),
+                      _statusChip(isPaid ? context.l10n.paid.toUpperCase() : context.l10n.unpaid.toUpperCase(), isPaid),
                     AppGaps.w8,
                     _tagChip(widget.order.isQrOrder ? context.l10n.qrOrder : context.l10n.manual),
                     AppGaps.w8,
                     ((widget.order.status == "CANCELLED") |
-                            (widget.order.status == "SERVED"))
+                            (widget.order.status == context.l10n.served.toUpperCase()))
                         ? SizedBox.shrink()
                         : InkWell(
                             onTap: () => _showDeleteDialog(context),

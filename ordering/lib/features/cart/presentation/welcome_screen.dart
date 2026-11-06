@@ -196,7 +196,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                 minimumSize: const Size(0, 48),
               ),
               onPressed: _checkCartPaymentStatus,
-              child: const Text('RETRY'),
+              child: Text(context.l10n.retry.toUpperCase()),
             ),
           ),
           const SizedBox(height: 8),
@@ -219,7 +219,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                 child: OutlinedButton(
                   style: buttonStyle,
                   onPressed: () => signOut(context),
-                  child: const Text('LOGOUT'),
+                  child: Text(context.l10n.logout.toUpperCase()),
                 ),
               ),
             ],
@@ -255,7 +255,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     return Column(
       children: [
         Text(
-          'WELCOME',
+          context.l10n.welcome.toUpperCase(),
           style: TextStyle(
             color: AppColors.white.withAlpha(166),
             fontSize: 12,

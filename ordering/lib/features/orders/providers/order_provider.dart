@@ -75,6 +75,10 @@ class OrderProvider with ChangeNotifier {
 
   socket_io.Socket? _socket;
 
+  /// Off in widget tests, which have no server to connect to.
+  @visibleForTesting
+  static bool liveUpdates = true;
+
   // ---------------------------------------------------------------------------
   // CREATE ORDER
   // ---------------------------------------------------------------------------
@@ -174,7 +178,7 @@ class OrderProvider with ChangeNotifier {
       // The screen handles Active filtering.
       _orders = fetchedOrders;
 
-      initSocket(cartId);
+      if (liveUpdates) initSocket(cartId);
 
       return _orders;
     } finally {

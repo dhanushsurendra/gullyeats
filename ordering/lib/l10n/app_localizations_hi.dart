@@ -1057,6 +1057,33 @@ class AppLocalizationsHi extends AppLocalizations {
   String get findingBestBites => 'सबसे अच्छा खाना ढूँढ रहे हैं...';
 
   @override
+  String get retry => 'फिर से कोशिश';
+
+  @override
+  String get welcome => 'स्वागत है';
+
+  @override
+  String get skip => 'छोड़ें';
+
+  @override
+  String get undo => 'वापस लें';
+
+  @override
+  String get serve => 'परोसें';
+
+  @override
+  String get due => 'बाकी';
+
+  @override
+  String get notAvailable => 'उपलब्ध नहीं';
+
+  @override
+  String get continueLabel => 'आगे बढ़ें';
+
+  @override
+  String get current => 'मौजूदा';
+
+  @override
   String get sessionExpired =>
       'आपका लॉगिन खत्म हो गया है। कृपया फिर से लॉगिन करें।';
 

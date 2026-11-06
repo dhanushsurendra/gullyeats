@@ -18,9 +18,6 @@ Future<File> compressImage(File file) async {
     format: CompressFormat.jpeg,
   );
 
-  if (result == null) {
-    throw Exception('Failed to compress image');
-  }
-
-  return File(result.path);
+  // If the image can't be compressed, upload the original.
+  return result == null ? file : File(result.path);
 }

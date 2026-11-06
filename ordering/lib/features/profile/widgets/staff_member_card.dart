@@ -46,7 +46,7 @@ class StaffMemberCard extends StatelessWidget {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(
-              "CANCEL",
+              context.l10n.cancel.toUpperCase(),
               style: AppTextStyles.body.copyWith(color: Colors.grey.shade600),
             ),
           ),
@@ -56,7 +56,7 @@ class StaffMemberCard extends StatelessWidget {
               onDelete(staffId);
             },
             child: Text(
-              "REMOVE",
+              context.l10n.remove.toUpperCase(),
               style: AppTextStyles.body.copyWith(
                 color: Colors.red.shade600,
                 fontWeight: FontWeight.w600,

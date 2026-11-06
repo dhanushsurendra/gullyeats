@@ -1053,6 +1053,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get findingBestBites => 'Finding the best bites...';
 
   @override
+  String get retry => 'Retry';
+
+  @override
+  String get welcome => 'Welcome';
+
+  @override
+  String get skip => 'Skip';
+
+  @override
+  String get undo => 'Undo';
+
+  @override
+  String get serve => 'Serve';
+
+  @override
+  String get due => 'Due';
+
+  @override
+  String get notAvailable => 'N/A';
+
+  @override
+  String get continueLabel => 'Continue';
+
+  @override
+  String get current => 'Current';
+
+  @override
   String get sessionExpired => 'Your login has expired. Please log in again.';
 
   @override

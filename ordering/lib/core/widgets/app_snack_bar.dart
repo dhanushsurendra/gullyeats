@@ -36,7 +36,11 @@ class AppSnackBar {
             ),
           ],
         ),
-        backgroundColor: isInfo ? AppColors.black : isError ? Colors.redAccent[700] : Colors.green[800],
+        backgroundColor: isInfo
+            ? AppColors.grey600
+            : isError
+            ? AppColors.error
+            : AppColors.success,
         duration: const Duration(seconds: 3),
         behavior: SnackBarBehavior.floating,
         margin: EdgeInsets.only(bottom: marginBottom, left: 16, right: 16),

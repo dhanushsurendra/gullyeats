@@ -521,7 +521,7 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
   }
 
   Widget _statusPill() {
-    final label = _isPartiallyPaid ? context.l10n.partiallyPaidCaps : 'DUE';
+    final label = _isPartiallyPaid ? context.l10n.partiallyPaidCaps : context.l10n.due.toUpperCase();
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),

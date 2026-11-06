@@ -635,7 +635,7 @@ class _AddNewOrderState extends State<AddNewOrder> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                widget.isEditing ? context.l10n.newTotalCaps : "TOTAL",
+                widget.isEditing ? context.l10n.newTotalCaps : context.l10n.total.toUpperCase(),
                 style: AppTextStyles.heading2.copyWith(fontSize: 16),
               ),
               Text(
@@ -666,7 +666,7 @@ class _AddNewOrderState extends State<AddNewOrder> {
                     height: 48,
                     child: AppButton(
                       disabled: provider.orderItems.isEmpty || _isSubmitting,
-                      label: "SKIP",
+                      label: context.l10n.skip.toUpperCase(),
                       isLoading: _isSubmitting && !_isMarkingPaid,
                       onPressed: () async {
                         await _createOrder(false, provider, token, cartId);

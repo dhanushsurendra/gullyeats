@@ -185,7 +185,7 @@ class _SalesScreenState extends State<SalesScreen> {
                   const SizedBox(height: 16),
                   TextButton(
                     onPressed: _loadSales,
-                    child: const Text("RETRY"),
+                    child: Text(context.l10n.retry.toUpperCase()),
                   ),
                 ],
               ),

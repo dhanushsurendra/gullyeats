@@ -480,7 +480,7 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
             // ====================================================
             // CATEGORY
             // ====================================================
-            _buildLabel("CATEGORY"),
+            _buildLabel(context.l10n.category.toUpperCase()),
 
             Row(
               children: [
@@ -511,7 +511,7 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
             // ====================================================
             // STOCK
             // ====================================================
-            _buildLabel("STOCK"),
+            _buildLabel(context.l10n.stock.toUpperCase()),
 
             Row(
               children: [

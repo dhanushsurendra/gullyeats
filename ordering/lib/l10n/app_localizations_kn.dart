@@ -1060,6 +1060,33 @@ class AppLocalizationsKn extends AppLocalizations {
   String get findingBestBites => 'ಅತ್ಯುತ್ತಮ ರುಚಿಗಳನ್ನು ಹುಡುಕುತ್ತಿದ್ದೇವೆ...';
 
   @override
+  String get retry => 'ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ';
+
+  @override
+  String get welcome => 'ಸ್ವಾಗತ';
+
+  @override
+  String get skip => 'ಬಿಟ್ಟುಬಿಡಿ';
+
+  @override
+  String get undo => 'ರದ್ದುಮಾಡಿ';
+
+  @override
+  String get serve => 'ಸರ್ವ್ ಮಾಡಿ';
+
+  @override
+  String get due => 'ಬಾಕಿ';
+
+  @override
+  String get notAvailable => 'ಲಭ್ಯವಿಲ್ಲ';
+
+  @override
+  String get continueLabel => 'ಮುಂದುವರಿಸಿ';
+
+  @override
+  String get current => 'ಪ್ರಸ್ತುತ';
+
+  @override
   String get sessionExpired =>
       'ನಿಮ್ಮ ಲಾಗಿನ್ ಅವಧಿ ಮುಗಿದಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಲಾಗಿನ್ ಮಾಡಿ.';
 

@@ -411,7 +411,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 3),
 
                 Text(
-                  selectedCart?.cartId ?? 'N/A',
+                  selectedCart?.cartId ?? context.l10n.notAvailable,
                   style: AppTextStyles.body.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -420,7 +420,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 AppGaps.h12,
 
                 Text(
-                  "ADDRESS",
+                  context.l10n.address.toUpperCase(),
                   style: AppTextStyles.caption.copyWith(
                     color: AppColors.grey600,
                     fontWeight: FontWeight.w600,
@@ -430,7 +430,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                 const SizedBox(height: 3),
 
-                Text(selectedCart?.address ?? 'N/A', style: AppTextStyles.body),
+                Text(selectedCart?.address ?? context.l10n.notAvailable, style: AppTextStyles.body),
               ],
             ),
           ),

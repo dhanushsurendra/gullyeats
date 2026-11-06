@@ -63,21 +63,7 @@ class BaseScreen extends StatelessWidget {
             ? Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 500),
-                  child: Padding(
-                    padding: AppPadding.screen,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (showBackButton && onBack != null) ...[
-                          AppBackButton(),
-                          AppGaps.h16,
-                        ],
-                        _buildHeader(),
-                        AppGaps.h32,
-                        Expanded(child: child),
-                      ],
-                    ),
-                  ),
+                  child: LayoutBuilder(builder: _buildExpanded),
                 ),
               )
             : SingleChildScrollView(
@@ -92,7 +78,7 @@ class BaseScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         if (showBackButton && onBack != null) ...[
-                          AppBackButton(),
+                          AppBackButton(onPressed: onBack),
                           AppGaps.h16,
                         ],
 
@@ -107,7 +93,56 @@ class BaseScreen extends StatelessWidget {
                 ),
               ),
       ),
-      bottomNavigationBar: bottomNavigationBar,
+      bottomNavigationBar: bottomNavigationBar == null
+          ? null
+          // Same max width as the body so footer buttons don't stretch on tablets.
+          : Center(
+              heightFactor: 1,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 500),
+                child: bottomNavigationBar,
+              ),
+            ),
+    );
+  }
+
+  Widget _buildExpanded(BuildContext context, BoxConstraints constraints) {
+    final top = [
+      if (showBackButton && onBack != null) ...[
+        AppBackButton(onPressed: onBack),
+        AppGaps.h16,
+      ],
+      _buildHeader(),
+      AppGaps.h32,
+    ];
+
+    // Short windows (keyboard open on small phones, split screen) would squeeze
+    // the child to nothing: scroll the header away and give the child a full
+    // viewport instead.
+    if (constraints.maxHeight < _minExpandedHeight) {
+      return SingleChildScrollView(
+        padding: AppPadding.screen,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ...top,
+            SizedBox(
+              height: constraints.maxHeight - AppPadding.screen.vertical,
+              child: child,
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Padding(
+      padding: AppPadding.screen,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [...top, Expanded(child: child)],
+      ),
     );
   }
 }
+
+const double _minExpandedHeight = 480;

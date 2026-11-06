@@ -1072,6 +1072,33 @@ class AppLocalizationsTa extends AppLocalizations {
   String get findingBestBites => 'சிறந்த சுவைகளைத் தேடுகிறோம்...';
 
   @override
+  String get retry => 'மீண்டும் முயற்சி';
+
+  @override
+  String get welcome => 'வரவேற்கிறோம்';
+
+  @override
+  String get skip => 'தவிர்';
+
+  @override
+  String get undo => 'செயல்தவிர்';
+
+  @override
+  String get serve => 'பரிமாறு';
+
+  @override
+  String get due => 'நிலுவை';
+
+  @override
+  String get notAvailable => 'இல்லை';
+
+  @override
+  String get continueLabel => 'தொடர்';
+
+  @override
+  String get current => 'தற்போதைய';
+
+  @override
   String get sessionExpired =>
       'உங்கள் உள்நுழைவு காலாவதியானது. மீண்டும் உள்நுழையவும்.';
 

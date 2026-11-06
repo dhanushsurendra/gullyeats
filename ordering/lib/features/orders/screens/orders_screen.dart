@@ -151,7 +151,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
           isInfo: true,
           message: context.l10n.orderMarkedServed,
           action: SnackBarAction(
-            label: 'UNDO',
+            label: context.l10n.undo.toUpperCase(),
             textColor: AppColors.primary,
             onPressed: () async {
               try {
@@ -199,7 +199,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
           isInfo: true,
           message: context.l10n.orderMarkedPaid,
           action: SnackBarAction(
-            label: 'UNDO',
+            label: context.l10n.undo.toUpperCase(),
             textColor: AppColors.primary,
             onPressed: () async {
               try {
@@ -247,7 +247,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
           isInfo: true,
           message: context.l10n.orderCancelled,
           action: SnackBarAction(
-            label: 'UNDO',
+            label: context.l10n.undo.toUpperCase(),
             textColor: AppColors.primary,
             onPressed: () async {
               try {

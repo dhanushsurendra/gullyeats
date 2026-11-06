@@ -245,7 +245,7 @@ class _EditMenuScreenState extends State<EditMenuScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: Text("CANCEL", style: TextStyle(color: AppColors.grey500)),
+            child: Text(context.l10n.cancel.toUpperCase(), style: TextStyle(color: AppColors.grey500)),
           ),
           TextButton(
             onPressed: () async {
@@ -279,8 +279,8 @@ class _EditMenuScreenState extends State<EditMenuScreen> {
                 );
               }
             },
-            child: const Text(
-              "DELETE",
+            child: Text(
+              context.l10n.delete.toUpperCase(),
               style: TextStyle(color: AppColors.error),
             ),
           ),

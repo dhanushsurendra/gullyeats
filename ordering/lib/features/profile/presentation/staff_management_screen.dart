@@ -378,7 +378,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
           ],
         ),
         child: AppButton(
-          label: "CONTINUE",
+          label: context.l10n.continueLabel.toUpperCase(),
           onPressed: () => Navigator.pushNamed(context, "/cart-activated"),
         ),
       ),
