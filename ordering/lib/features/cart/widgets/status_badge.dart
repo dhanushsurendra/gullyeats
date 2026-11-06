@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ordering/core/theme/app_colors.dart';
+import 'package:ordering/core/theme/app_text_styles.dart';
 
 class StatusBadge extends StatelessWidget {
   final String label;
@@ -9,7 +10,7 @@ class StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isSuccess ? Colors.green : AppColors.grey400;
+    final color = isSuccess ? AppColors.success : AppColors.grey400;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
@@ -18,9 +19,9 @@ class StatusBadge extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(
-          color: color, 
-          fontSize: 10, 
+        style: AppTextStyles.caption.copyWith(
+          color: color,
+          fontSize: 10,
           fontWeight: FontWeight.bold,
           letterSpacing: 0.5,
         ),

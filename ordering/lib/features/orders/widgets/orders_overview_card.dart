@@ -5,6 +5,7 @@ import 'package:ordering/core/theme/app_padding.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
 import 'package:ordering/features/orders/models/order_model.dart';
 import 'package:ordering/l10n/l10n.dart';
+import 'package:ordering/core/utils/format_price.dart';
 
 class OrdersOverviewCard extends StatefulWidget {
   final OrderModel order;
@@ -31,7 +32,7 @@ class OrdersOverviewCardState extends State<OrdersOverviewCard> {
         border: Border.all(color: AppColors.grey200),
         boxShadow: [
           BoxShadow(
-            color: AppColors.black.withValues(alpha: 0.04),
+            color: AppColors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -97,51 +98,43 @@ class OrdersOverviewCardState extends State<OrdersOverviewCard> {
   // Top row — order chip, time, status
   // ---------------------------------------------------------------------
 
+  // Wrap: on narrow screens or long translations the status drops to a new
+  // line instead of overflowing.
   Widget _topRow(OrderModel order, DateTime? time, Color statusColor) {
-    return Row(
+    return Wrap(
+      spacing: 8,
+      runSpacing: 6,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        Expanded(
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: AppColors.grey100,
+            borderRadius: BorderRadius.circular(8),
+          ),
           child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.grey100,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.receipt_long_rounded,
-                      size: 12,
-                      color: AppColors.grey600,
-                    ),
-                    AppGaps.w4,
-                    Text(
-                      "#${shortOrderId(order.id)}",
-                      style: AppTextStyles.caption.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
+              const Icon(
+                Icons.receipt_long_rounded,
+                size: 12,
+                color: AppColors.grey600,
+              ),
+              AppGaps.w4,
+              Text(
+                "#${shortOrderId(order.id)}",
+                style: AppTextStyles.caption.copyWith(
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-              AppGaps.w8,
-              if (time != null)
-                Flexible(
-                  child: Text(
-                    formatDateTimeIST(time),
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.grey500,
-                    ),
-                  ),
-                ),
             ],
           ),
         ),
-        AppGaps.w8,
+        if (time != null)
+          Text(
+            formatDateTimeIST(time),
+            style: AppTextStyles.caption.copyWith(color: AppColors.grey500),
+          ),
         statusBadge(order.status),
       ],
     );
@@ -290,7 +283,7 @@ class OrdersOverviewCardState extends State<OrdersOverviewCard> {
 
   Widget _metaChips(OrderModel order) {
     final chips = <Widget>[
-      _metaChip(order.orderType),
+      _metaChip(order.isQrOrder ? context.l10n.qrOrder : context.l10n.manual),
       if (order.orderDate != null) _metaChip(formatDateTime(order.orderDate!)),
       if (order.paidAt != null)
         _metaChip(context.l10n.paidAt(formatDateTimeIST(order.paidAt!))),
@@ -308,14 +301,9 @@ class OrdersOverviewCardState extends State<OrdersOverviewCard> {
         color: AppColors.grey100,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            label,
-            style: AppTextStyles.caption.copyWith(color: AppColors.grey600),
-          ),
-        ],
+      child: Text(
+        label,
+        style: AppTextStyles.caption.copyWith(color: AppColors.grey600),
       ),
     );
   }
@@ -429,7 +417,7 @@ class OrdersOverviewCardState extends State<OrdersOverviewCard> {
   }
 
   String money(num value) {
-    return "₹${value.toStringAsFixed(0)}";
+    return "₹${formatPrice(value)}";
   }
 }
 

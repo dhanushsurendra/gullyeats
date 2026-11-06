@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:ordering/core/widgets/app_snack_bar.dart';
 import 'package:ordering/core/error/app_exceptions.dart';
 import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
-import 'package:ordering/core/theme/app_padding.dart';
 import 'package:ordering/core/theme/app_gaps.dart';
-import 'package:ordering/core/widgets/app_header.dart';
-import 'package:ordering/features/cart/presentation/switch_cart_screen.dart';
 import 'package:ordering/features/orders/models/order_model.dart';
 import 'package:ordering/features/cart/providers/cart_provider.dart';
 import 'package:ordering/features/auth/providers/auth_provider.dart';
@@ -15,6 +11,10 @@ import 'package:ordering/features/orders/providers/order_provider.dart';
 import 'package:ordering/features/orders/widgets/orders_overview_card.dart';
 import 'package:provider/provider.dart';
 import 'package:ordering/l10n/l10n.dart';
+import 'package:ordering/core/widgets/base_screen.dart';
+import 'package:ordering/core/widgets/list_message.dart';
+import 'package:ordering/core/widgets/date_range_filter.dart';
+import 'package:ordering/features/cart/widgets/cart_selector.dart';
 
 class OrdersOverviewScreen extends StatefulWidget {
   const OrdersOverviewScreen({super.key});
@@ -25,6 +25,7 @@ class OrdersOverviewScreen extends StatefulWidget {
 
 class _OrdersOverviewScreenState extends State<OrdersOverviewScreen> {
   bool _init = false;
+  bool _loadFailed = false;
   String? _lastLoadedCartId;
 
   // ==========================================================================
@@ -94,6 +95,7 @@ class _OrdersOverviewScreenState extends State<OrdersOverviewScreen> {
 
     if (cartId == null) return;
 
+    setState(() => _loadFailed = false);
     try {
       await orderProvider.loadAllOrders(
         authProvider.token!,
@@ -103,9 +105,11 @@ class _OrdersOverviewScreenState extends State<OrdersOverviewScreen> {
       );
     } catch (e) {
       if (!mounted) return;
+      setState(() => _loadFailed = true);
       AppSnackBar.show(
         context,
         message: AppExceptionHandler.getMessage(e),
+        marginBottom: 0,
         isError: true,
       );
     }
@@ -249,23 +253,6 @@ class _OrdersOverviewScreenState extends State<OrdersOverviewScreen> {
   // DATE FORMAT
   // ==========================================================================
 
-  String _formatDisplayDate(DateTime date) =>
-      DateFormat('dd MMM yyyy', Localizations.localeOf(context).languageCode)
-          .format(date);
-
-  // ==========================================================================
-  // SWITCH CART
-  // ==========================================================================
-
-  void openSwitchCartSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const SwitchCartScreen(isDraggable: true),
-    );
-  }
-
   // ==========================================================================
   // BUILD
   // ==========================================================================
@@ -273,61 +260,36 @@ class _OrdersOverviewScreenState extends State<OrdersOverviewScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<OrderProvider>();
-
     final orders = provider.ordersOverview;
 
-    return Scaffold(
-      backgroundColor: AppColors.white,
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _loadOrders,
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            children: [
-              AppGaps.h16,
-
-              // =================================================================
-              // HEADER
-              //
-              // This NEVER disappears when filters change.
-              // =================================================================
-              AppHeader(
-                title: '',
-                showBack: true,
-                actionWidget: _buildOutletSelector(context),
-              ),
-
-              AppGaps.h16,
-
-              Padding(
-                padding: AppPadding.horizontalScreen,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(context.l10n.ordersOverview, style: AppTextStyles.heading2),
-
-                    // =============================================================
-                    // DATE FILTER
-                    //
-                    // This NEVER reloads.
-                    // =============================================================
-                    AppGaps.h16,
-                    
-                    _dateFilter(),
-
-                    AppGaps.h16,
-
-                    // =============================================================
-                    // ONLY THIS SECTION LOADS
-                    // =============================================================
-                    _ordersContent(provider, orders),
-
-                    AppGaps.h40,
-                  ],
-                ),
-              ),
-            ],
-          ),
+    return BaseScreen(
+      onBack: () => Navigator.pop(context),
+      header: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(context.l10n.ordersOverview, style: AppTextStyles.heading1),
+          AppGaps.h12,
+          const CartSelector(),
+        ],
+      ),
+      expandToFullHeight: true,
+      child: RefreshIndicator(
+        onRefresh: _loadOrders,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.only(bottom: 24),
+          children: [
+            DateRangeFilter(
+              start: _startDate,
+              end: _endDate,
+              presets: [for (final p in _presets) p['key']!],
+              selectedPreset: _selectedPreset,
+              onPickDate: (isStart) => _pickDate(isStart: isStart),
+              onPreset: _applyPreset,
+            ),
+            AppGaps.h24,
+            _ordersContent(provider, orders),
+          ],
         ),
       ),
     );
@@ -381,130 +343,6 @@ class _OrdersOverviewScreenState extends State<OrdersOverviewScreen> {
   }
 
   // ==========================================================================
-  // DATE FILTER
-  // ==========================================================================
-
-  Widget _dateFilter() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(context.l10n.dateRange, style: AppTextStyles.heading3),
-
-        AppGaps.h8,
-
-        Row(
-          children: [
-            Expanded(
-              child: _dateBox(
-                _startDate,
-                onTap: () => _pickDate(isStart: true),
-              ),
-            ),
-
-            AppGaps.w8,
-
-            Expanded(
-              child: _dateBox(_endDate, onTap: () => _pickDate(isStart: false)),
-            ),
-          ],
-        ),
-
-        AppGaps.h12,
-
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: _presets.map((preset) {
-              final isLast = preset == _presets.last;
-
-              return Padding(
-                padding: EdgeInsets.only(right: isLast ? 0 : 8),
-                child: _presetChip(context.l10n.rangeLabel(preset['key']!), preset['key']!),
-              );
-            }).toList(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ==========================================================================
-  // DATE BOX
-  // ==========================================================================
-
-  Widget _dateBox(DateTime date, {required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          border: Border.all(color: AppColors.grey200),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            const Icon(
-              Icons.calendar_today_outlined,
-              size: 16,
-              color: AppColors.grey500,
-            ),
-
-            AppGaps.w8,
-
-            Flexible(
-              child: Text(
-                _formatDisplayDate(date),
-                overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.body,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ==========================================================================
-  // PRESET CHIP
-  // ==========================================================================
-
-  Widget _presetChip(String label, String presetKey) {
-    final isSelected = _selectedPreset == presetKey;
-
-    return GestureDetector(
-      onTap: () => _applyPreset(presetKey),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.grey200,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: isSelected
-                  ? AppColors.primary.withValues(alpha: 0.25)
-                  : Colors.black.withValues(alpha: 0.05),
-              blurRadius: isSelected ? 12 : 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Text(
-          label,
-          style: AppTextStyles.body.copyWith(
-            color: isSelected ? AppColors.white : AppColors.black,
-            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ==========================================================================
   // ORDER STATUS
   // ==========================================================================
 
@@ -528,30 +366,18 @@ class _OrdersOverviewScreenState extends State<OrdersOverviewScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(context.l10n.ordersStatus, style: AppTextStyles.heading3),
-
-        AppGaps.h8,
-
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _statusPill(context.l10n.unpaid, unpaidOrders, AppColors.warning),
-
-              AppGaps.w8,
-
-              _statusPill(context.l10n.paid, paidOrders, AppColors.primary),
-
-              AppGaps.w8,
-
-              _statusPill(context.l10n.served, servedOrders, AppColors.success),
-
-              AppGaps.w8,
-
-              _statusPill(context.l10n.cancelled, cancelledOrders, AppColors.error),
-            ],
-          ),
+        Text(context.l10n.ordersStatus, style: AppTextStyles.heading2),
+        AppGaps.h12,
+        // Wrap, so pills drop to a new line instead of scrolling off-screen.
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            _statusPill(context.l10n.unpaid, unpaidOrders, AppColors.warning),
+            _statusPill(context.l10n.paid, paidOrders, AppColors.primary),
+            _statusPill(context.l10n.served, servedOrders, AppColors.success),
+            _statusPill(context.l10n.cancelled, cancelledOrders, AppColors.error),
+          ],
         ),
       ],
     );
@@ -566,7 +392,7 @@ class _OrdersOverviewScreenState extends State<OrdersOverviewScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
         '$label $count',
@@ -586,122 +412,25 @@ class _OrdersOverviewScreenState extends State<OrdersOverviewScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(context.l10n.orders, style: AppTextStyles.heading3),
-
-        AppGaps.h8,
-
-        if (orders.isEmpty)
-          _sectionCard(
-            child: Text(
-              context.l10n.noOrdersInPeriod,
-              style: AppTextStyles.caption,
-            ),
+        Text(context.l10n.orders, style: AppTextStyles.heading2),
+        AppGaps.h12,
+        if (orders.isEmpty && _loadFailed)
+          ListMessage.failed(
+            message: context.l10n.couldntLoadOrders,
+            onRetry: _loadOrders,
+          )
+        else if (orders.isEmpty)
+          ListMessage(
+            icon: Icons.receipt_long_outlined,
+            message: context.l10n.noOrdersInPeriod,
           )
         else
-          ...orders.map(
-            (order) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
+          for (final order in orders)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
               child: OrdersOverviewCard(order: order),
             ),
-          ),
       ],
-    );
-  }
-
-  // ==========================================================================
-  // SHARED CARD
-  // ==========================================================================
-
-  BoxDecoration _card() {
-    return BoxDecoration(
-      color: AppColors.white,
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: AppColors.grey200, width: 1),
-      boxShadow: [
-        BoxShadow(
-          color: AppColors.black.withValues(alpha: 0.05),
-          blurRadius: 10,
-          offset: const Offset(0, 4),
-        ),
-      ],
-    );
-  }
-
-  Widget _sectionCard({required Widget child}) {
-    return Container(
-      width: double.infinity,
-      padding: AppPadding.card,
-      decoration: _card(),
-      child: child,
-    );
-  }
-
-  // ==========================================================================
-  // OUTLET / SWITCH CART
-  // ==========================================================================
-
-  Widget _buildOutletSelector(BuildContext context) {
-    return Consumer<CartProvider>(
-      builder: (_, cartProvider, _) {
-        final carts = cartProvider.carts;
-
-        if (carts.isEmpty) {
-          return const SizedBox.shrink();
-        }
-
-        final cart = cartProvider.selectedCart;
-
-        if (cart == null) {
-          return const SizedBox.shrink();
-        }
-
-        return GestureDetector(
-          onTap: () => openSwitchCartSheet(context),
-          child: Container(
-            padding: AppPadding.smallCard,
-            decoration: BoxDecoration(
-              border: Border.all(color: AppColors.grey300),
-              borderRadius: BorderRadius.circular(12),
-              color: AppColors.white,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  width: 90,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        cart.cartName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.heading3.copyWith(fontSize: 14),
-                      ),
-
-                      Text(
-                        cart.address,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.caption,
-                      ),
-                    ],
-                  ),
-                ),
-
-                AppGaps.w8,
-
-                const Icon(
-                  Icons.keyboard_arrow_down,
-                  size: 18,
-                  color: AppColors.grey500,
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 }

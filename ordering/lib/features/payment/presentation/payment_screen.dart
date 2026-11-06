@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_gaps.dart';
-import 'package:ordering/core/theme/app_padding.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
-import 'package:ordering/core/widgets/app_header.dart';
 import 'package:ordering/features/auth/providers/auth_provider.dart';
-import 'package:ordering/features/cart/presentation/switch_cart_screen.dart';
 import 'package:ordering/features/cart/providers/cart_provider.dart';
 import 'package:ordering/features/payment/models/payment_model.dart';
 import 'package:ordering/features/payment/providers/payment_provider.dart';
 import 'package:ordering/features/payment/widgets/payment_history_tile.dart';
 import 'package:provider/provider.dart';
 import 'package:ordering/l10n/l10n.dart';
+import 'package:ordering/core/widgets/base_screen.dart';
+import 'package:ordering/core/widgets/list_message.dart';
+import 'package:ordering/core/widgets/date_range_filter.dart';
+import 'package:ordering/features/cart/widgets/cart_selector.dart';
 
 class PaymentScreen extends StatefulWidget {
   const PaymentScreen({super.key});
@@ -210,228 +210,43 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   // ==========================================================================
-  // DATE FORMAT
-  // ==========================================================================
-
-  String _formatDisplayDate(DateTime date) =>
-      DateFormat('dd MMM yyyy', Localizations.localeOf(context).languageCode)
-          .format(date);
-
-  // ==========================================================================
-  // SWITCH CART
-  // ==========================================================================
-
-  void _openSwitchCartSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const SwitchCartScreen(isDraggable: true),
-    );
-  }
-
-  // ==========================================================================
   // BUILD
   // ==========================================================================
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.white,
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _loadPaymentHistory,
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            children: [
-              AppGaps.h16,
-
-              // =================================================================
-              // HEADER
-              // =================================================================
-              AppHeader(
-                title: '',
-                showBack: true,
-                actionWidget: _buildOutletSelector(),
-              ),
-
-              AppGaps.h16,
-
-              // =================================================================
-              // CONTENT
-              // =================================================================
-              Padding(
-                padding: AppPadding.horizontalScreen,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // ===========================================================
-                    // TITLE
-                    // ===========================================================
-                    Text(context.l10n.transactionHistory, style: AppTextStyles.heading2),
-
-                    AppGaps.h16,
-
-                    // ===========================================================
-                    // DATE RANGE
-                    // ===========================================================
-                    _dateFilter(),
-
-                    AppGaps.h24,
-
-                    // ===========================================================
-                    // TRANSACTIONS
-                    // ===========================================================
-                    Consumer<PaymentProvider>(
-                      builder: (_, paymentProvider, _) {
-                        return _buildTransactionList(paymentProvider);
-                      },
-                    ),
-
-                    AppGaps.h40,
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+    final l10n = context.l10n;
+    return BaseScreen(
+      onBack: () => Navigator.pop(context),
+      header: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(l10n.transactionHistory, style: AppTextStyles.heading1),
+          AppGaps.h12,
+          const CartSelector(),
+        ],
       ),
-    );
-  }
-
-  // ==========================================================================
-  // DATE FILTER
-  // ==========================================================================
-
-  Widget _dateFilter() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(context.l10n.dateRange, style: AppTextStyles.heading3),
-
-        AppGaps.h8,
-
-        // ======================================================================
-        // START + END DATE
-        // ======================================================================
-        Row(
+      expandToFullHeight: true,
+      child: RefreshIndicator(
+        onRefresh: _loadPaymentHistory,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.only(bottom: 24),
           children: [
-            Expanded(
-              child: _dateBox(
-                _startDate,
-                onTap: () => _pickDate(isStart: true),
-              ),
+            DateRangeFilter(
+              start: _startDate,
+              end: _endDate,
+              presets: [for (final p in _presets) p['key']!],
+              selectedPreset: _selectedPreset,
+              onPickDate: (isStart) => _pickDate(isStart: isStart),
+              onPreset: _applyPreset,
             ),
-
-            AppGaps.w8,
-
-            Expanded(
-              child: _dateBox(_endDate, onTap: () => _pickDate(isStart: false)),
-            ),
-          ],
-        ),
-
-        AppGaps.h12,
-
-        // ======================================================================
-        // PRESETS
-        // ======================================================================
-        _buildFilters(),
-      ],
-    );
-  }
-
-  // ==========================================================================
-  // DATE BOX
-  // ==========================================================================
-
-  Widget _dateBox(DateTime date, {required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          border: Border.all(color: AppColors.grey200),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            const Icon(
-              Icons.calendar_today_outlined,
-              size: 16,
-              color: AppColors.grey500,
-            ),
-
-            AppGaps.w8,
-
-            Flexible(
-              child: Text(
-                _formatDisplayDate(date),
-                overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.body,
-              ),
+            AppGaps.h24,
+            Consumer<PaymentProvider>(
+              builder: (_, paymentProvider, _) =>
+                  _buildTransactionList(paymentProvider),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  // ==========================================================================
-  // FILTERS
-  // ==========================================================================
-
-  Widget _buildFilters() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: _presets.map((preset) {
-          final isLast = preset == _presets.last;
-
-          return Padding(
-            padding: EdgeInsets.only(right: isLast ? 0 : 8),
-            child: _presetChip(context.l10n.rangeLabel(preset['key']!), preset['key']!),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  // ==========================================================================
-  // PRESET CHIP
-  // ==========================================================================
-
-  Widget _presetChip(String label, String presetKey) {
-    final isSelected = _selectedPreset == presetKey;
-
-    return GestureDetector(
-      onTap: () => _applyPreset(presetKey),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.grey200,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: isSelected
-                  ? AppColors.primary.withValues(alpha: 0.25)
-                  : Colors.black.withValues(alpha: 0.05),
-              blurRadius: isSelected ? 12 : 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Text(
-          label,
-          style: AppTextStyles.body.copyWith(
-            color: isSelected ? AppColors.white : AppColors.black,
-            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-          ),
         ),
       ),
     );
@@ -465,33 +280,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
     // ========================================================================
 
     if (history.isEmpty && paymentProvider.error != null) {
-      return Container(
-        width: double.infinity,
-        padding: AppPadding.card,
-        decoration: BoxDecoration(
-          color: AppColors.grey100,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Column(
-          children: [
-            const Icon(Icons.error_outline, size: 36, color: AppColors.error),
-
-            AppGaps.h8,
-
-            Text(
-              paymentProvider.error!,
-              textAlign: TextAlign.center,
-              style: AppTextStyles.caption,
-            ),
-
-            AppGaps.h8,
-
-            TextButton(
-              onPressed: _loadPaymentHistory,
-              child: Text(context.l10n.tryAgain),
-            ),
-          ],
-        ),
+      return ListMessage.failed(
+        message: paymentProvider.error!,
+        onRetry: _loadPaymentHistory,
       );
     }
 
@@ -500,17 +291,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
     // ========================================================================
 
     if (history.isEmpty) {
-      return Container(
-        width: double.infinity,
-        padding: AppPadding.card,
-        decoration: BoxDecoration(
-          color: AppColors.grey100,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Text(
-          context.l10n.noTransactionsInPeriod,
-          style: AppTextStyles.caption,
-        ),
+      return ListMessage(
+        icon: Icons.receipt_long_outlined,
+        message: context.l10n.noTransactionsInPeriod,
       );
     }
 
@@ -523,7 +306,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(context.l10n.transactions, style: AppTextStyles.heading3),
+            Text(context.l10n.transactions, style: AppTextStyles.heading2),
 
             AppGaps.h12,
 
@@ -534,7 +317,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   payment.isPending;
 
               return Padding(
-                padding: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.only(bottom: 12),
                 child: _transactionItem(
                   payment,
                   isCurrentPending: isCurrentPending,
@@ -622,11 +405,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
                 AppGaps.w8,
 
-                Text(
-                  context.l10n.currentPendingTransactionCaps,
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.warning,
-                    fontWeight: FontWeight.w800,
+                Expanded(
+                  child: Text(
+                    context.l10n.currentPendingTransactionCaps,
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.warning,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
               ],
@@ -636,75 +421,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
           PaymentHistoryTile(payment: payment),
         ],
       ),
-    );
-  }
-
-  // ==========================================================================
-  // OUTLET / SWITCH CART SELECTOR
-  // ==========================================================================
-
-  Widget _buildOutletSelector() {
-    return Consumer<CartProvider>(
-      builder: (_, cartProvider, _) {
-        final carts = cartProvider.carts;
-
-        if (carts.isEmpty) {
-          return const SizedBox.shrink();
-        }
-
-        final cart = cartProvider.selectedCart;
-
-        if (cart == null) {
-          return const SizedBox.shrink();
-        }
-
-        return GestureDetector(
-          onTap: _openSwitchCartSheet,
-          child: Container(
-            padding: AppPadding.smallCard,
-            decoration: BoxDecoration(
-              border: Border.all(color: AppColors.grey300),
-              borderRadius: BorderRadius.circular(12),
-              color: AppColors.white,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  width: 90,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        cart.cartName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.heading3.copyWith(fontSize: 14),
-                      ),
-
-                      Text(
-                        cart.address,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.caption,
-                      ),
-                    ],
-                  ),
-                ),
-
-                AppGaps.w8,
-
-                const Icon(
-                  Icons.keyboard_arrow_down,
-                  size: 18,
-                  color: AppColors.grey500,
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 }

@@ -2,120 +2,90 @@ import 'package:flutter/material.dart';
 import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_gaps.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
-import 'package:ordering/core/widgets/app_card.dart';
 import 'package:ordering/features/cart/models/cart_model.dart';
+import 'package:ordering/features/cart/widgets/status_badge.dart';
 import 'package:ordering/l10n/l10n.dart';
 
+/// A cart in a picker list; same look as the onboarding app's outlet card.
 class CartCard extends StatelessWidget {
   final CartModel cart;
   final bool isSelected;
+  final VoidCallback? onTap;
 
-  const CartCard({super.key, required this.cart, required this.isSelected});
+  const CartCard({
+    super.key,
+    required this.cart,
+    required this.isSelected,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       curve: Curves.easeInOut,
-
-      /// 🔶 ONLY border + selection styling
       decoration: BoxDecoration(
+        color: isSelected
+            ? AppColors.primary.withValues(alpha: 0.02)
+            : AppColors.white,
         borderRadius: BorderRadius.circular(16),
-        border: isSelected
-            ? Border.all(color: AppColors.primary, width: 2)
-            : null, // 👈 no border when not selected
+        border: Border.all(
+          color: isSelected ? AppColors.primary : AppColors.grey200,
+          width: isSelected ? 2 : 1,
+        ),
       ),
-
-      child: AppCard(
-        padding: const EdgeInsets.all(16),
-
-        /// 🔶 subtle selected background
-        child: Container(
-          decoration: BoxDecoration(
-            color: isSelected
-                ? AppColors.primary.withOpacity(0.02)
-                : AppColors.white,
-            borderRadius: BorderRadius.circular(16),
-          ),
-
-          child: InkWell(
-            borderRadius: BorderRadius.circular(16),
-
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                /// 🔶 LEFT CONTENT
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        cart.cartName,
-                        style: AppTextStyles.heading3.copyWith(
-                          color: isSelected
-                              ? AppColors.primary
-                              : AppColors.black,
-                        ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      cart.cartName,
+                      style: AppTextStyles.heading3.copyWith(
+                        color: isSelected ? AppColors.primary : AppColors.black,
                       ),
-
-                      AppGaps.h12,
-
-                      Text(
-                        cart.address,
-                        style: AppTextStyles.body.copyWith(
-                          color: AppColors.grey400,
-                          fontSize: 13,
-                        ),
-                      ),
-
-                      AppGaps.h12,
-
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.grey100,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          "ID: ${cart.cartId}",
-                          style: AppTextStyles.caption.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                AppGaps.w12,
-
-                /// 🔶 STATUS CHIP
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: cart.isOpen
-                        ? AppColors.success.withOpacity(0.1)
-                        : AppColors.grey200,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    cart.isOpen ? context.l10n.open : context.l10n.closed,
-                    style: AppTextStyles.caption.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: cart.isOpen
-                          ? AppColors.success
-                          : AppColors.grey600,
                     ),
+                  ),
+                  AppGaps.w8,
+                  StatusBadge(
+                    label: (cart.isOpen ? context.l10n.open : context.l10n.closed)
+                        .toUpperCase(),
+                    isSuccess: cart.isOpen,
+                  ),
+                ],
+              ),
+              if (cart.address.isNotEmpty) ...[
+                AppGaps.h8,
+                Text(
+                  cart.address,
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.grey400,
+                    fontSize: 13,
                   ),
                 ),
               ],
-            ),
+              AppGaps.h12,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.grey100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  "ID: ${cart.cartId}",
+                  style: AppTextStyles.caption.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

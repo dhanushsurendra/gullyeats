@@ -6,6 +6,7 @@ import 'package:ordering/core/theme/app_padding.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
 import 'package:ordering/features/payment/models/payment_model.dart';
 import 'package:ordering/l10n/l10n.dart';
+import 'package:ordering/core/utils/format_price.dart';
 
 /// A payment history transaction tile.
 ///
@@ -42,7 +43,7 @@ class _PaymentHistoryTileState extends State<PaymentHistoryTile> {
       padding: AppPadding.card,
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.grey200),
       ),
       child: Column(
@@ -96,10 +97,12 @@ class _PaymentHistoryTileState extends State<PaymentHistoryTile> {
                           color: AppColors.grey500,
                         ),
                         const SizedBox(width: 5),
-                        Text(
-                          _orderCountLabel(payment.totalOrders),
-                          style: AppTextStyles.caption.copyWith(
-                            color: AppColors.grey500,
+                        Flexible(
+                          child: Text(
+                            _orderCountLabel(payment.totalOrders),
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.grey500,
+                            ),
                           ),
                         ),
                       ],
@@ -116,11 +119,13 @@ class _PaymentHistoryTileState extends State<PaymentHistoryTile> {
                           color: statusColor,
                         ),
                         const SizedBox(width: 5),
-                        Text(
-                          _statusLabel(payment.status),
-                          style: AppTextStyles.caption.copyWith(
-                            color: statusColor,
-                            fontWeight: FontWeight.w600,
+                        Flexible(
+                          child: Text(
+                            _statusLabel(payment.status),
+                            style: AppTextStyles.caption.copyWith(
+                              color: statusColor,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ],
@@ -138,16 +143,24 @@ class _PaymentHistoryTileState extends State<PaymentHistoryTile> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    '₹${payment.amount.toStringAsFixed(0)}',
+                    '₹${formatPrice(payment.amount)}',
                     style: AppTextStyles.heading3.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
                   ),
                   const SizedBox(height: 2),
-                  Text(
-                    context.l10n.platformFee,
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.grey500,
+                  // Capped so a long translation wraps instead of squeezing
+                  // the cart name to nothing.
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 96),
+                    child: Text(
+                      context.l10n.platformFee,
+                      textAlign: TextAlign.end,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.grey500,
+                      ),
                     ),
                   ),
                 ],

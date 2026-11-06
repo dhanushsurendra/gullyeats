@@ -23,43 +23,44 @@ class AppTabFilter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 48,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        separatorBuilder: (_, _) => const SizedBox(width: 10),
-        itemCount: tabs.length,
-        itemBuilder: (context, index) {
-          final tab = tabs[index];
-          final isSelected = selectedTab == tab;
+    // No fixed height: the chips grow with large system text.
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (final (index, tab) in tabs.indexed) ...[
+            if (index > 0) const SizedBox(width: 10),
+            _chip(tab, selectedTab == tab),
+          ],
+        ],
+      ),
+    );
+  }
 
-          return Center(
-            child: GestureDetector(
-              onTap: () => onTabSelected(tab),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.lg,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primary : Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isSelected ? AppColors.primary : AppColors.grey200,
-                  ),
-                ),
-                child: Text(
-                  labelOf?.call(tab) ?? tab,
-                  style: AppTextStyles.body.copyWith(
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                    color: isSelected ? AppColors.white : AppColors.grey600,
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
+  Widget _chip(String tab, bool isSelected) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () => onTabSelected(tab),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: 10,
+        ),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : AppColors.grey200,
+          ),
+        ),
+        child: Text(
+          labelOf?.call(tab) ?? tab,
+          style: AppTextStyles.body.copyWith(
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+            color: isSelected ? AppColors.white : AppColors.grey600,
+          ),
+        ),
       ),
     );
   }
