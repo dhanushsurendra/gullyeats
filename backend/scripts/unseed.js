@@ -7,10 +7,10 @@ async function main() {
   const db = mongoose.connection.db
   const seededCarts = await db.collection('carts').distinct('_id', { seed: SEED_TAG })
   for (const name of ['payments', 'counters', 'orders', 'menuitems', 'carts', 'users']) {
-    // Payments are also matched by cart: the app may have written untagged
-    // ones for seeded carts (e.g. auto-settling a ₹0 day).
-    const filter =
-      name === 'payments' ? { $or: [{ seed: SEED_TAG }, { cartId: { $in: seededCarts } }] } : { seed: SEED_TAG }
+    // Also matched by cart: orders placed by hand on seeded carts, and the
+    // counters and payments the app wrote for them, carry no tag.
+    const byCart = ['payments', 'counters', 'orders', 'menuitems'].includes(name)
+    const filter = byCart ? { $or: [{ seed: SEED_TAG }, { cartId: { $in: seededCarts } }] } : { seed: SEED_TAG }
     const { deletedCount } = await db.collection(name).deleteMany(filter)
     console.log(`${name}: deleted ${deletedCount}`)
   }
