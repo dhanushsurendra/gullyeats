@@ -3,6 +3,9 @@ const asyncHandler = require('../utils/asyncHandler')
 const Order = require('../models/Order')
 const { findManagedCart } = require('../utils/cartAccess')
 
+// Money the vendor actually received: orders are served only after payment.
+const PAID_STATUSES = new Set(['PAID', 'SERVED'])
+
 function formatDuration(seconds) {
   if (seconds === null || seconds === undefined || Number.isNaN(seconds)) {
     return null
@@ -28,14 +31,179 @@ function safeDivide(numerator, denominator) {
   return numerator / denominator
 }
 
+const sum = (values) => values.reduce((total, v) => total + (Number(v) || 0), 0)
+const avg = (values) => (values.length ? sum(values) / values.length : null)
+const seconds = (from, to) => (new Date(to) - new Date(from)) / 1000
+
+const istParts = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Asia/Kolkata',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  hourCycle: 'h23',
+})
+
+function istDayAndHour(date) {
+  const parts = Object.fromEntries(
+    istParts.formatToParts(new Date(date)).map((p) => [p.type, p.value]),
+  )
+  return { day: `${parts.year}-${parts.month}-${parts.day}`, hour: Number(parts.hour) }
+}
+
+/**
+ * The sales dashboard numbers for one cart's orders in the chosen period.
+ * Revenue, items and order values count only paid orders (PAID or SERVED);
+ * order counts and rates count every order, so cancellations show up.
+ */
+function buildSalesReport(orders) {
+  const paid = orders.filter((o) => PAID_STATUSES.has(o.status))
+  const notCancelled = orders.filter((o) => o.status !== 'CANCELLED')
+  const count = (status) => orders.filter((o) => o.status === status).length
+
+  const totalOrders = orders.length
+  const pendingOrders = count('PENDING')
+  const paidOrders = count('PAID')
+  const servedOrders = count('SERVED')
+  const cancelledOrders = count('CANCELLED')
+
+  const revenue = sum(paid.map((o) => o.totalPrice))
+  const subtotalRevenue = sum(paid.map((o) => o.subtotal))
+  const parcelRevenue = sum(paid.map((o) => o.parcelCharge))
+  const platformFeeRevenue = sum(paid.map((o) => o.platformFee))
+  const totals = paid.map((o) => Number(o.totalPrice) || 0)
+
+  const qr = paid.filter((o) => o.orderType === 'QR')
+  const manual = paid.filter((o) => o.orderType === 'MANUAL')
+  const parcel = paid.filter((o) => Number(o.parcelCharge) > 0)
+
+  // Items are grouped by menu item, so a renamed item stays one row (under
+  // its latest name). Old lines without an ID fall back to their name.
+  const items = new Map()
+  const itemsPerOrder = []
+  for (const order of paid) {
+    let inOrder = 0
+    for (const line of order.orderItems || []) {
+      const qty = Number(line.quantity) || 0
+      const key = line.menuItemId ? String(line.menuItemId) : `name:${line.name}`
+      const item = items.get(key) || { name: line.name, revenue: 0, qty: 0 }
+      item.name = line.name
+      item.revenue += (Number(line.price) || 0) * qty
+      item.qty += qty
+      items.set(key, item)
+      inOrder += qty
+    }
+    itemsPerOrder.push(inOrder)
+  }
+  const itemList = [...items.values()]
+  const byRevenue = [...itemList].sort((a, b) => b.revenue - a.revenue)
+  const byVolume = [...itemList].sort((a, b) => b.qty - a.qty)
+  const totalItemsSold = sum(itemsPerOrder)
+
+  const served = paid.filter((o) => o.servedAt)
+  const prepTimes = served.map((o) => seconds(o.createdAt, o.servedAt))
+  const paidAt = paid.filter((o) => o.paidAt)
+  const paymentTimes = paidAt.map((o) => seconds(o.createdAt, o.paidAt))
+  const serveAfterPayment = paidAt
+    .filter((o) => o.servedAt)
+    .map((o) => seconds(o.paidAt, o.servedAt))
+
+  // Busy hours count every order that wasn't cancelled: it is about traffic.
+  const hourCounts = new Map()
+  for (const order of notCancelled) {
+    const { hour } = istDayAndHour(order.createdAt)
+    hourCounts.set(hour, (hourCounts.get(hour) || 0) + 1)
+  }
+  const busiest = [...hourCounts]
+    .map(([hour, count]) => ({ hour, count }))
+    .sort((a, b) => b.count - a.count || a.hour - b.hour)
+    .slice(0, 5)
+  // The peak is the busiest hour (the earliest, on a tie), taken before the
+  // list is put back in time order for the chart.
+  const peakHour = busiest.length ? busiest[0].hour : null
+  const busyHours = [...busiest].sort((a, b) => a.hour - b.hour)
+
+  // Gaps only within a day: the overnight gap isn't time between orders.
+  const gaps = []
+  const times = notCancelled
+    .map((o) => new Date(o.createdAt))
+    .sort((a, b) => a - b)
+  for (let i = 1; i < times.length; i++) {
+    if (istDayAndHour(times[i]).day === istDayAndHour(times[i - 1]).day) {
+      gaps.push(seconds(times[i - 1], times[i]))
+    }
+  }
+
+  return {
+    // revenue
+    revenue: Math.round(revenue),
+    subtotalRevenue,
+    parcelRevenue,
+    platformFeeRevenue,
+    netRevenue: revenue - platformFeeRevenue,
+
+    // order counts
+    totalOrders,
+    pendingOrders,
+    paidOrders,
+    servedOrders,
+    cancelledOrders,
+
+    // rates
+    completionRate: safeDivide(servedOrders, totalOrders) * 100,
+    cancellationRate: safeDivide(cancelledOrders, totalOrders) * 100,
+    paymentRate: safeDivide(paid.length, totalOrders) * 100,
+
+    // order value
+    avgOrderValue: safeDivide(revenue, paid.length),
+    highestOrder: totals.length ? Math.max(...totals) : 0,
+    lowestOrder: totals.length ? Math.min(...totals) : 0,
+    revenuePerOrder: safeDivide(revenue, totalOrders),
+
+    // items
+    totalItemsSold,
+    avgItemsPerOrder: safeDivide(totalItemsSold, paid.length),
+    highestItemsInOrder: itemsPerOrder.length ? Math.max(...itemsPerOrder) : 0,
+    uniqueItemsSold: itemList.length,
+
+    // prep / payment timings
+    avgPrepTime: formatDuration(avg(prepTimes)),
+    fastestOrder: formatDuration(prepTimes.length ? Math.min(...prepTimes) : null),
+    slowestOrder: formatDuration(prepTimes.length ? Math.max(...prepTimes) : null),
+    avgPaymentTime: formatDuration(avg(paymentTimes)),
+    avgServeAfterPaymentTime: formatDuration(avg(serveAfterPayment)),
+
+    // timing patterns
+    peakHour,
+    busyHours,
+    averageTimeBetweenOrders: formatDuration(avg(gaps)),
+
+    // order type breakdown
+    qrOrders: qr.length,
+    manualOrders: manual.length,
+    qrRevenue: sum(qr.map((o) => o.totalPrice)),
+    manualRevenue: sum(manual.map((o) => o.totalPrice)),
+
+    // parcel
+    parcelOrders: parcel.length,
+    avgParcelCharge: safeDivide(parcelRevenue, parcel.length),
+
+    // top/bottom items
+    topRevenueItem: byRevenue[0]?.name ?? null,
+    topVolumeItem: byVolume[0]?.name ?? null,
+    topItems: byRevenue.slice(0, 5),
+    bottomItems: [...itemList].sort((a, b) => a.revenue - b.revenue).slice(0, 5),
+  }
+}
+
+exports.buildSalesReport = buildSalesReport
+
 exports.getSalesDashboard = asyncHandler(async (req, res) => {
   const cartId = req.params.cartId
   const { startDate, endDate } = req.query
 
-  if (!cartId) {
-    return res
-      .status(400)
-      .json({ success: false, message: 'cartId is required' })
+  if (!cartId || !mongoose.isValidObjectId(cartId)) {
+    return res.status(400).json({ success: false, message: 'Invalid cartId' })
   }
 
   if (!startDate || !endDate) {
@@ -59,421 +227,17 @@ exports.getSalesDashboard = asyncHandler(async (req, res) => {
 
   await findManagedCart(req, res, cartId)
 
-  let cartObjectId
-  try {
-    cartObjectId = new mongoose.Types.ObjectId(cartId)
-  } catch (err) {
-    return res.status(400).json({ success: false, message: 'Invalid cartId' })
-  }
-
-  const dateMatch = {
-    cartId: cartObjectId,
+  // shortcut: loads the period's orders and adds them up in Node, fine for a
+  // street-food cart's volume; move the totals back into an aggregation if
+  // a cart ever has tens of thousands of orders in a range.
+  const orders = await Order.find({
+    cartId,
     createdAt: { $gte: start, $lte: end },
-  }
-
-  // Anything that represents money/items sold should exclude CANCELLED
-  // orders. Anything that represents order *counts/status* should keep them,
-  // otherwise cancellationRate can never be calculated.
-  const excludeCancelled = { status: { $ne: 'CANCELLED' } }
-
-  const [result] = await Order.aggregate([
-    { $match: dateMatch },
-    {
-      $facet: {
-        // ---- 1. order status counts (based on ALL orders in range) ----
-        statusMetrics: [
-          {
-            $group: {
-              _id: null,
-              totalOrders: { $sum: 1 },
-              pendingOrders: {
-                $sum: { $cond: [{ $eq: ['$status', 'PENDING'] }, 1, 0] },
-              },
-              paidOrders: {
-                $sum: { $cond: [{ $eq: ['$status', 'PAID'] }, 1, 0] },
-              },
-              servedOrders: {
-                $sum: { $cond: [{ $eq: ['$status', 'SERVED'] }, 1, 0] },
-              },
-              cancelledOrders: {
-                $sum: { $cond: [{ $eq: ['$status', 'CANCELLED'] }, 1, 0] },
-              },
-            },
-          },
-        ],
-
-        // ---- 2. revenue summary (excludes CANCELLED) ----
-        summary: [
-          { $match: excludeCancelled },
-          {
-            $group: {
-              _id: null,
-              revenue: { $sum: '$totalPrice' },
-              validOrders: { $sum: 1 },
-              highestOrder: { $max: '$totalPrice' },
-              lowestOrder: { $min: '$totalPrice' },
-            },
-          },
-        ],
-
-        // ---- 3. revenue breakdown (excludes CANCELLED) ----
-        revenueBreakdown: [
-          { $match: excludeCancelled },
-          {
-            $group: {
-              _id: null,
-              subtotalRevenue: { $sum: '$subtotal' },
-              parcelRevenue: { $sum: '$parcelCharge' },
-              platformFeeRevenue: { $sum: '$platformFee' },
-              qrRevenue: {
-                $sum: {
-                  $cond: [{ $eq: ['$orderType', 'QR'] }, '$totalPrice', 0],
-                },
-              },
-              manualRevenue: {
-                $sum: {
-                  $cond: [{ $eq: ['$orderType', 'MANUAL'] }, '$totalPrice', 0],
-                },
-              },
-              qrOrders: {
-                $sum: { $cond: [{ $eq: ['$orderType', 'QR'] }, 1, 0] },
-              },
-              manualOrders: {
-                $sum: { $cond: [{ $eq: ['$orderType', 'MANUAL'] }, 1, 0] },
-              },
-              parcelOrders: {
-                $sum: { $cond: [{ $gt: ['$parcelCharge', 0] }, 1, 0] },
-              },
-            },
-          },
-        ],
-
-        // ---- 4. item level metrics (excludes CANCELLED) ----
-        itemMetrics: [
-          { $match: excludeCancelled },
-          { $unwind: '$orderItems' },
-          {
-            $group: {
-              _id: null,
-              totalItemsSold: { $sum: '$orderItems.quantity' },
-              uniqueItemsSold: { $addToSet: '$orderItems.name' },
-              highestItemsInOrder: { $max: '$orderItems.quantity' },
-            },
-          },
-          {
-            $project: {
-              _id: 0,
-              totalItemsSold: 1,
-              highestItemsInOrder: 1,
-              uniqueItemsSold: { $size: '$uniqueItemsSold' },
-            },
-          },
-        ],
-
-        // ---- 5. top 5 items by revenue (excludes CANCELLED) ----
-        topItems: [
-          { $match: excludeCancelled },
-          { $unwind: '$orderItems' },
-          {
-            $group: {
-              _id: '$orderItems.name',
-              revenue: {
-                $sum: {
-                  $multiply: ['$orderItems.price', '$orderItems.quantity'],
-                },
-              },
-              qty: { $sum: '$orderItems.quantity' },
-            },
-          },
-          { $sort: { revenue: -1 } },
-          { $limit: 5 },
-          { $project: { _id: 0, name: '$_id', revenue: 1, qty: 1 } },
-        ],
-
-        // ---- 6. bottom 5 items by revenue (excludes CANCELLED) ----
-        bottomItems: [
-          { $match: excludeCancelled },
-          { $unwind: '$orderItems' },
-          {
-            $group: {
-              _id: '$orderItems.name',
-              revenue: {
-                $sum: {
-                  $multiply: ['$orderItems.price', '$orderItems.quantity'],
-                },
-              },
-              qty: { $sum: '$orderItems.quantity' },
-            },
-          },
-          { $sort: { revenue: 1 } },
-          { $limit: 5 },
-          { $project: { _id: 0, name: '$_id', revenue: 1, qty: 1 } },
-        ],
-
-        // ---- 7. top item by volume (qty sold) (excludes CANCELLED) ----
-        topVolumeItem: [
-          { $match: excludeCancelled },
-          { $unwind: '$orderItems' },
-          {
-            $group: {
-              _id: '$orderItems.name',
-              qty: { $sum: '$orderItems.quantity' },
-            },
-          },
-          { $sort: { qty: -1 } },
-          { $limit: 1 },
-          { $project: { _id: 0, name: '$_id', qty: 1 } },
-        ],
-
-        // ---- 8. prep time metrics ----
-        prepMetrics: [
-          {
-            $match: {
-              ...excludeCancelled,
-              servedAt: { $exists: true, $ne: null },
-            },
-          },
-          {
-            $project: {
-              prepTime: {
-                $divide: [{ $subtract: ['$servedAt', '$createdAt'] }, 1000],
-              },
-            },
-          },
-          {
-            $group: {
-              _id: null,
-              avgPrepTime: { $avg: '$prepTime' },
-              fastestOrderTime: { $min: '$prepTime' },
-              slowestOrderTime: { $max: '$prepTime' },
-            },
-          },
-        ],
-
-        // ---- 9. payment metrics ----
-        paymentMetrics: [
-          {
-            $match: {
-              ...excludeCancelled,
-              paidAt: { $exists: true, $ne: null },
-            },
-          },
-          {
-            $project: {
-              paymentTime: {
-                $divide: [{ $subtract: ['$paidAt', '$createdAt'] }, 1000],
-              },
-              serveAfterPayment: {
-                $cond: [
-                  {
-                    $and: [
-                      { $ne: ['$paidAt', null] },
-                      { $ne: ['$servedAt', null] },
-                    ],
-                  },
-                  { $divide: [{ $subtract: ['$servedAt', '$paidAt'] }, 1000] },
-                  null,
-                ],
-              },
-            },
-          },
-          {
-            $group: {
-              _id: null,
-              avgPaymentTime: { $avg: '$paymentTime' },
-              avgServeTimeAfterPayment: { $avg: '$serveAfterPayment' },
-            },
-          },
-        ],
-
-        // ---- 10. top 5 busiest hours of day (excludes CANCELLED) ----
-        busyHours: [
-          { $match: excludeCancelled },
-          {
-            $group: {
-              _id: {
-                $hour: {
-                  date: '$createdAt',
-                  timezone: 'Asia/Kolkata',
-                },
-              },
-              count: { $sum: 1 },
-            },
-          },
-          { $sort: { count: -1 } },
-          { $limit: 5 },
-          { $sort: { _id: 1 } }, 
-          {
-            $project: {
-              _id: 0,
-              hour: '$_id',
-              count: 1,
-            },
-          },
-        ],
-
-        // ---- 11. raw timestamps for "average time between orders" ----
-        orderTimestamps: [
-          { $match: excludeCancelled },
-          { $sort: { createdAt: 1 } },
-          { $project: { _id: 0, createdAt: 1 } },
-        ],
-      },
-    },
-  ])
-
-  const statusMetrics = result.statusMetrics[0] || {
-    totalOrders: 0,
-    pendingOrders: 0,
-    paidOrders: 0,
-    servedOrders: 0,
-    cancelledOrders: 0,
-  }
-
-  const summary = result.summary[0] || {
-    revenue: 0,
-    validOrders: 0,
-    highestOrder: 0,
-    lowestOrder: 0,
-  }
-  const revenueBreakdown = result.revenueBreakdown[0] || {
-    subtotalRevenue: 0,
-    parcelRevenue: 0,
-    platformFeeRevenue: 0,
-    qrRevenue: 0,
-    manualRevenue: 0,
-    qrOrders: 0,
-    manualOrders: 0,
-    parcelOrders: 0,
-  }
-  const itemMetrics = result.itemMetrics[0] || {
-    totalItemsSold: 0,
-    uniqueItemsSold: 0,
-    highestItemsInOrder: 0,
-  }
-  const prepMetrics = result.prepMetrics[0] || {
-    avgPrepTime: null,
-    fastestOrderTime: null,
-    slowestOrderTime: null,
-  }
-  const paymentMetrics = result.paymentMetrics[0] || {
-    avgPaymentTime: null,
-    avgServeTimeAfterPayment: null,
-  }
-  const topItems = result.topItems || []
-  const bottomItems = result.bottomItems || []
-  const topVolumeItem = result.topVolumeItem[0] || null
-  const busyHours = result.busyHours || []
-  const orderTimestamps = (result.orderTimestamps || []).map((o) => o.createdAt)
-
-  const {
-    totalOrders,
-    pendingOrders,
-    paidOrders,
-    servedOrders,
-    cancelledOrders,
-  } = statusMetrics
-  const { revenue, validOrders, highestOrder, lowestOrder } = summary
-  const {
-    subtotalRevenue,
-    parcelRevenue,
-    platformFeeRevenue,
-    qrRevenue,
-    manualRevenue,
-    qrOrders,
-    manualOrders,
-    parcelOrders,
-  } = revenueBreakdown
-  const { totalItemsSold, uniqueItemsSold, highestItemsInOrder } = itemMetrics
-  const { avgPrepTime, fastestOrderTime, slowestOrderTime } = prepMetrics
-  const { avgPaymentTime, avgServeTimeAfterPayment } = paymentMetrics
-
-  // ---- derived rates & averages ----
-  const completionRate = safeDivide(servedOrders, totalOrders) * 100
-  const paymentRate = safeDivide(paidOrders, totalOrders) * 100
-  const cancellationRate = safeDivide(cancelledOrders, totalOrders) * 100
-
-  const netRevenue = revenue - (platformFeeRevenue || 0)
-  const avgOrderValue = safeDivide(revenue, validOrders)
-  const revenuePerOrder = safeDivide(revenue, totalOrders)
-  const avgItemsPerOrder = safeDivide(totalItemsSold, validOrders)
-  const avgParcelCharge = safeDivide(parcelRevenue, parcelOrders)
-
-  const topRevenueItem = topItems[0] || null
-
-  const peakHour = busyHours.length > 0 ? busyHours[0].hour : null
-
-  let averageTimeBetweenOrders = null
-  if (orderTimestamps.length > 1) {
-    let totalGapSeconds = 0
-    for (let i = 1; i < orderTimestamps.length; i++) {
-      totalGapSeconds +=
-        (new Date(orderTimestamps[i]) - new Date(orderTimestamps[i - 1])) / 1000
-    }
-    averageTimeBetweenOrders = totalGapSeconds / (orderTimestamps.length - 1)
-  }
-
-  res.json({
-    success: true,
-    data: {
-      // revenue
-      revenue: Math.round(revenue),
-      subtotalRevenue,
-      parcelRevenue,
-      platformFeeRevenue,
-      netRevenue,
-
-      // order counts
-      totalOrders,
-      pendingOrders,
-      paidOrders,
-      servedOrders,
-      cancelledOrders,
-
-      // rates
-      completionRate,
-      cancellationRate,
-      paymentRate,
-
-      // order value
-      avgOrderValue,
-      highestOrder,
-      lowestOrder,
-      revenuePerOrder,
-
-      // items
-      totalItemsSold,
-      avgItemsPerOrder,
-      highestItemsInOrder,
-      uniqueItemsSold,
-
-      // prep / payment timings
-      avgPrepTime: formatDuration(avgPrepTime),
-      fastestOrder: formatDuration(fastestOrderTime),
-      slowestOrder: formatDuration(slowestOrderTime),
-      avgPaymentTime: formatDuration(avgPaymentTime),
-      avgServeAfterPaymentTime: formatDuration(avgServeTimeAfterPayment),
-
-      // timing patterns
-      peakHour,
-      busyHours,
-      averageTimeBetweenOrders: formatDuration(averageTimeBetweenOrders),
-
-      // order type breakdown
-      qrOrders,
-      manualOrders,
-      qrRevenue,
-      manualRevenue,
-
-      // parcel
-      parcelOrders,
-      avgParcelCharge,
-
-      // top/bottom items
-      topRevenueItem: topRevenueItem ? topRevenueItem.name : null,
-      topVolumeItem: topVolumeItem ? topVolumeItem.name : null,
-      topItems,
-      bottomItems,
-    },
   })
+    .select(
+      'status totalPrice subtotal parcelCharge platformFee orderType orderItems createdAt paidAt servedAt',
+    )
+    .lean()
+
+  res.json({ success: true, data: buildSalesReport(orders) })
 })
