@@ -274,3 +274,19 @@ test('a malformed id is a 400, not a server error', async () => {
   assert.strictEqual(r.status, 400)
   assert.strictEqual(r.body.message, 'Invalid ID')
 })
+
+test('feedback takes a 1-5 star rating, with or without words', async () => {
+  const order = paidOrder()
+  setup({ order })
+  const send = (body) => call(c.submitOrderFeedback, { params: { orderNumber: order._id }, body })
+  assert.strictEqual((await send({ rating: 4 })).status, 200)
+  assert.strictEqual(order.rating, 4)
+  assert.strictEqual(order.feedback, undefined)
+
+  assert.strictEqual((await send({ rating: 5, feedback: ' Tasty ' })).status, 200)
+  assert.deepStrictEqual([order.rating, order.feedback], [5, 'Tasty'])
+
+  for (const body of [{ rating: 6 }, { rating: 0 }, { rating: 3.5 }, { rating: '5' }, {}, { feedback: '  ' }]) {
+    assert.strictEqual((await send(body)).status, 400, JSON.stringify(body))
+  }
+})

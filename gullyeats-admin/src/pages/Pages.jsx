@@ -413,7 +413,13 @@ export function Feedback() {
               className='flex items-start justify-between gap-4 border-b border-line px-4 py-3 last:border-0'
             >
               <div>
-                <p>“{f.text}”</p>
+                {f.rating ? (
+                  <p className='text-amber-500' aria-label={`${f.rating} of 5 stars`}>
+                    {'★'.repeat(f.rating)}
+                    <span className='text-neutral-300'>{'★'.repeat(5 - f.rating)}</span>
+                  </p>
+                ) : null}
+                {f.text && <p>“{f.text}”</p>}
                 <p className='text-[12px] text-neutral-500'>
                   {f.cart} · {f.owner} · Order #{f.number}
                 </p>

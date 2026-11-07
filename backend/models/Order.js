@@ -109,6 +109,14 @@ const OrderSchema = new mongoose.Schema(
       default: null,
     },
 
+    // The customer's 1–5 star rating, given with (or instead of) feedback.
+    rating: {
+      type: Number,
+      min: 1,
+      max: 5,
+      default: null,
+    },
+
     orderDate: {
       type: Date,
       default: Date.now,

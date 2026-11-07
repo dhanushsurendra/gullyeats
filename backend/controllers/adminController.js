@@ -1380,13 +1380,16 @@ exports.payments = asyncHandler(async (req, res) => {
 
 exports.feedback = asyncHandler(async (req, res) => {
   const limit = Math.min(Number(req.query.limit) || 30, 200)
-  const hasFb = { feedback: { $exists: true, $nin: ['', null] } }
+  const hasFb = {
+    $or: [{ feedback: { $exists: true, $nin: ['', null] } }, { rating: { $gte: 1 } }],
+  }
   const [total, rows] = await Promise.all([
     Order.countDocuments(hasFb),
-    Order.find({ ...hasFb, ...afterCursor(res, req.query.cursor) })
+    // $and: the cursor is an $or too, so spreading would drop one.
+    Order.find({ $and: [hasFb, afterCursor(res, req.query.cursor)] })
       .sort({ createdAt: -1, _id: -1 })
       .limit(limit + 1)
-      .select('feedback orderNumber cartId createdAt')
+      .select('feedback rating orderNumber cartId createdAt')
       .lean(),
   ])
   const hasMore = rows.length > limit
@@ -1399,6 +1402,7 @@ exports.feedback = asyncHandler(async (req, res) => {
       items: rows.map((o) => ({
         id: String(o._id),
         text: o.feedback,
+        rating: o.rating ?? null,
         number: o.orderNumber,
         cart: info.get(String(o.cartId))?.name,
         owner: info.get(String(o.cartId))?.owner,

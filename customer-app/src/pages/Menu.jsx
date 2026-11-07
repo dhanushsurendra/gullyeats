@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate, useParams } from 'react-router-dom'
 import { RiArrowRightLine, RiCloseLine, RiSearchLine } from 'react-icons/ri'
 
+import ActiveOrders from '../components/ActiveOrders'
 import { MenuItem } from '../components/MenuItem'
 import MenuItemShimmer from '../components/MenuItemShimmer'
 import { Button, Page, StatusScreen, TopBar } from '../components/ui'
@@ -108,7 +109,8 @@ export default function Menu() {
     // Sold-out items sink to the bottom.
     .sort((a, b) => (b.isInStock !== false) - (a.isInStock !== false))
 
-  const backToOrder = () => navigate(`/c/${cartId}/order/${orderId}`)
+  // Replace, so the back button from the order doesn't reopen this editor.
+  const backToOrder = () => navigate(`/c/${cartId}/order/${orderId}`, { replace: true })
 
   const save = async () => {
     // From the draft, not the menu: keeps ordered items that have left the menu.
@@ -203,6 +205,7 @@ export default function Menu() {
       </div>
 
       <main className='flex-1 px-4 pb-6'>
+        {!isAddMore && <ActiveOrders cartId={cartId} />}
         {!loading && !isAddMore && !isOpen && (
           <p className='mb-4 rounded-2xl bg-grey-100 px-4 py-3 text-sm text-grey-600'>
             This cart is closed right now, so ordering is paused. Here's what they serve.

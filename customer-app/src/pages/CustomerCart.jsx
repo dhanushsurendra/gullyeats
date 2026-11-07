@@ -6,7 +6,7 @@ import { RiAddLine, RiPhoneLine } from 'react-icons/ri'
 import defaultFoodImage from '../assets/default-food.png'
 import { BottomBar, Button, Card, Page, Row, StatusScreen, Stepper, TopBar, VegMark } from '../components/ui'
 import { api } from '../constants/api'
-import { addItem, clearCart, removeItem, setOrder, setPhoneNumber } from '../store/cartSlice'
+import { addItem, clearCart, removeItem, rememberOrder, setPhoneNumber } from '../store/cartSlice'
 import { itemCount, itemsTotal, PLATFORM_FEE, rupees } from '../utils/format'
 
 // Review the basket, optionally leave a phone number, and place the order.
@@ -63,7 +63,7 @@ export default function CustomerCart() {
         },
       })
       dispatch(setPhoneNumber(phone || null))
-      dispatch(setOrder(order))
+      dispatch(rememberOrder(order))
       dispatch(clearCart())
       navigate(`/c/${cartId}/order/${order._id}`, { replace: true })
     } catch (e) {

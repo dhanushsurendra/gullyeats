@@ -72,4 +72,4 @@ Both apps use the same structure: `lib/core/` (constants, routes, theme, widgets
 - Cart status: LIVE = `isOpen`. PAUSED = closed and `isActive === false`. ATTENTION = the cart has a PENDING platform-fee `Payment`. Anything else is OFFLINE.
 - Order status: PENDING = awaiting payment, PAID = preparing, SERVED, CANCELLED.
 - GMV = the sum of `totalPrice` over paid orders (`PAID` or `SERVED`). Platform revenue = their `platformFee`. Unpaid and cancelled orders count toward order totals only. The vendor sales report and fee billing use the same rule.
-- Orders have no star rating, so the feedback views show counts and rates instead.
+- Customers can rate a served order 1–5 stars (`Order.rating`) and/or leave text (`Order.feedback`) through `PUT /api/orders/submit-feedback/:orderId`. The admin feedback list shows both; insights views still show counts and rates. The customer app keeps a summary of every order placed on the phone (`cart.orders` in redux-persist), so the menu and welcome pages link back to open orders after the back button, a closed tab or a re-scan.

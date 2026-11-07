@@ -5,8 +5,12 @@ const initialState = {
   items: [],
   cart: {},
   phone: null,
-  order: null,
+  // Orders placed on this phone, newest first, so leaving the order page
+  // (back button, closing the tab, scanning again) never loses one.
+  orders: [],
 }
+
+const KEEP = 10
 const cartSlice = createSlice({
   name: 'cart',
 
@@ -51,8 +55,16 @@ const cartSlice = createSlice({
       state.phone = action.payload
     },
 
-    setOrder: (state, action) => {
-      state.order = action.payload
+    // Adds or refreshes an order: { _id, cartId, orderNumber, status, createdAt }.
+    rememberOrder: (state, action) => {
+      const { _id, cartId, orderNumber, status, createdAt } = action.payload
+      const rest = (state.orders || []).filter((o) => o._id !== _id)
+      state.orders = [{ _id, cartId, orderNumber, status, createdAt }, ...rest].slice(0, KEEP)
+      delete state.order // the single order kept by older versions
+    },
+
+    forgetOrder: (state, action) => {
+      state.orders = (state.orders || []).filter((o) => o._id !== action.payload)
     },
 
     setCart: (state, action) => {
@@ -64,7 +76,7 @@ const cartSlice = createSlice({
       state.items = []
       state.cart = {}
       state.phone = null
-      state.order = null
+      state.orders = []
     },
   },
 })
@@ -76,7 +88,8 @@ export const {
   removeItem,
   clearCart,
   setPhoneNumber,
-  setOrder,
+  rememberOrder,
+  forgetOrder,
   setCart,
   clearCartSession,
 } = cartSlice.actions

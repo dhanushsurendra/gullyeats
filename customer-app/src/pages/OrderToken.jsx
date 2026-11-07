@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
+import { useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { RiCheckLine, RiEditLine, RiDoubleQuotesL } from 'react-icons/ri'
 
@@ -7,7 +7,6 @@ import CancelOrderModal from '../components/CancelOrderModal'
 import { Button, Card, LoadingScreen, Page, Row, StatusScreen, TopBar } from '../components/ui'
 import { api } from '../constants/api'
 import useOrder from '../hooks/useOrder'
-import { setOrder as rememberOrder } from '../store/cartSlice'
 import { rupees } from '../utils/format'
 
 const STEPS = ['Placed', 'Paid', 'Served']
@@ -39,7 +38,6 @@ function Progress({ status }) {
 
 export default function OrderToken() {
   const navigate = useNavigate()
-  const dispatch = useDispatch()
   const cart = useSelector((state) => state.cart.details)
   const { order, setOrder, error, retry, cartId, orderId } = useOrder({ page: '' })
 
@@ -53,10 +51,6 @@ export default function OrderToken() {
       .then((d) => setTruthLine(typeof d === 'string' ? d : d?.text || ''))
       .catch(() => {})
   }, [])
-
-  useEffect(() => {
-    if (order) dispatch(rememberOrder(order))
-  }, [order, dispatch])
 
   if (!order) {
     return (

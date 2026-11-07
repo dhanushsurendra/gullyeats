@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { RiMapPin2Line, RiRestaurantLine, RiTicket2Line, RiWallet3Line } from 'react-icons/ri'
 
 import illustration from '../assets/welcome.png'
+import ActiveOrders from '../components/ActiveOrders'
 import { Button, LoadingScreen, Page, StatusScreen, BottomBar } from '../components/ui'
 import { api } from '../constants/api'
 import { setCartDetails } from '../store/cartSlice'
@@ -96,7 +97,11 @@ export default function Welcome() {
           </p>
         )}
 
-        <h2 className='mt-8 text-xs font-semibold uppercase tracking-wider text-grey-400'>How it works</h2>
+        <div className='mt-6'>
+          <ActiveOrders cartId={cartId} />
+        </div>
+
+        <h2 className='mt-2 text-xs font-semibold uppercase tracking-wider text-grey-400'>How it works</h2>
         <ol className='mt-3 space-y-1'>
           {STEPS.map(({ icon, title, text }, i) => (
             <li

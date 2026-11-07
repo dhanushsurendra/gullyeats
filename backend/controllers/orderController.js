@@ -567,12 +567,15 @@ exports.getTruthLine = asyncHandler(async (req, res) => {
 
 exports.submitOrderFeedback = asyncHandler(async (req, res) => {
   const { orderNumber } = req.params
-  const { feedback } = req.body
+  const { feedback, rating } = req.body
 
-  if (typeof feedback !== 'string' || !feedback.trim()) {
-    res.status(400)
-    throw new Error('Feedback is required')
+  // A star rating, some words, or both.
+  const text = feedback === undefined || feedback === null ? '' : feedback
+  if (typeof text !== 'string') fail(res, 400, 'Feedback must be text')
+  if (rating != null && !(Number.isInteger(rating) && rating >= 1 && rating <= 5)) {
+    fail(res, 400, 'Rating must be 1 to 5 stars')
   }
+  if (!text.trim() && rating == null) fail(res, 400, 'Add a rating or some feedback')
 
   const order = await Order.findById(orderNumber)
 
@@ -581,7 +584,8 @@ exports.submitOrderFeedback = asyncHandler(async (req, res) => {
     throw new Error('Order not found')
   }
 
-  order.feedback = feedback.trim().slice(0, 500)
+  if (text.trim()) order.feedback = text.trim().slice(0, 500)
+  if (rating != null) order.rating = rating
 
   await order.save()
 

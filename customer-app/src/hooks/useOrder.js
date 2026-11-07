@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useDispatch } from 'react-redux'
 import { useNavigate, useParams } from 'react-router-dom'
 import { io } from 'socket.io-client'
 
 import { api, SOCKET_URL } from '../constants/api'
+import { rememberOrder } from '../store/cartSlice'
 
 // Which order page belongs to each status. PENDING and PAID share the token page.
 const PAGE = { PENDING: '', PAID: '', SERVED: '/served', CANCELLED: '/cancelled' }
@@ -18,6 +20,7 @@ const PAGE = { PENDING: '', PAID: '', SERVED: '/served', CANCELLED: '/cancelled'
 export default function useOrder({ page } = {}) {
   const { cartId, orderNumber: orderId } = useParams()
   const navigate = useNavigate()
+  const dispatch = useDispatch()
   const [order, setOrder] = useState(null)
   const [error, setError] = useState('')
 
@@ -50,6 +53,11 @@ export default function useOrder({ page } = {}) {
       document.removeEventListener('visibilitychange', onVisible)
     }
   }, [orderId, load])
+
+  // Keep the saved copy current, so the menu's "your orders" list is right.
+  useEffect(() => {
+    if (order?._id) dispatch(rememberOrder(order))
+  }, [order, dispatch])
 
   const target = order ? PAGE[order.status] : undefined
   useEffect(() => {
