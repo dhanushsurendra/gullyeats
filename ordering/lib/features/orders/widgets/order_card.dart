@@ -42,11 +42,19 @@ class OrderCard extends StatefulWidget {
 }
 
 class _OrderCardState extends State<OrderCard> {
-  // Shows a tick in place of SERVE / MARK PAID while the request runs.
+  // True from the tap until the server answers: SERVE shows "SERVED",
+  // MARK PAID shows a spinner.
   bool _done = false;
 
   // Item lines shown before "+N more".
   static const _visibleItems = 3;
+
+  @override
+  void didUpdateWidget(OrderCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // The server answered: the new stage's button starts fresh.
+    if (oldWidget.order.status != widget.order.status) _done = false;
+  }
 
   void _confirm(VoidCallback action) {
     HapticFeedback.mediumImpact();
@@ -362,10 +370,9 @@ class _OrderCardState extends State<OrderCard> {
         // Capped, so a long translation wraps instead of squeezing the total.
         ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 170),
+          // Stage changes cross-fade; while saving, the button itself changes.
           child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 250),
-            transitionBuilder: (child, animation) =>
-                ScaleTransition(scale: animation, child: child),
+            duration: const Duration(milliseconds: 300),
             child: switch (status) {
               "CANCELLED" => _statusChip(
                 Icons.block_rounded,
@@ -377,25 +384,26 @@ class _OrderCardState extends State<OrderCard> {
                 l10n.served.toUpperCase(),
                 AppColors.success,
               ),
-              _ when _done => const Icon(
-                Icons.check_circle,
-                key: ValueKey('done'),
-                color: AppColors.success,
-                size: 40,
-              ),
+              // Turns green and says SERVED straight away; the card then
+              // moves to the Served group when the server confirms.
               "PAID" => _actionButton(
                 key: const ValueKey('serve'),
-                icon: Icons.room_service_rounded,
-                label: l10n.serve.toUpperCase(),
+                icon: _done ? Icons.check_rounded : Icons.room_service_rounded,
+                label: _done
+                    ? l10n.served.toUpperCase()
+                    : l10n.serve.toUpperCase(),
+                color: _done ? AppColors.success : AppColors.primary,
                 filled: true,
-                onTap: () => _confirm(widget.onServe),
+                onTap: _done ? null : () => _confirm(widget.onServe),
               ),
               _ => _actionButton(
                 key: const ValueKey('paid'),
                 icon: Icons.currency_rupee_rounded,
                 label: l10n.markPaidCaps,
+                color: AppColors.primary,
                 filled: false,
-                onTap: () => _confirm(widget.onMarkPaid),
+                busy: _done,
+                onTap: _done ? null : () => _confirm(widget.onMarkPaid),
               ),
             },
           ),
@@ -404,40 +412,58 @@ class _OrderCardState extends State<OrderCard> {
     );
   }
 
+  /// A pill button. Colour changes animate, and [busy] swaps the icon for a
+  /// small spinner while the request runs.
   Widget _actionButton({
     required Key key,
     required IconData icon,
     required String label,
+    required Color color,
     required bool filled,
-    required VoidCallback onTap,
+    required VoidCallback? onTap,
+    bool busy = false,
   }) {
-    final fg = filled ? AppColors.white : AppColors.primary;
+    final fg = filled ? AppColors.white : color;
 
-    return Material(
+    return InkWell(
       key: key,
-      color: filled ? AppColors.primary : AppColors.lightOrange,
       borderRadius: BorderRadius.circular(26),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(26),
-        onTap: onTap,
-        child: Container(
-          // A min height (not fixed), so large system text still fits.
-          constraints: const BoxConstraints(minHeight: 44),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: filled
-              ? null
-              : BoxDecoration(
-                  borderRadius: BorderRadius.circular(26),
-                  border: Border.all(color: AppColors.primary),
-                ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 18, color: fg),
-              AppGaps.w8,
-              Flexible(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+        // A min height (not fixed), so large system text still fits.
+        constraints: const BoxConstraints(minHeight: 44),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: filled ? color : AppColors.lightOrange,
+          borderRadius: BorderRadius.circular(26),
+          border: Border.all(color: color),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 18,
+              height: 18,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: busy
+                    ? CircularProgressIndicator(
+                        key: const ValueKey('busy'),
+                        strokeWidth: 2,
+                        color: fg,
+                      )
+                    : Icon(icon, key: ValueKey(icon), size: 18, color: fg),
+              ),
+            ),
+            AppGaps.w8,
+            Flexible(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
                 child: Text(
                   label,
+                  key: ValueKey(label),
                   textAlign: TextAlign.center,
                   style: AppTextStyles.caption.copyWith(
                     color: fg,
@@ -445,8 +471,8 @@ class _OrderCardState extends State<OrderCard> {
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
