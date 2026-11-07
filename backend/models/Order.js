@@ -126,6 +126,9 @@ const OrderSchema = new mongoose.Schema(
 
 OrderSchema.index({ cartId: 1, orderNumber: 1, createdAt: 1 }, { unique: true })
 
+// Newest-first paging across all carts (admin orders and feedback lists).
+OrderSchema.index({ createdAt: -1, _id: -1 })
+
 OrderSchema.index({
   cartId: 1,
   createdAt: 1,

@@ -6,7 +6,12 @@ const User = require('../models/User')
 const Cart = require('../models/Cart')
 const Order = require('../models/Order')
 const Payment = require('../models/Payment')
-const { getCartPaymentStatus, createBillPayment } = require('../utils/cartPaymentLock')
+const {
+  getCartPaymentStatus,
+  createBillPayment,
+  BILLING_LOCK_MS,
+  getISTMidnight,
+} = require('../utils/cartPaymentLock')
 
 const TZ = 'Asia/Kolkata'
 const DAY = 864e5
@@ -90,237 +95,6 @@ async function cartInfo(ids) {
       },
     ]),
   )
-}
-
-async function paymentStats(start, end) {
-  const rows = await Payment.aggregate([
-    {
-      $match: {
-        createdAt: {
-          $gte: start,
-          $lt: end,
-        },
-      },
-    },
-    {
-      $group: {
-        _id: null,
-
-        // Money GullyEats actually earned
-        revenue: {
-          $sum: {
-            $cond: [{ $eq: ['$status', 'VERIFIED'] }, '$amount', 0],
-          },
-        },
-
-        // Money still pending
-        pendingAmount: {
-          $sum: {
-            $cond: [{ $eq: ['$status', 'PENDING'] }, '$amount', 0],
-          },
-        },
-
-        // Money from rejected payments
-        rejectedAmount: {
-          $sum: {
-            $cond: [{ $eq: ['$status', 'REJECTED'] }, '$amount', 0],
-          },
-        },
-
-        verifiedCount: {
-          $sum: {
-            $cond: [{ $eq: ['$status', 'VERIFIED'] }, 1, 0],
-          },
-        },
-
-        pendingCount: {
-          $sum: {
-            $cond: [{ $eq: ['$status', 'PENDING'] }, 1, 0],
-          },
-        },
-
-        rejectedCount: {
-          $sum: {
-            $cond: [{ $eq: ['$status', 'REJECTED'] }, 1, 0],
-          },
-        },
-      },
-    },
-  ])
-
-  return (
-    rows[0] || {
-      revenue: 0,
-      pendingAmount: 0,
-      rejectedAmount: 0,
-      verifiedCount: 0,
-      pendingCount: 0,
-      rejectedCount: 0,
-    }
-  )
-}
-
-async function buildSeries(period) {
-  const [unit, n] = {
-    '7d': ['day', 7],
-    '30d': ['day', 30],
-    '3m': ['week', 13],
-    '12m': ['month', 12],
-  }[period] || ['day', 30]
-
-  const today = todayStart()
-  const tomorrow = new Date(+today + DAY)
-
-  const start =
-    unit === 'month'
-      ? monthStart(11)
-      : new Date(+today - (unit === 'week' ? 90 : n - 1) * DAY)
-
-  const format = {
-    day: '%Y-%m-%d',
-    week: '%G-W%V',
-    month: '%Y-%m',
-  }[unit]
-
-  // Order operational metrics
-  const rows = await Order.aggregate([
-    {
-      $match: {
-        createdAt: {
-          $gte: start,
-          $lt: tomorrow,
-        },
-      },
-    },
-    {
-      $group: {
-        _id: {
-          $dateToString: {
-            format,
-            date: '$createdAt',
-            timezone: TZ,
-          },
-        },
-        orders: { $sum: 1 },
-        pending: cnt(is('PENDING')),
-        preparing: cnt(is('PAID')),
-        served: cnt(is('SERVED')),
-        cancelled: cnt(is('CANCELLED')),
-      },
-    },
-    { $sort: { _id: 1 } },
-  ])
-
-  // Only successfully paid orders generate GullyEats revenue.
-  const paidRows = await Payment.aggregate([
-    {
-      $match: {
-        createdAt: {
-          $gte: start,
-          $lt: tomorrow,
-        },
-        status: 'VERIFIED',
-      },
-    },
-    {
-      $group: {
-        _id: {
-          $dateToString: {
-            format,
-            date: '$createdAt',
-            timezone: TZ,
-          },
-        },
-
-        paidOrders: { $sum: 1 },
-
-        // ₹2 platform fee per successfully paid order
-        revenue: {
-          $sum: 2,
-        },
-      },
-    },
-    { $sort: { _id: 1 } },
-  ])
-
-  const byKey = new Map(rows.map((r) => [r._id, r]))
-
-  const paidByKey = new Map(paidRows.map((r) => [r._id, r]))
-
-  let keys = rows.map((r) => r._id)
-
-  if (unit === 'day') {
-    keys = Array.from({ length: n }, (_, i) =>
-      ymd(new Date(+today - (n - 1 - i) * DAY)),
-    )
-  }
-
-  if (unit === 'month') {
-    keys = Array.from({ length: 12 }, (_, i) =>
-      ymd(monthStart(11 - i)).slice(0, 7),
-    )
-  }
-
-  const label = (k) =>
-    unit === 'day'
-      ? new Date(`${k}T00:00:00+05:30`).toLocaleDateString('en-IN', {
-          day: 'numeric',
-          month: 'short',
-          timeZone: TZ,
-        })
-      : unit === 'month'
-        ? new Date(`${k}-01T00:00:00+05:30`).toLocaleDateString('en-IN', {
-            month: 'short',
-            year: '2-digit',
-            timeZone: TZ,
-          })
-        : k.split('-')[1]
-
-  const points = keys.map((k) => {
-    const r = byKey.get(k) || {}
-    const paid = paidByKey.get(k) || {}
-
-    return {
-      label: label(k),
-
-      // Only money that was actually paid
-      revenue: paid.revenue || 0,
-
-      // Number of successfully paid orders
-      paidOrders: paid.paidOrders || 0,
-
-      // Operational order count
-      orders: r.orders || 0,
-      pending: r.pending || 0,
-      preparing: r.preparing || 0,
-      served: r.served || 0,
-      cancelled: r.cancelled || 0,
-    }
-  })
-
-  const len = tomorrow - start
-
-  const [cur, prev] = await Promise.all([
-    stats(start, tomorrow),
-    stats(new Date(+start - len), start),
-  ])
-
-  return {
-    points,
-
-    totals: {
-      paidOrders: paidRows.reduce((sum, r) => sum + (r.paidOrders || 0), 0),
-      totalOrders: cur.orders,
-      collectionRate: cur.orders
-        ? +(
-            (paidRows.reduce((sum, r) => sum + (r.paidOrders || 0), 0) /
-              cur.orders) *
-            100
-          ).toFixed(1)
-        : 0,
-      aov: cur.aov,
-    },
-  }
 }
 
 exports.login = asyncHandler(async (req, res) => {
@@ -547,16 +321,28 @@ async function buildSeries(period) {
   const today = todayStart()
   const tomorrow = new Date(+today + DAY)
 
+  // Weeks start on Monday (IST), so every bucket is a whole week.
+  const mondayOffset = (new Date(`${ymd(today)}T00:00:00Z`).getUTCDay() + 6) % 7
+  const thisMonday = new Date(+today - mondayOffset * DAY)
+
   const start =
     unit === 'month'
       ? monthStart(11)
-      : new Date(+today - (unit === 'week' ? 90 : n - 1) * DAY)
+      : unit === 'week'
+        ? new Date(+thisMonday - (n - 1) * 7 * DAY)
+        : new Date(+today - (n - 1) * DAY)
 
-  const format = {
-    day: '%Y-%m-%d',
-    week: '%G-W%V',
-    month: '%Y-%m',
-  }[unit]
+  // Bucket key: the IST day, the IST Monday of its week, or the month.
+  const bucket = (date) => ({
+    $dateToString: {
+      format: unit === 'month' ? '%Y-%m' : '%Y-%m-%d',
+      date:
+        unit === 'week'
+          ? { $dateTrunc: { date, unit: 'week', startOfWeek: 'monday', timezone: TZ } }
+          : date,
+      timezone: TZ,
+    },
+  })
 
   // ==========================================================
   // 1. ORDER DATA
@@ -574,13 +360,7 @@ async function buildSeries(period) {
 
     {
       $group: {
-        _id: {
-          $dateToString: {
-            format,
-            date: '$createdAt',
-            timezone: TZ,
-          },
-        },
+        _id: bucket('$createdAt'),
 
         // Total orders
         orders: {
@@ -652,25 +432,8 @@ async function buildSeries(period) {
 
     {
       $group: {
-        _id: {
-          $dateToString: {
-            format,
-
-            // Use verifiedAt for verified payments,
-            // createdAt for pending/rejected payments.
-            date: {
-              $cond: [
-                {
-                  $eq: ['$status', 'VERIFIED'],
-                },
-                '$verifiedAt',
-                '$createdAt',
-              ],
-            },
-
-            timezone: TZ,
-          },
-        },
+        // verifiedAt for verified payments, createdAt for pending/rejected.
+        _id: bucket({ $cond: [{ $eq: ['$status', 'VERIFIED'] }, '$verifiedAt', '$createdAt'] }),
 
         // ====================================================
         // GullyEats actual revenue
@@ -777,26 +540,20 @@ async function buildSeries(period) {
   // 3. GENERATE ALL PERIOD KEYS
   // ==========================================================
 
-  let keys = orderRows.map((r) => r._id)
-
-  if (unit === 'day') {
-    keys = Array.from({ length: n }, (_, i) =>
-      ymd(new Date(+today - (n - 1 - i) * DAY)),
-    )
-  }
-
-  if (unit === 'month') {
-    keys = Array.from({ length: 12 }, (_, i) =>
-      ymd(monthStart(11 - i)).slice(0, 7),
-    )
-  }
+  // Every bucket gets a point, even with no orders or payments.
+  const keys = Array.from({ length: n }, (_, i) =>
+    unit === 'month'
+      ? ymd(monthStart(n - 1 - i)).slice(0, 7)
+      : ymd(new Date(+start + i * (unit === 'week' ? 7 : 1) * DAY)),
+  )
 
   // ==========================================================
   // 4. LABEL
   // ==========================================================
 
   const label = (key) => {
-    if (unit === 'day') {
+    // A week is labelled by its Monday.
+    if (unit === 'day' || unit === 'week') {
       return new Date(`${key}T00:00:00+05:30`).toLocaleDateString('en-IN', {
         day: 'numeric',
         month: 'short',
@@ -812,7 +569,6 @@ async function buildSeries(period) {
       })
     }
 
-    return key
   }
 
   // ==========================================================
@@ -835,6 +591,9 @@ async function buildSeries(period) {
     const rejectedRevenue = payments.rejectedRevenue || 0
 
     const paidPayments = payments.paidPayments || 0
+
+    // Orders the customer paid for (served orders were paid first).
+    const paidOrders = (orders.preparing || 0) + (orders.served || 0)
 
     return {
       label: label(key),
@@ -865,11 +624,9 @@ async function buildSeries(period) {
       // Restaurant GMV
       gmv,
 
-      aov: totalOrders ? +(gmv / totalOrders).toFixed(2) : 0,
+      paidOrders,
 
-      collectionRate: totalOrders
-        ? +((paidPayments / totalOrders) * 100).toFixed(1)
-        : 0,
+      aov: paidOrders ? +(gmv / paidOrders).toFixed(2) : 0,
 
       // ======================================================
       // ORDER OPERATIONS
@@ -911,6 +668,8 @@ async function buildSeries(period) {
   const totalOrders = points.reduce((sum, p) => sum + p.orders, 0)
 
   const gmv = points.reduce((sum, p) => sum + p.gmv, 0)
+
+  const paidOrders = points.reduce((sum, p) => sum + p.paidOrders, 0)
 
   const cancelled = points.reduce((sum, p) => sum + p.cancelled, 0)
 
@@ -977,11 +736,9 @@ async function buildSeries(period) {
       // Restaurant GMV
       gmv,
 
-      aov: totalOrders ? +(gmv / totalOrders).toFixed(2) : 0,
+      paidOrders,
 
-      collectionRate: totalOrders
-        ? +((paidPayments / totalOrders) * 100).toFixed(1)
-        : 0,
+      aov: paidOrders ? +(gmv / paidOrders).toFixed(2) : 0,
 
       cancellationRate: totalOrders
         ? +((cancelled / totalOrders) * 100).toFixed(1)
@@ -990,9 +747,45 @@ async function buildSeries(period) {
   }
 }
 
+// Overdue platform fees vendors owe us: the fee on every PAID or SERVED order
+// that no verified fee payment has covered, from billing days (the IST day the
+// customer paid) whose 26h grace has passed, the same moment the cart locks.
+// Orders are only
+// cancelled on their own day, before that day is billed, so there are no
+// billing credits to subtract.
+// A day's bill is overdue BILLING_LOCK_MS after its IST midnight, so every
+// billing day before the one containing (now - BILLING_LOCK_MS) is overdue.
+const overdueBefore = (now = new Date()) =>
+  new Date(+getISTMidnight(new Date(+now - BILLING_LOCK_MS)) + DAY)
+
+async function unpaidFees() {
+  // shortcut: loads every billed order id; move to a $lookup on an indexed Payment.orderIds once there are ~100k+ billed orders.
+  const billed = await Payment.distinct('orderIds', { status: 'VERIFIED' })
+  const [r] = await Order.aggregate([
+    {
+      $match: {
+        status: { $in: ['PAID', 'SERVED'] },
+        _id: { $nin: billed },
+        $expr: { $lt: [{ $ifNull: ['$paidAt', '$orderDate', '$createdAt'] }, overdueBefore()] },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        amount: { $sum: '$platformFee' },
+        orders: { $sum: 1 },
+        carts: { $addToSet: '$cartId' },
+      },
+    },
+  ])
+  return { amount: r?.amount || 0, count: r?.orders || 0, carts: r?.carts.length || 0 }
+}
+
 // ============================================================
 // OVERVIEW
 // ============================================================
+exports.overdueBefore = overdueBefore // for tests
+
 exports.overview = asyncHandler(async (req, res) => {
   const { start, end } = rangeFor(req.query)
   const prevStart = new Date(+start - (end - start))
@@ -1033,13 +826,14 @@ exports.overview = asyncHandler(async (req, res) => {
     activeCartIds,
     newOwners,
     newCarts, // Order statuses
-    rangeStatus, // Restaurant activity
+    todayStatus, // Restaurant activity
     active7, // Location
     noLoc, // Feedback
     fbTotal,
     fbRecent, // Total orders
     ordersTotal, // Revenue/operations series
     daily,
+    unpaid,
   ] = await Promise.all([
     // ======================================================
     // ORDERS
@@ -1107,8 +901,8 @@ exports.overview = asyncHandler(async (req, res) => {
       {
         $match: {
           createdAt: {
-            $gte: start,
-            $lt: end,
+            $gte: today,
+            $lt: tomorrow,
           },
         },
       },
@@ -1158,6 +952,7 @@ exports.overview = asyncHandler(async (req, res) => {
     // SERIES
     // ======================================================
     buildSeries('7d'),
+    unpaidFees(),
   ])
   const totalRevenue = allTimePayments[0]?.revenue || 0
   const totalPaidPayments = allTimePayments[0]?.count || 0 // ACTIVE OWNERS
@@ -1176,27 +971,28 @@ exports.overview = asyncHandler(async (req, res) => {
     _id: {
       $nin: active7,
     },
+    createdAt: { $lt: week },
   }) // ========================================================
   // FEEDBACK CART INFO
   // ========================================================
   const info = await cartInfo(fbRecent.map((o) => o.cartId)) // ========================================================
   // ORDER STATUS MAP
   // ========================================================
-  const st = Object.fromEntries(rangeStatus.map((s) => [s._id, s.n])) // ========================================================
+  const st = Object.fromEntries(todayStatus.map((s) => [s._id, s.n])) // ========================================================
   // ATTENTION
   // ========================================================
   const attention = [] // --------------------------------------------------------
   // Pending payments
   // --------------------------------------------------------
-  if (curPayments.pendingCount) {
+  if (unpaid.count) {
     attention.push({
       id: 'pay',
       kind: 'payment',
       severity: 'High',
       title: 'Platform fee pending',
-      text: `${curPayments.pendingCount} payment${
-        curPayments.pendingCount > 1 ? 's' : ''
-      } awaiting collection · ₹${curPayments.pendingAmount}`,
+      text: `₹${unpaid.amount} overdue on ${unpaid.count} order${
+        unpaid.count > 1 ? 's' : ''
+      } across ${unpaid.carts} cart${unpaid.carts > 1 ? 's' : ''}`,
       to: '/payments',
     })
   } // --------------------------------------------------------
@@ -1317,23 +1113,18 @@ exports.overview = asyncHandler(async (req, res) => {
         // PAYMENT HEALTH
         // ==================================================
 
-        pendingPayments: {
-          amount: curPayments.pendingAmount,
-          count: curPayments.pendingCount,
-        },
+        // All overdue platform fees, whatever the date range.
+        pendingPayments: unpaid,
 
         rejectedPayments: {
           amount: curPayments.rejectedAmount,
           count: curPayments.rejectedCount,
         },
 
+        // Share of all platform fees due so far that has been paid.
         collectionRate:
-          curPayments.revenue + curPayments.pendingAmount
-            ? +(
-                (curPayments.revenue /
-                  (curPayments.revenue + curPayments.pendingAmount)) *
-                100
-              ).toFixed(1)
+          totalRevenue + unpaid.amount
+            ? +((totalRevenue / (totalRevenue + unpaid.amount)) * 100).toFixed(1)
             : 0,
 
         // ==================================================
@@ -1352,6 +1143,9 @@ exports.overview = asyncHandler(async (req, res) => {
 
         // Marketplace GMV — NOT GullyEats revenue.
         orderGmvRange: cur.gmv,
+
+        // Platform fees on paid orders placed in range (earned, paid or not).
+        platformFeeRange: cur.fee,
       },
       // ====================================================
       // LIVE OPERATIONS
@@ -1509,6 +1303,7 @@ exports.carts = asyncHandler(async (req, res) => {
       cartId: c.cartId,
       name: c.cartName,
       owner: oname.get(String(c.userId)) || '—',
+      ownerId: String(c.userId),
       city: c.cartCity,
       address: c.address,
       lat: hasLoc(c) ? c.location.coordinates[0] : null,
@@ -1524,79 +1319,44 @@ exports.carts = asyncHandler(async (req, res) => {
   res.json({ success: true, data })
 })
 
+// Newest-first paging: a "createdAt|_id" cursor from the previous page's last row.
+function afterCursor(res, cursor) {
+  if (!cursor) return {}
+  const [createdAt, id] = String(cursor).split('|')
+  const at = new Date(createdAt)
+  if (isNaN(at) || !mongoose.isValidObjectId(id)) {
+    res.status(400)
+    throw new Error('Invalid cursor')
+  }
+  return { $or: [{ createdAt: { $lt: at } }, { createdAt: at, _id: { $lt: id } }] }
+}
+const nextCursor = (rows, hasMore) => {
+  const last = rows[rows.length - 1]
+  return hasMore && last ? `${last.createdAt.toISOString()}|${last._id}` : null
+}
+
 exports.orders = asyncHandler(async (req, res) => {
   const limit = Math.min(Number(req.query.limit) || 50, 500)
   const { status, cursor } = req.query
 
-  const filter = status ? { status } : {}
-
-  // Cursor pagination ONLY when cursor exists
-  if (cursor) {
-    const [createdAt, id] = cursor.split('|')
-
-    filter.$or = [
-      {
-        createdAt: { $lt: new Date(createdAt) },
-      },
-      {
-        createdAt: new Date(createdAt),
-        _id: { $lt: id },
-      },
-    ]
+  const filter = {
+    ...(status ? { status: String(status) } : {}),
+    ...afterCursor(res, cursor),
   }
 
+  // One extra row tells whether there's another page.
   const rows = await Order.find(filter)
-    .sort({
-      createdAt: -1,
-      _id: -1,
-    })
-    .limit(cursor ? limit + 1 : limit)
+    .sort({ createdAt: -1, _id: -1 })
+    .limit(limit + 1)
     .select('orderNumber totalPrice status cartId orderItems createdAt')
     .lean()
 
-  // Normal request — Dashboard
-  if (!cursor) {
-    const info = await cartInfo(rows.map((o) => o.cartId))
-
-    const data = rows.map((o) => {
-      const c = info.get(String(o.cartId)) || {}
-
-      return {
-        id: String(o._id),
-        number: o.orderNumber,
-        cart: c.name || '—',
-        owner: c.owner || '—',
-        amount: o.totalPrice,
-        items: (o.orderItems || []).reduce((s, i) => s + (i.quantity || 1), 0),
-        status: o.status,
-        payment:
-          o.status === 'PENDING'
-            ? 'PENDING'
-            : o.status === 'CANCELLED'
-              ? 'VOID'
-              : 'PAID',
-        createdAt: o.createdAt,
-      }
-    })
-
-    return res.json({
-      success: true,
-      data,
-    })
-  }
-
-  // Paginated request — Orders page
   const hasMore = rows.length > limit
-
-  if (hasMore) {
-    rows.pop()
-  }
+  if (hasMore) rows.pop()
 
   const info = await cartInfo(rows.map((o) => o.cartId))
-
   const data = rows.map((o) => {
     const c = info.get(String(o.cartId)) || {}
-
     return {
       id: String(o._id),
       number: o.orderNumber,
@@ -1606,33 +1366,25 @@ exports.orders = asyncHandler(async (req, res) => {
       items: (o.orderItems || []).reduce((s, i) => s + (i.quantity || 1), 0),
       status: o.status,
       payment:
-        o.status === 'PENDING'
-          ? 'PENDING'
-          : o.status === 'CANCELLED'
-            ? 'VOID'
-            : 'PAID',
+        o.status === 'PENDING' ? 'PENDING' : o.status === 'CANCELLED' ? 'VOID' : 'PAID',
       createdAt: o.createdAt,
     }
   })
 
-  const last = rows[rows.length - 1]
-
-  const nextCursor =
-    hasMore && last ? `${last.createdAt.toISOString()}|${last._id}` : null
-
   res.json({
     success: true,
     data,
-    pagination: {
-      hasMore,
-      nextCursor,
-    },
+    pagination: { hasMore, nextCursor: nextCursor(rows, hasMore) },
   })
 })
 
 exports.payments = asyncHandler(async (req, res) => {
+  const limit = Math.min(Number(req.query.limit) || 30, 200)
   const [rows, sums] = await Promise.all([
-    Payment.find().sort({ createdAt: -1 }).limit(200).lean(),
+    Payment.find(afterCursor(res, req.query.cursor))
+      .sort({ createdAt: -1, _id: -1 })
+      .limit(limit + 1)
+      .lean(),
     Payment.aggregate([
       {
         $group: {
@@ -1643,10 +1395,13 @@ exports.payments = asyncHandler(async (req, res) => {
       },
     ]),
   ])
+  const hasMore = rows.length > limit
+  if (hasMore) rows.pop()
   const info = await cartInfo(rows.map((p) => p.cartId))
   res.json({
     success: true,
     data: {
+      pagination: { hasMore, nextCursor: nextCursor(rows, hasMore) },
       summary: Object.fromEntries(
         sums.map((s) => [s._id, { count: s.count, amount: s.amount }]),
       ),
@@ -1667,15 +1422,18 @@ exports.payments = asyncHandler(async (req, res) => {
 })
 
 exports.feedback = asyncHandler(async (req, res) => {
+  const limit = Math.min(Number(req.query.limit) || 30, 200)
   const hasFb = { feedback: { $exists: true, $nin: ['', null] } }
   const [total, rows] = await Promise.all([
     Order.countDocuments(hasFb),
-    Order.find(hasFb)
-      .sort({ createdAt: -1 })
-      .limit(100)
+    Order.find({ ...hasFb, ...afterCursor(res, req.query.cursor) })
+      .sort({ createdAt: -1, _id: -1 })
+      .limit(limit + 1)
       .select('feedback orderNumber cartId createdAt')
       .lean(),
   ])
+  const hasMore = rows.length > limit
+  if (hasMore) rows.pop()
   const info = await cartInfo(rows.map((o) => o.cartId))
   res.json({
     success: true,
@@ -1689,6 +1447,7 @@ exports.feedback = asyncHandler(async (req, res) => {
         owner: info.get(String(o.cartId))?.owner,
         at: o.createdAt,
       })),
+      pagination: { hasMore, nextCursor: nextCursor(rows, hasMore) },
     },
   })
 })
@@ -1708,7 +1467,7 @@ exports.activity = asyncHandler(async (req, res) => {
     Order.find()
       .sort({ createdAt: -1 })
       .limit(6)
-      .select('_id totalPrice cartId createdAt')
+      .select('orderNumber totalPrice cartId createdAt')
       .lean(),
     Payment.find().sort({ updatedAt: -1 }).limit(4).lean(),
   ])
@@ -1733,7 +1492,7 @@ exports.activity = asyncHandler(async (req, res) => {
       type: o.totalPrice >= LARGE_ORDER ? 'large' : 'order',
       title:
         o.totalPrice >= LARGE_ORDER ? 'Large order received' : 'Order received',
-      text: `Order #${String(o._id).slice(-5)} · ₹${o.totalPrice} · ${
+      text: `Order #${o.orderNumber} · ₹${o.totalPrice} · ${
         info.get(String(o.cartId))?.name || '—'
       }`,
       at: o.createdAt,

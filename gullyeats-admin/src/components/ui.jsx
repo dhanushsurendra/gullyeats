@@ -128,3 +128,20 @@ export const Seg = ({ options, value, onChange }) => (
     ))}
   </div>
 )
+
+// Bottom of a scroll-paged list: the trigger while more can load, a retry
+// after a failed load, then an end note. Pass usePaged/useReveal's fields.
+export const ScrollFooter = ({ sentinel, hasMore, loading, error, retry, count, noun = 'items' }) =>
+  hasMore ? (
+    <div ref={sentinel} className='py-6 text-center text-sm text-neutral-500'>
+      {loading && count ? `Loading more ${noun}…` : ''}
+    </div>
+  ) : error ? (
+    <div className='py-6 text-center text-sm'>
+      <button onClick={retry} className='font-medium text-brand hover:underline'>
+        {count ? "Couldn't load more. Retry" : 'Retry'}
+      </button>
+    </div>
+  ) : count ? (
+    <div className='py-6 text-center text-sm text-neutral-500'>You've reached the end.</div>
+  ) : null

@@ -18,7 +18,6 @@ export const T = Object.fromEntries(
     'carts',
     'orders',
     'payments',
-    'feedback',
     'activity',
   ].map((k) => [k, make(k, api[k])]),
 )

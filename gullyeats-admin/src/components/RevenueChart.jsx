@@ -103,12 +103,12 @@ export default function RevenueChart() {
         <div className='grid grid-cols-2 border-t border-line sm:grid-cols-4'>
           {[
             ['Revenue', inr(t?.revenue), 'text-brand'],
-            ['Orders', num(t?.orders)],
+            ['Orders', num(t?.totalOrders)],
             ['AOV', inr(t?.aov)],
             [
               'Growth',
-              t?.growth == null ? '—' : signed(t.growth),
-              t?.growth < 0 ? 'text-red-600' : 'text-green-600',
+              t?.revenueGrowth == null ? '—' : signed(t.revenueGrowth),
+              t?.revenueGrowth < 0 ? 'text-red-600' : 'text-green-600',
             ],
           ].map(([k, v, c]) => (
             <div

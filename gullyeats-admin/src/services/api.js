@@ -5,6 +5,9 @@ const ADMIN = import.meta.env.VITE_ADMIN_PATH || '/api/admin'
 
 const CARTS = import.meta.env.VITE_CART_PATH || '/api/carts'
 
+// Thrown on a 401; authSlice logs the admin out when a request fails with it.
+export const SESSION_EXPIRED = 'Your session has expired. Please log in again.'
+
 async function request(path, params) {
   const clean = Object.entries(params || {}).filter(
     ([, v]) => v !== undefined && v !== null && v !== '',
@@ -27,6 +30,7 @@ async function request(path, params) {
 
   const body = await res.json().catch(() => ({}))
 
+  if (res.status === 401) throw new Error(SESSION_EXPIRED)
   if (!res.ok || body.success === false) {
     throw new Error(body.message || `Request failed (${res.status})`)
   }
@@ -48,6 +52,7 @@ async function post(path) {
 
   const body = await res.json().catch(() => ({}))
 
+  if (res.status === 401) throw new Error(SESSION_EXPIRED)
   if (!res.ok || body.success === false) {
     throw new Error(body.message || `Request failed (${res.status})`)
   }
@@ -75,8 +80,9 @@ export const ordersRequest = async (params = {}) => {
     },
   )
 
-  const body = await res.json()
+  const body = await res.json().catch(() => ({}))
 
+  if (res.status === 401) throw new Error(SESSION_EXPIRED)
   if (!res.ok || body.success === false) {
     throw new Error(
       body.message ||

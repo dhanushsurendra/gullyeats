@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
-import { loginRequest, logoutRequest } from '../services/api'
+import { loginRequest, logoutRequest, SESSION_EXPIRED } from '../services/api'
 
 export const login = createAsyncThunk(
   'auth/login',
@@ -57,9 +57,18 @@ const slice = createSlice({
         state.error = null
       })
 
-      .addCase(logout.rejected, (state, action) => {
-        state.error = action.payload || 'Logout failed'
+      // Clear the user even if the server call fails, or the admin can't leave.
+      .addCase(logout.rejected, (state) => {
+        state.user = null
       })
+
+      // Any request that finds the login cookie expired logs the admin out.
+      .addMatcher(
+        (a) => a.type.endsWith('/rejected') && a.payload === SESSION_EXPIRED,
+        (state) => {
+          state.user = null
+        },
+      )
   },
 })
 

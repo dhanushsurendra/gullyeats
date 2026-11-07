@@ -146,12 +146,12 @@ export default function Dashboard() {
     // ==================================================
 
     {
-      label: 'Pending Payments',
+      label: 'Overdue Fees',
       icon: Clock,
       value: inr(k.pendingPayments.amount),
-      change: `${k.pendingPayments.count} pending`,
+      change: `${num(k.pendingPayments.count)} orders`,
       tone: k.pendingPayments.count ? 'down' : 'neutral',
-      note: 'platform fees due',
+      note: `overdue fees · ${num(k.pendingPayments.carts)} carts`,
     },
 
     {
@@ -167,7 +167,7 @@ export default function Dashboard() {
       label: 'Collection Rate',
       icon: CheckCircle2,
       value: `${k.collectionRate}%`,
-      note: 'revenue successfully collected',
+      note: 'of fees due so far, paid',
     },
 
     // ==================================================
@@ -180,9 +180,7 @@ export default function Dashboard() {
       value: inr(k.aov.value),
       ...chg(k.aov.change),
       note: 'vs previous period',
-      series: sp((p) =>
-        p.orders - p.cancelled ? p.gmv / (p.orders - p.cancelled) : 0,
-      ),
+      series: sp((p) => p.aov),
     },
 
     {
@@ -201,7 +199,7 @@ export default function Dashboard() {
     ['Cancelled Today', o.live.cancelled],
   ]
   const orderCols = [
-    { key: 'number', label: 'Order', render: (r) => <b>#{r.id.slice(-5)}</b> },
+    { key: 'number', label: 'Order', render: (r) => <b>#{r.number}</b> },
     { key: 'cart', label: 'Restaurant' },
     { key: 'owner', label: 'Owner' },
     { key: 'amount', label: 'Amount', render: (r) => inr(r.amount) },

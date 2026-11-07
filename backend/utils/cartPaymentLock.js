@@ -440,6 +440,7 @@ async function getCartPaymentStatus(cartId) {
 }
 
 module.exports = {
+  BILLING_LOCK_MS,
   createBillPayment,
   getCartPaymentStatus,
   getBillingDate,

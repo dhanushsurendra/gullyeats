@@ -9,7 +9,8 @@ import RevenueChart from '../components/RevenueChart'
 import OrdersChart from '../components/OrdersChart'
 import StatusBadge from '../components/StatusBadge'
 import KpiCard from '../components/KpiCard'
-import { Card, CardHeader, Table, State, Seg, Btn } from '../components/ui'
+import { Card, CardHeader, Table, State, Seg, Btn, ScrollFooter } from '../components/ui'
+import usePaged from '../hooks/usePaged'
 import { IndianRupee, Wallet, Clock, ShoppingBag } from 'lucide-react'
 import { inr, num, ago, ist, matches, ORDER_LABEL } from '../utils/format'
 import { API_BASE, api } from '../services/api'
@@ -134,7 +135,7 @@ export function Orders() {
     {
       key: 'number',
       label: 'Order',
-      render: (r) => <b>#{r.id.slice(-5)}</b>,
+      render: (r) => <b>#{r.number}</b>,
     },
     {
       key: 'cart',
@@ -235,14 +236,14 @@ export function Revenue() {
           <KpiCard
             icon={IndianRupee}
             label='GMV (selected range)'
-            value={inr(k?.gmvRange)}
-            note={`${num(k?.ordersRange)} orders`}
+            value={inr(k?.orderGmvRange)}
+            note={`${num(k?.ordersRange?.value)} orders`}
           />
           <KpiCard
             icon={Wallet}
             label='Platform fee earned'
-            value={inr(k?.platformFee)}
-            note='from orders in range'
+            value={inr(k?.platformFeeRange)}
+            note='on paid orders in range'
           />
           <KpiCard
             icon={ShoppingBag}
@@ -252,9 +253,9 @@ export function Revenue() {
           />
           <KpiCard
             icon={Clock}
-            label='Fees outstanding'
-            value={inr(s?.PENDING?.amount)}
-            note={`${s?.PENDING?.count || 0} pending`}
+            label='Fees overdue'
+            value={inr(k?.pendingPayments?.amount)}
+            note={`${num(k?.pendingPayments?.count)} orders · ${num(k?.pendingPayments?.carts)} carts`}
           />
         </div>
       </State>
@@ -263,10 +264,12 @@ export function Revenue() {
   )
 }
 
+const fetchPayments = (cursor) => api.payments({ limit: 30, cursor })
+
 export function Payments() {
   const q = useSelector((s) => s.admin.search)
-  const { data, loading, error } = useResource('payments', null, 60000)
-  const s = data?.summary || {}
+  const p = usePaged(fetchPayments)
+  const s = p.first?.summary || {}
   const cols = [
     {
       key: 'cart',
@@ -321,30 +324,36 @@ export function Payments() {
         ))}
       </div>
       <Card>
-        <CardHeader title='Platform fee payments' subtitle='Latest 200' />
-        <State loading={loading} error={error}>
+        <CardHeader
+          title='Platform fee payments'
+          subtitle={`Newest first · showing ${num(p.rows.length)}`}
+        />
+        <State loading={p.loading && !p.rows.length} error={!p.rows.length && p.error}>
           <Table
             columns={cols}
-            rows={(data?.items || []).filter((r) => matches(r, q))}
-            empty='No payments yet.'
+            rows={p.rows.filter((r) => matches(r, q))}
+            empty={p.hasMore ? '' : 'No payments yet.'}
           />
         </State>
+        <ScrollFooter {...p} count={p.rows.length} noun='payments' />
       </Card>
     </div>
   )
 }
 
+const fetchFeedback = (cursor) => api.feedback({ limit: 30, cursor })
+
 export function Feedback() {
   const q = useSelector((s) => s.admin.search)
-  const { data, loading, error } = useResource('feedback')
-  const items = (data?.items || []).filter((r) => matches(r, q))
+  const p = usePaged(fetchFeedback)
+  const items = p.rows.filter((r) => matches(r, q))
   return (
     <Card>
       <CardHeader
         title='Customer Feedback'
-        subtitle={`${num(data?.total)} total · showing latest 100`}
+        subtitle={`${num(p.first?.total)} total · showing ${num(p.rows.length)}`}
       />
-      <State loading={loading} error={error}>
+      <State loading={p.loading && !p.rows.length} error={!p.rows.length && p.error}>
         {items.length ? (
           items.map((f) => (
             <div
@@ -363,11 +372,12 @@ export function Feedback() {
             </div>
           ))
         ) : (
-          <p className='px-4 py-10 text-center text-neutral-500'>
-            No feedback yet.
-          </p>
+          !p.loading && !p.hasMore && (
+            <p className='px-4 py-10 text-center text-neutral-500'>No feedback yet.</p>
+          )
         )}
       </State>
+      <ScrollFooter {...p} count={p.rows.length} noun='feedback' />
     </Card>
   )
 }

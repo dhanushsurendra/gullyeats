@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
+import { T } from '../store/adminSlice'
 import { X } from 'lucide-react'
 import {
   Card,
@@ -10,7 +11,9 @@ import {
   Select,
   Spinner,
   ErrorNote,
+  ScrollFooter,
 } from './ui'
+import { useReveal } from '../hooks/usePaged'
 import StatusBadge from './StatusBadge'
 import { api } from '../services/api'
 import { inr, num, ago, istDate, matches } from '../utils/format'
@@ -19,6 +22,7 @@ import { inr, num, ago, istDate, matches } from '../utils/format'
 // Marks the cart's due platform fee as paid outside Razorpay (e.g. cash to
 // the GullyEats team). Asks first: it unlocks the cart with no payment check.
 function MarkFeePaid({ cart }) {
+  const dispatch = useDispatch()
   const [state, setState] = useState({})
   const markPaid = async () => {
     if (
@@ -32,6 +36,7 @@ function MarkFeePaid({ cart }) {
     try {
       const p = await api.markFeePaid(cart.id)
       setState({ done: `Marked ${inr(p.amount)} as paid.` })
+      dispatch(T.carts()) // refresh the cart's status now, not at the next poll
     } catch (e) {
       setState({ error: e.message })
     }
@@ -152,9 +157,10 @@ export default function RestaurantTable({ carts = [], limit, loading, error }) {
   const [f, setF] = useState({
     status: '',
     city: '',
-    owner: params.get('owner') || '',
+    owner: '',
     sort: '',
   })
+  const ownerId = params.get('ownerId')
   const [open, setOpen] = useState(null)
   const set = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.value }))
   useEffect(() => {
@@ -170,11 +176,14 @@ export default function RestaurantTable({ carts = [], limit, loading, error }) {
         (!f.status || c.status === f.status) &&
         (!f.city || c.city === f.city) &&
         (!f.owner || c.owner === f.owner) &&
+        (!ownerId || c.ownerId === ownerId) &&
         matches(c, q),
     )
     if (f.sort) r = [...r].sort((a, b) => b[f.sort] - a[f.sort])
     return limit ? r.slice(0, limit) : r
-  }, [carts, f, q, limit])
+  }, [carts, f, q, limit, ownerId])
+  // All carts stay loaded (the map and filters need them); the table grows 30 rows per scroll.
+  const reveal = useReveal(rows, JSON.stringify([f, q, ownerId]))
 
   const cols = [
     {
@@ -204,9 +213,17 @@ export default function RestaurantTable({ carts = [], limit, loading, error }) {
     <Card>
       <CardHeader
         title='Carts'
-        subtitle={`${rows.length} shown`}
+        subtitle={`${num(rows.length)} carts${ownerId ? ' · one owner' : ''}`}
         right={
           <div className='flex flex-wrap gap-1.5'>
+            {ownerId && (
+              <button
+                onClick={() => nav('/restaurants')}
+                className='px-1 text-[12px] font-medium text-brand hover:underline'
+              >
+                Show all owners
+              </button>
+            )}
             <Select
               value={f.status}
               onChange={set('status')}
@@ -248,11 +265,12 @@ export default function RestaurantTable({ carts = [], limit, loading, error }) {
       <State loading={loading} error={error}>
         <Table
           columns={cols}
-          rows={rows}
+          rows={reveal.visible}
           onRow={setOpen}
           empty='No restaurants match these filters.'
         />
       </State>
+      {!limit && <ScrollFooter {...reveal} count={rows.length} noun='carts' />}
       {open && <CartDrawer cart={open} onClose={() => setOpen(null)} />}
     </Card>
   )

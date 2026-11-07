@@ -107,4 +107,87 @@ test('admin GMV, fees and average order count only paid and served orders', asyn
       : undefined
   assert.equal(find(r.body, 'orderGmvRange'), 164)
   assert.equal(find(find(r.body, 'aov'), 'value'), 82)
+  // Overdue fees: today's orders aren't due until the day ends.
+  assert.deepEqual(r.body.data.kpis.pendingPayments, { amount: 0, count: 0, carts: 0 })
+
+  // A SERVED order paid two days ago is overdue, unless a verified payment covers it.
+  const Payment = require('../models/Payment')
+  const old = new Date(+now - 2 * 864e5)
+  await Order.collection.insertMany([
+    { ...o('SERVED', 82), createdAt: old, orderDate: old, paidAt: old },
+    { ...o('SERVED', 82), createdAt: old, orderDate: old, paidAt: old },
+  ])
+  const covered = await Order.findOne({ cartId, paidAt: old }).lean()
+  await Payment.collection.insertOne({
+    cartId, status: 'VERIFIED', amount: 2, orderIds: [covered._id],
+    verifiedAt: now, createdAt: now, billingDate: old,
+  })
+  const r2 = await call(admin.overview, { query: { range: '30d' }, user: { role: 'admin' } })
+  assert.deepEqual(r2.body.data.kpis.pendingPayments, { amount: 2, count: 1, carts: 1 })
+  assert.equal(r2.body.data.kpis.collectionRate, 50)
+
+  // The chart's AOV also divides by paid orders only, and weeks are whole.
+  const s = await call(admin.series, { query: { period: '3m' } })
+  assert.equal(s.body.data.totals.aov, 82)
+  assert.equal(s.body.data.points.length, 13)
+
+  // Orders page: first page reports whether there are more.
+  const p1 = await call(admin.orders, { query: { limit: '3' } })
+  assert.equal(p1.body.data.length, 3)
+  assert.equal(p1.body.pagination.hasMore, true)
+  const p2 = await call(admin.orders, { query: { limit: '3', cursor: p1.body.pagination.nextCursor } })
+  assert.equal(p2.body.data.length, 3)
+  assert.equal(p2.body.pagination.hasMore, false)
+})
+
+test("a day's platform fee is overdue only once its 26h grace has passed", () => {
+  const { overdueBefore } = require('../controllers/adminController')
+  const ist = (s) => new Date(`${s}+05:30`)
+  // Bills before the returned midnight are overdue.
+  assert.deepEqual(overdueBefore(ist('2026-11-07T01:59:00')), ist('2026-11-06T00:00:00'))
+  assert.deepEqual(overdueBefore(ist('2026-11-07T02:00:00')), ist('2026-11-07T00:00:00'))
+  assert.deepEqual(overdueBefore(ist('2026-11-07T23:59:00')), ist('2026-11-07T00:00:00'))
+})
+
+test('feedback pages newest first until there is no more', async () => {
+  const Order = require('../models/Order')
+  const admin = require('../controllers/adminController')
+  const { call } = require('./helpers')
+  const base = Date.now()
+  await Order.collection.insertMany(
+    [1, 2, 3, 4, 5].map((i) => ({
+      cartId, orderNumber: 100 + i, status: 'SERVED', totalPrice: 10, platformFee: 2,
+      orderItems: [], feedback: `fb ${i}`, createdAt: new Date(base - i * 1000),
+    })),
+  )
+  const p1 = await call(admin.feedback, { query: { limit: '2' } })
+  assert.deepEqual(p1.body.data.items.map((f) => f.text), ['fb 1', 'fb 2'])
+  assert.equal(p1.body.data.total, 5)
+  const p2 = await call(admin.feedback, { query: { limit: '2', cursor: p1.body.data.pagination.nextCursor } })
+  const p3 = await call(admin.feedback, { query: { limit: '2', cursor: p2.body.data.pagination.nextCursor } })
+  assert.deepEqual(p3.body.data.items.map((f) => f.text), ['fb 5'])
+  assert.equal(p3.body.data.pagination.hasMore, false)
+  const bad = await call(admin.feedback, { query: { cursor: 'junk' } })
+  assert.equal(bad.status, 400)
+})
+
+test('payments page newest first and keep the all-time summary on every page', async () => {
+  const Payment = require('../models/Payment')
+  const admin = require('../controllers/adminController')
+  const { call } = require('./helpers')
+  await Payment.deleteMany({})
+  const base = Date.now()
+  await Payment.collection.insertMany(
+    [1, 2, 3].map((i) => ({
+      cartId, status: 'VERIFIED', amount: 2, orderIds: [], paymentReference: `T-${i}`,
+      createdAt: new Date(base - i * 1000),
+    })),
+  )
+  const p1 = await call(admin.payments, { query: { limit: '2' } })
+  assert.equal(p1.body.data.items.length, 2)
+  assert.deepEqual(p1.body.data.summary.VERIFIED, { count: 3, amount: 6 })
+  const p2 = await call(admin.payments, { query: { limit: '2', cursor: p1.body.data.pagination.nextCursor } })
+  assert.equal(p2.body.data.items.length, 1)
+  assert.equal(p2.body.data.pagination.hasMore, false)
+  assert.deepEqual(p2.body.data.summary.VERIFIED, { count: 3, amount: 6 })
 })

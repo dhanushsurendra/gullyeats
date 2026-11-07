@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { Phone } from 'lucide-react'
-import { Card, CardHeader, Table, State, Btn } from './ui'
+import { Card, CardHeader, Table, State, Btn, ScrollFooter } from './ui'
+import { useReveal } from '../hooks/usePaged'
 import StatusBadge from './StatusBadge'
 import { inr, num, signed } from '../utils/format'
 
@@ -12,7 +13,9 @@ export default function OwnerTable({
   title = 'Top Performing Owners',
 }) {
   const nav = useNavigate()
-  const rows = limit ? owners.slice(0, limit) : owners
+  const all = limit ? owners.slice(0, limit) : owners
+  // The full ranked list is loaded once; the table grows 30 rows per scroll.
+  const reveal = useReveal(all, owners.length)
   const cols = [
     {
       key: 'name',
@@ -69,7 +72,7 @@ export default function OwnerTable({
         <div className='flex gap-1.5'>
           <Btn
             onClick={() =>
-              nav(`/restaurants?owner=${encodeURIComponent(o.name)}`)
+              nav(`/restaurants?ownerId=${o.id}`)
             }
           >
             View
@@ -94,8 +97,9 @@ export default function OwnerTable({
         }
       />
       <State loading={loading} error={error}>
-        <Table columns={cols} rows={rows} empty='No owners match.' />
+        <Table columns={cols} rows={reveal.visible} empty='No owners match.' />
       </State>
+      {!limit && <ScrollFooter {...reveal} count={all.length} noun='owners' />}
     </Card>
   )
 }

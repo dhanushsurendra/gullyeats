@@ -171,6 +171,9 @@ PaymentSchema.index({
   createdAt: -1,
 })
 
+// Newest-first paging across all carts (admin payments list).
+PaymentSchema.index({ createdAt: -1, _id: -1 })
+
 /*
  * Useful for finding a payment
  * for a particular billing day.

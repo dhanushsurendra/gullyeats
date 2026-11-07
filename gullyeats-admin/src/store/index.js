@@ -7,13 +7,14 @@ import admin from './adminSlice'
 
 const rootReducer = combineReducers({
   auth,
-  admin,
+  // Only the view choices; fetched data is refetched on load.
+  admin: persistReducer({ key: 'admin', storage, whitelist: ['range', 'period'] }, admin),
 })
 
 const persistConfig = {
   key: 'root',
   storage,
-  whitelist: ['auth', 'admin'],
+  whitelist: ['auth'],
 }
 
 const persistedReducer = persistReducer(persistConfig, rootReducer)

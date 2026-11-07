@@ -126,6 +126,7 @@ export default function CartMap({
   const plotted = useMemo(
     () =>
       carts
+        .filter((cart) => cart.lat != null && cart.lng != null)
         .map((cart) => ({
           ...cart,
           lat: Number(cart.lat),
