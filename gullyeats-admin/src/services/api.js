@@ -113,6 +113,8 @@ export const loginRequest = async (email, password) => {
   try {
     res = await fetch(`${BASE}${ADMIN}/login`, {
       method: 'POST',
+      // Without this the browser drops the cross-origin Set-Cookie and every later call is 401.
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
       },
@@ -178,6 +180,9 @@ export const api = {
   cartInsights: (cartId, p) => request(`${CARTS}/sales-insights/${cartId}`, p),
 
   markFeePaid: (cartId) => post(`${ADMIN}/carts/${cartId}/mark-fee-paid`),
+
+  resetVendorPin: (vendorId) =>
+    post(`${ADMIN}/vendors/${encodeURIComponent(vendorId.trim())}/reset-pin`),
 }
 
 export const API_BASE = BASE

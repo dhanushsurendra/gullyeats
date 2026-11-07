@@ -13,6 +13,7 @@ const DAY = 864e5
 const LARGE_ORDER = 1000
 
 const bcrypt = require('bcrypt')
+const generatePin = require('../utils/generatePin')
 const jwt = require('jsonwebtoken')
 
 const ymd = (d) => new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(d)
@@ -1794,4 +1795,20 @@ exports.markFeePaid = asyncHandler(async (req, res) => {
     success: true,
     data: { id: String(payment._id), amount: payment.amount, billingDate: payment.billingDate },
   })
+})
+
+// Admin-issued PIN reset: only the hash is stored, so the new PIN is returned once for the admin to pass on.
+exports.resetVendorPin = asyncHandler(async (req, res) => {
+  const vendorId = String(req.params.vendorId || '').trim().toUpperCase()
+  const user = await User.findOne({ userId: vendorId, role: 'vendor' })
+  if (!user) {
+    res.status(404)
+    throw new Error('Vendor not found')
+  }
+
+  const pin = generatePin()
+  user.pinHash = await bcrypt.hash(pin, 10)
+  await user.save()
+
+  res.json({ success: true, data: { userId: user.userId, name: user.name, pin } })
 })

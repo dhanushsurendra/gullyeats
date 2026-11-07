@@ -376,6 +376,8 @@ export function SettingsPage() {
   const dispatch = useDispatch()
   const user = useSelector((s) => s.auth.user)
   return (
+    <div className='space-y-4'>
+    <ResetVendorPin />
     <Card className='max-w-xl'>
       <CardHeader title='Account & connection' />
       <dl className='grid grid-cols-[120px_1fr] gap-y-2 px-4 py-4 text-[13px]'>
@@ -393,6 +395,59 @@ export function SettingsPage() {
       <div className='border-t border-line px-4 py-3'>
         <Btn onClick={() => dispatch(logout())}>Log out</Btn>
       </div>
+    </Card>
+    </div>
+  )
+}
+
+function ResetVendorPin() {
+  const [vendorId, setVendorId] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const [result, setResult] = useState(null)
+
+  const submit = async (e) => {
+    e.preventDefault()
+    const id = vendorId.trim()
+    if (!id) return
+    if (!window.confirm(`Generate a new PIN for ${id}? Their current PIN will stop working.`)) return
+    setBusy(true)
+    setError('')
+    setResult(null)
+    try {
+      setResult(await api.resetVendorPin(id))
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Card className='max-w-xl'>
+      <CardHeader title='Reset vendor PIN' />
+      <form onSubmit={submit} className='flex flex-wrap items-end gap-2 px-4 py-4 text-[13px]'>
+        <label className='flex flex-1 flex-col gap-1'>
+          <span className='text-neutral-500'>Vendor ID</span>
+          <input
+            value={vendorId}
+            onChange={(e) => setVendorId(e.target.value)}
+            placeholder='VEN-XXXXXX'
+            className='rounded-md border border-line px-2.5 py-1.5 uppercase outline-none focus:border-brand'
+          />
+        </label>
+        <Btn primary type='submit' disabled={busy || !vendorId.trim()} className='py-1.5'>
+          {busy ? 'Generating…' : 'Generate new PIN'}
+        </Btn>
+      </form>
+      {error && <p className='px-4 pb-4 text-[13px] text-red-600'>{error}</p>}
+      {result && (
+        <div className='border-t border-line px-4 py-3 text-[13px]'>
+          New PIN for {result.name ? `${result.name} (${result.userId})` : result.userId}:{' '}
+          <span className='font-mono text-lg font-semibold tracking-widest'>{result.pin}</span>
+          <p className='text-neutral-500'>Shown once. Share it with the vendor now.</p>
+        </div>
+      )}
     </Card>
   )
 }
