@@ -38,13 +38,17 @@ async function request(path, params) {
   return body.data ?? body
 }
 
-async function post(path) {
+async function post(path, payload) {
   let res
 
   try {
     res = await fetch(`${BASE}${path}`, {
       method: 'POST',
       credentials: 'include',
+      ...(payload && {
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }),
     })
   } catch {
     throw new Error(`Cannot reach the API at ${BASE}.`)
@@ -182,6 +186,14 @@ export const api = {
   vendors: () => request(`${ADMIN}/insights/vendors`),
   growth: () => request(`${ADMIN}/insights/growth`),
   operations: () => request(`${ADMIN}/insights/operations`),
+
+  actions: (p) => request(`${ADMIN}/actions`, p),
+  suspendCart: (cartId, reason) => post(`${ADMIN}/carts/${cartId}/suspend`, { reason }),
+  resumeCart: (cartId) => post(`${ADMIN}/carts/${cartId}/resume`),
+  logReminder: (cartId, amount, channel) =>
+    post(`${ADMIN}/carts/${cartId}/reminder`, { amount, channel }),
+  disableVendor: (ownerId, reason) => post(`${ADMIN}/owners/${ownerId}/disable`, { reason }),
+  enableVendor: (ownerId) => post(`${ADMIN}/owners/${ownerId}/enable`),
 
   cartInsights: (cartId, p) => request(`${CARTS}/sales-insights/${cartId}`, p),
 

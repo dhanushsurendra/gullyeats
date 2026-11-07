@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken')
 const asyncHandler = require('../utils/asyncHandler')
 const { validatePhone, validateRole } = require('../utils/validators')
 const generatePin = require('../utils/generatePin')
+const DISABLED_MESSAGE = 'This account has been disabled. Please contact GullyEats support.'
 
 // The OTP comes back in the send-otp response, so it only works while a
 // vendor is being onboarded. Once one of their outlets is finished (QR poster
@@ -85,6 +86,11 @@ exports.verifyOtp = asyncHandler(async (req, res) => {
     throw new Error('User not found')
   }
 
+  if (user.disabledAt) {
+    res.status(403)
+    throw new Error(DISABLED_MESSAGE)
+  }
+
   await refuseIfOnboarded(res, user)
 
   if (!user.otpExpiresAt || user.otpExpiresAt < new Date()) {
@@ -159,6 +165,11 @@ exports.vendorLogin = asyncHandler(async (req, res) => {
     return res
       .status(401)
       .json({ success: false, message: 'Invalid credentials' })
+  }
+
+  // Checked after the PIN so a disabled account can't be discovered by guessing.
+  if (user.disabledAt) {
+    return res.status(403).json({ success: false, message: DISABLED_MESSAGE })
   }
 
   const token = jwt.sign(

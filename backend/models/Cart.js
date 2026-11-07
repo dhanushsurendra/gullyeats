@@ -32,6 +32,11 @@
       // New carts start active; the vendor can switch this in the ordering app.
       isActive: { type: Boolean, default: true },
       isOpen: { type: Boolean, default: false },
+      // Set by a GullyEats admin (e.g. suspected fee avoidance, or the vendor
+      // was disabled). A suspended cart takes no orders and can't be reopened
+      // from the vendor app until an admin resumes it.
+      suspendedAt: { type: Date, default: null },
+      suspendReason: { type: String, trim: true, default: null },
     },
     { timestamps: true },
   )

@@ -1,4 +1,5 @@
 import { LineChart, Line } from 'recharts'
+import { Link } from 'react-router-dom'
 import { Card } from './ui'
 
 const TONE = {
@@ -15,9 +16,10 @@ export default function KpiCard({
   tone = 'neutral',
   note,
   series,
+  to, // page this number comes from; makes the card a link
 }) {
-  return (
-    <Card className='p-3 transition-colors hover:border-orange-300'>
+  const card = (
+    <Card className={`h-full p-3 transition-colors ${to ? 'hover:border-orange-300' : ''}`}>
       <div className='flex items-center gap-1.5 text-[12px] text-neutral-500'>
         <Icon size={14} className='text-brand' />
         {label}
@@ -44,5 +46,16 @@ export default function KpiCard({
         )}
       </div>
     </Card>
+  )
+  return to ? (
+    <Link
+      to={to}
+      title={`Open ${label}`}
+      className='block rounded-[10px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand'
+    >
+      {card}
+    </Link>
+  ) : (
+    card
   )
 }

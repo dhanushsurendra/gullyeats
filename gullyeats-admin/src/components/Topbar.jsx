@@ -14,6 +14,7 @@ const TITLES = {
   '/revenue': ['Revenue', 'GMV and platform fee revenue'],
   '/payments': ['Payments', 'Platform fee payments from owners'],
   '/collections': ['Collections', 'Overdue platform fees, longest owed first'],
+  '/actions': ['Action log', 'Who did what, and when'],
   '/insights': ['Business Insights', 'Growth, vendors, fee leakage and operations'],
   '/feedback': ['Feedback', 'What customers are saying'],
   '/settings': ['Settings', 'Account and connection'],

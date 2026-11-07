@@ -8,6 +8,8 @@ const STYLE = {
   PENDING: 'bg-amber-50 text-amber-700',
   REVIEW: 'bg-amber-50 text-amber-700',
   ATTENTION: 'bg-red-50 text-red-600',
+  SUSPENDED: 'bg-neutral-800 text-white',
+  DISABLED: 'bg-neutral-800 text-white',
   CANCELLED: 'bg-red-50 text-red-600',
   REJECTED: 'bg-red-50 text-red-600',
   PAID: 'bg-green-50 text-green-700',

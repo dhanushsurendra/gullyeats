@@ -9,7 +9,8 @@ import RevenueChart from '../components/RevenueChart'
 import OrdersChart from '../components/OrdersChart'
 import StatusBadge from '../components/StatusBadge'
 import KpiCard from '../components/KpiCard'
-import { Card, CardHeader, Table, State, Seg, Btn, ScrollFooter } from '../components/ui'
+import { Card, CardHeader, Table, State, Seg, Btn, ScrollFooter, ExportButton } from '../components/ui'
+import { downloadCsv, fetchAll, istDay, istStamp, today } from '../utils/csv'
 import usePaged from '../hooks/usePaged'
 import { IndianRupee, Wallet, Clock, ShoppingBag } from 'lucide-react'
 import { inr, num, ago, ist, matches, ORDER_LABEL } from '../utils/format'
@@ -176,17 +177,20 @@ export function Orders() {
         title='Orders'
         subtitle={`Showing ${rows.length} orders`}
         right={
-          <Seg
-            value={status}
-            onChange={setStatus}
-            options={[
-              ['', 'All'],
-              ['PENDING', 'Pending'],
-              ['PAID', 'Preparing'],
-              ['SERVED', 'Served'],
-              ['CANCELLED', 'Cancelled'],
-            ]}
-          />
+          <div className='flex flex-wrap items-center gap-2'>
+            <Seg
+              value={status}
+              onChange={setStatus}
+              options={[
+                ['', 'All'],
+                ['PENDING', 'Pending'],
+                ['PAID', 'Preparing'],
+                ['SERVED', 'Served'],
+                ['CANCELLED', 'Cancelled'],
+              ]}
+            />
+            <ExportButton run={() => exportOrders(status)} />
+          </div>
         }
       />
 
@@ -266,6 +270,42 @@ export function Revenue() {
 
 const fetchPayments = (cursor) => api.payments({ limit: 30, cursor })
 
+const capped = (truncated, n) => (truncated ? `First ${num(n)} rows only.` : '')
+
+async function exportPayments() {
+  const { rows, truncated } = await fetchAll((cursor) => api.payments({ limit: 200, cursor }))
+  downloadCsv(`gullyeats-platform-fees-${today()}.csv`, [
+    { label: 'Cart', value: (r) => r.cart },
+    { label: 'Owner', value: (r) => r.owner },
+    { label: 'Billing day', value: (r) => istDay(r.billingDate) },
+    { label: 'Orders billed', value: (r) => r.orders },
+    { label: 'Platform fee (INR)', value: (r) => r.amount },
+    { label: 'Status', value: (r) => r.status },
+    { label: 'Verified at (IST)', value: (r) => istStamp(r.verifiedAt) },
+    { label: 'Source', value: (r) => r.source },
+    { label: 'Refunded (INR)', value: (r) => (r.refunds || []).filter((f) => f.status === 'REFUNDED').reduce((t, f) => t + f.amount, 0) || '' },
+    { label: 'Created at (IST)', value: (r) => istStamp(r.createdAt) },
+  ], rows)
+  return capped(truncated, rows.length)
+}
+
+async function exportOrders(status) {
+  const { rows, truncated } = await fetchAll((cursor) =>
+    api.orders({ limit: 500, status, cursor }).then((d) => ({ items: d.data, pagination: d.pagination })),
+  )
+  downloadCsv(`gullyeats-orders${status ? `-${status.toLowerCase()}` : ''}-${today()}.csv`, [
+    { label: 'Order no.', value: (r) => r.number },
+    { label: 'Cart', value: (r) => r.cart },
+    { label: 'Owner', value: (r) => r.owner },
+    { label: 'Items', value: (r) => r.items },
+    { label: 'Amount (INR)', value: (r) => r.amount },
+    { label: 'Status', value: (r) => ORDER_LABEL[r.status] || r.status },
+    { label: 'Payment', value: (r) => r.payment },
+    { label: 'Placed at (IST)', value: (r) => istStamp(r.createdAt) },
+  ], rows)
+  return capped(truncated, rows.length)
+}
+
 export function Payments() {
   const q = useSelector((s) => s.admin.search)
   const p = usePaged(fetchPayments)
@@ -302,7 +342,18 @@ export function Payments() {
       key: 'source',
       label: 'Source',
       render: (r) => (
-        <span className='text-neutral-500'>{r.source || '—'}</span>
+        <span className='text-neutral-500'>
+          {r.source || '—'}
+          {r.refunds?.map((f) => (
+            <span
+              key={f.razorpayPaymentId}
+              title={f.error || f.refundId || ''}
+              className={`ml-1.5 font-medium ${f.status === 'FAILED' ? 'text-red-600' : 'text-amber-700'}`}
+            >
+              · {f.status === 'FAILED' ? 'refund failed' : 'duplicate refunded'} {inr(f.amount)}
+            </span>
+          ))}
+        </span>
       ),
     },
   ]
@@ -327,6 +378,7 @@ export function Payments() {
         <CardHeader
           title='Platform fee payments'
           subtitle={`Newest first · showing ${num(p.rows.length)}`}
+          right={<ExportButton run={exportPayments} />}
         />
         <State loading={p.loading && !p.rows.length} error={!p.rows.length && p.error}>
           <Table

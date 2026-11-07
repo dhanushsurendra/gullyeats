@@ -142,6 +142,9 @@ exports.createOrder = asyncHandler(async (req, res) => {
 
   const isVendor = await canManageCart(req.user, cart)
 
+  // Suspended by GullyEats: no orders at all, including vendor-entered ones.
+  if (cart.suspendedAt) fail(res, 403, 'This cart is not taking orders right now')
+
   if (!isVendor && (!cart.isActive || !cart.isOpen)) {
     fail(res, 403, 'This cart is not taking orders right now')
   }

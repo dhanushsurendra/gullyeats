@@ -43,6 +43,9 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // Set when a GullyEats admin disables a vendor: they can't log in, and
+    // their carts are suspended.
+    disabledAt: { type: Date, default: null },
     otpHash: String,
     otpExpiresAt: Date,
   },

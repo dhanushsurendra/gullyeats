@@ -126,6 +126,24 @@ const PaymentSchema = new mongoose.Schema(
      * (charged earlier, cancelled since) and charged again (credited, then
      * restored). Applied to the orders when the payment is verified.
      */
+    /*
+     * Online payments refunded because this bill was already settled another
+     * way (an admin marked it paid, e.g. cash, while the vendor's checkout was
+     * still open). status: PENDING while the refund call runs, then REFUNDED
+     * or FAILED (refund by hand in the Razorpay dashboard).
+     */
+    refunds: [
+      {
+        _id: false,
+        razorpayPaymentId: String,
+        refundId: String,
+        amount: Number,
+        status: { type: String, enum: ['PENDING', 'REFUNDED', 'FAILED'] },
+        error: String,
+        at: Date,
+      },
+    ],
+
     orderIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Order' }],
     creditOrderIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Order' }],
     rechargeOrderIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Order' }],

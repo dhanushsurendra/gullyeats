@@ -53,6 +53,7 @@ export default function Dashboard() {
 
     {
       label: 'Total Revenue',
+      to: '/revenue',
       icon: IndianRupee,
       value: inr(k.totalRevenue.value),
       note: 'All-time GullyEats revenue',
@@ -60,6 +61,7 @@ export default function Dashboard() {
 
     {
       label: 'Revenue Today',
+      to: '/revenue',
       icon: TrendingUp,
       value: inr(k.revenueToday.value),
       ...chg(k.revenueToday.change),
@@ -69,6 +71,7 @@ export default function Dashboard() {
 
     {
       label: 'Revenue This Month',
+      to: '/insights?tab=growth',
       icon: IndianRupee,
       value: inr(k.revenueMonth.value),
       ...chg(k.revenueMonth.change),
@@ -81,6 +84,7 @@ export default function Dashboard() {
 
     {
       label: 'Total Orders',
+      to: '/orders',
       icon: ShoppingBag,
       value: num(k.totalOrders),
       note: 'All-time orders',
@@ -88,6 +92,7 @@ export default function Dashboard() {
 
     {
       label: 'Orders Today',
+      to: '/orders',
       icon: ShoppingBag,
       value: num(k.ordersToday.value),
       ...chg(k.ordersToday.change),
@@ -101,6 +106,7 @@ export default function Dashboard() {
 
     {
       label: 'Total Owners',
+      to: '/owners',
       icon: Users,
       value: num(k.totalOwners.value),
       change: `+${k.totalOwners.delta}`,
@@ -110,6 +116,7 @@ export default function Dashboard() {
 
     {
       label: 'Active Owners',
+      to: '/insights?tab=vendors',
       icon: CheckCircle2,
       value: num(k.activeOwners.value),
       note: `${k.activeOwners.share}% of total`,
@@ -117,6 +124,7 @@ export default function Dashboard() {
 
     {
       label: 'Total Carts',
+      to: '/restaurants',
       icon: Store,
       value: num(k.totalCarts.value),
       change: `+${k.totalCarts.delta}`,
@@ -126,6 +134,7 @@ export default function Dashboard() {
 
     {
       label: 'Live Carts',
+      to: '/restaurants',
       icon: Zap,
       value: num(k.liveCarts.value),
       note: 'Currently accepting orders',
@@ -137,6 +146,7 @@ export default function Dashboard() {
 
     {
       label: 'Overdue Fees',
+      to: '/collections',
       icon: Clock,
       value: inr(k.pendingPayments.amount),
       change: `${num(k.pendingPayments.count)} orders`,
@@ -146,6 +156,7 @@ export default function Dashboard() {
 
     {
       label: 'Rejected Payments',
+      to: '/payments',
       icon: Ban,
       value: inr(k.rejectedPayments.amount),
       change: `${k.rejectedPayments.count} rejected`,
@@ -155,6 +166,7 @@ export default function Dashboard() {
 
     {
       label: 'Collection Rate',
+      to: '/collections',
       icon: CheckCircle2,
       value: `${k.collectionRate}%`,
       note: 'of fees due so far, paid',
@@ -166,6 +178,7 @@ export default function Dashboard() {
 
     {
       label: 'Average Order Value',
+      to: '/analytics',
       icon: PieChart,
       value: inr(k.aov.value),
       ...chg(k.aov.change),
@@ -175,6 +188,7 @@ export default function Dashboard() {
 
     {
       label: 'Cancellation Rate',
+      to: '/insights?tab=leakage',
       icon: Ban,
       value: `${k.cancelRate.value}%`,
       ...chg(k.cancelRate.change, true, ' pp'),

@@ -1,4 +1,5 @@
-import { Loader2, AlertCircle } from 'lucide-react'
+import { useState } from 'react'
+import { Loader2, AlertCircle, Download } from 'lucide-react'
 
 export const Card = ({ className = '', children }) => (
   <div
@@ -144,3 +145,28 @@ export const ScrollFooter = ({ sentinel, hasMore, loading, error, retry, count, 
   ) : count ? (
     <div className='py-6 text-center text-sm text-neutral-500'>You've reached the end.</div>
   ) : null
+
+// "Export CSV" button with a busy state; run() does the fetching and download.
+export function ExportButton({ run, label = 'Export CSV', disabled = false }) {
+  const [busy, setBusy] = useState(false)
+  const [note, setNote] = useState('')
+  const click = async () => {
+    setBusy(true)
+    setNote('')
+    try {
+      setNote((await run()) || '')
+    } catch (e) {
+      setNote(e.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <span className='inline-flex items-center gap-2'>
+      {note && <span className='text-[11.5px] text-neutral-500'>{note}</span>}
+      <Btn onClick={click} disabled={busy || disabled} className='inline-flex items-center gap-1 disabled:opacity-50'>
+        <Download size={12} /> {busy ? 'Preparing…' : label}
+      </Btn>
+    </span>
+  )
+}

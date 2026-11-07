@@ -13,6 +13,14 @@ const { s3Client } = require('../utils/s3Client')
 const generatePin = require('../utils/generatePin')
 const Menu = require('../models/Menu')
 
+// A cart suspended by GullyEats can't be reopened from the vendor app.
+function refuseIfSuspended(res, cart, opening) {
+  if (opening && cart.suspendedAt) {
+    res.status(403)
+    throw new Error('This cart is paused by GullyEats. Please contact GullyEats support.')
+  }
+}
+
 exports.createBasicCart = asyncHandler(async (req, res) => {
   let { cartName, cartCity } = req.body
 
@@ -100,6 +108,7 @@ exports.updateCart = asyncHandler(async (req, res) => {
   }
 
   if (isOpen !== undefined) {
+    refuseIfSuspended(res, cart, isOpen);
     cart.isOpen = isOpen;
   }
 
@@ -844,7 +853,9 @@ exports.toggleCartStatus = asyncHandler(async (req, res) => {
     throw new Error('isOpen must be true or false')
   }
 
-  cart.isOpen = isOpen === undefined ? !cart.isOpen : isOpen
+  const next = isOpen === undefined ? !cart.isOpen : isOpen
+  refuseIfSuspended(res, cart, next)
+  cart.isOpen = next
   await cart.save()
 
   res.status(200).json({

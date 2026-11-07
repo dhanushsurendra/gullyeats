@@ -1,15 +1,52 @@
 import { useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { IndianRupee, Store, Clock, AlertTriangle, Phone } from 'lucide-react'
+import { IndianRupee, Store, Clock, AlertTriangle, Phone, MessageCircle } from 'lucide-react'
 import useResource from '../hooks/useResource'
 import { useReveal } from '../hooks/usePaged'
 import { T } from '../store/adminSlice'
 import { api } from '../services/api'
 import KpiCard from '../components/KpiCard'
-import { Card, CardHeader, Table, State, Btn, Seg, ScrollFooter } from '../components/ui'
+import { Card, CardHeader, Table, State, Btn, Seg, ScrollFooter, ExportButton } from '../components/ui'
+import { downloadCsv, istDay, today } from '../utils/csv'
 import { inr, num, ist, matches } from '../utils/format'
 
 const AGE_ICON = [Clock, Clock, AlertTriangle]
+
+// Indian mobile numbers are stored as 10 digits; wa.me and sms: need +91.
+const intl = (phone) => {
+  const d = String(phone || '').replace(/\D/g, '')
+  return d.length === 10 ? `91${d}` : d
+}
+
+const reminderText = (r) =>
+  `Hi ${r.owner}, this is GullyEats. The platform fee of ₹${r.amount} for ${r.cart} ` +
+  `has been due since ${ist(r.oldestDay).split(',')[0]}, so the cart is locked for new orders. ` +
+  'Please open the GullyEats vendor app and pay to unlock it. Thank you!'
+
+// Opens WhatsApp or SMS with the reminder typed in (the admin presses send),
+// and records that a reminder went out.
+function Reminder({ row }) {
+  const [sent, setSent] = useState(null)
+  if (!row.phone) return '—'
+  const to = intl(row.phone)
+  const text = encodeURIComponent(reminderText(row))
+  const open = (channel, href) => {
+    window.open(href, '_blank', 'noopener')
+    setSent(channel)
+    api.logReminder(row.cartId, row.amount, channel).catch(() => {})
+  }
+  return (
+    <span className='inline-flex items-center gap-1.5'>
+      <Btn onClick={() => open('whatsapp', `https://wa.me/${to}?text=${text}`)} title='Send on WhatsApp'>
+        <MessageCircle size={12} className='inline' /> WhatsApp
+      </Btn>
+      <Btn onClick={() => open('sms', `sms:+${to}?body=${text}`)} title='Send as SMS'>
+        SMS
+      </Btn>
+      {sent && <span className='text-[11px] text-green-700'>Opened</span>}
+    </span>
+  )
+}
 
 export default function Collections() {
   const dispatch = useDispatch()
@@ -36,12 +73,24 @@ export default function Collections() {
     setMarking((m) => ({ ...m, [r.cartId]: 'busy' }))
     try {
       const p = await api.markFeePaid(r.cartId)
-      setMarking((m) => ({ ...m, [r.cartId]: `Marked ${inr(p.amount)} paid` }))
+      setMarking((m) => ({ ...m, [r.cartId]: p.message }))
       dispatch(T.collections())
     } catch (e) {
       setMarking((m) => ({ ...m, [r.cartId]: e.message }))
     }
   }
+
+  const exportCsv = () =>
+    downloadCsv(`gullyeats-overdue-fees-${today()}.csv`, [
+      { label: 'Cart', value: (r) => r.cart },
+      { label: 'City', value: (r) => r.city },
+      { label: 'Owner', value: (r) => r.owner },
+      { label: 'Phone', value: (r) => r.phone },
+      { label: 'Overdue (INR)', value: (r) => r.amount },
+      { label: 'Orders', value: (r) => r.orders },
+      { label: 'Oldest unpaid day', value: (r) => istDay(r.oldestDay) },
+      { label: 'Days owed', value: (r) => r.days },
+    ], rows)
 
   const cols = [
     { key: 'cart', label: 'Cart', render: (r) => <b className='font-medium'>{r.cart}</b> },
@@ -72,11 +121,18 @@ export default function Collections() {
       ),
     },
     {
+      key: 'remind',
+      label: 'Remind',
+      render: (r) => <Reminder row={r} />,
+    },
+    {
       key: 'action',
       label: '',
       render: (r) =>
         marking[r.cartId] && marking[r.cartId] !== 'busy' ? (
-          <span className='text-[12px] text-neutral-500'>{marking[r.cartId]}</span>
+          <span className='inline-block max-w-[220px] whitespace-normal text-[12px] text-neutral-500'>
+            {marking[r.cartId]}
+          </span>
         ) : (
           <Btn onClick={() => markPaid(r)} disabled={marking[r.cartId] === 'busy'}>
             {marking[r.cartId] === 'busy' ? 'Marking…' : 'Mark fee paid'}
@@ -111,11 +167,14 @@ export default function Collections() {
           title='Call list'
           subtitle={`${num(rows.length)} carts · longest owed first. "Mark fee paid" settles the oldest unpaid day.`}
           right={
-            <Seg
-              value={bucket}
-              onChange={setBucket}
-              options={[['', 'All'], ...(data?.buckets || []).map((b) => [b.label, b.label])]}
-            />
+            <div className='flex flex-wrap items-center gap-2'>
+              <Seg
+                value={bucket}
+                onChange={setBucket}
+                options={[['', 'All'], ...(data?.buckets || []).map((b) => [b.label, b.label])]}
+              />
+              <ExportButton run={exportCsv} disabled={!data} />
+            </div>
           }
         />
         <State loading={loading} error={error}>

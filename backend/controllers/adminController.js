@@ -8,6 +8,8 @@ const Order = require('../models/Order')
 const Payment = require('../models/Payment')
 const { getCartPaymentStatus, createBillPayment } = require('../utils/cartPaymentLock')
 const { overdueByCart } = require('../utils/overdueFees')
+const { logAction } = require('../utils/adminLog')
+const AdminAction = require('../models/AdminAction')
 
 const TZ = 'Asia/Kolkata'
 const DAY = 864e5
@@ -931,9 +933,20 @@ exports.overview = asyncHandler(async (req, res) => {
   const st = Object.fromEntries(todayStatus.map((s) => [s._id, s.n])) // ========================================================
   // ATTENTION
   // ========================================================
+  const failedRefunds = await Payment.countDocuments({ 'refunds.status': 'FAILED' })
   const attention = [] // --------------------------------------------------------
   // Pending payments
   // --------------------------------------------------------
+  if (failedRefunds) {
+    attention.push({
+      id: 'refund',
+      kind: 'failed',
+      severity: 'High',
+      title: 'Refund failed',
+      text: `${failedRefunds} duplicate online payment${failedRefunds > 1 ? 's' : ''} couldn't be refunded automatically. Refund in the Razorpay dashboard.`,
+      to: '/actions?action=AUTO_REFUND',
+    })
+  }
   if (unpaid.count) {
     attention.push({
       id: 'pay',
@@ -1137,7 +1150,7 @@ exports.owners = asyncHandler(async (req, res) => {
   const d60 = new Date(+today - 59 * DAY)
   const [owners, carts, rows] = await Promise.all([
     User.find({ role: 'vendor' })
-      .select('name phoneNumber userId createdAt')
+      .select('name phoneNumber userId createdAt disabledAt')
       .lean(),
     Cart.find().select('userId isOpen').lean(),
     Order.aggregate([
@@ -1191,8 +1204,10 @@ exports.owners = asyncHandler(async (req, res) => {
         gmv: a.gmv,
         aov: a.valid ? a.gmv / a.valid : 0,
         growth,
-        status:
-          a.g30 > 0
+        disabled: Boolean(o.disabledAt),
+        status: o.disabledAt
+          ? 'Disabled'
+          : a.g30 > 0
             ? growth !== null && growth < -10
               ? 'Review'
               : 'Active'
@@ -1229,7 +1244,9 @@ exports.carts = asyncHandler(async (req, res) => {
   const pend = new Set(pending.map(String))
   const data = carts.map((c) => {
     const r = by.get(String(c._id)) || {}
-    const status = pend.has(String(c._id))
+    const status = c.suspendedAt
+      ? 'SUSPENDED'
+      : pend.has(String(c._id))
       ? 'ATTENTION'
       : c.isOpen
         ? 'LIVE'
@@ -1247,6 +1264,7 @@ exports.carts = asyncHandler(async (req, res) => {
       lat: hasLoc(c) ? c.location.coordinates[0] : null,
       lng: hasLoc(c) ? c.location.coordinates[1] : null,
       status,
+      suspendReason: c.suspendReason || null,
       ordersToday: r.orders || 0,
       gmvToday: r.gmv || 0,
       current: r.current || 0,
@@ -1353,6 +1371,7 @@ exports.payments = asyncHandler(async (req, res) => {
         billingDate: p.billingDate,
         verifiedAt: p.verifiedAt,
         source: p.verificationSource,
+        refunds: p.refunds || [],
         createdAt: p.createdAt,
       })),
     },
@@ -1470,10 +1489,30 @@ exports.markFeePaid = asyncHandler(async (req, res) => {
   }
 
   let payment = await Payment.findOne({ cartId, status: 'PENDING' })
+  let paidOnline = false
   if (payment) {
+    // The vendor may already have paid this bill online: record that payment
+    // instead, or they'd pay twice. If Razorpay can't be checked, stop.
+    // Loaded here: paymentController builds the Razorpay client on load.
+    const { findCapturedPayment } = require('./paymentController')
+    let captured
+    try {
+      captured = await findCapturedPayment(payment)
+    } catch (e) {
+      res.status(502)
+      throw new Error("Couldn't check Razorpay for an online payment. Try again in a minute.")
+    }
     payment.status = 'VERIFIED'
-    payment.verificationSource = 'MANUAL'
     payment.verifiedAt = new Date()
+    if (captured) {
+      paidOnline = true
+      payment.razorpayPaymentId = captured.id
+      payment.verificationSource = 'RAZORPAY_RECOVERY'
+    } else {
+      // An online payment that still arrives for this bill is refunded
+      // automatically (see refundDuplicatePayment).
+      payment.verificationSource = 'MANUAL'
+    }
     await payment.save()
   } else {
     const status = await getCartPaymentStatus(cartId)
@@ -1488,9 +1527,25 @@ exports.markFeePaid = asyncHandler(async (req, res) => {
     })
   }
 
+  if (!paidOnline) {
+    await logAction(req, 'MARK_FEE_PAID', { kind: 'cart', id: cart._id, label: cart.cartName }, {
+      amount: payment.amount,
+      billingDate: payment.billingDate,
+      paymentId: payment._id,
+    })
+  }
+
   res.json({
     success: true,
-    data: { id: String(payment._id), amount: payment.amount, billingDate: payment.billingDate },
+    data: {
+      id: String(payment._id),
+      amount: payment.amount,
+      billingDate: payment.billingDate,
+      paidOnline,
+      message: paidOnline
+        ? `The vendor had already paid ${payment.amount} online, so that payment was recorded instead.`
+        : `Marked ₹${payment.amount} as paid.`,
+    },
   })
 })
 
@@ -1506,6 +1561,128 @@ exports.resetVendorPin = asyncHandler(async (req, res) => {
   const pin = generatePin()
   user.pinHash = await bcrypt.hash(pin, 10)
   await user.save()
+  await logAction(req, 'RESET_PIN', { kind: 'vendor', id: user._id, label: `${user.name || 'Unnamed'} (${user.userId})` })
 
   res.json({ success: true, data: { userId: user.userId, name: user.name, pin } })
+})
+
+const reasonOf = (req) => String(req.body?.reason || '').trim().slice(0, 300) || null
+
+async function findCart(req, res) {
+  if (!mongoose.isValidObjectId(req.params.cartId)) {
+    res.status(400)
+    throw new Error('Invalid cartId')
+  }
+  const cart = await Cart.findById(req.params.cartId)
+  if (!cart) {
+    res.status(404)
+    throw new Error('Cart not found')
+  }
+  return cart
+}
+
+// Stops a cart taking orders (customer or vendor-entered) until resumed.
+exports.suspendCart = asyncHandler(async (req, res) => {
+  const cart = await findCart(req, res)
+  const reason = reasonOf(req)
+  cart.suspendedAt = new Date()
+  cart.suspendReason = reason
+  cart.isOpen = false
+  await cart.save()
+  await logAction(req, 'SUSPEND_CART', { kind: 'cart', id: cart._id, label: cart.cartName }, { reason })
+  res.json({ success: true, data: { id: String(cart._id), suspendedAt: cart.suspendedAt } })
+})
+
+exports.resumeCart = asyncHandler(async (req, res) => {
+  const cart = await findCart(req, res)
+  const owner = await User.findById(cart.userId).select('disabledAt').lean()
+  if (owner?.disabledAt) {
+    res.status(409)
+    throw new Error("This cart's vendor is disabled. Enable the vendor first.")
+  }
+  cart.suspendedAt = null
+  cart.suspendReason = null
+  await cart.save()
+  await logAction(req, 'RESUME_CART', { kind: 'cart', id: cart._id, label: cart.cartName })
+  res.json({ success: true, data: { id: String(cart._id) } })
+})
+
+async function findVendor(req, res) {
+  if (!mongoose.isValidObjectId(req.params.ownerId)) {
+    res.status(400)
+    throw new Error('Invalid vendor id')
+  }
+  const user = await User.findOne({ _id: req.params.ownerId, role: 'vendor' })
+  if (!user) {
+    res.status(404)
+    throw new Error('Vendor not found')
+  }
+  return user
+}
+
+// Disabling a vendor blocks their logins and suspends every cart they own.
+// shortcut: their existing app session keeps read access until its token expires (30 days); add a disabledAt check to auth if that matters.
+exports.disableVendor = asyncHandler(async (req, res) => {
+  const user = await findVendor(req, res)
+  const reason = reasonOf(req)
+  user.disabledAt = new Date()
+  await user.save()
+  const r = await Cart.updateMany(
+    { userId: user._id, suspendedAt: null },
+    { $set: { suspendedAt: new Date(), suspendReason: reason || 'Vendor disabled', isOpen: false } },
+  )
+  await logAction(req, 'DISABLE_VENDOR', { kind: 'vendor', id: user._id, label: `${user.name || 'Unnamed'} (${user.userId})` }, {
+    reason,
+    cartsSuspended: r.modifiedCount,
+  })
+  res.json({ success: true, data: { id: String(user._id), cartsSuspended: r.modifiedCount } })
+})
+
+// Re-enables logins. Their carts stay suspended until resumed one by one.
+exports.enableVendor = asyncHandler(async (req, res) => {
+  const user = await findVendor(req, res)
+  user.disabledAt = null
+  await user.save()
+  await logAction(req, 'ENABLE_VENDOR', { kind: 'vendor', id: user._id, label: `${user.name || 'Unnamed'} (${user.userId})` })
+  res.json({ success: true, data: { id: String(user._id) } })
+})
+
+// The dashboard opens WhatsApp/SMS with the reminder text; this records that it was sent.
+exports.logReminder = asyncHandler(async (req, res) => {
+  const cart = await findCart(req, res)
+  const amount = Number(req.body?.amount) || 0
+  const channel = req.body?.channel === 'sms' ? 'sms' : 'whatsapp'
+  await logAction(req, 'SEND_REMINDER', { kind: 'cart', id: cart._id, label: cart.cartName }, { amount, channel })
+  res.json({ success: true })
+})
+
+// The action log, newest first, with the admin's name.
+exports.actions = asyncHandler(async (req, res) => {
+  const limit = Math.min(Number(req.query.limit) || 30, 200)
+  const filter = {
+    ...(req.query.action ? { action: String(req.query.action) } : {}),
+    ...afterCursor(res, req.query.cursor),
+  }
+  const rows = await AdminAction.find(filter).sort({ createdAt: -1, _id: -1 }).limit(limit + 1).lean()
+  const hasMore = rows.length > limit
+  if (hasMore) rows.pop()
+  const admins = await User.find({ _id: { $in: rows.map((r) => r.adminId).filter(Boolean) } })
+    .select('name email')
+    .lean()
+  const name = new Map(admins.map((a) => [String(a._id), a.name || a.email]))
+  res.json({
+    success: true,
+    data: {
+      items: rows.map((r) => ({
+        id: String(r._id),
+        at: r.createdAt,
+        action: r.action,
+        by: r.adminId ? name.get(String(r.adminId)) || 'Unknown admin' : 'System',
+        target: r.target?.label || '—',
+        targetKind: r.target?.kind,
+        details: r.details || {},
+      })),
+      pagination: { hasMore, nextCursor: nextCursor(rows, hasMore) },
+    },
+  })
 })

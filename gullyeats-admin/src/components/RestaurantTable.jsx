@@ -35,7 +35,7 @@ function MarkFeePaid({ cart }) {
     setState({ busy: true })
     try {
       const p = await api.markFeePaid(cart.id)
-      setState({ done: `Marked ${inr(p.amount)} as paid.` })
+      setState({ done: p.message })
       dispatch(T.carts()) // refresh the cart's status now, not at the next poll
     } catch (e) {
       setState({ error: e.message })
@@ -54,6 +54,53 @@ function MarkFeePaid({ cart }) {
         {state.busy ? 'Marking…' : 'Mark fee paid'}
       </button>
       {state.done && <p className='mt-1.5 text-emerald-700'>{state.done}</p>}
+      {state.error && <ErrorNote message={state.error} />}
+    </div>
+  )
+}
+
+// Suspend stops all orders (customer and vendor-entered) and blocks reopening
+// from the vendor app; Resume lifts it. Both are recorded in the action log.
+function SuspendCart({ cart }) {
+  const dispatch = useDispatch()
+  const [state, setState] = useState({})
+  const suspended = cart.status === 'SUSPENDED'
+  const run = async () => {
+    let reason
+    if (!suspended) {
+      reason = window.prompt(
+        `Suspend ${cart.name}? It will stop taking orders and the vendor can't reopen it.
+
+Reason (shown in the action log):`,
+      )
+      if (reason === null) return
+    } else if (!window.confirm(`Resume ${cart.name}? The vendor will be able to open it again.`)) {
+      return
+    }
+    setState({ busy: true })
+    try {
+      if (suspended) await api.resumeCart(cart.id)
+      else await api.suspendCart(cart.id, reason)
+      setState({})
+      dispatch(T.carts())
+    } catch (e) {
+      setState({ error: e.message })
+    }
+  }
+  return (
+    <div className='mt-5'>
+      <p className='mb-1 text-[11.5px] font-medium text-neutral-500'>CART ACCESS</p>
+      <button
+        onClick={run}
+        disabled={state.busy}
+        className={`rounded-md border px-3 py-1.5 font-medium disabled:opacity-50 ${
+          suspended
+            ? 'border-line hover:bg-neutral-100'
+            : 'border-red-200 text-red-600 hover:bg-red-50'
+        }`}
+      >
+        {state.busy ? 'Saving…' : suspended ? 'Resume cart' : 'Suspend cart'}
+      </button>
       {state.error && <ErrorNote message={state.error} />}
     </div>
   )
@@ -107,7 +154,11 @@ function CartDrawer({ cart, onClose }) {
         <div className='mt-2'>
           <StatusBadge status={cart.status} />
         </div>
+        {cart.status === 'SUSPENDED' && cart.suspendReason && (
+          <p className='mt-2 text-[12px] text-neutral-500'>Reason: {cart.suspendReason}</p>
+        )}
         <MarkFeePaid cart={cart} />
+        <SuspendCart cart={cart} />
         <p className='mb-2 mt-5 text-[11.5px] font-medium text-neutral-500'>
           LAST 30 DAYS
         </p>
@@ -230,7 +281,7 @@ export default function RestaurantTable({ carts = [], limit, loading, error }) {
               aria-label='Status'
             >
               <option value=''>All statuses</option>
-              {['LIVE', 'OFFLINE', 'PAUSED', 'ATTENTION'].map((s) => (
+              {['LIVE', 'OFFLINE', 'PAUSED', 'ATTENTION', 'SUSPENDED'].map((s) => (
                 <option key={s}>{s}</option>
               ))}
             </Select>
@@ -271,7 +322,12 @@ export default function RestaurantTable({ carts = [], limit, loading, error }) {
         />
       </State>
       {!limit && <ScrollFooter {...reveal} count={rows.length} noun='carts' />}
-      {open && <CartDrawer cart={open} onClose={() => setOpen(null)} />}
+      {open && (
+        <CartDrawer
+          cart={carts.find((c) => c.id === open.id) || open}
+          onClose={() => setOpen(null)}
+        />
+      )}
     </Card>
   )
 }

@@ -3,6 +3,7 @@ const Razorpay = require('razorpay')
 const asyncHandler = require('../utils/asyncHandler')
 const Payment = require('../models/Payment')
 const { findManagedCart } = require('../utils/cartAccess')
+const { logAction } = require('../utils/adminLog')
 const {
   createBillPayment,
   getCartPaymentStatus,
@@ -308,16 +309,72 @@ async function claimRazorpayOrderCreation(paymentId) {
  * VERIFIED. Otherwise the vendor would be shown checkout again for a bill
  * they had paid. A Razorpay outage here doesn't block reopening checkout.
  */
-async function markVerifiedIfAlreadyPaid(payment) {
-  try {
-    const expectedAmountPaise = Math.round(Number(payment.amount) * 100)
-    const paymentsResponse = await razorpay.orders.fetchPayments(payment.razorpayOrderId)
-    const captured = paymentsResponse?.items?.find(
+/*
+ * The captured Razorpay payment for this Payment's order, or null if the
+ * vendor hasn't paid it online (or no real Razorpay order exists yet).
+ * Throws if Razorpay can't be reached, so callers decide what that means.
+ */
+async function findCapturedPayment(payment) {
+  if (!isRealRazorpayOrderId(payment.razorpayOrderId)) return null
+  const expectedAmountPaise = Math.round(Number(payment.amount) * 100)
+  const paymentsResponse = await razorpay.orders.fetchPayments(payment.razorpayOrderId)
+  return (
+    paymentsResponse?.items?.find(
       (item) =>
         item.status === 'captured' &&
         Number(item.amount) === expectedAmountPaise &&
         item.currency === 'INR',
-    )
+    ) || null
+  )
+}
+exports.findCapturedPayment = findCapturedPayment
+
+/*
+ * A bill can be settled twice: an admin marks it paid (e.g. the vendor paid
+ * cash) while the vendor's Razorpay checkout for it is still open, and the
+ * vendor then pays online too. That second payment is refunded, once: the
+ * refund is claimed in the Payment first, so the checkout callback and the
+ * webhook racing each other can't refund it twice.
+ */
+async function refundDuplicatePayment(payment, razorpayPaymentId, amountPaise) {
+  const claimed = await Payment.updateOne(
+    { _id: payment._id, 'refunds.razorpayPaymentId': { $ne: razorpayPaymentId } },
+    {
+      $push: {
+        refunds: { razorpayPaymentId, amount: amountPaise / 100, status: 'PENDING', at: new Date() },
+      },
+    },
+  )
+  if (!claimed.modifiedCount) return false // already refunded (or being refunded)
+
+  const target = { kind: 'payment', id: payment._id, label: payment.cartName }
+  const where = { _id: payment._id, 'refunds.razorpayPaymentId': razorpayPaymentId }
+  try {
+    const refund = await razorpay.payments.refund(razorpayPaymentId, {
+      amount: amountPaise,
+      notes: { reason: 'Bill already settled', paymentId: String(payment._id) },
+    })
+    await Payment.updateOne(where, {
+      $set: { 'refunds.$.status': 'REFUNDED', 'refunds.$.refundId': refund.id },
+    })
+    await logAction(null, 'AUTO_REFUND', target, {
+      razorpayPaymentId, refundId: refund.id, amount: amountPaise / 100, status: 'REFUNDED',
+    })
+  } catch (error) {
+    const message = error?.error?.description || error.message
+    console.error(`Refund of duplicate payment ${razorpayPaymentId} failed:`, message)
+    await Payment.updateOne(where, { $set: { 'refunds.$.status': 'FAILED', 'refunds.$.error': message } })
+    await logAction(null, 'AUTO_REFUND', target, {
+      razorpayPaymentId, amount: amountPaise / 100, status: 'FAILED', error: message,
+    })
+  }
+  return true
+}
+exports.refundDuplicatePayment = refundDuplicatePayment
+
+async function markVerifiedIfAlreadyPaid(payment) {
+  try {
+    const captured = await findCapturedPayment(payment)
     if (captured && payment.status === 'PENDING') {
       payment.status = 'VERIFIED'
       payment.razorpayPaymentId = captured.id
@@ -905,6 +962,29 @@ exports.verifyRazorpayPayment = asyncHandler(async (req, res) => {
   }
 
   if (payment.status === 'VERIFIED') {
+    // Settled another way (e.g. cash, marked by an admin) before this online
+    // payment went through: refund it rather than keep both.
+    if (
+      razorpay_payment_id !== payment.razorpayPaymentId &&
+      payment.razorpayOrderId === razorpay_order_id &&
+      isValidCheckoutSignature({
+        orderId: razorpay_order_id,
+        paymentId: razorpay_payment_id,
+        signature: razorpay_signature,
+      })
+    ) {
+      const rp = await razorpay.payments.fetch(razorpay_payment_id)
+      if (rp.status === 'captured' && rp.order_id === payment.razorpayOrderId) {
+        await refundDuplicatePayment(payment, razorpay_payment_id, Number(rp.amount))
+        return res.status(200).json({
+          success: true,
+          refunded: true,
+          message:
+            'This bill was already paid, so your online payment will be refunded in 5–7 working days.',
+          payment,
+        })
+      }
+    }
     return res.status(200).json({
       success: true,
       message: 'Payment already verified',
@@ -1029,6 +1109,17 @@ exports.razorpayWebhook = asyncHandler(async (req, res) => {
       const payment = await Payment.findOne({
         razorpayOrderId: paymentEntity.order_id,
       })
+
+      // Already settled another way before this online payment arrived
+      // (e.g. an admin marked it paid): refund the online one.
+      if (
+        payment &&
+        payment.status === 'VERIFIED' &&
+        paymentEntity.status === 'captured' &&
+        paymentEntity.id !== payment.razorpayPaymentId
+      ) {
+        await refundDuplicatePayment(payment, paymentEntity.id, Number(paymentEntity.amount))
+      }
 
       /*
        * Idempotent — if the checkout callback already verified this

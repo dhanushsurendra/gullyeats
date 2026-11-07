@@ -21,6 +21,7 @@ const STATUS = [
   ['ATTENTION', 'Attention', '#DC2626'],
   ['PAUSED', 'Paused', '#F59E0B'],
   ['OFFLINE', 'Offline', '#A3A3A3'],
+  ['SUSPENDED', 'Suspended', '#404040'],
 ]
 const COLOR = Object.fromEntries(STATUS.map(([k, , c]) => [k, c]))
 const colorOf = (s) => COLOR[s] || COLOR.OFFLINE

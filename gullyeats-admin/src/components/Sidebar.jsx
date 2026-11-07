@@ -11,6 +11,7 @@ import {
   MessageSquare,
   Wallet,
   Lightbulb,
+  History,
   Settings,
   LogOut,
   X,
@@ -40,6 +41,7 @@ const NAV = [
     [
       ['Payments', '/payments', CreditCard],
       ['Collections', '/collections', Wallet],
+      ['Action log', '/actions', History],
       ['Feedback', '/feedback', MessageSquare],
       ['Settings', '/settings', Settings],
     ],
