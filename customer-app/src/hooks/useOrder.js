@@ -16,6 +16,10 @@ const PAGE = { PENDING: '', PAID: '', SERVED: '/served', CANCELLED: '/cancelled'
  *
  * Refetches whenever the socket (re)connects or the tab comes back into view,
  * so updates missed while the phone was asleep still arrive.
+ *
+ * Also follows the cart's queue (who is being prepared, how many are ahead):
+ * the server says "queue_changed" when any order there moves, and the page
+ * refetches its own place.
  */
 export default function useOrder({ page } = {}) {
   const { cartId, orderNumber: orderId } = useParams()
@@ -23,6 +27,12 @@ export default function useOrder({ page } = {}) {
   const dispatch = useDispatch()
   const [order, setOrder] = useState(null)
   const [error, setError] = useState('')
+  const [queue, setQueue] = useState(null)
+
+  const loadQueue = useCallback(() => {
+    // The queue is extra: the token page works without it.
+    api(`/orders/queue/${orderId}`).then(setQueue, () => {})
+  }, [orderId])
 
   const load = useCallback(async () => {
     try {
@@ -38,21 +48,34 @@ export default function useOrder({ page } = {}) {
     const socket = io(SOCKET_URL, { transports: ['websocket'] })
     socket.on('connect', () => {
       socket.emit('join_order', orderId)
+      socket.emit('join_queue', cartId)
       load()
     })
+    socket.on('queue_changed', loadQueue)
     const onUpdate = (updated) => {
       if (String(updated?._id) === String(orderId)) setOrder(updated)
     }
     socket.on('order_updated', onUpdate)
     socket.on('order_cancelled', onUpdate)
 
-    const onVisible = () => document.visibilityState === 'visible' && load()
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return
+      load()
+      loadQueue()
+    }
     document.addEventListener('visibilitychange', onVisible)
     return () => {
       socket.disconnect()
       document.removeEventListener('visibilitychange', onVisible)
     }
-  }, [orderId, load])
+  }, [orderId, cartId, load, loadQueue])
+
+  // This order's own changes (paid, preparing) move its place too.
+  const status = order?.status
+  const preparingAt = order?.preparingAt
+  useEffect(() => {
+    if (status === 'PENDING' || status === 'PAID') loadQueue()
+  }, [status, preparingAt, loadQueue])
 
   // Keep the saved copy current, so the menu's "your orders" list is right.
   useEffect(() => {
@@ -66,5 +89,5 @@ export default function useOrder({ page } = {}) {
     }
   }, [page, target, cartId, orderId, navigate])
 
-  return { order, setOrder, error, retry: load, cartId, orderId }
+  return { order, setOrder, error, retry: load, cartId, orderId, queue }
 }

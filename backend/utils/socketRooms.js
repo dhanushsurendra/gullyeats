@@ -37,11 +37,20 @@ function joinOrder(socket, orderId) {
   return true
 }
 
+// The queue room only ever carries "queue_changed", with no order details,
+// so anyone at the cart (customers, without logging in) may join it.
+function joinQueue(socket, cartId) {
+  if (!mongoose.isValidObjectId(String(cartId))) return false
+  socket.join(`queue:${cartId}`)
+  return true
+}
+
 function registerSocketHandlers(io) {
   io.on('connection', (socket) => {
     socket.on('join_order', (orderId) => joinOrder(socket, orderId))
     socket.on('join_vendor', (cartId) => joinVendor(socket, cartId))
+    socket.on('join_queue', (cartId) => joinQueue(socket, cartId))
   })
 }
 
-module.exports = { joinVendor, joinOrder, registerSocketHandlers }
+module.exports = { joinVendor, joinOrder, joinQueue, registerSocketHandlers }

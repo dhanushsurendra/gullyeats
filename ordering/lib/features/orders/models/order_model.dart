@@ -61,6 +61,9 @@ class OrderModel {
   final DateTime? paidAt;
   final DateTime? servedAt;
 
+  /// Set while the vendor is cooking this paid order (optional step).
+  final DateTime? preparingAt;
+
   // Optional payment adjustment after updating an order
   final PaymentAdjustment? paymentAdjustment;
 
@@ -82,10 +85,13 @@ class OrderModel {
     this.updatedAt,
     this.paidAt,
     this.servedAt,
+    this.preparingAt,
     this.paymentAdjustment,
   });
 
   bool get isQrOrder => orderType == "QR";
+
+  bool get isPreparing => status == "PAID" && preparingAt != null;
 
   factory OrderModel.fromJson(Map<String, dynamic> json) {
     return OrderModel(
@@ -140,6 +146,10 @@ class OrderModel {
           ? DateTime.tryParse(json["servedAt"].toString())
           : null,
 
+      preparingAt: json["preparingAt"] != null
+          ? DateTime.tryParse(json["preparingAt"].toString())
+          : null,
+
       paymentAdjustment: json["paymentAdjustment"] != null
           ? PaymentAdjustment.fromJson(
               json["paymentAdjustment"] as Map<String, dynamic>,
@@ -184,6 +194,8 @@ class OrderModel {
 
       "servedAt": servedAt?.toIso8601String(),
 
+      "preparingAt": preparingAt?.toIso8601String(),
+
       if (paymentAdjustment != null)
         "paymentAdjustment": paymentAdjustment!.toJson(),
     };
@@ -207,6 +219,7 @@ class OrderModel {
     DateTime? updatedAt,
     DateTime? paidAt,
     DateTime? servedAt,
+    DateTime? preparingAt,
     PaymentAdjustment? paymentAdjustment,
   }) {
     return OrderModel(
@@ -227,6 +240,7 @@ class OrderModel {
       updatedAt: updatedAt ?? this.updatedAt,
       paidAt: paidAt ?? this.paidAt,
       servedAt: servedAt ?? this.servedAt,
+      preparingAt: preparingAt ?? this.preparingAt,
       paymentAdjustment: paymentAdjustment ?? this.paymentAdjustment,
     );
   }

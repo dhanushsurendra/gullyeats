@@ -97,6 +97,11 @@ final ordersJson = [
     _line('m3', 'Chicken 65', 180, 3),
   ], type: 'QR', parcel: 10),
   _order('o2', 102, 'PAID', [_line('m1', 'Masala Dosa', 60, 1)]),
+  // Being cooked: the order card shows "Preparing".
+  {
+    ..._order('o5', 105, 'PAID', [_line('m3', 'Chicken 65', 180, 1)], type: 'QR'),
+    'preparingAt': _now.toIso8601String(),
+  },
   _order('o3', 103, 'SERVED', [_line('m3', 'Chicken 65', 180, 2)], type: 'QR'),
   _order('o4', 104, 'CANCELLED', [_line('m1', 'Masala Dosa', 60, 1)]),
 ];

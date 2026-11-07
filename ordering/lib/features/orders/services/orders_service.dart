@@ -101,6 +101,25 @@ class OrderService {
     }
   }
 
+  /// Marks a paid order as being cooked, or takes that back.
+  Future<OrderModel> setPreparing(String? token, String orderId, bool preparing) async {
+    final response = await http.put(
+      Uri.parse('${ApiConstants.orders}/preparing/$orderId'),
+      headers: _headers(token),
+      body: json.encode({'preparing': preparing}),
+    ).timeout(const Duration(seconds: 10));
+
+    final data = json.decode(response.body);
+    if (response.statusCode == 200) {
+      return OrderModel.fromJson(data["data"]);
+    } else {
+      throw ApiException(
+        data["message"] ?? "Failed to update the order",
+        response.statusCode,
+      );
+    }
+  }
+
   Future<OrderModel> markUnpaid(String? token, String orderId) async {
     final response = await http.put(
       Uri.parse('${ApiConstants.orders}/mark-order-unpaid/$orderId'),

@@ -30,11 +30,18 @@ function fail(res, status, message) {
   throw new Error(message)
 }
 
-// Tells the customer's order page and every vendor device about a change.
+// Tells the customer's order page and every vendor device about a change,
+// and everyone waiting at the cart that the queue may have moved (no order
+// details: they refetch their own place with getQueue).
 function emitOrder(req, order, event = 'order_updated') {
   req.io.to(`order:${order._id}`).emit(event, order)
   req.io.to(order.cartId.toString()).emit(event, order)
+  req.io.to(`queue:${order.cartId}`).emit('queue_changed')
 }
+
+// Paid orders still waiting to be served count as the queue; older than
+// this they are forgotten ones, not a queue.
+const QUEUE_HOURS = 12
 
 function parseParcelCharge(res, value) {
   const charge = Number(value)
@@ -191,6 +198,7 @@ exports.createOrder = asyncHandler(async (req, res) => {
   })
 
   req.io.to(cart._id.toString()).emit('new_order_received', order)
+  if (isPaid) req.io.to(`queue:${cart._id}`).emit('queue_changed')
 
   res.status(201).json({
     success: true,
@@ -385,6 +393,8 @@ exports.markOrderUnpaid = asyncHandler(async (req, res) => {
   if (!(order.paidAt && (await isPaidDayBilled(order)))) order.paidAt = null
   order.paidAmount = 0
   order.paymentAdjustment = null
+  // Not paid, so not being cooked either.
+  order.preparingAt = null
   await order.save()
 
   emitOrder(req, order)
@@ -548,6 +558,68 @@ exports.deleteOrder = asyncHandler(async (req, res) => {
     message: 'Order deleted successfully',
     data: order,
     paymentAdjustment,
+  })
+})
+
+/*
+ * The vendor marks a paid order as being cooked (preparing: true) or takes
+ * that back (false). Optional: orders can go straight from PAID to SERVED.
+ */
+exports.setPreparing = asyncHandler(async (req, res) => {
+  const order = await findManagedOrder(req, res, req.params.orderId)
+  const { preparing } = req.body || {}
+
+  if (typeof preparing !== 'boolean') fail(res, 400, 'preparing must be true or false')
+  if (order.status !== 'PAID') fail(res, 400, 'Only paid orders can be prepared')
+
+  order.preparingAt = preparing ? order.preparingAt || new Date() : null
+  await order.save()
+
+  emitOrder(req, order)
+
+  res.status(200).json({ success: true, data: order })
+})
+
+/*
+ * Where an order stands in its cart's queue, for the customer's token page
+ * (no login; the order id is the customer's secret). Only token numbers of
+ * other orders are returned, never their details.
+ *
+ * The queue is the cart's paid, unserved orders in the order they were
+ * paid: cooking starts after payment. `ahead` counts those paid before
+ * this one, so it is an estimate if the vendor cooks out of order.
+ */
+exports.getQueue = asyncHandler(async (req, res) => {
+  const order = await Order.findById(req.params.orderId)
+    .select('cartId status paidAt preparingAt')
+    .lean()
+  if (!order) fail(res, 404, 'Order not found')
+
+  const queue = await Order.find({
+    cartId: order.cartId,
+    status: 'PAID',
+    paidAt: { $gte: new Date(Date.now() - QUEUE_HOURS * 3600e3) },
+  })
+    .select('orderNumber paidAt preparingAt')
+    .sort({ paidAt: 1, _id: 1 })
+    .lean()
+
+  const preparing = queue
+    .filter((o) => o.preparingAt)
+    .sort((a, b) => a.preparingAt - b.preparingAt)
+    .map((o) => o.orderNumber)
+  const mine = queue.findIndex((o) => String(o._id) === String(order._id))
+
+  res.status(200).json({
+    success: true,
+    data: {
+      preparing,
+      // With nothing marked, the oldest paid order is the one up next.
+      nextUp: preparing.length ? null : queue[0]?.orderNumber ?? null,
+      waiting: queue.length,
+      isPreparing: mine !== -1 && Boolean(order.preparingAt),
+      ahead: mine === -1 ? null : mine,
+    },
   })
 })
 

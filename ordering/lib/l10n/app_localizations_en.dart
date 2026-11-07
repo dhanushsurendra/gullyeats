@@ -1198,4 +1198,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get refunded => 'Refunded';
+
+  @override
+  String get preparing => 'Preparing';
+
+  @override
+  String get startPreparing => 'Start preparing';
 }

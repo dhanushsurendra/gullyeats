@@ -1212,4 +1212,10 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get refunded => 'திருப்பிக் கொடுத்தது';
+
+  @override
+  String get preparing => 'தயாராகிறது';
+
+  @override
+  String get startPreparing => 'தயாரிக்கத் தொடங்கு';
 }

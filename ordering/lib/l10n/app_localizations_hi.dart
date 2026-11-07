@@ -1196,4 +1196,10 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get refunded => 'वापस किया';
+
+  @override
+  String get preparing => 'बन रहा है';
+
+  @override
+  String get startPreparing => 'बनाना शुरू करें';
 }

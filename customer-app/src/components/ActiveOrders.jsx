@@ -50,7 +50,11 @@ export default function ActiveOrders({ cartId }) {
           <span className='min-w-0 flex-1'>
             <span className='block text-[15px] font-semibold'>Your token #{o.orderNumber}</span>
             <span className='block text-sm text-white/60'>
-              {o.status === 'PAID' ? 'Paid · being prepared' : 'Pay at the counter'}
+              {o.status !== 'PAID'
+                ? 'Pay at the counter'
+                : o.preparingAt
+                  ? 'Being prepared'
+                  : 'Paid · in the queue'}
             </span>
           </span>
           <RiArrowRightSLine size={24} className='shrink-0 text-white/60' />

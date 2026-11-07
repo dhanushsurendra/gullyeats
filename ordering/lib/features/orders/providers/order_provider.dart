@@ -346,6 +346,18 @@ class OrderProvider with ChangeNotifier {
     }
   }
 
+  /// Marks a paid order as being cooked (or not), so its customer and the
+  /// others waiting see the queue move.
+  Future<void> setPreparing(String? token, String orderId, bool preparing) async {
+    try {
+      final updated = await _orderService.setPreparing(token, orderId, preparing);
+      final index = _orders.indexWhere((order) => order.id == orderId);
+      if (index != -1) _orders[index] = updated;
+    } finally {
+      notifyListeners();
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // MARK ORDER UNPAID
   // ---------------------------------------------------------------------------

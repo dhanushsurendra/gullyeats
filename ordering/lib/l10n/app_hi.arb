@@ -362,5 +362,7 @@
   "handoverTitle": "आज का हिसाब",
   "handoverSubtitle": "शिफ्ट खत्म होने पर सौंपने वाला पैसा।",
   "collected": "जमा हुआ",
-  "refunded": "वापस किया"
+  "refunded": "वापस किया",
+  "preparing": "बन रहा है",
+  "startPreparing": "बनाना शुरू करें"
 }

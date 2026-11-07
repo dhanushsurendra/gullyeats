@@ -2279,6 +2279,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Refunded'**
   String get refunded;
+
+  /// No description provided for @preparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing'**
+  String get preparing;
+
+  /// No description provided for @startPreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Start preparing'**
+  String get startPreparing;
 }
 
 class _AppLocalizationsDelegate

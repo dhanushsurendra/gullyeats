@@ -362,5 +362,7 @@
   "handoverTitle": "ಇಂದಿನ ಲೆಕ್ಕ",
   "handoverSubtitle": "ನಿಮ್ಮ ಶಿಫ್ಟ್ ಮುಗಿದಾಗ ಒಪ್ಪಿಸಬೇಕಾದ ಹಣ.",
   "collected": "ಸಂಗ್ರಹಿಸಿದ್ದು",
-  "refunded": "ಹಿಂತಿರುಗಿಸಿದ್ದು"
+  "refunded": "ಹಿಂತಿರುಗಿಸಿದ್ದು",
+  "preparing": "ತಯಾರಾಗುತ್ತಿದೆ",
+  "startPreparing": "ತಯಾರಿಸಲು ಪ್ರಾರಂಭಿಸಿ"
 }

@@ -1198,4 +1198,10 @@ class AppLocalizationsKn extends AppLocalizations {
 
   @override
   String get refunded => 'ಹಿಂತಿರುಗಿಸಿದ್ದು';
+
+  @override
+  String get preparing => 'ತಯಾರಾಗುತ್ತಿದೆ';
+
+  @override
+  String get startPreparing => 'ತಯಾರಿಸಲು ಪ್ರಾರಂಭಿಸಿ';
 }

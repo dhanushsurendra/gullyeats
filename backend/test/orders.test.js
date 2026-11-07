@@ -90,7 +90,8 @@ test('vendor can create a PAID manual order with a parcel charge', async () => {
   assert.strictEqual(o.orderType, 'MANUAL')
   assert.strictEqual(o.totalPrice, 47)
   assert.strictEqual(o.paidAmount, 47)
-  assert.deepStrictEqual(r.emits.map((e) => e.event), ['new_order_received'])
+  // A paid order joins the queue, so customers waiting there hear of it.
+  assert.deepStrictEqual(r.emits.map((e) => e.event), ['new_order_received', 'queue_changed'])
 })
 
 test('another vendor gets customer rules', async () => {

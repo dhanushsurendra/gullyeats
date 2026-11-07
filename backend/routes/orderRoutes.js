@@ -13,7 +13,9 @@ const {
   undoDeleteOrder,
   updateOrder,
   getTruthLine,
-  submitOrderFeedback
+  submitOrderFeedback,
+  setPreparing,
+  getQueue,
 } = require('../controllers/orderController')
 const auth = require('../middlewares/auth')
 const optionalAuth = require('../middlewares/optionalAuth')
@@ -34,6 +36,10 @@ router.get('/orders/:cartId', auth, getAllOrders)
 router.put('/update-order/:orderId', optionalAuth, updateOrder)
 
 router.get('/get-truth-line', getTruthLine)
+
+router.get('/queue/:orderId', getQueue)
+
+router.put('/preparing/:orderId', auth, setPreparing)
 
 router.get('/:cartId', auth, getAllOrders)
 

@@ -10,7 +10,7 @@ process.env.FRONTEND_URL_ADMIN = 'https://admin.gullyeats.test'
 
 const Cart = require('../models/Cart')
 const User = require('../models/User')
-const { joinVendor, joinOrder } = require('../utils/socketRooms')
+const { joinVendor, joinOrder, joinQueue } = require('../utils/socketRooms')
 const auth = require('../middlewares/auth')
 
 let mongo
@@ -70,6 +70,14 @@ test('a customer can follow their own order by its ID, but not by junk', () => {
   assert.equal(joinOrder(socket, orderId), true)
   assert.equal(joinOrder(socket, '1'), false)
   assert.deepEqual(socket.rooms, [`order:${orderId}`])
+})
+
+test("anyone may hear a cart's queue move (it carries no order details)", () => {
+  const socket = fakeSocket()
+  const cart = String(new mongoose.Types.ObjectId())
+  assert.equal(joinQueue(socket, cart), true)
+  assert.equal(joinQueue(socket, 'junk'), false)
+  assert.deepEqual(socket.rooms, [`queue:${cart}`])
 })
 
 test("the admin cookie works for writes only from the dashboard's origin", () => {

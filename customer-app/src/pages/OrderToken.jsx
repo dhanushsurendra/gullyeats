@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { RiCheckLine, RiEditLine, RiDoubleQuotesL } from 'react-icons/ri'
+import { RiCheckLine, RiEditLine, RiDoubleQuotesL, RiFireLine } from 'react-icons/ri'
 
 import CancelOrderModal from '../components/CancelOrderModal'
 import { Button, Card, LoadingScreen, Page, Row, StatusScreen, TopBar } from '../components/ui'
@@ -9,10 +9,56 @@ import { api } from '../constants/api'
 import useOrder from '../hooks/useOrder'
 import { rupees } from '../utils/format'
 
-const STEPS = ['Placed', 'Paid', 'Served']
+const STEPS = ['Placed', 'Paid', 'Preparing', 'Served']
 
-function Progress({ status }) {
-  const reached = status === 'SERVED' ? 2 : status === 'PAID' ? 1 : 0
+const tokens = (list) => list.map((n) => `#${n}`).join(', ')
+
+/*
+ * Where the cart's queue is: what's cooking now, and this order's place.
+ * Places are counted in payment order, so they're a good guess, not a promise.
+ */
+function Queue({ queue, isPending }) {
+  if (!queue) return null
+  const { preparing = [], nextUp, waiting = 0, isPreparing, ahead } = queue
+  if (!waiting && !isPending) return null
+
+  const now = preparing.length
+    ? { label: 'Now preparing', value: tokens(preparing) }
+    : nextUp != null
+      ? { label: 'Next up', value: `#${nextUp}` }
+      : null
+  const place = isPending
+    ? waiting
+      ? `${waiting} ${waiting === 1 ? 'order' : 'orders'} in the queue. Pay at the counter to join it.`
+      : 'Pay at the counter to join the queue.'
+    : isPreparing
+      ? 'Yours is on the stove.'
+      : ahead === 0
+        ? "You're next."
+        : ahead != null
+          ? `${ahead} ${ahead === 1 ? 'order' : 'orders'} ahead of you.`
+          : null
+
+  return (
+    <Card className='animate-fade-up flex items-center gap-4 [animation-delay:90ms]'>
+      <span className='flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-500'>
+        <RiFireLine size={26} />
+      </span>
+      <div className='min-w-0'>
+        {now && (
+          <p className='text-[15px]'>
+            <span className='text-grey-500'>{now.label} </span>
+            <b className='tabular-nums'>{now.value}</b>
+          </p>
+        )}
+        {place && <p className={now ? 'text-sm text-grey-600' : 'text-[15px] font-semibold'}>{place}</p>}
+      </div>
+    </Card>
+  )
+}
+
+function Progress({ status, preparing }) {
+  const reached = status === 'SERVED' ? 3 : status === 'PAID' ? (preparing ? 2 : 1) : 0
   return (
     <ol className='flex items-center'>
       {STEPS.map((label, i) => (
@@ -39,7 +85,7 @@ function Progress({ status }) {
 export default function OrderToken() {
   const navigate = useNavigate()
   const cart = useSelector((state) => state.cart.details)
-  const { order, setOrder, error, retry, cartId, orderId } = useOrder({ page: '' })
+  const { order, setOrder, error, retry, cartId, orderId, queue } = useOrder({ page: '' })
 
   const [truthLine, setTruthLine] = useState('')
   const [confirming, setConfirming] = useState(false)
@@ -93,7 +139,9 @@ export default function OrderToken() {
     ? paid > 0
       ? `Pay ${rupees(due)} more at the counter`
       : `Pay ${rupees(due)} at the counter`
-    : 'Paid. Your food is being prepared'
+    : order.preparingAt
+      ? 'Your food is being prepared'
+      : "Paid. You're in the queue"
   const detail = isPending
     ? 'Show your token when you pay. Cooking starts after payment.'
     : "We'll let you know here when it's ready. Keep this page open."
@@ -114,7 +162,7 @@ export default function OrderToken() {
         </section>
 
         <Card className='animate-fade-up space-y-4 [animation-delay:60ms]'>
-          <Progress status={order.status} />
+          <Progress status={order.status} preparing={Boolean(order.preparingAt)} />
           <div className={`rounded-2xl px-4 py-3 ${isPending ? 'bg-primary-soft' : 'bg-success-soft'}`}>
             <p className={`text-[15px] font-semibold ${isPending ? 'text-primary' : 'text-success'}`}>{headline}</p>
             <p className='mt-0.5 text-sm text-grey-600'>{detail}</p>
@@ -125,6 +173,8 @@ export default function OrderToken() {
             </p>
           )}
         </Card>
+
+        <Queue queue={queue} isPending={isPending} />
 
         <Card className='animate-fade-up [animation-delay:120ms]'>
           <h2 className='text-[15px] font-semibold'>Your order</h2>

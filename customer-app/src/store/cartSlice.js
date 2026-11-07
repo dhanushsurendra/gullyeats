@@ -55,11 +55,11 @@ const cartSlice = createSlice({
       state.phone = action.payload
     },
 
-    // Adds or refreshes an order: { _id, cartId, orderNumber, status, createdAt }.
+    // Adds or refreshes an order's summary.
     rememberOrder: (state, action) => {
-      const { _id, cartId, orderNumber, status, createdAt } = action.payload
+      const { _id, cartId, orderNumber, status, createdAt, preparingAt = null } = action.payload
       const rest = (state.orders || []).filter((o) => o._id !== _id)
-      state.orders = [{ _id, cartId, orderNumber, status, createdAt }, ...rest].slice(0, KEEP)
+      state.orders = [{ _id, cartId, orderNumber, status, createdAt, preparingAt }, ...rest].slice(0, KEEP)
       delete state.order // the single order kept by older versions
     },
 

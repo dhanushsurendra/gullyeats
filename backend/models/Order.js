@@ -97,6 +97,10 @@ const OrderSchema = new mongoose.Schema(
     servedAt: Date,
     paidAt: Date,
 
+    // Set while the vendor is cooking a PAID order (optional step). Status
+    // stays PAID, so billing and sales are unaffected.
+    preparingAt: { type: Date, default: null },
+
     // What the customer has paid so far; updateOrder compares new totals
     // against it. Unset on orders created before it existed.
     paidAmount: {

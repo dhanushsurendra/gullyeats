@@ -24,6 +24,10 @@ class OrderCard extends StatefulWidget {
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
 
+  /// Marks a paid order as being cooked (true) or not (false). Optional:
+  /// the vendor can serve without it.
+  final ValueChanged<bool>? onPreparing;
+
   /// Just arrived live: the card slides in and glows briefly.
   final bool isFresh;
 
@@ -34,6 +38,7 @@ class OrderCard extends StatefulWidget {
     required this.onTap,
     required this.onDelete,
     required this.onMarkPaid,
+    this.onPreparing,
     this.isFresh = false,
   });
 
@@ -241,6 +246,8 @@ class _OrderCardState extends State<OrderCard> {
                   AppColors.grey500,
                 ),
                 if (isActive) _waitTime(),
+                if (widget.order.status == "PAID" && widget.onPreparing != null)
+                  _preparingChip(),
               ],
             ),
           ),
@@ -506,6 +513,37 @@ class _OrderCardState extends State<OrderCard> {
           ),
         ),
       ],
+    );
+  }
+
+  /// "Start preparing" on a paid order; once tapped, a filled "Preparing"
+  /// that can be tapped again to take it back. Customers see it in the queue.
+  Widget _preparingChip() {
+    final on = widget.order.isPreparing;
+    final label = on ? context.l10n.preparing : context.l10n.startPreparing;
+    return Semantics(
+      button: true,
+      toggled: on,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => widget.onPreparing!(!on),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          constraints: const BoxConstraints(minHeight: 32),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: on ? AppColors.warning : AppColors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.warning),
+          ),
+          child: _iconLabel(
+            on ? Icons.local_fire_department_rounded : Icons.local_fire_department_outlined,
+            label,
+            on ? AppColors.white : AppColors.warning,
+            bold: true,
+          ),
+        ),
+      ),
     );
   }
 

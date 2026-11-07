@@ -559,5 +559,7 @@
   "handoverTitle": "Today's handover",
   "handoverSubtitle": "The money to hand over at the end of your shift.",
   "collected": "Collected",
-  "refunded": "Refunded"
+  "refunded": "Refunded",
+  "preparing": "Preparing",
+  "startPreparing": "Start preparing"
 }
