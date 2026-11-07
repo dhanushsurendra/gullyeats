@@ -152,9 +152,8 @@ class _CartPhotoFieldState extends State<CartPhotoField> {
                   const SizedBox(width: 6),
                   Text(
                     hasNewPhoto || hasExistingPhoto ? context.l10n.changePhoto : context.l10n.addPhoto,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.white,
                       fontWeight: FontWeight.w600,
                     ),
                   ),

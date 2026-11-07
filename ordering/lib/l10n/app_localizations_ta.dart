@@ -1187,4 +1187,10 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get feePaidTitle => 'பணம் செலுத்தப்பட்டது!';
+
+  @override
+  String get toCollect => 'வசூலிக்க வேண்டும்';
+
+  @override
+  String get toServe => 'பரிமாற வேண்டும்';
 }

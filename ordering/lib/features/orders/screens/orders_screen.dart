@@ -325,6 +325,15 @@ class _OrdersScreenState extends State<OrdersScreen> {
           child: Skeleton(heights: [150, 150, 150]),
         );
       }
+
+      // Orders grouped by what the vendor does next.
+      final sections = [
+        ("PENDING", l10n.toCollect),
+        ("PAID", l10n.toServe),
+        ("SERVED", l10n.served),
+        ("CANCELLED", l10n.cancelled),
+      ];
+
       return RefreshIndicator(
         color: AppColors.primary,
         onRefresh: _loadOrders,
@@ -339,9 +348,15 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 onRetry: _loadOrders,
               )
             else if (filteredOrders.isEmpty)
-              _buildEmptyState()
-            else
-              for (final order in filteredOrders)
+              _buildEmptyState(),
+            for (final (status, label) in sections)
+              if (filteredOrders.any((o) => o.status == status)) ...[
+                _SectionHeader(
+                  label: label,
+                  color: orderStatusColor(status),
+                  count: filteredOrders.where((o) => o.status == status).length,
+                ),
+              for (final order in filteredOrders.where((o) => o.status == status))
                 Padding(
                   // Keyed, so a new order on top doesn't reuse the cards below.
                   key: ValueKey(order.id),
@@ -368,6 +383,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
                         deleteOrder(authProvider.token ?? "", order.id),
                   ),
                 ),
+                AppGaps.h12,
+              ],
           ],
         ),
       );
@@ -558,11 +575,59 @@ class _LiveBadgeState extends State<_LiveBadge>
             ),
           ),
           AppGaps.w4,
-          Text(
-            widget.isLive ? context.l10n.liveStatus : context.l10n.reconnecting,
-            style: AppTextStyles.caption.copyWith(
-              color: color,
-              fontWeight: FontWeight.w600,
+          Flexible(
+            child: Text(
+              widget.isLive ? context.l10n.liveStatus : context.l10n.reconnecting,
+              style: AppTextStyles.caption.copyWith(
+                color: color,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// "● To serve  2": a coloured dot, the stage and how many orders are in it.
+class _SectionHeader extends StatelessWidget {
+  final String label;
+  final Color color;
+  final int count;
+
+  const _SectionHeader({
+    required this.label,
+    required this.color,
+    required this.count,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          AppGaps.w8,
+          Flexible(child: Text(label, style: AppTextStyles.heading3)),
+          AppGaps.w8,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              "$count",
+              style: AppTextStyles.caption.copyWith(
+                color: color,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ],

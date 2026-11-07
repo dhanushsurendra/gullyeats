@@ -2231,6 +2231,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Payment done!'**
   String get feePaidTitle;
+
+  /// No description provided for @toCollect.
+  ///
+  /// In en, this message translates to:
+  /// **'To collect'**
+  String get toCollect;
+
+  /// No description provided for @toServe.
+  ///
+  /// In en, this message translates to:
+  /// **'To serve'**
+  String get toServe;
 }
 
 class _AppLocalizationsDelegate

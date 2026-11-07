@@ -9,7 +9,7 @@ Always use the theme classes in `lib/core/theme/` instead of raw values.
 | What | Use | Notes |
 |---|---|---|
 | Colors | `AppColors` | `primary` #FE5200, greys `grey100`–`grey600`, `success`, `error`. No `Colors.orange.shade50`, `Colors.redAccent[700]` and the like for UI chrome. Veg is green and non-veg is red: those are the only raw colors allowed. |
-| Text | `AppTextStyles` | `heading1` 24 (screen title), `heading2` 18 (section), `heading3` 16 (card title, field label), `body` 14, `caption` 12, `button` 16. All Poppins. |
+| Text | `AppTextStyles` | `heading1` 24 (screen title), `heading2` 18 (section), `heading3` 16 (card title, field label), `body` 14, `caption` 12, `button` 16. All Poppins. The vendor app adds `display` 32 (hero title on a coloured background) and `tag` 10 bold (tiny uppercase badges). Don't set `fontSize` directly; the only exceptions are the printable QR poster and the clamped, width-scaled splash logo. |
 | Spacing | `AppGaps` (`h4`…`h48`, `w4`…`w16`) | Screen padding is `AppPadding.screen` (24). |
 | Corner radius | 26 (buttons, `AppButton`) · 24 (search bar) · **16 (cards, panels, sheets' inner cards)** · **12 (inputs, info boxes, chips, small buttons)** · 6–8 (tiny tags) | Fully round "pill" labels are fine. Printable graphics (the QR poster) are exempt. |
 | Shadows | Cards: black 2%, blur 10, offset (0, 4). Footer: black 5%, blur 10, offset (0, −4). | Prefer a `grey200` border over a heavier shadow. |

@@ -19,12 +19,7 @@ class StatusBadge extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: AppTextStyles.caption.copyWith(
-          color: color,
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 0.5,
-        ),
+        style: AppTextStyles.tag.copyWith(color: color, letterSpacing: 0.5),
       ),
     );
   }

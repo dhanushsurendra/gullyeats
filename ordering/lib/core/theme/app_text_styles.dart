@@ -6,6 +6,14 @@ class AppTextStyles {
 
   static const String fontFamily = 'Poppins';
 
+  // Hero title on a full-screen colour background (the welcome screen)
+  static const TextStyle display = TextStyle(
+    fontSize: 32,
+    fontWeight: FontWeight.w700,
+    fontFamily: fontFamily,
+    color: AppColors.black,
+  );
+
   // Page Title
   static const TextStyle heading1 = TextStyle(
     fontSize: 24,
@@ -42,6 +50,14 @@ class AppTextStyles {
   static const TextStyle caption = TextStyle(
     fontSize: 12,
     fontWeight: FontWeight.w400,
+    fontFamily: fontFamily,
+    color: AppColors.grey500,
+  );
+
+  // Tiny uppercase tags inside badges ("IN STOCK", "CURRENT")
+  static const TextStyle tag = TextStyle(
+    fontSize: 10,
+    fontWeight: FontWeight.w700,
     fontFamily: fontFamily,
     color: AppColors.grey500,
   );

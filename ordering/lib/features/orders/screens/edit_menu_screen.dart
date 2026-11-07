@@ -212,7 +212,7 @@ class _EditMenuScreenState extends State<EditMenuScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: Text(context.l10n.cancel.toUpperCase(), style: AppTextStyles.button.copyWith(fontSize: 14, color: AppColors.grey500)),
+            child: Text(context.l10n.cancel.toUpperCase(), style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600, color: AppColors.grey500)),
           ),
           TextButton(
             onPressed: () async {
@@ -248,7 +248,7 @@ class _EditMenuScreenState extends State<EditMenuScreen> {
             },
             child: Text(
               context.l10n.delete.toUpperCase(),
-              style: AppTextStyles.button.copyWith(fontSize: 14, color: AppColors.error),
+              style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600, color: AppColors.error),
             ),
           ),
         ],
@@ -266,11 +266,7 @@ class _EditMenuScreenState extends State<EditMenuScreen> {
       ),
       child: Text(
         isInStock ? context.l10n.inStockCaps : context.l10n.outOfStockCaps,
-        style: AppTextStyles.caption.copyWith(
-          color: color,
-          fontWeight: FontWeight.bold,
-          fontSize: 10,
-        ),
+        style: AppTextStyles.tag.copyWith(color: color),
       ),
     );
   }

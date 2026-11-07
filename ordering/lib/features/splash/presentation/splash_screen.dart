@@ -95,15 +95,14 @@ class _SplashScreenState extends State<SplashScreen> {
                     text: "Gully",
                     style: AppTextStyles.heading1.copyWith(
                       color: AppColors.primary,
-                      fontSize:
-                          constraints.maxWidth * 0.08, // Dynamic font size
+                      fontSize: _logoSize(constraints),
                     ),
                   ),
                   TextSpan(
                     text: "Eats",
                     style: AppTextStyles.heading1.copyWith(
                       fontWeight: FontWeight.w700,
-                      fontSize: constraints.maxWidth * 0.08,
+                      fontSize: _logoSize(constraints),
                     ),
                   ),
                 ],
@@ -115,13 +114,17 @@ class _SplashScreenState extends State<SplashScreen> {
         Text(
           "THE STREET FOOD REVOLUTION",
           style: AppTextStyles.body.copyWith(
-            fontSize: constraints.maxWidth * 0.025,
+            // Scales with width, capped so tablets don't get poster-size text.
+            fontSize: (constraints.maxWidth * 0.025).clamp(10.0, 14.0),
             letterSpacing: 1.01,
           ),
         ),
       ],
     );
   }
+
+  double _logoSize(BoxConstraints constraints) =>
+      (constraints.maxWidth * 0.08).clamp(24.0, 40.0);
 
   Widget _buildIllustration(double screenHeight) {
     return Flexible(
@@ -150,8 +153,7 @@ class _SplashScreenState extends State<SplashScreen> {
         AppGaps.h12,
         Text(
           context.l10n.findingBestBites,
-          style: AppTextStyles.body.copyWith(
-            fontSize: 12,
+          style: AppTextStyles.caption.copyWith(
             color: AppColors.grey400,
           ),
         ),

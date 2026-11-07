@@ -203,7 +203,7 @@ class OrdersOverviewCardState extends State<OrdersOverviewCard> {
         Expanded(
           child: Text(
             item.name,
-            style: AppTextStyles.body.copyWith(fontSize: 13),
+            style: AppTextStyles.body,
           ),
         ),
         if (lineTotal != null)

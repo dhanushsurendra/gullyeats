@@ -645,9 +645,8 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
               SizedBox(width: 4),
               Text(
                 context.l10n.change,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.white,
                   fontWeight: FontWeight.w500,
                 ),
               ),

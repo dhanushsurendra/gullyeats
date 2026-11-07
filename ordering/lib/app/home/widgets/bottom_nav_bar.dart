@@ -121,8 +121,7 @@ class BottomNavBar extends StatelessWidget {
                     child: Text(
                       label,
                       maxLines: 1,
-                      style: AppTextStyles.body.copyWith(
-                        fontSize: 12,
+                      style: AppTextStyles.caption.copyWith(
                         color: color,
                         fontWeight: value > 0.5 ? FontWeight.w600 : FontWeight.w400,
                         letterSpacing: 0.2,

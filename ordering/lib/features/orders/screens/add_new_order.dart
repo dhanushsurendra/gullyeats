@@ -691,7 +691,6 @@ class _AddNewOrderState extends State<AddNewOrder> {
                   "₹${formatPrice(newTotal)}",
                   style: AppTextStyles.heading1.copyWith(
                     color: AppColors.primary,
-                    fontSize: 22,
                   ),
                 ),
               ],

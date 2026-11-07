@@ -67,7 +67,6 @@ class CartCard extends StatelessWidget {
                   cart.address,
                   style: AppTextStyles.body.copyWith(
                     color: AppColors.grey400,
-                    fontSize: 13,
                   ),
                 ),
               ],

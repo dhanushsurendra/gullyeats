@@ -354,5 +354,7 @@
   "minutesAgo": "{count} நிமிடம் முன்பு",
   "liveStatus": "லைவ்",
   "reconnecting": "மீண்டும் இணைக்கிறது…",
-  "feePaidTitle": "பணம் செலுத்தப்பட்டது!"
+  "feePaidTitle": "பணம் செலுத்தப்பட்டது!",
+  "toCollect": "வசூலிக்க வேண்டும்",
+  "toServe": "பரிமாற வேண்டும்"
 }

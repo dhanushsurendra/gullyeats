@@ -147,8 +147,7 @@ class _SwitchStaffCartSheetState extends State<SwitchStaffCartSheet> {
                                               Flexible(
                                                 child: Text(
                                                   cart.cartName,
-                                                  style: AppTextStyles.heading3
-                                                      .copyWith(fontSize: 14),
+                                                  style: AppTextStyles.heading3,
                                                 ),
                                               ),
 
@@ -170,14 +169,9 @@ class _SwitchStaffCartSheetState extends State<SwitchStaffCartSheet> {
                                                   ),
                                                   child: Text(
                                                     context.l10n.current.toUpperCase(),
-                                                    style: AppTextStyles.caption
-                                                        .copyWith(
-                                                          color:
-                                                              AppColors.primary,
-                                                          fontSize: 9,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                        ),
+                                                    style: AppTextStyles.tag.copyWith(
+                                                      color: AppColors.primary,
+                                                    ),
                                                   ),
                                                 ),
                                               ],

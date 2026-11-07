@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ordering/core/routes/app_routes.dart';
 import 'package:ordering/core/theme/app_colors.dart';
+import 'package:ordering/core/theme/app_text_styles.dart';
 import 'package:ordering/core/utils/session.dart';
 import 'package:ordering/features/cart/presentation/switch_cart_screen.dart';
 import 'package:ordering/features/cart/providers/cart_provider.dart';
@@ -55,6 +56,9 @@ class _WelcomeScreenState extends State<WelcomeScreen>
 
     setState(() => _error = null);
 
+    // Shown at least this long; the status check runs meanwhile.
+    final minShown = Future.delayed(const Duration(milliseconds: 2500));
+
     final cartProvider = context.read<CartProvider>();
     final paymentProvider = context.read<PaymentProvider>();
     final authProvider = context.read<AuthProvider>();
@@ -63,6 +67,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     final token = authProvider.token;
 
     if (selectedCart == null || token == null) {
+      await minShown;
       if (!mounted) return;
 
       Navigator.pushReplacementNamed(context, AppRoutes.home);
@@ -76,6 +81,8 @@ class _WelcomeScreenState extends State<WelcomeScreen>
         selectedCart.id,
       );
 
+      // Errors show at once; only moving on waits for the minimum.
+      if (paymentStatus != null) await minShown;
       if (!mounted) return;
 
       if (paymentStatus == null) {
@@ -188,7 +195,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
           Text(
             _error!,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white, fontSize: 14),
+            style: AppTextStyles.body.copyWith(color: AppColors.white),
           ),
           const SizedBox(height: 16),
           SizedBox(
@@ -262,9 +269,8 @@ class _WelcomeScreenState extends State<WelcomeScreen>
         children: [
           Text(
             context.l10n.welcome.toUpperCase(),
-            style: TextStyle(
+            style: AppTextStyles.caption.copyWith(
               color: AppColors.white.withAlpha(166),
-              fontSize: 12,
               fontWeight: FontWeight.w600,
               letterSpacing: 2.4,
             ),
@@ -275,10 +281,8 @@ class _WelcomeScreenState extends State<WelcomeScreen>
           Text(
             cartName ?? context.l10n.vendor,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 32,
-              fontWeight: FontWeight.w700,
+            style: AppTextStyles.display.copyWith(
+              color: AppColors.white,
               letterSpacing: -0.5,
               height: 1.1,
             ),
@@ -289,10 +293,8 @@ class _WelcomeScreenState extends State<WelcomeScreen>
           Text(
             context.l10n.checkingPaymentStatus,
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: AppTextStyles.body.copyWith(
               color: AppColors.white.withAlpha(184),
-              fontSize: 14,
-              fontWeight: FontWeight.w400,
               letterSpacing: 0.2,
               height: 1.4,
             ),
@@ -303,10 +305,8 @@ class _WelcomeScreenState extends State<WelcomeScreen>
           Text(
             context.l10n.pleaseWait,
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: AppTextStyles.caption.copyWith(
               color: AppColors.white.withAlpha(128),
-              fontSize: 12,
-              fontWeight: FontWeight.w400,
               letterSpacing: 0.1,
             ),
           ),

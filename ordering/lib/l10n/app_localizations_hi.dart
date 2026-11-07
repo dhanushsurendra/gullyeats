@@ -1172,4 +1172,10 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get feePaidTitle => 'भुगतान हो गया!';
+
+  @override
+  String get toCollect => 'वसूलना बाकी';
+
+  @override
+  String get toServe => 'परोसना बाकी';
 }

@@ -193,12 +193,10 @@ class _StockScreenState extends State<StockScreen> {
                   ),
                   child: Text(
                     item.isInStock ? context.l10n.inStockCaps : context.l10n.outOfStockCaps,
-                    style: AppTextStyles.caption.copyWith(
-                      fontSize: 10,
+                    style: AppTextStyles.tag.copyWith(
                       color: item.isInStock
                           ? AppColors.success
                           : AppColors.error,
-                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),

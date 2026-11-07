@@ -1173,4 +1173,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get feePaidTitle => 'Payment done!';
+
+  @override
+  String get toCollect => 'To collect';
+
+  @override
+  String get toServe => 'To serve';
 }

@@ -1174,4 +1174,10 @@ class AppLocalizationsKn extends AppLocalizations {
 
   @override
   String get feePaidTitle => 'ಪಾವತಿ ಆಯಿತು!';
+
+  @override
+  String get toCollect => 'ಸಂಗ್ರಹಿಸಬೇಕು';
+
+  @override
+  String get toServe => 'ಬಡಿಸಬೇಕು';
 }

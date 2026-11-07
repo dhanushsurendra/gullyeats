@@ -354,5 +354,7 @@
   "minutesAgo": "{count} मिनट पहले",
   "liveStatus": "लाइव",
   "reconnecting": "फिर से जुड़ रहा है…",
-  "feePaidTitle": "भुगतान हो गया!"
+  "feePaidTitle": "भुगतान हो गया!",
+  "toCollect": "वसूलना बाकी",
+  "toServe": "परोसना बाकी"
 }

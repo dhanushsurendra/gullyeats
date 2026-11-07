@@ -551,5 +551,7 @@
   },
   "liveStatus": "Live",
   "reconnecting": "Reconnecting…",
-  "feePaidTitle": "Payment done!"
+  "feePaidTitle": "Payment done!",
+  "toCollect": "To collect",
+  "toServe": "To serve"
 }

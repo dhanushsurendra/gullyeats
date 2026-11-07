@@ -483,7 +483,6 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
             style: AppTextStyles.caption.copyWith(
               color: AppColors.error,
               fontWeight: FontWeight.w800,
-              fontSize: 11,
             ),
           ),
           const SizedBox(width: 2),
