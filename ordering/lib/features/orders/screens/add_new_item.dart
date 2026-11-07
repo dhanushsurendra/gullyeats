@@ -12,9 +12,9 @@ import 'package:ordering/core/widgets/app_input.dart';
 import 'package:ordering/core/widgets/app_snack_bar.dart';
 import 'package:ordering/features/auth/providers/auth_provider.dart';
 import 'package:ordering/features/cart/providers/cart_provider.dart';
-import 'package:ordering/features/orders/models/food_name_model.dart';
 import 'package:ordering/features/orders/models/menu_item_model.dart';
 import 'package:ordering/features/orders/providers/menu_provider.dart';
+import 'package:ordering/features/orders/widgets/food_name_field.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
@@ -34,7 +34,6 @@ class _AddItemScreenState extends State<AddItemScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
-  final FocusNode _nameFocus = FocusNode();
   bool _isInStock = true;
   bool _isVeg = true;
   String _imageUrl = "";
@@ -48,15 +47,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
   bool _isLoading = false;
 
   @override
-  void initState() {
-    super.initState();
-    final token = context.read<AuthProvider>().token;
-    context.read<MenuProvider>().loadFoodNames(token);
-  }
-
-  @override
   void dispose() {
-    _nameFocus.dispose();
     _nameController.dispose();
     _priceController.dispose();
     super.dispose();
@@ -307,7 +298,15 @@ class _AddItemScreenState extends State<AddItemScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildNameField(l10n.itemName),
+            FoodNameField(
+              controller: _nameController,
+              label: l10n.itemName,
+              hint: "e.g. Veg Momos",
+              errorText: _nameError,
+              onChanged: (_) {
+                if (_nameError != null) setState(() => _nameError = null);
+              },
+            ),
             AppGaps.h16,
             AppInput(
               controller: _priceController,
@@ -347,85 +346,6 @@ class _AddItemScreenState extends State<AddItemScreen> {
             _buildLabel(l10n.itemPhoto),
             _buildPhotoSection(),
           ],
-        ),
-      ),
-    );
-  }
-
-  /// The name field, suggesting common items (in the app's language) as the
-  /// vendor types. Picking one fills the English name, whose spellings the
-  /// server already has; anything else typed is saved as it is.
-  Widget _buildNameField(String label) {
-    return LayoutBuilder(
-      builder: (context, constraints) => RawAutocomplete<FoodNameModel>(
-        textEditingController: _nameController,
-        focusNode: _nameFocus,
-        displayStringForOption: (option) => option.name,
-        optionsBuilder: (value) =>
-            context.read<MenuProvider>().suggestFoodNames(value.text),
-        onSelected: (_) {
-          if (_nameError != null) setState(() => _nameError = null);
-        },
-        fieldViewBuilder: (context, controller, focusNode, onSubmitted) =>
-            AppInput(
-              controller: controller,
-              focusNode: focusNode,
-              label: label,
-              hint: "e.g. Veg Momos",
-              hasError: _nameError != null,
-              errorText: _nameError,
-              onChanged: (value) {
-                if (_nameError != null) setState(() => _nameError = null);
-              },
-            ),
-        optionsViewBuilder: (context, onSelected, options) => Align(
-          alignment: Alignment.topLeft,
-          child: Material(
-            elevation: 4,
-            color: AppColors.white,
-            borderRadius: BorderRadius.circular(12),
-            clipBehavior: Clip.antiAlias,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: 240,
-                maxWidth: constraints.maxWidth,
-              ),
-              child: ListView(
-                padding: EdgeInsets.zero,
-                shrinkWrap: true,
-                children: [
-                  for (final option in options)
-                    InkWell(
-                      onTap: () => onSelected(option),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 10,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              option.displayName,
-                              style: AppTextStyles.body.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            if (option.displayName != option.name)
-                              Text(
-                                option.name,
-                                style: AppTextStyles.caption.copyWith(
-                                  color: AppColors.grey500,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
         ),
       ),
     );

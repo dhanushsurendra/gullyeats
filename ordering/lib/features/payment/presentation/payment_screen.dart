@@ -1,3 +1,4 @@
+import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_gaps.dart';
@@ -50,7 +51,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   void initState() {
     super.initState();
 
-    final today = DateTime.now();
+    final today = clock.now();
 
     _startDate = DateTime(today.year, today.month, today.day);
 
@@ -103,7 +104,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   // ==========================================================================
 
   Future<void> _applyPreset(String presetKey) async {
-    final today = DateTime.now();
+    final today = clock.now();
 
     final todayStart = DateTime(today.year, today.month, today.day);
 
@@ -162,7 +163,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       context: context,
       initialDate: initialDate,
       firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
+      lastDate: clock.now(),
     );
 
     if (picked == null) return;

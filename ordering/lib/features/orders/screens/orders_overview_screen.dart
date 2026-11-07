@@ -1,3 +1,4 @@
+import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:ordering/core/widgets/app_snack_bar.dart';
 import 'package:ordering/core/error/app_exceptions.dart';
@@ -56,7 +57,7 @@ class _OrdersOverviewScreenState extends State<OrdersOverviewScreen> {
   void initState() {
     super.initState();
 
-    final today = DateTime.now();
+    final today = clock.now();
 
     _startDate = DateTime(today.year, today.month, today.day);
 
@@ -123,7 +124,7 @@ class _OrdersOverviewScreenState extends State<OrdersOverviewScreen> {
   // ==========================================================================
 
   Future<void> _applyPreset(String presetKey) async {
-    final today = DateTime.now();
+    final today = clock.now();
 
     final todayStart = DateTime(today.year, today.month, today.day);
 
@@ -195,7 +196,7 @@ class _OrdersOverviewScreenState extends State<OrdersOverviewScreen> {
       context: context,
       initialDate: initialDate,
       firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
+      lastDate: clock.now(),
     );
 
     if (picked == null) return;

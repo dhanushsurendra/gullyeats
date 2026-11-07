@@ -1,3 +1,4 @@
+import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:ordering/core/error/app_exceptions.dart';
 import 'package:ordering/core/widgets/app_snack_bar.dart';
@@ -47,7 +48,7 @@ class _SalesScreenState extends State<SalesScreen> {
   @override
   void initState() {
     super.initState();
-    final today = DateTime.now();
+    final today = clock.now();
     _startDate = DateTime(today.year, today.month, today.day);
     _endDate = DateTime(today.year, today.month, today.day);
 
@@ -91,7 +92,7 @@ class _SalesScreenState extends State<SalesScreen> {
   }
 
   void _applyPreset(String presetKey) {
-    final today = DateTime.now();
+    final today = clock.now();
     final todayStart = DateTime(today.year, today.month, today.day);
 
     DateTime start;
@@ -132,7 +133,7 @@ class _SalesScreenState extends State<SalesScreen> {
       context: context,
       initialDate: initial,
       firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
+      lastDate: clock.now(),
     );
 
     if (picked == null) return;

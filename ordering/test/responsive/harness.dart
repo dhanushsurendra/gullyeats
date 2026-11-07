@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -193,6 +194,9 @@ Widget buildApp(
 /// Pumps [app] at [device], waits for images, compares it with its golden (for
 /// [goldenDeviceNames]), optionally saves a screenshot, and returns every
 /// layout error (overflows, unbounded constraints) raised while rendering.
+/// "Now" while rendering: the day the goldens were generated.
+final sampleClock = Clock.fixed(DateTime(2026, 11, 7, 12));
+
 Future<List<String>> renderAt(
   WidgetTester tester,
   Device device,
@@ -212,14 +216,15 @@ Future<List<String>> renderAt(
     tester.view.viewInsets = FakeViewPadding(bottom: device.keyboard * 2);
     tester.platformDispatcher.textScaleFactorTestValue = device.textScale;
 
-    // Requests made while the screen loads get the sample data.
-    await http.runWithClient(() async {
+    // Requests made while the screen loads get the sample data, and "today"
+    // is always the day the goldens were made, so date pickers match them.
+    await withClock(sampleClock, () => http.runWithClient(() async {
       await tester.pumpWidget(app);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
       if (interact != null) await interact(tester);
       await tester.pump(const Duration(milliseconds: 300));
-    }, () => fakeBackend);
+    }, () => fakeBackend));
 
     await tester.runAsync(() async {
       for (final element in find.byType(Image).evaluate().toList()) {

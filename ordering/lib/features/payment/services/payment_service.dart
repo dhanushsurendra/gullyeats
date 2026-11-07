@@ -1,3 +1,4 @@
+import 'package:clock/clock.dart';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -159,7 +160,7 @@ class PaymentService {
       resolvedStartDate = startDate;
       resolvedEndDate = endDate;
     } else if (preset != null) {
-      final now = DateTime.now();
+      final now = clock.now();
 
       // Use only the calendar date.
       final today = DateTime(now.year, now.month, now.day);

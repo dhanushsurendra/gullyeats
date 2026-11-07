@@ -16,6 +16,7 @@ import 'package:ordering/core/widgets/app_snack_bar.dart';
 import 'package:ordering/features/auth/providers/auth_provider.dart';
 import 'package:ordering/features/orders/models/menu_item_model.dart';
 import 'package:ordering/features/orders/providers/menu_provider.dart';
+import 'package:ordering/features/orders/widgets/food_name_field.dart';
 import 'package:ordering/features/profile/providers/language_provider.dart';
 import 'package:ordering/l10n/l10n.dart';
 import 'package:ordering/core/widgets/app_input.dart';
@@ -454,15 +455,18 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
               ),
               AppGaps.h16,
               // The same fields as the Add Item screen.
-              AppInput(
+              FoodNameField(
                 controller: _nameController,
                 label: l10n.itemName,
                 hint: "e.g. Chicken Momos",
-                hasError: _nameError != null,
                 errorText: _nameError,
                 onChanged: (_) {
                   if (_nameError != null) setState(() => _nameError = null);
                 },
+                // A picked item brings its own spelling in the app's language.
+                onSelected: (option) => setState(
+                  () => _localNameController.text = option.names[_lang] ?? '',
+                ),
               ),
               if (_showLocalName) ...[
                 AppGaps.h16,
