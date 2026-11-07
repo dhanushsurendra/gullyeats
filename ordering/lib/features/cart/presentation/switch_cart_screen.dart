@@ -74,23 +74,13 @@ class _SwitchCartScreenState extends State<SwitchCartScreen> {
 
       if (!mounted) return;
 
-      // On app start, skip the picker when the saved cart still exists or
-      // there is only one cart to choose.
-      if (!widget.isDraggable) {
-        final savedId = cartProvider.selectedCart?.id;
-        final saved = carts.where((cart) => cart.id == savedId);
-        final cart = saved.isNotEmpty
-            ? saved.first
-            : carts.length == 1
-            ? carts.first
-            : null;
-
-        if (cart != null) {
-          await cartProvider.selectCart(cart);
-          if (!mounted) return;
-          Navigator.of(context).pushReplacementNamed(AppRoutes.welcome);
-          return;
-        }
+      // On app start the vendor picks a cart every time (the last one is
+      // preselected below), unless there is only one to choose.
+      if (!widget.isDraggable && carts.length == 1) {
+        await cartProvider.selectCart(carts.first);
+        if (!mounted) return;
+        Navigator.of(context).pushReplacementNamed(AppRoutes.welcome);
+        return;
       }
 
       // Re-select the current cart after carts are loaded.
