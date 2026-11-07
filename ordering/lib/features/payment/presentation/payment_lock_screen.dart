@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:ordering/core/utils/order_alerts.dart';
 import 'package:ordering/core/routes/app_routes.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:ordering/core/theme/app_colors.dart';
@@ -157,7 +157,7 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
 
   /// A tick that pops in, then closes itself after a moment.
   Future<void> _showPaidDialog() {
-    HapticFeedback.heavyImpact();
+    OrderAlerts.paid();
     final dialog = showDialog<void>(
       context: context,
       // Closed only by the timer below, so that pop never hits this screen.

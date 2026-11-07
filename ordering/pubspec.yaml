@@ -62,7 +62,8 @@ dependencies:
   flutter_map_vector_tiles: ^2.8.1
   razorpay_flutter: ^1.4.6
   connectivity_plus: ^7.3.1
-  flutter_ringtone_player: ^4.0.0+4
+  audioplayers: ^6.7.1
+  vibration: ^3.2.1
 
 dev_dependencies:
   flutter_test:
@@ -93,6 +94,7 @@ flutter:
     - assets/images/cart.png
     - assets/images/logo_text.png
     - assets/images/no_orders.png
+    - assets/sounds/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

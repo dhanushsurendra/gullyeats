@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:ordering/core/utils/order_alerts.dart';
 import 'package:intl/intl.dart';
 import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
@@ -56,8 +56,8 @@ class _OrderCardState extends State<OrderCard> {
     if (oldWidget.order.status != widget.order.status) _done = false;
   }
 
-  void _confirm(VoidCallback action) {
-    HapticFeedback.mediumImpact();
+  void _confirm(VoidCallback action, Future<void> Function() feedback) {
+    feedback();
     setState(() => _done = true);
     action();
     // If the request fails the card stays, so bring the button back.
@@ -394,7 +394,7 @@ class _OrderCardState extends State<OrderCard> {
                     : l10n.serve.toUpperCase(),
                 color: _done ? AppColors.success : AppColors.primary,
                 filled: true,
-                onTap: _done ? null : () => _confirm(widget.onServe),
+                onTap: _done ? null : () => _confirm(widget.onServe, OrderAlerts.served),
               ),
               _ => _actionButton(
                 key: const ValueKey('paid'),
@@ -403,7 +403,7 @@ class _OrderCardState extends State<OrderCard> {
                 color: AppColors.primary,
                 filled: false,
                 busy: _done,
-                onTap: _done ? null : () => _confirm(widget.onMarkPaid),
+                onTap: _done ? null : () => _confirm(widget.onMarkPaid, OrderAlerts.paid),
               ),
             },
           ),

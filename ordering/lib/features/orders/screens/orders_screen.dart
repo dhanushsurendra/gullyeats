@@ -1,8 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
+import 'package:ordering/core/utils/order_alerts.dart';
 import 'package:ordering/core/widgets/skeleton.dart';
 import 'package:ordering/core/error/app_exceptions.dart';
 import 'package:ordering/core/theme/app_colors.dart';
@@ -61,19 +60,11 @@ class _OrdersScreenState extends State<OrdersScreen> {
     super.dispose();
   }
 
-  /// A QR order arrived: buzz, chime and say so, whichever tab is open.
+  /// A QR order arrived: ring once, whichever tab is open. No pop-up, so
+  /// the vendor isn't interrupted; the new card glows in the list.
   void _onIncomingOrder() {
-    final order = _orderProvider?.incomingOrder.value;
-    if (order == null || !mounted) return;
-    HapticFeedback.vibrate();
-    // The phone's own notification sound. Flutter's SystemSound has no
-    // alert sound on phones. Errors are ignored: the vibration still runs.
-    FlutterRingtonePlayer().playNotification().catchError((_) {});
-    AppSnackBar.show(
-      context,
-      isInfo: true,
-      message: context.l10n.newOrderAlert(order.orderNumber),
-    );
+    if (_orderProvider?.incomingOrder.value == null || !mounted) return;
+    OrderAlerts.newOrder();
   }
 
   Future<void> _loadOrders() async {
