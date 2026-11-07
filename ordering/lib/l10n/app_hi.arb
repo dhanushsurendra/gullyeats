@@ -357,5 +357,10 @@
   "reconnecting": "फिर से जुड़ रहा है…",
   "feePaidTitle": "भुगतान हो गया!",
   "toCollect": "वसूलना बाकी",
-  "toServe": "परोसना बाकी"
+  "toServe": "परोसना बाकी",
+  "handover": "हिसाब",
+  "handoverTitle": "आज का हिसाब",
+  "handoverSubtitle": "शिफ्ट खत्म होने पर सौंपने वाला पैसा।",
+  "collected": "जमा हुआ",
+  "refunded": "वापस किया"
 }

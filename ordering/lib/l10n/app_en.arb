@@ -554,5 +554,10 @@
   "reconnecting": "Reconnecting…",
   "feePaidTitle": "Payment done!",
   "toCollect": "To collect",
-  "toServe": "To serve"
+  "toServe": "To serve",
+  "handover": "Handover",
+  "handoverTitle": "Today's handover",
+  "handoverSubtitle": "The money to hand over at the end of your shift.",
+  "collected": "Collected",
+  "refunded": "Refunded"
 }

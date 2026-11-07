@@ -1181,4 +1181,19 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get toServe => 'परोसना बाकी';
+
+  @override
+  String get handover => 'हिसाब';
+
+  @override
+  String get handoverTitle => 'आज का हिसाब';
+
+  @override
+  String get handoverSubtitle => 'शिफ्ट खत्म होने पर सौंपने वाला पैसा।';
+
+  @override
+  String get collected => 'जमा हुआ';
+
+  @override
+  String get refunded => 'वापस किया';
 }

@@ -1183,4 +1183,19 @@ class AppLocalizationsKn extends AppLocalizations {
 
   @override
   String get toServe => 'ಬಡಿಸಬೇಕು';
+
+  @override
+  String get handover => 'ಲೆಕ್ಕ';
+
+  @override
+  String get handoverTitle => 'ಇಂದಿನ ಲೆಕ್ಕ';
+
+  @override
+  String get handoverSubtitle => 'ನಿಮ್ಮ ಶಿಫ್ಟ್ ಮುಗಿದಾಗ ಒಪ್ಪಿಸಬೇಕಾದ ಹಣ.';
+
+  @override
+  String get collected => 'ಸಂಗ್ರಹಿಸಿದ್ದು';
+
+  @override
+  String get refunded => 'ಹಿಂತಿರುಗಿಸಿದ್ದು';
 }

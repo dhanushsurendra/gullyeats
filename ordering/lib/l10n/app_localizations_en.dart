@@ -1182,4 +1182,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get toServe => 'To serve';
+
+  @override
+  String get handover => 'Handover';
+
+  @override
+  String get handoverTitle => 'Today\'s handover';
+
+  @override
+  String get handoverSubtitle =>
+      'The money to hand over at the end of your shift.';
+
+  @override
+  String get collected => 'Collected';
+
+  @override
+  String get refunded => 'Refunded';
 }

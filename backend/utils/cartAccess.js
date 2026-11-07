@@ -32,6 +32,20 @@ async function findManagedCart(req, res, cartId) {
   throw new Error('Not allowed to manage this cart')
 }
 
+/**
+ * Like findManagedCart, but staff are refused: the menu, cart details,
+ * sales, fee bills and staff logins are the owner's (or an admin's). Staff
+ * keep orders, stock and opening/closing the cart.
+ */
+async function findOwnedCart(req, res, cartId) {
+  const cart = await findManagedCart(req, res, cartId)
+  if (String(cart.userId) !== String(req.user._id) && req.user.role !== 'admin') {
+    res.status(403)
+    throw new Error('Only the cart owner can do this')
+  }
+  return cart
+}
+
 /** Loads the order and checks the user may manage its cart (see above). */
 async function findManagedOrder(req, res, orderId) {
   const order = await Order.findById(orderId)
@@ -45,4 +59,4 @@ async function findManagedOrder(req, res, orderId) {
   return order
 }
 
-module.exports = { canManageCart, findManagedCart, findManagedOrder }
+module.exports = { canManageCart, findManagedCart, findOwnedCart, findManagedOrder }

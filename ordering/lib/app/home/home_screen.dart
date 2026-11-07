@@ -10,6 +10,7 @@ import 'package:ordering/core/utils/format_price.dart';
 import 'package:ordering/core/utils/payment_lock.dart';
 import 'package:ordering/features/auth/providers/auth_provider.dart';
 import 'package:ordering/features/cart/presentation/sales_screen.dart';
+import 'package:ordering/features/orders/screens/handover_screen.dart';
 import 'package:ordering/features/orders/screens/orders_screen.dart';
 import 'package:ordering/features/payment/models/payment_status_model.dart';
 import 'package:ordering/features/payment/presentation/payment_lock_screen.dart';
@@ -29,12 +30,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   PaymentStatusModel? _status;
   Timer? _lockTimer;
 
-  final List<Widget> _screens = const [
-    SalesScreen(),
-    OrdersScreen(),
-    ProfileScreen(),
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -42,7 +37,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     // The cart can become due while the app stays open all day, so the lock
     // is checked here too, not only on the welcome screen at start-up.
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkLock());
-    _lockTimer = Timer.periodic(const Duration(minutes: 10), (_) => _checkLock());
+    _lockTimer = Timer.periodic(
+      const Duration(minutes: 10),
+      (_) => _checkLock(),
+    );
   }
 
   @override
@@ -73,6 +71,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     // Only between midnight (the day's bill is final) and the 2:00am lock,
     // so vendors aren't interrupted while they serve during the day.
     final showBanner = status != null && status.isFeeComingDue && status.canPay;
+    // Staff see today's handover instead of the owner's sales.
+    final screens = [
+      context.watch<AuthProvider>().isStaff
+          ? const HandoverScreen()
+          : const SalesScreen(),
+      const OrdersScreen(),
+      const ProfileScreen(),
+    ];
 
     return Scaffold(
       backgroundColor: AppColors.white,
@@ -90,11 +96,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   Positioned.fill(
                     child: IndexedStack(
                       index: _currentIndex,
-                      children: List.generate(_screens.length, (i) {
+                      children: List.generate(screens.length, (i) {
                         return AnimatedOpacity(
                           opacity: _currentIndex == i ? 1 : 0,
                           duration: const Duration(milliseconds: 250),
-                          child: _screens[i],
+                          child: screens[i],
                         );
                       }),
                     ),
@@ -103,7 +109,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    child: BottomNavBar(currentIndex: _currentIndex, onTap: _onTabTap),
+                    child: BottomNavBar(
+                      currentIndex: _currentIndex,
+                      onTap: _onTabTap,
+                    ),
                   ),
                 ],
               ),

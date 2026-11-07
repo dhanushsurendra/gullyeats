@@ -1196,4 +1196,20 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get toServe => 'பரிமாற வேண்டும்';
+
+  @override
+  String get handover => 'கணக்கு';
+
+  @override
+  String get handoverTitle => 'இன்றைய கணக்கு';
+
+  @override
+  String get handoverSubtitle =>
+      'உங்கள் ஷிஃப்ட் முடிவில் ஒப்படைக்க வேண்டிய பணம்.';
+
+  @override
+  String get collected => 'வசூலானது';
+
+  @override
+  String get refunded => 'திருப்பிக் கொடுத்தது';
 }

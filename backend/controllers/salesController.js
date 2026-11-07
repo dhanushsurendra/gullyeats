@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 const asyncHandler = require('../utils/asyncHandler')
 const Order = require('../models/Order')
-const { findManagedCart } = require('../utils/cartAccess')
+const { findOwnedCart } = require('../utils/cartAccess')
 
 const TZ = 'Asia/Kolkata'
 
@@ -289,7 +289,7 @@ exports.getSalesDashboard = asyncHandler(async (req, res) => {
       .json({ success: false, message: 'Invalid startDate or endDate' })
   }
 
-  await findManagedCart(req, res, cartId)
+  await findOwnedCart(req, res, cartId)
 
   const [result] = await Order.aggregate(salesPipeline(cartId, start, end))
 

@@ -7,6 +7,7 @@ const User = require('../models/User')
 const Order = require('../models/Order')
 const MenuItem = require('../models/Menu')
 const Counter = require('../models/Counter')
+const paymentLock = require('../utils/cartPaymentLock')
 const c = require('../controllers/orderController')
 
 afterEach(restoreAll)
@@ -19,8 +20,9 @@ const tea = { _id: id(), name: 'Tea', price: 10, isInStock: true }
 const gone = { _id: id(), name: 'Vada', price: 15, isInStock: false }
 const owner = { _id: ownerId, role: 'vendor' }
 
-function setup({ isOpen = true, order } = {}) {
+function setup({ isOpen = true, order, isLocked = false } = {}) {
   const cart = { _id: cartId, userId: ownerId, isOpen, isActive: true }
+  stub(paymentLock, 'getCartPaymentStatus', async () => ({ isLocked }))
   stub(Cart, 'findById', () => q(cart))
   stub(User, 'findById', () => q(null))
   stub(MenuItem, 'find', (filter) =>
@@ -205,4 +207,70 @@ test('mark paid records the amount; serve needs payment', async () => {
 
   r = await call(c.serveOrder, { user: owner, params: { orderId: order._id } })
   assert.strictEqual(order.status, 'SERVED')
+})
+
+test('a customer cannot cancel a partly paid order; the vendor cancel records the return', async () => {
+  // Paid 32, then the customer added a tea: PENDING again, 10 still owed.
+  const order = { ...paidOrder(), status: 'PENDING', paidAmount: 32, totalPrice: 42 }
+  setup({ order })
+  let r = await call(c.deleteOrder, { params: { orderId: order._id } })
+  assert.strictEqual(r.status, 400)
+  assert.strictEqual(order.status, 'PENDING')
+
+  r = await call(c.deleteOrder, { user: owner, params: { orderId: order._id } })
+  assert.strictEqual(r.status, 200)
+  assert.deepStrictEqual(
+    { action: order.paymentAdjustment.action, amount: order.paymentAdjustment.amount },
+    { action: 'RETURN', amount: 32 },
+  )
+})
+
+test('restoring a cancelled order uses the money paid, not the payment time', async () => {
+  // Marked unpaid on a billed day keeps paidAt, but nothing was paid.
+  const unpaid = { ...paidOrder(), status: 'CANCELLED', paidAmount: 0 }
+  setup({ order: unpaid })
+  await call(c.undoDeleteOrder, { user: owner, params: { orderId: unpaid._id } })
+  assert.strictEqual(unpaid.status, 'PENDING')
+
+  restoreAll()
+  const paid = { ...paidOrder(), status: 'CANCELLED', paidAmount: 32 }
+  setup({ order: paid })
+  await call(c.undoDeleteOrder, { user: owner, params: { orderId: paid._id } })
+  assert.strictEqual(paid.status, 'PAID')
+})
+
+test('customers cannot add items while the cart is closed or locked', async () => {
+  const body = { orderItems: [line(dosa, 2)] }
+  let order = { ...paidOrder(), status: 'PENDING', paidAt: null }
+  setup({ order, isOpen: false })
+  let r = await call(c.updateOrder, { params: { orderId: order._id }, body })
+  assert.strictEqual(r.status, 403)
+
+  restoreAll()
+  setup({ order, isLocked: true })
+  r = await call(c.updateOrder, { params: { orderId: order._id }, body })
+  assert.strictEqual(r.status, 403)
+
+  // The vendor can still fix the order.
+  r = await call(c.updateOrder, { user: owner, params: { orderId: order._id }, body })
+  assert.strictEqual(r.status, 200)
+})
+
+test('feedback must be text, and is cut to 500 characters', async () => {
+  const order = paidOrder()
+  setup({ order })
+  let r = await call(c.submitOrderFeedback, { params: { orderNumber: order._id }, body: { feedback: { $gt: '' } } })
+  assert.strictEqual(r.status, 400)
+  r = await call(c.submitOrderFeedback, { params: { orderNumber: order._id }, body: { feedback: 'x'.repeat(900) } })
+  assert.strictEqual(r.status, 200)
+  assert.strictEqual(order.feedback.length, 500)
+})
+
+test('a malformed id is a 400, not a server error', async () => {
+  stub(Order, 'findById', () => {
+    throw Object.assign(new Error('Cast to ObjectId failed'), { name: 'CastError' })
+  })
+  const r = await call(c.getOrder, { params: { orderId: 'junk' } })
+  assert.strictEqual(r.status, 400)
+  assert.strictEqual(r.body.message, 'Invalid ID')
 })

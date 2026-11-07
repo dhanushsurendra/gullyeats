@@ -271,3 +271,16 @@ test('an admin gets a clear error when nothing is due', async () => {
   })
   assert.equal(r.status, 400)
 })
+
+test('an abandoned checkout locks the cart only once its bill is due', async () => {
+  const pending = (n) => ({ ...paidDay(n), status: 'PENDING' })
+  await Payment.collection.insertOne(pending(0)) // due tomorrow at 2am
+  let status = await getCartPaymentStatus(cartId)
+  assert.equal(status.isLocked, false)
+  assert.equal(status.totalPending, 2)
+
+  await Payment.collection.deleteMany({})
+  await Payment.collection.insertOne(pending(2))
+  status = await getCartPaymentStatus(cartId)
+  assert.equal(status.isLocked, true)
+})

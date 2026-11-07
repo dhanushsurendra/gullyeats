@@ -2,7 +2,7 @@ const Cart = require('../models/Cart')
 const MenuItem = require('../models/Menu')
 const User = require('../models/User')
 const Order = require('../models/Order')
-const { findManagedCart } = require('../utils/cartAccess')
+const { findManagedCart, findOwnedCart } = require('../utils/cartAccess')
 const QRCode = require('qrcode')
 const asyncHandler = require('../utils/asyncHandler')
 const bcrypt = require('bcrypt')
@@ -14,6 +14,11 @@ const generatePin = require('../utils/generatePin')
 const Menu = require('../models/Menu')
 const translit = require('../utils/transliterate')
 const FoodName = require('../models/FoodName')
+
+// The only uploads allowed: the bucket is public, so anything else (an HTML
+// page, say) would be served from our address.
+// The vendor app sends "image/jpg" for .jpg files, so that is allowed too.
+const IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
 
 // A cart suspended by GullyEats can't be reopened from the vendor app.
 function refuseIfSuspended(res, cart, opening) {
@@ -74,7 +79,7 @@ exports.updateCart = asyncHandler(async (req, res) => {
     parcelCharge,
   } = req.body;
 
-  const cart = await findManagedCart(req, res, cartId);
+  const cart = await findOwnedCart(req, res, cartId);
 
   if (parcelCharge !== undefined) {
     const value = Number(parcelCharge);
@@ -367,7 +372,7 @@ function menuItemFields(req, res, { requireAll }) {
 exports.deleteMenuItem = asyncHandler(async (req, res) => {
   const { cartId, itemId } = req.params
 
-  await findManagedCart(req, res, cartId)
+  await findOwnedCart(req, res, cartId)
 
   const item = await MenuItem.findOne({ _id: itemId, cartId })
 
@@ -388,7 +393,7 @@ exports.deleteMenuItem = asyncHandler(async (req, res) => {
 exports.updateMenuItem = asyncHandler(async (req, res) => {
   const { cartId } = req.params
 
-  await findManagedCart(req, res, cartId)
+  await findOwnedCart(req, res, cartId)
 
   const item = await MenuItem.findOne({ _id: req.body.id, cartId })
 
@@ -449,7 +454,7 @@ exports.updateMenuItemStock = asyncHandler(async (req, res) => {
 exports.addMenuItem = asyncHandler(async (req, res) => {
   const { cartId } = req.params
 
-  await findManagedCart(req, res, cartId)
+  await findOwnedCart(req, res, cartId)
 
   const fields = menuItemFields(req, res, { requireAll: true })
   const [names] = await translit.transliterate([fields.name])
@@ -469,16 +474,16 @@ exports.getPresignedUploadUrlForMenuItem = asyncHandler(async (req, res) => {
   const { fileType, menuItemId } = req.body
   const { cartId } = req.params
 
-  await findManagedCart(req, res, cartId)
+  await findOwnedCart(req, res, cartId)
 
-  if (!fileType) {
+  if (!IMAGE_TYPES.includes(fileType)) {
     res.status(400)
-    throw new Error('File type is required')
+    throw new Error('Upload a JPEG, PNG or WebP image')
   }
 
   const bucketName = process.env.BUCKET_NAME
 
-  const extension = fileType.split('/')[1] || 'jpg'
+  const extension = fileType.split('/')[1]
 
   // Generate a unique ID for this menu image
   const imageId = crypto.randomUUID()
@@ -530,11 +535,11 @@ exports.getPresignedUploadUrlForExistingMenuItem = asyncHandler(
     const { fileType } = req.body
     const { cartId, menuItemId } = req.params
 
-    await findManagedCart(req, res, cartId)
+    await findOwnedCart(req, res, cartId)
 
-    if (!fileType) {
+    if (!IMAGE_TYPES.includes(fileType)) {
       res.status(400)
-      throw new Error('File type is required')
+      throw new Error('Upload a JPEG, PNG or WebP image')
     }
 
     const menuItem = await MenuItem.findOne({
@@ -548,7 +553,7 @@ exports.getPresignedUploadUrlForExistingMenuItem = asyncHandler(
     }
 
     const bucketName = process.env.BUCKET_NAME
-    const extension = fileType.split('/')[1] || 'jpg'
+    const extension = fileType.split('/')[1]
 
     const imageId = crypto.randomUUID()
 
@@ -650,7 +655,7 @@ exports.addStaff = asyncHandler(async (req, res) => {
     throw new Error('Invalid name')
   }
 
-  const cart = await findManagedCart(req, res, cartId)
+  const cart = await findOwnedCart(req, res, cartId)
 
   let user = await User.findOne({ phoneNumber })
 
@@ -701,8 +706,8 @@ exports.switchStaffCart = asyncHandler(async (req, res) => {
 
   // The caller must manage both the staff member's cart and the new one,
   // otherwise anyone could move any account onto any cart.
-  await findManagedCart(req, res, staff.cartId)
-  const cart = await findManagedCart(req, res, cartId)
+  await findOwnedCart(req, res, staff.cartId)
+  const cart = await findOwnedCart(req, res, cartId)
 
   staff.cartId = cart._id
   await staff.save()
@@ -724,10 +729,14 @@ exports.getPresignedUploadUrl = asyncHandler(async (req, res) => {
   const { fileType } = req.body
   const cartId = req.params.cartId
 
-  await findManagedCart(req, res, cartId)
+  await findOwnedCart(req, res, cartId)
+  if (!IMAGE_TYPES.includes(fileType)) {
+    res.status(400)
+    throw new Error('Upload a JPEG, PNG or WebP image')
+  }
   const bucketName = process.env.BUCKET_NAME
 
-  const extension = fileType.split('/')[1] || 'jpg'
+  const extension = fileType.split('/')[1]
 
   const command = new PutObjectCommand({
     Bucket: bucketName,
@@ -737,7 +746,7 @@ exports.getPresignedUploadUrl = asyncHandler(async (req, res) => {
 
   const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 60 })
 
-  const s3Key = `uploads/${cartId}.${fileType.split('/')[1]}`
+  const s3Key = `uploads/${cartId}.${extension}`
   const fileUrl = `https://${process.env.BUCKET_NAME}.s3.amazonaws.com/${s3Key}`
 
   res.status(200).json({
@@ -751,7 +760,7 @@ exports.updateCartImage = asyncHandler(async (req, res) => {
   const { cartId } = req.params
   const { imageUrl } = req.body
 
-  await findManagedCart(req, res, cartId)
+  await findOwnedCart(req, res, cartId)
 
   const updatedCart = await Cart.findByIdAndUpdate(
     cartId,
@@ -819,8 +828,6 @@ exports.getAllCarts = asyncHandler(async (req, res) => {
 exports.getAllStaff = asyncHandler(async (req, res) => {
   const cartId = req.params.cartId
 
-  console.log('Fetching staff for cartId:', cartId)
-
   const cart = await findManagedCart(req, res, cartId)
 
   const staffs = await User.find({
@@ -846,7 +853,7 @@ exports.deleteStaff = asyncHandler(async (req, res) => {
     throw new Error('Staff member not found')
   }
 
-  await findManagedCart(req, res, staff.cartId)
+  await findOwnedCart(req, res, staff.cartId)
 
   await staff.deleteOne()
 

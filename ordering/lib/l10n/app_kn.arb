@@ -357,5 +357,10 @@
   "reconnecting": "ಮರುಸಂಪರ್ಕಿಸಲಾಗುತ್ತಿದೆ…",
   "feePaidTitle": "ಪಾವತಿ ಆಯಿತು!",
   "toCollect": "ಸಂಗ್ರಹಿಸಬೇಕು",
-  "toServe": "ಬಡಿಸಬೇಕು"
+  "toServe": "ಬಡಿಸಬೇಕು",
+  "handover": "ಲೆಕ್ಕ",
+  "handoverTitle": "ಇಂದಿನ ಲೆಕ್ಕ",
+  "handoverSubtitle": "ನಿಮ್ಮ ಶಿಫ್ಟ್ ಮುಗಿದಾಗ ಒಪ್ಪಿಸಬೇಕಾದ ಹಣ.",
+  "collected": "ಸಂಗ್ರಹಿಸಿದ್ದು",
+  "refunded": "ಹಿಂತಿರುಗಿಸಿದ್ದು"
 }

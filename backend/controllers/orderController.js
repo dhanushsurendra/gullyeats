@@ -7,7 +7,8 @@ const TruthLine = require('../models/TruthLine')
 const getNextOrderNumber = require('../utils/getNextOrderNumber')
 const { canManageCart, findManagedCart, findManagedOrder } = require('../utils/cartAccess')
 const Payment = require('../models/Payment')
-const { getISTMidnight } = require('../utils/cartPaymentLock')
+const paymentLock = require('../utils/cartPaymentLock')
+const { getISTMidnight } = paymentLock
 
 /** Whether a bill already covers the day [order] was paid on. */
 async function isPaidDayBilled(order) {
@@ -405,10 +406,23 @@ exports.updateOrder = asyncHandler(async (req, res) => {
   const order = await Order.findById(req.params.orderId)
   if (!order) fail(res, 404, 'Order not found')
 
-  const isVendor = await managesOrderCart(req, order)
+  const cart = await Cart.findById(order.cartId)
+  const isVendor = Boolean(cart) && (await canManageCart(req.user, cart))
 
   if (order.status !== 'PENDING' && order.status !== 'PAID') {
     fail(res, 400, 'This order can no longer be changed')
+  }
+
+  // Customers add items under the same rules as placing an order.
+  if (
+    !isVendor &&
+    (!cart ||
+      cart.suspendedAt ||
+      !cart.isActive ||
+      !cart.isOpen ||
+      (await paymentLock.getCartPaymentStatus(cart._id)).isLocked)
+  ) {
+    fail(res, 403, 'This cart is not taking orders right now')
   }
 
   const items = await buildOrderItems(
@@ -474,7 +488,10 @@ exports.undoDeleteOrder = asyncHandler(async (req, res) => {
     fail(res, 400, 'This order is not cancelled')
   }
 
-  order.status = order.paidAt != null ? 'PAID' : 'PENDING'
+  // Back to PAID only if the customer paid the whole total. paidAt alone
+  // isn't proof: it is kept when an order on a billed day is marked unpaid.
+  const paid = order.paidAmount ?? (order.paidAt ? order.totalPrice : 0)
+  order.status = paid >= order.totalPrice ? 'PAID' : 'PENDING'
   order.paymentAdjustment = null
   await order.save()
 
@@ -498,20 +515,19 @@ exports.deleteOrder = asyncHandler(async (req, res) => {
 
   const isVendor = await managesOrderCart(req, order)
 
-  const allowed = isVendor ? ['PENDING', 'PAID'] : ['PENDING']
-  if (!allowed.includes(order.status)) {
-    fail(
-      res,
-      400,
-      order.status === 'PAID'
-        ? 'This order is already paid. Ask the cart to cancel it.'
-        : 'This order can no longer be cancelled',
-    )
+  if (order.status !== 'PENDING' && order.status !== 'PAID') {
+    fail(res, 400, 'This order can no longer be cancelled')
   }
 
+  // An order edited after payment is PENDING but partly paid: customers
+  // may cancel only orders they have paid nothing for.
   const paid = amountPaid(order)
+  if (!isVendor && paid > 0) {
+    fail(res, 400, 'This order is already paid. Ask the cart to cancel it.')
+  }
+
   const paymentAdjustment =
-    order.status === 'PAID' && paid > 0
+    paid > 0
       ? {
           oldTotal: paid,
           newTotal: 0,
@@ -553,7 +569,7 @@ exports.submitOrderFeedback = asyncHandler(async (req, res) => {
   const { orderNumber } = req.params
   const { feedback } = req.body
 
-  if (!feedback?.trim()) {
+  if (typeof feedback !== 'string' || !feedback.trim()) {
     res.status(400)
     throw new Error('Feedback is required')
   }
@@ -565,7 +581,7 @@ exports.submitOrderFeedback = asyncHandler(async (req, res) => {
     throw new Error('Order not found')
   }
 
-  order.feedback = feedback.trim()
+  order.feedback = feedback.trim().slice(0, 500)
 
   await order.save()
 

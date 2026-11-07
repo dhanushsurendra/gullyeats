@@ -2,7 +2,7 @@ const crypto = require('crypto')
 const Razorpay = require('razorpay')
 const asyncHandler = require('../utils/asyncHandler')
 const Payment = require('../models/Payment')
-const { findManagedCart } = require('../utils/cartAccess')
+const { findManagedCart, findOwnedCart } = require('../utils/cartAccess')
 const { logAction } = require('../utils/adminLog')
 const {
   createBillPayment,
@@ -595,7 +595,7 @@ exports.getPaymentOverview = asyncHandler(async (req, res) => {
     throw new Error('cartId is required')
   }
 
-  await findManagedCart(req, res, cartId)
+  await findOwnedCart(req, res, cartId)
 
   // Existing pending payment always takes priority.
   const currentPayment = await Payment.findOne({
@@ -1221,7 +1221,7 @@ exports.getPaymentHistory = asyncHandler(async (req, res) => {
     throw new Error('Authenticated user not found')
   }
 
-  await findManagedCart(req, res, cartId)
+  await findOwnedCart(req, res, cartId)
 
   const filter = {
     cartId,

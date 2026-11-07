@@ -138,27 +138,40 @@ async function getBillingFee(cartId, billingDate) {
   const cart = new mongoose.Types.ObjectId(String(cartId))
   const fee = (order) => Number(order.platformFee || 0)
 
-  const [orders, billedIds, recharges] = await Promise.all([
+  // Cancelled orders a bill may have charged: paid ones (paidAt is kept on
+  // cancel) and legacy ones from before paidAmount. Unpaid cancellations,
+  // most of them, can't have been billed, so the list stays short.
+  const [orders, cancelled, recharges] = await Promise.all([
     Order.aggregate([
       ...billableOrders(cartId),
       { $match: { billedAt: { $gte: start, $lt: billingEnd } } },
       { $project: { platformFee: 1 } },
     ]),
-    Payment.distinct('orderIds', { cartId: cart, status: 'VERIFIED' }),
+    Order.find({
+      cartId: cart,
+      status: 'CANCELLED',
+      feeCredited: { $ne: true },
+      $or: [{ paidAt: { $ne: null } }, { paidAmount: { $exists: false } }],
+    })
+      .select('platformFee')
+      .sort({ updatedAt: 1 })
+      .lean(),
     Order.find({ cartId: cart, status: { $ne: 'CANCELLED' }, feeCredited: true })
       .select('platformFee')
       .lean(),
   ])
-  const cancelledSinceBilled = billedIds.length
-    ? await Order.find({
-        _id: { $in: billedIds },
-        status: 'CANCELLED',
-        feeCredited: { $ne: true },
-      })
-        .select('platformFee')
-        .sort({ updatedAt: 1 })
-        .lean()
-    : []
+  const billed = cancelled.length
+    ? new Set(
+        (
+          await Payment.distinct('orderIds', {
+            cartId: cart,
+            status: 'VERIFIED',
+            orderIds: { $in: cancelled.map((o) => o._id) },
+          })
+        ).map(String),
+      )
+    : new Set()
+  const cancelledSinceBilled = cancelled.filter((o) => billed.has(String(o._id)))
 
   const charged = orders.reduce((t, o) => t + fee(o), 0) + recharges.reduce((t, o) => t + fee(o), 0)
   const credits = []
@@ -294,11 +307,18 @@ async function getCartPaymentStatus(cartId) {
     status: 'PENDING',
   }).lean()
 
+  // A started payment (checkout opened, maybe closed again) locks only once
+  // its bill is due, like an unstarted one.
   if (pendingPayment) {
+    const dueAt = pendingPayment.billingDate
+      ? new Date(new Date(pendingPayment.billingDate).getTime() + BILLING_LOCK_MS)
+      : null
     return {
-      isLocked: true,
+      isLocked: !dueAt || new Date() >= dueAt,
       message: 'Payment verification is pending.',
       payment: pendingPayment,
+      dueAt,
+      canPay: true,
       billingDate: pendingPayment.billingDate || null,
       totalOrders: pendingPayment.totalOrders || 0,
       totalPending: Number(pendingPayment.amount || 0),

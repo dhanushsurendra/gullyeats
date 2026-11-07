@@ -81,36 +81,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _outletCard(context, selectedCart),
           AppGaps.h12,
 
-          _sectionCard(
-            context.l10n.paymentsHistory,
-            context.l10n.trackPayments,
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const PaymentScreen()),
+          // Fee bills, the menu and staff logins are the owner's (the server
+          // refuses staff). Staff still mark items out of stock from Orders.
+          if (!authProvider.isStaff) ...[
+            _sectionCard(
+              context.l10n.paymentsHistory,
+              context.l10n.trackPayments,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PaymentScreen()),
+              ),
             ),
-          ),
+            AppGaps.h12,
 
-          AppGaps.h12,
-
-          _sectionCard(
-            context.l10n.menuManagement,
-            context.l10n.editMenuItems,
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const EditMenuScreen()),
+            _sectionCard(
+              context.l10n.menuManagement,
+              context.l10n.editMenuItems,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const EditMenuScreen()),
+              ),
             ),
-          ),
-          AppGaps.h12,
+            AppGaps.h12,
 
-          _sectionCard(
-            context.l10n.staffManagement,
-            context.l10n.editStaffDetails,
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const StaffManagementScreen()),
+            _sectionCard(
+              context.l10n.staffManagement,
+              context.l10n.editStaffDetails,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const StaffManagementScreen(),
+                ),
+              ),
             ),
-          ),
-          AppGaps.h12,
+            AppGaps.h12,
+          ],
 
           _sectionCard(
             context.l10n.ordersOverview,
@@ -190,30 +195,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   style: AppTextStyles.heading3,
                 ),
               ),
-              Material(
-                color: AppColors.grey100,
-                borderRadius: BorderRadius.circular(12),
-                child: InkWell(
+              // Cart details (name, address, photo, parcel charge) are the owner's.
+              if (!context.watch<AuthProvider>().isStaff)
+                Material(
+                  color: AppColors.grey100,
                   borderRadius: BorderRadius.circular(12),
-                  onTap: selectedCart == null
-                      ? null
-                      : () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => EditCartScreen(cart: selectedCart),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: selectedCart == null
+                        ? null
+                        : () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  EditCartScreen(cart: selectedCart),
+                            ),
                           ),
-                        ),
-                  child: const SizedBox(
-                    width: 40,
-                    height: 40,
-                    child: Icon(
-                      Icons.edit_outlined,
-                      size: 20,
-                      color: AppColors.primary,
+                    child: const SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: Icon(
+                        Icons.edit_outlined,
+                        size: 20,
+                        color: AppColors.primary,
+                      ),
                     ),
                   ),
                 ),
-              ),
             ],
           ),
           AppGaps.h8,

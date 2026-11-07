@@ -2249,6 +2249,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'To serve'**
   String get toServe;
+
+  /// No description provided for @handover.
+  ///
+  /// In en, this message translates to:
+  /// **'Handover'**
+  String get handover;
+
+  /// No description provided for @handoverTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s handover'**
+  String get handoverTitle;
+
+  /// No description provided for @handoverSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The money to hand over at the end of your shift.'**
+  String get handoverSubtitle;
+
+  /// No description provided for @collected.
+  ///
+  /// In en, this message translates to:
+  /// **'Collected'**
+  String get collected;
+
+  /// No description provided for @refunded.
+  ///
+  /// In en, this message translates to:
+  /// **'Refunded'**
+  String get refunded;
 }
 
 class _AppLocalizationsDelegate

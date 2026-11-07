@@ -8,6 +8,7 @@ import 'package:ordering/features/auth/presentation/login_screen.dart';
 import 'package:ordering/features/cart/models/cart_model.dart';
 import 'package:ordering/features/cart/presentation/edit_cart_screen.dart';
 import 'package:ordering/features/cart/presentation/sales_screen.dart';
+import 'package:ordering/features/orders/screens/handover_screen.dart';
 import 'package:ordering/features/cart/presentation/stock_screen.dart';
 import 'package:ordering/features/cart/presentation/switch_cart_screen.dart';
 import 'package:ordering/features/cart/presentation/welcome_screen.dart';
@@ -78,6 +79,7 @@ final screens = <ScreenCase>[
     () => AddNewOrder(existingOrder: OrderModel.fromJson(ordersJson[0])),
   ),
   ScreenCase('sales', () => const SalesScreen()),
+  ScreenCase('handover', () => const HandoverScreen()),
   ScreenCase('orders_overview', () => const OrdersOverviewScreen()),
   ScreenCase('edit_menu', () => const EditMenuScreen()),
   ScreenCase('add_item', () => const AddItemScreen(), hasInputs: true),

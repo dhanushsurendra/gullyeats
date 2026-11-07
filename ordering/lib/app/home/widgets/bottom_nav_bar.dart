@@ -2,7 +2,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
+import 'package:ordering/features/auth/providers/auth_provider.dart';
 import 'package:ordering/l10n/l10n.dart';
+import 'package:provider/provider.dart';
 
 class BottomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -16,6 +18,8 @@ class BottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Staff get today's handover where the owner has Sales.
+    final isStaff = context.watch<AuthProvider>().isStaff;
     return SafeArea(
       bottom: true,
       child: Padding(
@@ -41,9 +45,13 @@ class BottomNavBar extends StatelessWidget {
             children: [
               _navItem(
                 index: 0,
-                outlinedIcon: CupertinoIcons.graph_square,
-                filledIcon: CupertinoIcons.graph_square_fill,
-                label: context.l10n.sales,
+                outlinedIcon: isStaff
+                    ? CupertinoIcons.doc_text
+                    : CupertinoIcons.graph_square,
+                filledIcon: isStaff
+                    ? CupertinoIcons.doc_text_fill
+                    : CupertinoIcons.graph_square_fill,
+                label: isStaff ? context.l10n.handover : context.l10n.sales,
               ),
               _navItem(
                 index: 1,
@@ -123,7 +131,9 @@ class BottomNavBar extends StatelessWidget {
                       maxLines: 1,
                       style: AppTextStyles.caption.copyWith(
                         color: color,
-                        fontWeight: value > 0.5 ? FontWeight.w600 : FontWeight.w400,
+                        fontWeight: value > 0.5
+                            ? FontWeight.w600
+                            : FontWeight.w400,
                         letterSpacing: 0.2,
                       ),
                     ),
