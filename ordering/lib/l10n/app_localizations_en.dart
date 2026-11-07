@@ -499,6 +499,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get itemName => 'Item Name';
 
   @override
+  String get itemNameInMyLanguage => 'Item name in your language';
+
+  @override
   String get price => 'Price';
 
   @override

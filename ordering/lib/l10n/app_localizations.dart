@@ -1026,6 +1026,12 @@ abstract class AppLocalizations {
   /// **'Item Name'**
   String get itemName;
 
+  /// No description provided for @itemNameInMyLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Item name in your language'**
+  String get itemNameInMyLanguage;
+
   /// No description provided for @price.
   ///
   /// In en, this message translates to:

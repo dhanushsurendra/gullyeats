@@ -89,6 +89,10 @@ final screens = <ScreenCase>[
       initialIsVeg: true,
       initialInStock: true,
       initialImageUrl: '',
+      initialNames: {
+        'kn': 'ಗಹೀ ರೋಸ್ಟ್ ಪೇಪರ್ ದೋಸಾ ವಿಥ್ ಎಕ್ಸ್ಟ್ರಾ ಚಟ್ನಿ ಅಂಡ್ ಸಾಂಬಾರ್',
+        'ta': 'கஹீ ரோசஸ்ட பேப்பர் தோச வித் எக்ஸ்ட்ரா சட்னி அண்ட் சாம்பார்',
+      },
       id: 'm2',
       cartId: 'c1',
     ),

@@ -6,6 +6,21 @@ import 'package:gullyeats/features/menu/models/menu_item_model.dart';
 
 class MenuService {
 
+  /// Common item names, most common first. Names from this list get checked
+  /// spellings in Hindi, Kannada and Tamil on the vendor app.
+  Future<List<String>> fetchFoodNames(String? token) async {
+    final response = await http.get(
+      Uri.parse("${ApiConstants.carts}/food-names"),
+      headers: {"Authorization": "Bearer $token"},
+    ).timeout(const Duration(seconds: 15));
+
+    final data = response.body.isNotEmpty ? jsonDecode(response.body) : {};
+    if (response.statusCode != 200) {
+      throw ApiException(data['message'] ?? "Failed to load item names", response.statusCode);
+    }
+    return [for (final n in data['data'] as List) n['name'].toString()];
+  }
+
   Future<void> saveMenuItems(String? token, List<MenuItemModel> items, String cartId) async {
     final response = await http.post(
       Uri.parse("${ApiConstants.carts}/create-menu/$cartId"),

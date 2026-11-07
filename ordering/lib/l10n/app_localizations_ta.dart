@@ -506,6 +506,9 @@ class AppLocalizationsTa extends AppLocalizations {
   String get itemName => 'பொருளின் பெயர்';
 
   @override
+  String get itemNameInMyLanguage => 'பொருளின் பெயர் தமிழில்';
+
+  @override
   String get price => 'விலை';
 
   @override

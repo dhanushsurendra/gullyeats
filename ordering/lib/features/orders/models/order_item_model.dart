@@ -1,14 +1,21 @@
+import 'package:ordering/core/utils/local_name.dart';
+
 class OrderItemModel {
   final String menuItemId;
   final String name;       
   final double price;      
   final int quantity;
+  final Map<String, String> names;
+
+  /// The name in the app's language, else English.
+  String get displayName => localName(name, names);
 
   OrderItemModel({
     required this.menuItemId,
     required this.name,
     required this.price,
     required this.quantity,
+    this.names = const {},
   });
 
   double get total => price * quantity;
@@ -19,6 +26,7 @@ class OrderItemModel {
       name: json["name"] ?? "",
       price: (json["price"] as num).toDouble(),
       quantity: json["quantity"] ?? 1,
+      names: namesFromJson(json["names"]),
     );
   }
 

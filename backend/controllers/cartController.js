@@ -12,6 +12,8 @@ const { getSignedUrl } = require('@aws-sdk/s3-request-presigner')
 const { s3Client } = require('../utils/s3Client')
 const generatePin = require('../utils/generatePin')
 const Menu = require('../models/Menu')
+const translit = require('../utils/transliterate')
+const FoodName = require('../models/FoodName')
 
 // A cart suspended by GullyEats can't be reopened from the vendor app.
 function refuseIfSuspended(res, cart, opening) {
@@ -235,6 +237,9 @@ exports.createMenuItems = asyncHandler(async (req, res) => {
     )
   }
 
+  const names = await translit.transliterate(processedItems.map((item) => item.name))
+  processedItems.forEach((item, i) => (item.names = names[i]))
+
   await MenuItem.deleteMany({ cartId })
   const createdItems = await MenuItem.insertMany(processedItems)
 
@@ -243,6 +248,16 @@ exports.createMenuItems = asyncHandler(async (req, res) => {
     count: createdItems.length,
     data: createdItems,
   })
+})
+
+// Common item names with their spelling in each script, most common first.
+// The apps fetch it once and suggest from it as the vendor types.
+exports.getFoodNames = asyncHandler(async (req, res) => {
+  const names = await FoodName.find({}, { _id: 0, name: 1, hi: 1, kn: 1, ta: 1 })
+    .sort({ popularity: -1, name: 1 })
+    .lean()
+  res.set('Cache-Control', 'private, max-age=86400')
+  res.status(200).json({ success: true, data: names })
 })
 
 exports.getMenuItems = asyncHandler(async (req, res) => {
@@ -288,8 +303,13 @@ async function deleteMenuImage(cartId, imageUrl) {
 
 // Validates the editable menu item fields present in the body. Anything
 // else (cartId, _id, ...) is ignored.
+// Plain { hi, kn, ta } from a stored item's names.
+function pickNames(names) {
+  return Object.fromEntries(translit.LANGS.filter((l) => names?.[l]).map((l) => [l, names[l]]))
+}
+
 function menuItemFields(req, res, { requireAll }) {
-  const { name, price, isVeg, isInStock, imageUrl } = req.body
+  const { name, price, isVeg, isInStock, imageUrl, names } = req.body
   const fields = {}
 
   if (name !== undefined || requireAll) {
@@ -316,6 +336,16 @@ function menuItemFields(req, res, { requireAll }) {
       throw new Error(`${key} must be true or false`)
     }
     fields[key] = value
+  }
+
+  // The vendor's own spelling in their language; '' falls back to English.
+  if (names !== undefined) {
+    const entries = names && typeof names === 'object' && !Array.isArray(names) ? Object.entries(names) : null
+    if (!entries || entries.some(([lang, v]) => !translit.LANGS.includes(lang) || typeof v !== 'string' || v.trim().length > 100)) {
+      res.status(400)
+      throw new Error('Invalid item name in your language')
+    }
+    fields.names = Object.fromEntries(entries.map(([lang, v]) => [lang, v.trim()]))
   }
 
   if (imageUrl !== undefined) {
@@ -371,7 +401,11 @@ exports.updateMenuItem = asyncHandler(async (req, res) => {
   // the client names.
   const previousImageUrl = item.imageUrl
 
-  Object.assign(item, menuItemFields(req, res, { requireAll: false }))
+  const { names, ...fields } = menuItemFields(req, res, { requireAll: false })
+  const renamed = fields.name !== undefined && fields.name !== item.name
+  Object.assign(item, fields)
+  if (renamed) item.names = (await translit.transliterate([item.name]))[0]
+  if (names) item.names = { ...pickNames(item.names), ...names }
   await item.save()
 
   if (previousImageUrl !== item.imageUrl) {
@@ -417,8 +451,11 @@ exports.addMenuItem = asyncHandler(async (req, res) => {
 
   await findManagedCart(req, res, cartId)
 
+  const fields = menuItemFields(req, res, { requireAll: true })
+  const [names] = await translit.transliterate([fields.name])
   const menuItem = await MenuItem.create({
-    ...menuItemFields(req, res, { requireAll: true }),
+    ...fields,
+    names: { ...names, ...fields.names },
     cartId,
   })
 

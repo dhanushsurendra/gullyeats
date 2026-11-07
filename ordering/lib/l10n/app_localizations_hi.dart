@@ -501,6 +501,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get itemName => 'आइटम का नाम';
 
   @override
+  String get itemNameInMyLanguage => 'आइटम का नाम हिंदी में';
+
+  @override
   String get price => 'कीमत';
 
   @override

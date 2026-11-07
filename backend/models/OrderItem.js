@@ -14,6 +14,9 @@ const OrderItemSchema = new mongoose.Schema(
       trim: true,
     },
 
+    // The menu item's names in each script, copied like name.
+    names: { hi: String, kn: String, ta: String },
+
     price: {
       type: Number,
       required: true,

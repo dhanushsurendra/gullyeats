@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:ordering/core/constants/api_constants.dart';
 import 'package:ordering/core/error/api_exception.dart';
+import 'package:ordering/features/orders/models/food_name_model.dart';
 import 'package:ordering/features/orders/models/menu_item_model.dart';
 
 class MenuService {
@@ -12,6 +13,20 @@ class MenuService {
       'Content-Type': 'application/json',
       if (token != null) 'Authorization': 'Bearer $token',
     };
+  }
+
+  /// Common item names with their spelling in each script, most common first.
+  Future<List<FoodNameModel>> fetchFoodNames(String? token) async {
+    final response = await http.get(
+      Uri.parse('${ApiConstants.carts}/food-names'),
+      headers: _headers(token),
+    ).timeout(const Duration(seconds: 15));
+
+    final data = json.decode(response.body);
+    if (response.statusCode != 200) {
+      throw ApiException(data["message"] ?? "Failed to load item names", response.statusCode);
+    }
+    return (data['data'] as List).map((n) => FoodNameModel.fromJson(n)).toList();
   }
 
   Future<List<MenuItemModel>> fetchMenu(String? token, String? cartId) async {

@@ -535,7 +535,7 @@ class OrderProvider with ChangeNotifier {
 
     return orders.where((order) {
       final items = order.orderItems
-          .map((item) => item.name.toLowerCase())
+          .map((item) => '${item.name} ${item.displayName}'.toLowerCase())
           .join(" ");
 
       final orderNumber = order.orderNumber.toLowerCase();
@@ -609,6 +609,7 @@ class OrderProvider with ChangeNotifier {
   MenuItemModel _lineAsItem(OrderItemModel line) => MenuItemModel(
     id: line.menuItemId,
     name: line.name,
+    names: line.names,
     price: line.price,
     isVeg: true,
     isInStock: true,

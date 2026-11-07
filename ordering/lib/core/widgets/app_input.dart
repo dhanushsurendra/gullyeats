@@ -6,6 +6,7 @@ import 'package:ordering/core/theme/app_text_styles.dart';
 
 class AppInput extends StatelessWidget {
   final TextEditingController? controller;
+  final FocusNode? focusNode;
   final String? label;
   final String? hint;
 
@@ -29,6 +30,7 @@ class AppInput extends StatelessWidget {
   const AppInput({
     super.key,
     this.controller,
+    this.focusNode,
     this.label,
     this.hint,
     this.keyboardType = TextInputType.text,
@@ -55,6 +57,7 @@ class AppInput extends StatelessWidget {
 
         TextField(
           controller: controller,
+          focusNode: focusNode,
           keyboardType: keyboardType,
           obscureText: obscureText,
           onChanged: onChanged,

@@ -158,7 +158,7 @@ class OrdersOverviewCardState extends State<OrdersOverviewCard> {
 
     final visible = order.orderItems.take(2);
     final summary = visible
-        .map((item) => "${item.name} x${item.quantity}")
+        .map((item) => "${item.displayName} x${item.quantity}")
         .join(" • ");
 
     return order.orderItems.length > 2 ? "$summary • …" : summary;
@@ -202,7 +202,7 @@ class OrdersOverviewCardState extends State<OrdersOverviewCard> {
         ),
         Expanded(
           child: Text(
-            item.name,
+            item.displayName,
             style: AppTextStyles.body,
           ),
         ),

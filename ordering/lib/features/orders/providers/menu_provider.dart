@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:ordering/features/orders/models/food_name_model.dart';
 import 'package:ordering/features/orders/models/menu_item_model.dart';
 import 'package:ordering/features/orders/services/menu_service.dart';
 
@@ -12,6 +13,43 @@ class MenuProvider extends ChangeNotifier {
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
+
+  /// Common item names suggested while adding an item; fetched once.
+  List<FoodNameModel> _foodNames = [];
+
+  @visibleForTesting
+  void debugSetFoodNames(List<FoodNameModel> names) => _foodNames = names;
+
+  Future<void> loadFoodNames(String? token) async {
+    if (_foodNames.isNotEmpty) return;
+    try {
+      _foodNames = await _menuService.fetchFoodNames(token);
+    } catch (_) {
+      // Suggestions are a convenience: without them the vendor just types.
+    }
+  }
+
+  /// Up to [limit] names starting with [query] (any word, English or the
+  /// app's language), then ones containing it. The list is already sorted by
+  /// how common each item is.
+  List<FoodNameModel> suggestFoodNames(String query, {int limit = 8}) {
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty) return const [];
+    bool starts(String s) =>
+        s.toLowerCase().split(' ').any((w) => w.startsWith(q)) ||
+        s.toLowerCase().startsWith(q);
+    final first = <FoodNameModel>[], rest = <FoodNameModel>[];
+    for (final n in _foodNames) {
+      if (starts(n.name) || starts(n.displayName)) {
+        first.add(n);
+        if (first.length == limit) break;
+      } else if (rest.length < limit &&
+          (n.name.toLowerCase().contains(q) || n.displayName.contains(q))) {
+        rest.add(n);
+      }
+    }
+    return [...first, ...rest].take(limit).toList();
+  }
 
   Future<void> fetchMenuItems(String? token, String cartId) async {
     try {
@@ -128,11 +166,7 @@ class MenuProvider extends ChangeNotifier {
   }
 
   List<MenuItemModel> searchMenuItem(String query) {
-    final lowerQuery = query.trim().toLowerCase();
-
-    return _menuItems.where((item) {
-      return item.name.toLowerCase().contains(lowerQuery);
-    }).toList();
+    return _menuItems.where((item) => item.matches(query)).toList();
   }
 
   /// Updates the item optimistically; on failure it reverts and rethrows so

@@ -158,6 +158,8 @@ Widget buildApp(
   String locale = 'en',
   List<NavigatorObserver> navigatorObservers = const [],
 }) {
+  // Item names read the language from here, as in the app.
+  LanguageProvider.current = Locale(locale);
   return MultiProvider(
     providers: [
       ChangeNotifierProvider.value(value: p.order),

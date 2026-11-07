@@ -5,6 +5,7 @@ const Cart = require('../models/Cart')
 const User = require('../models/User')
 const MenuItem = require('../models/Menu')
 const { s3Client } = require('../utils/s3Client')
+const translit = require('../utils/transliterate')
 const c = require('../controllers/cartController')
 
 afterEach(restoreAll)
@@ -19,6 +20,7 @@ function setup(item) {
   stub(MenuItem, 'findOne', () => q(item))
   const deleted = []
   stub(s3Client, 'send', async (cmd) => deleted.push(cmd.input.Key))
+  stub(translit, 'transliterate', async (names) => names.map((n) => ({ hi: `hi:${n}`, kn: `kn:${n}` })))
   return deleted
 }
 
@@ -65,7 +67,9 @@ test('add keeps the in-stock flag and trims the name', async () => {
     body: { name: '  Tea ', price: '10', isInStock: false, isVeg: true },
   })
   assert.strictEqual(r.status, 201)
-  assert.deepStrictEqual(r.body.data, { name: 'Tea', price: 10, isInStock: false, isVeg: true, cartId: 'cart1' })
+  assert.deepStrictEqual(r.body.data, {
+    name: 'Tea', price: 10, isInStock: false, isVeg: true, cartId: 'cart1', names: { hi: 'hi:Tea', kn: 'kn:Tea' },
+  })
   const bad = await call(c.addMenuItem, { user: owner, params: { cartId: 'cart1' }, body: { name: '   ', price: 10 } })
   assert.strictEqual(bad.status, 400)
 })
@@ -86,4 +90,25 @@ test('toggle-cart-status sets the requested state', async () => {
   assert.strictEqual(cart.isOpen, true)
   await call(c.toggleCartStatus, { user: owner, params: { cartId: 'cart1' }, body: { isOpen: false } })
   assert.strictEqual(cart.isOpen, false)
+})
+
+test('renaming an item rewrites its names; the vendor spelling wins', async () => {
+  const item = { name: 'Dosa', names: { hi: 'old', kn: 'old', ta: 'old' }, save: async () => {} }
+  setup(item)
+  let r = await call(c.updateMenuItem, { user: owner, params: { cartId: 'cart1' }, body: { id: 'i1', price: 30 } })
+  assert.strictEqual(r.status, 201)
+  assert.strictEqual(item.names.hi, 'old')
+
+  r = await call(c.updateMenuItem, {
+    user: owner,
+    params: { cartId: 'cart1' },
+    body: { id: 'i1', name: 'Masala Dosa', names: { kn: ' ಮಸಾಲೆ ದೋಸೆ ' } },
+  })
+  assert.strictEqual(r.status, 201)
+  assert.deepStrictEqual(item.names, { hi: 'hi:Masala Dosa', kn: 'ಮಸಾಲೆ ದೋಸೆ' })
+
+  for (const names of [{ fr: 'x' }, { hi: 5 }, ['x'], { ta: 'x'.repeat(101) }]) {
+    r = await call(c.updateMenuItem, { user: owner, params: { cartId: 'cart1' }, body: { id: 'i1', names } })
+    assert.strictEqual(r.status, 400)
+  }
 })

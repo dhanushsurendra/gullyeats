@@ -502,6 +502,9 @@ class AppLocalizationsKn extends AppLocalizations {
   String get itemName => 'ಐಟಂ ಹೆಸರು';
 
   @override
+  String get itemNameInMyLanguage => 'ಐಟಂ ಹೆಸರು ಕನ್ನಡದಲ್ಲಿ';
+
+  @override
   String get price => 'ಬೆಲೆ';
 
   @override

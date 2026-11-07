@@ -84,6 +84,7 @@ async function buildOrderItems(res, cartId, orderItems, previousItems = []) {
       return {
         menuItemId: old.menuItemId,
         name: old.name,
+        names: old.names,
         price: old.price,
         quantity,
       }
@@ -93,7 +94,7 @@ async function buildOrderItems(res, cartId, orderItems, previousItems = []) {
     if (!item) fail(res, 400, 'Some items are no longer on the menu')
     if (item.isInStock === false) fail(res, 400, `${item.name} is out of stock`)
 
-    return { menuItemId: item._id, name: item.name, price: item.price, quantity }
+    return { menuItemId: item._id, name: item.name, names: item.names, price: item.price, quantity }
   })
 }
 

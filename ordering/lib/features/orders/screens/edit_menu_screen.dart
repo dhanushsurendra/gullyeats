@@ -138,7 +138,7 @@ class _EditMenuScreenState extends State<EditMenuScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(item.name, style: AppTextStyles.heading3),
+                Text(item.displayName, style: AppTextStyles.heading3),
                 AppGaps.h4,
                 // Wrap: the tags move under the price on narrow cards.
                 Wrap(
@@ -199,6 +199,7 @@ class _EditMenuScreenState extends State<EditMenuScreen> {
         id: item.id,
         cartId: item.cartId,
         initialImageUrl: item.imageUrl,
+        initialNames: item.names,
       ),
     );
   }

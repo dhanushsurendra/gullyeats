@@ -154,6 +154,7 @@
   "itemAdded": "பொருள் சேர்க்கப்பட்டது",
   "addNewItem": "புதிய பொருளைச் சேர்",
   "itemName": "பொருளின் பெயர்",
+  "itemNameInMyLanguage": "பொருளின் பெயர் தமிழில்",
   "price": "விலை",
   "enterPriceInRupees": "விலையை ரூபாயில் உள்ளிடவும்.",
   "category": "வகை",

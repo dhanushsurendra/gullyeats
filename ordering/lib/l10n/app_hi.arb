@@ -154,6 +154,7 @@
   "itemAdded": "आइटम जोड़ दिया गया",
   "addNewItem": "नया आइटम जोड़ें",
   "itemName": "आइटम का नाम",
+  "itemNameInMyLanguage": "आइटम का नाम हिंदी में",
   "price": "कीमत",
   "enterPriceInRupees": "कीमत रुपयों में डालें।",
   "category": "श्रेणी",

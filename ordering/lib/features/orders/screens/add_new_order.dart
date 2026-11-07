@@ -325,7 +325,7 @@ class _AddNewOrderState extends State<AddNewOrder> {
 
     final filteredMenu = menu
         .where(
-          (item) => item.name.toLowerCase().contains(searchQuery.toLowerCase()),
+          (item) => item.matches(searchQuery),
         )
         .toList();
 
@@ -495,7 +495,7 @@ class _AddNewOrderState extends State<AddNewOrder> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item.name,
+                  item.displayName,
                   style: AppTextStyles.heading3.copyWith(
                     color: AppColors.black,
                   ),

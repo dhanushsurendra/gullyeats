@@ -312,7 +312,7 @@ class _OrderCardState extends State<OrderCard> {
               AppGaps.w8,
               Expanded(
                 child: Text(
-                  item.name,
+                  item.displayName,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.body.copyWith(

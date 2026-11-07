@@ -30,9 +30,18 @@ final _secondCart = {
   'isOpen': false,
 };
 
+// What the backend's transliteration returned for each sample name.
+const _names = {
+  'Masala Dosa': {'hi': 'मसाला डोसा', 'kn': 'ಮಸಾಲಾ ದೋಸಾ', 'ta': 'மசாலா தோசை'},
+  'Ghee Roast Paper Dosa with Extra Chutney and Sambar': {'hi': 'घी रोस्ट पेपर डोसा विथ एक्स्ट्रा चटनी एंड सांबर', 'kn': 'ಗಹೀ ರೋಸ್ಟ್ ಪೇಪರ್ ದೋಸಾ ವಿಥ್ ಎಕ್ಸ್ಟ್ರಾ ಚಟ್ನಿ ಅಂಡ್ ಸಾಂಬಾರ್', 'ta': 'கஹீ ரோசஸ்ட பேப்பர் தோச வித் எக்ஸ்ட்ரா சட்னி அண்ட் சாம்பார்'},
+  'Chicken 65': {'hi': 'चिकन 65', 'kn': 'ಚಿಕನ್ 65', 'ta': 'சிக்கன் 65'},
+  'Filter Coffee': {'hi': 'फ़िल्टर कॉफ़ी', 'kn': 'ಫಿಲ್ಟರ್ ಕಾಫಿ', 'ta': 'பில்டர் காபி'},
+};
+
 Map<String, dynamic> _item(String id, String name, num price, {bool veg = true, bool stock = true}) => {
   '_id': id,
   'name': name,
+  'names': _names[name],
   'price': price,
   'isVeg': veg,
   'isInStock': stock,
@@ -48,7 +57,7 @@ final menuJson = [
 ];
 
 Map<String, dynamic> _line(String id, String name, num price, int qty) =>
-    {'menuItemId': id, 'name': name, 'price': price, 'quantity': qty};
+    {'menuItemId': id, 'name': name, 'names': _names[name], 'price': price, 'quantity': qty};
 
 // Fixed, so screens that print times render the same image every run.
 final _now = DateTime.utc(2026, 11, 6, 8, 15);
@@ -168,6 +177,13 @@ final fakeBackend = MockClient((request) async {
   if (has('/carts/get-all-carts/')) return _json({'carts': [cartJson, _secondCart]});
   if (has('/carts/sales-insights/')) return _json({'data': salesJson});
   if (has('/carts/get-menu-items/')) return _json({'data': menuJson});
+  if (has('/carts/food-names')) {
+    return _json({
+      'data': [
+        for (final e in _names.entries) {'name': e.key, ...e.value},
+      ],
+    });
+  }
   if (has('/carts/get-all-staff/')) return _json({'staff': staffJson});
   if (has('/carts/get-qr-details/')) {
     return _json({'data': {'cartId': 'GE-BLR-000123', 'cartName': longCartName, 'qrImageUrl': ''}});

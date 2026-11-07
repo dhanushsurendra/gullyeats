@@ -9,8 +9,11 @@ import 'package:gullyeats/core/widgets/app_footer.dart';
 import 'package:gullyeats/core/widgets/app_button.dart';
 import 'package:gullyeats/core/widgets/app_snack_bar.dart';
 import 'package:gullyeats/core/widgets/base_screen.dart';
+import 'package:gullyeats/features/auth/providers/auth_provider.dart';
 import 'package:gullyeats/features/menu/models/menu_item_model.dart';
+import 'package:gullyeats/features/menu/providers/menu_provider.dart';
 import 'package:gullyeats/features/menu/screens/menu_review_screen.dart';
+import 'package:provider/provider.dart';
 
 class AddMenuScreen extends StatefulWidget {
   const AddMenuScreen({super.key});
@@ -23,11 +26,22 @@ class _AddMenuScreenState extends State<AddMenuScreen> {
   final List<MenuItemModel> _menuItems = [];
   final Map<MenuItemModel, TextEditingController> _nameControllers = {};
   final Map<MenuItemModel, TextEditingController> _priceControllers = {};
+  final Map<MenuItemModel, FocusNode> _nameFocus = {};
   final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    final token = context.read<AuthProvider>().token;
+    context.read<MenuProvider>().loadFoodNames(token);
+  }
 
   @override
   void dispose() {
     _scrollController.dispose();
+    for (var f in _nameFocus.values) {
+      f.dispose();
+    }
     for (var c in _nameControllers.values) {
       c.dispose();
     }
@@ -75,10 +89,18 @@ class _AddMenuScreenState extends State<AddMenuScreen> {
   /// Review may replace or remove items, so rebuild the fields from the list.
   void _syncControllers() {
     final old = [..._nameControllers.values, ..._priceControllers.values];
+    final oldFocus = [
+      for (final e in _nameFocus.entries)
+        if (!_menuItems.contains(e.key)) e.value,
+    ];
+    _nameFocus.removeWhere((item, _) => !_menuItems.contains(item));
     // The fields still use the old controllers until this rebuild is drawn.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       for (final c in old) {
         c.dispose();
+      }
+      for (final f in oldFocus) {
+        f.dispose();
       }
     });
     _nameControllers.clear();
@@ -140,11 +162,7 @@ class _AddMenuScreenState extends State<AddMenuScreen> {
           children: [
             Expanded(
               flex: 5,
-              child: _buildField(
-                hint: "Item Name",
-                controller: _nameControllers[item] ??= TextEditingController(),
-                onChanged: (val) => setState(() => item.name = val),
-              ),
+              child: _buildNameField(item),
             ),
             AppGaps.w12,
             Expanded(
@@ -187,9 +205,67 @@ class _AddMenuScreenState extends State<AddMenuScreen> {
     );
   }
 
+  /// The item name, suggesting common items as staff type. Anything typed
+  /// is kept as it is; a picked name gets checked spellings in the vendor app.
+  Widget _buildNameField(MenuItemModel item) {
+    return LayoutBuilder(
+      builder: (context, constraints) => RawAutocomplete<String>(
+        textEditingController: _nameControllers[item] ??= TextEditingController(),
+        focusNode: _nameFocus[item] ??= FocusNode(),
+        optionsBuilder: (value) =>
+            context.read<MenuProvider>().suggestFoodNames(value.text),
+        onSelected: (name) => setState(() => item.name = name),
+        fieldViewBuilder: (context, controller, focusNode, _) => _buildField(
+          hint: "Item Name",
+          controller: controller,
+          focusNode: focusNode,
+          onChanged: (val) => setState(() => item.name = val),
+        ),
+        optionsViewBuilder: (context, onSelected, options) => Align(
+          alignment: Alignment.topLeft,
+          child: Material(
+            elevation: 4,
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            clipBehavior: Clip.antiAlias,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: 240,
+                maxWidth: constraints.maxWidth,
+              ),
+              child: ListView(
+                padding: EdgeInsets.zero,
+                shrinkWrap: true,
+                children: [
+                  for (final name in options)
+                    InkWell(
+                      onTap: () => onSelected(name),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        child: Text(
+                          name,
+                          style: AppTextStyles.body.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildField({
     required String hint,
     required TextEditingController controller,
+    FocusNode? focusNode,
     String? prefix,
     TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
@@ -203,6 +279,7 @@ class _AddMenuScreenState extends State<AddMenuScreen> {
       ),
       child: TextField(
         controller: controller,
+        focusNode: focusNode,
         onChanged: onChanged,
         keyboardType: keyboardType,
         inputFormatters: inputFormatters,
@@ -282,6 +359,7 @@ class _AddMenuScreenState extends State<AddMenuScreen> {
         setState(() {
           _menuItems.remove(item);
           _nameControllers.remove(item)?.dispose();
+          _nameFocus.remove(item)?.dispose();
           _priceControllers.remove(item)?.dispose();
         });
       },

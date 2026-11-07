@@ -23,7 +23,8 @@ const {
   updateMenuItemImage,
   switchStaffCart,
   updateCart,
-  getCart
+  getCart,
+  getFoodNames,
 } = require('../controllers/cartController')
 const { getSalesDashboard } = require('../controllers/salesController')
 const auth = require('../middlewares/auth')
@@ -69,6 +70,8 @@ router.delete('/delete-staff/:staffId', auth, deleteStaff)
 router.get('/sales-insights/:cartId', auth, getSalesDashboard)
 
 router.get('/get-menu-items/:cartId', getMenuItems)
+
+router.get('/food-names', auth, getFoodNames)
 
 router.put('/update-menu-item/:cartId', auth, updateMenuItem)
 

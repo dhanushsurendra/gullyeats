@@ -93,9 +93,7 @@ class _StockScreenState extends State<StockScreen> {
     final provider = context.watch<MenuProvider>();
 
     final filteredMenu = provider.menuItems.where((item) {
-      final matchesSearch = item.name.toLowerCase().contains(
-        searchQuery.toLowerCase(),
-      );
+      final matchesSearch = item.matches(searchQuery);
 
       final matchesStock =
           selectedTab == "All Items" ||
@@ -175,7 +173,7 @@ class _StockScreenState extends State<StockScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item.name,
+                  item.displayName,
                   style: AppTextStyles.body.copyWith(
                     fontWeight: FontWeight.w600,
                     decoration: isOut ? TextDecoration.lineThrough : null,

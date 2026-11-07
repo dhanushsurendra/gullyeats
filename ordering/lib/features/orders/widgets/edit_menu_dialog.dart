@@ -27,6 +27,7 @@ class EditMenuDialog extends StatefulWidget {
   final bool initialIsVeg;
   final bool initialInStock;
   final String initialImageUrl;
+  final Map<String, String> initialNames;
   final String id;
   final String cartId;
 
@@ -37,6 +38,7 @@ class EditMenuDialog extends StatefulWidget {
     required this.initialIsVeg,
     required this.initialInStock,
     required this.initialImageUrl,
+    this.initialNames = const {},
     required this.id,
     required this.cartId,
   });
@@ -48,6 +50,11 @@ class EditMenuDialog extends StatefulWidget {
 class _EditMenuDialogState extends State<EditMenuDialog> {
   late final TextEditingController _nameController;
   late final TextEditingController _priceController;
+
+  /// The name in the app's language, e.g. ಚಿಕನ್ ಬಿರಿಯಾನಿ. Hidden in English.
+  late final TextEditingController _localNameController;
+  final String _lang = LanguageProvider.current.languageCode;
+  bool get _showLocalName => _lang != 'en';
 
   late bool _isVeg;
   late bool _isInStock;
@@ -70,6 +77,9 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
     super.initState();
 
     _nameController = TextEditingController(text: widget.initialName);
+    _localNameController = TextEditingController(
+      text: widget.initialNames[_lang] ?? '',
+    );
 
     // "60", not "60.0", so typing after it doesn't produce "60.05".
     _priceController = TextEditingController(
@@ -86,6 +96,7 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
   void dispose() {
     _nameController.dispose();
     _priceController.dispose();
+    _localNameController.dispose();
     super.dispose();
   }
 
@@ -319,7 +330,14 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
       return;
     }
 
+    final localName = _localNameController.text.trim();
+    // Send only a spelling the vendor changed: the server rewrites the others
+    // when the English name changes.
+    final localNameChanged =
+        _showLocalName && localName != (widget.initialNames[_lang] ?? '');
+
     final hasTextChanges =
+        localNameChanged ||
         name != widget.initialName ||
         price != widget.initialPrice ||
         _isVeg != widget.initialIsVeg ||
@@ -352,6 +370,7 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
         cartId: widget.cartId,
         id: widget.id,
         imageUrl: _imageUrl,
+        names: localNameChanged ? {_lang: localName} : const {},
       );
 
       await menuProvider.editMenuItem(
@@ -445,6 +464,15 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
                   if (_nameError != null) setState(() => _nameError = null);
                 },
               ),
+              if (_showLocalName) ...[
+                AppGaps.h16,
+                // Empty shows the English name (the hint) everywhere.
+                AppInput(
+                  controller: _localNameController,
+                  label: l10n.itemNameInMyLanguage,
+                  hint: _nameController.text,
+                ),
+              ],
               AppGaps.h16,
               AppInput(
                 controller: _priceController,
