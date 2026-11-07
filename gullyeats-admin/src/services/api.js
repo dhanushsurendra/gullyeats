@@ -90,12 +90,6 @@ export const ordersRequest = async (params = {}) => {
     )
   }
 
-  // Dashboard: limit 8 → simple array
-  if (params.limit === 8) {
-    return body.data || []
-  }
-
-  // Orders page → paginated response
   return {
     data: body.data || [],
     pagination: body.pagination || {},

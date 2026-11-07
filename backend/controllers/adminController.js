@@ -765,12 +765,7 @@ exports.overview = asyncHandler(async (req, res) => {
   const ms = monthStart()
   const prevMtdEnd = new Date(Math.min(+monthStart(1) + (tomorrow - ms), +ms))
   const week = new Date(+today - 6 * DAY)
-  const hasFb = {
-    feedback: {
-      $exists: true,
-      $nin: ['', null],
-    },
-  } // ========================================================
+  // ========================================================
   // ALL QUERIES
   // ========================================================
   const [
@@ -798,9 +793,7 @@ exports.overview = asyncHandler(async (req, res) => {
     newCarts, // Order statuses
     todayStatus, // Restaurant activity
     active7, // Location
-    noLoc, // Feedback
-    fbTotal,
-    fbRecent, // Total orders
+    noLoc, // Total orders
     ordersTotal, // Revenue/operations series
     daily,
     unpaid,
@@ -906,16 +899,6 @@ exports.overview = asyncHandler(async (req, res) => {
         },
       ],
     }), // ======================================================
-    // FEEDBACK
-    // ======================================================
-    Order.countDocuments(hasFb),
-    Order.find(hasFb)
-      .sort({
-        createdAt: -1,
-      })
-      .limit(3)
-      .select('feedback createdAt cartId')
-      .lean(), // ======================================================
     // TOTAL ORDERS
     // ======================================================
     Order.countDocuments(), // ======================================================
@@ -943,9 +926,6 @@ exports.overview = asyncHandler(async (req, res) => {
     },
     createdAt: { $lt: week },
   }) // ========================================================
-  // FEEDBACK CART INFO
-  // ========================================================
-  const info = await cartInfo(fbRecent.map((o) => o.cartId)) // ========================================================
   // ORDER STATUS MAP
   // ========================================================
   const st = Object.fromEntries(todayStatus.map((s) => [s._id, s.n])) // ========================================================
@@ -1135,18 +1115,6 @@ exports.overview = asyncHandler(async (req, res) => {
       // ATTENTION
       // ====================================================
       attention,
-      // ====================================================
-      // FEEDBACK
-      // ====================================================
-      feedback: {
-        total: fbTotal,
-        rate: ordersTotal ? +((fbTotal / ordersTotal) * 100).toFixed(1) : 0,
-        recent: fbRecent.map((o) => ({
-          text: o.feedback,
-          cart: info.get(String(o.cartId))?.name,
-          at: o.createdAt,
-        })),
-      },
       // ====================================================
       // HEALTH
       // ====================================================

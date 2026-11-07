@@ -10,6 +10,30 @@ body {
 .leaflet-container {
   font-family: inherit;
 }
+/* Cart map: grey base map so the coloured cart markers stand out. */
+.cart-map .leaflet-tile-pane {
+  filter: grayscale(1) brightness(1.06) contrast(0.88);
+}
+.dark .cart-map .leaflet-tile-pane {
+  filter: grayscale(1) invert(1) brightness(0.8) contrast(0.85);
+}
+.cart-map .leaflet-container {
+  background: #f1f1ef;
+}
+.dark .cart-map .leaflet-container {
+  background: #1c1c1f;
+}
+.cart-cluster {
+  background: none;
+  border: none;
+}
+.cart-cluster > div {
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.cart-cluster:hover > div {
+  transform: scale(1.08);
+}
 @keyframes pulse-dot {
   50% {
     opacity: 0.35;

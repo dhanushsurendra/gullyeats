@@ -10,22 +10,16 @@ import {
   PieChart,
   Clock,
   Ban,
-  ArrowRight,
 } from 'lucide-react'
 import useResource from '../hooks/useResource'
 import { rangeParams } from '../store/adminSlice'
 import KpiCard from '../components/KpiCard'
 import ActivityFeed from '../components/ActivityFeed'
 import CartMap from '../components/CartMap'
-import RevenueChart from '../components/RevenueChart'
-import OrdersChart from '../components/OrdersChart'
-import OwnerTable from '../components/OwnerTable'
-import RestaurantTable from '../components/RestaurantTable'
 import AttentionPanel from '../components/AttentionPanel'
 import StatusBadge from '../components/StatusBadge'
-import { Card, CardHeader, Table, State } from '../components/ui'
-import { inr, num, signed, ago, ORDER_LABEL } from '../utils/format'
-import { useNavigate } from 'react-router-dom'
+import { Card, CardHeader, State } from '../components/ui'
+import { inr, num, signed } from '../utils/format'
 
 const chg = (v, invert = false, suffix = '%') =>
   v == null
@@ -40,14 +34,10 @@ const HEALTH = [
 ]
 
 export default function Dashboard() {
-  const nav = useNavigate()
   const range = useSelector((s) => s.admin.range)
-  const q = useSelector((s) => s.admin.search)
   const ov = useResource('overview', rangeParams(range), 30000)
   const act = useResource('activity', null, 30000)
-  const owners = useResource('owners')
   const carts = useResource('carts', null, 30000)
-  const orders = useResource('orders', { limit: 8 }, 30000)
   const o = ov.data,
     k = o?.kpis
   const sp = (f) => (o?.spark || []).map((p) => ({ v: f(p) }))
@@ -198,29 +188,6 @@ export default function Dashboard() {
     ['Orders Served Today', o.live.served],
     ['Cancelled Today', o.live.cancelled],
   ]
-  const orderCols = [
-    { key: 'number', label: 'Order', render: (r) => <b>#{r.number}</b> },
-    { key: 'cart', label: 'Restaurant' },
-    { key: 'owner', label: 'Owner' },
-    { key: 'amount', label: 'Amount', render: (r) => inr(r.amount) },
-    {
-      key: 'payment',
-      label: 'Payment',
-      render: (r) => <StatusBadge status={r.payment} />,
-    },
-    {
-      key: 'status',
-      label: 'Status',
-      render: (r) => <StatusBadge status={ORDER_LABEL[r.status] || r.status} />,
-    },
-    {
-      key: 'createdAt',
-      label: 'Time',
-      render: (r) => (
-        <span className='text-neutral-500'>{ago(r.createdAt)}</span>
-      ),
-    },
-  ]
 
   return (
     <div className='space-y-3'>
@@ -283,95 +250,8 @@ export default function Dashboard() {
       <CartMap carts={carts.data} loading={carts.loading} error={carts.error} />
 
       <div className='grid gap-3 xl:grid-cols-[1.6fr_1fr]'>
-        <RevenueChart />
-        <OrdersChart />
-      </div>
-
-      <div className='grid gap-3 xl:grid-cols-[1.6fr_1fr]'>
-        <OwnerTable
-          owners={(owners.data || []).filter(
-            (x) => !q || x.name.toLowerCase().includes(q.toLowerCase()),
-          )}
-          limit={5}
-          loading={owners.loading}
-          error={owners.error}
-        />
         <AttentionPanel items={o?.attention} />
-      </div>
-
-      <RestaurantTable
-        carts={carts.data}
-        limit={10}
-        loading={carts.loading}
-        error={carts.error}
-      />
-
-      <div className='grid gap-3 xl:grid-cols-[1.6fr_1fr]'>
-        <Card>
-          <CardHeader
-            title='Recent Orders'
-            right={
-              <button
-                onClick={() => nav('/orders')}
-                className='flex items-center gap-1 text-[12px] font-medium text-brand hover:underline'
-              >
-                View all <ArrowRight size={12} />
-              </button>
-            }
-          />
-          <State loading={orders.loading} error={orders.error}>
-            <Table
-              columns={orderCols}
-              rows={orders.data || []}
-              empty='No orders yet.'
-            />
-          </State>
-        </Card>
-        <div className='space-y-3'>
-          <Card>
-            <CardHeader
-              title='Customer Feedback'
-              right={
-                <button
-                  onClick={() => nav('/feedback')}
-                  className='text-[12px] font-medium text-brand hover:underline'
-                >
-                  View feedback
-                </button>
-              }
-            />
-            <div className='grid grid-cols-2 border-b border-line'>
-              {[
-                ['Feedback received', num(o?.feedback.total)],
-                ['Of all orders', `${o?.feedback.rate ?? 0}%`],
-              ].map(([a, b]) => (
-                <div
-                  key={a}
-                  className='border-r border-line px-4 py-2.5 last:border-0'
-                >
-                  <small className='block text-neutral-500'>{a}</small>
-                  <b className='text-[16px] font-semibold'>{b}</b>
-                </div>
-              ))}
-            </div>
-            {o?.feedback.recent.length ? (
-              o.feedback.recent.map((f, i) => (
-                <p
-                  key={i}
-                  className='border-b border-line px-4 py-2 last:border-0'
-                >
-                  “{f.text}”{' '}
-                  <span className='text-[11.5px] text-neutral-500'>
-                    · {f.cart}
-                  </span>
-                </p>
-              ))
-            ) : (
-              <p className='px-4 py-6 text-center text-neutral-500'>
-                No feedback yet.
-              </p>
-            )}
-          </Card>
+        <div>
           <Card>
             <CardHeader title='Platform Health' />
             {HEALTH.map(([key, label]) => {
