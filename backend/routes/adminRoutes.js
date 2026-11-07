@@ -14,6 +14,7 @@ const loginLimit = rateLimit({
   message: { success: false, message: 'Too many attempts. Please try again in 15 minutes.' },
 })
 const c = require('../controllers/adminController')
+const insights = require('../controllers/insightsController')
 const auth = require('../middlewares/auth')
 
 const adminOnly = [
@@ -36,6 +37,11 @@ router.post('/carts/:cartId/mark-fee-paid', adminOnly, c.markFeePaid)
 router.post('/vendors/:vendorId/reset-pin', adminOnly, c.resetVendorPin)
 router.get('/feedback', adminOnly, c.feedback)
 router.get('/activity', adminOnly, c.activity)
+router.get('/insights/collections', adminOnly, insights.collections)
+router.get('/insights/leakage', adminOnly, insights.leakage)
+router.get('/insights/vendors', adminOnly, insights.vendors)
+router.get('/insights/growth', adminOnly, insights.growth)
+router.get('/insights/operations', adminOnly, insights.operations)
 router.post('/login', loginLimit, c.login)
 router.post('/logout', c.logout)
 

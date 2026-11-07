@@ -2,8 +2,7 @@ import { Loader2, AlertCircle } from 'lucide-react'
 
 export const Card = ({ className = '', children }) => (
   <div
-    className={`rounded-[10px] border border-line b
-      g-white shadow-[0_1px_2px_rgba(20,20,20,.05)] ${className}`}
+    className={`rounded-[10px] border border-line bg-white shadow-[0_1px_2px_rgba(20,20,20,.05)] ${className}`}
   >
     {children}
   </div>

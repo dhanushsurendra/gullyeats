@@ -6,12 +6,8 @@ const User = require('../models/User')
 const Cart = require('../models/Cart')
 const Order = require('../models/Order')
 const Payment = require('../models/Payment')
-const {
-  getCartPaymentStatus,
-  createBillPayment,
-  BILLING_LOCK_MS,
-  getISTMidnight,
-} = require('../utils/cartPaymentLock')
+const { getCartPaymentStatus, createBillPayment } = require('../utils/cartPaymentLock')
+const { overdueByCart } = require('../utils/overdueFees')
 
 const TZ = 'Asia/Kolkata'
 const DAY = 864e5
@@ -747,45 +743,19 @@ async function buildSeries(period) {
   }
 }
 
-// Overdue platform fees vendors owe us: the fee on every PAID or SERVED order
-// that no verified fee payment has covered, from billing days (the IST day the
-// customer paid) whose 26h grace has passed, the same moment the cart locks.
-// Orders are only
-// cancelled on their own day, before that day is billed, so there are no
-// billing credits to subtract.
-// A day's bill is overdue BILLING_LOCK_MS after its IST midnight, so every
-// billing day before the one containing (now - BILLING_LOCK_MS) is overdue.
-const overdueBefore = (now = new Date()) =>
-  new Date(+getISTMidnight(new Date(+now - BILLING_LOCK_MS)) + DAY)
-
+// Totals of the overdue platform fees vendors owe us (see utils/overdueFees).
 async function unpaidFees() {
-  // shortcut: loads every billed order id; move to a $lookup on an indexed Payment.orderIds once there are ~100k+ billed orders.
-  const billed = await Payment.distinct('orderIds', { status: 'VERIFIED' })
-  const [r] = await Order.aggregate([
-    {
-      $match: {
-        status: { $in: ['PAID', 'SERVED'] },
-        _id: { $nin: billed },
-        $expr: { $lt: [{ $ifNull: ['$paidAt', '$orderDate', '$createdAt'] }, overdueBefore()] },
-      },
-    },
-    {
-      $group: {
-        _id: null,
-        amount: { $sum: '$platformFee' },
-        orders: { $sum: 1 },
-        carts: { $addToSet: '$cartId' },
-      },
-    },
-  ])
-  return { amount: r?.amount || 0, count: r?.orders || 0, carts: r?.carts.length || 0 }
+  const rows = await overdueByCart()
+  return {
+    amount: rows.reduce((t, r) => t + r.amount, 0),
+    count: rows.reduce((t, r) => t + r.orders, 0),
+    carts: rows.length,
+  }
 }
 
 // ============================================================
 // OVERVIEW
 // ============================================================
-exports.overdueBefore = overdueBefore // for tests
-
 exports.overview = asyncHandler(async (req, res) => {
   const { start, end } = rangeFor(req.query)
   const prevStart = new Date(+start - (end - start))
@@ -993,7 +963,7 @@ exports.overview = asyncHandler(async (req, res) => {
       text: `₹${unpaid.amount} overdue on ${unpaid.count} order${
         unpaid.count > 1 ? 's' : ''
       } across ${unpaid.carts} cart${unpaid.carts > 1 ? 's' : ''}`,
-      to: '/payments',
+      to: '/collections',
     })
   } // --------------------------------------------------------
   // Rejected payments

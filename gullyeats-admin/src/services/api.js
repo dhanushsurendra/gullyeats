@@ -183,6 +183,12 @@ export const api = {
 
   activity: (p) => request(`${ADMIN}/activity`, p),
 
+  collections: () => request(`${ADMIN}/insights/collections`),
+  leakage: () => request(`${ADMIN}/insights/leakage`),
+  vendors: () => request(`${ADMIN}/insights/vendors`),
+  growth: () => request(`${ADMIN}/insights/growth`),
+  operations: () => request(`${ADMIN}/insights/operations`),
+
   cartInsights: (cartId, p) => request(`${CARTS}/sales-insights/${cartId}`, p),
 
   markFeePaid: (cartId) => post(`${ADMIN}/carts/${cartId}/mark-fee-paid`),

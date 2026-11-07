@@ -3,6 +3,8 @@ import { useSelector } from 'react-redux'
 import AdminLayout from './layouts/AdminLayout'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
+import Collections from './pages/Collections'
+import Insights from './pages/Insights'
 import {
   Owners,
   Restaurants,
@@ -48,6 +50,8 @@ export default function App() {
         <Route path="analytics" element={<Analytics />} />
         <Route path="revenue" element={<Revenue />} />
         <Route path="payments" element={<Payments />} />
+        <Route path="collections" element={<Collections />} />
+        <Route path="insights" element={<Insights />} />
         <Route path="feedback" element={<Feedback />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>

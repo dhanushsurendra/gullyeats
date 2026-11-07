@@ -9,6 +9,8 @@ import {
   IndianRupee,
   CreditCard,
   MessageSquare,
+  Wallet,
+  Lightbulb,
   Settings,
   LogOut,
   X,
@@ -30,12 +32,14 @@ const NAV = [
     [
       ['Analytics', '/analytics', BarChart3],
       ['Revenue', '/revenue', IndianRupee],
+      ['Business', '/insights', Lightbulb],
     ],
   ],
   [
     'System',
     [
       ['Payments', '/payments', CreditCard],
+      ['Collections', '/collections', Wallet],
       ['Feedback', '/feedback', MessageSquare],
       ['Settings', '/settings', Settings],
     ],

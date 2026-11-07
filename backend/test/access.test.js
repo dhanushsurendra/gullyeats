@@ -141,7 +141,7 @@ test('admin GMV, fees and average order count only paid and served orders', asyn
 })
 
 test("a day's platform fee is overdue only once its 26h grace has passed", () => {
-  const { overdueBefore } = require('../controllers/adminController')
+  const { overdueBefore } = require('../utils/overdueFees')
   const ist = (s) => new Date(`${s}+05:30`)
   // Bills before the returned midnight are overdue.
   assert.deepEqual(overdueBefore(ist('2026-11-07T01:59:00')), ist('2026-11-06T00:00:00'))
