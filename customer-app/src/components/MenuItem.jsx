@@ -30,7 +30,8 @@ export function MenuItem({ item, quantity, onAdd, onRemove, canOrder = true }) {
           }}
         />
         {available && canOrder && (
-          <div className='-mt-5'>
+          // z-10: the dark theme dims the placeholder photo with a filter, which lifts it above the button.
+          <div className='relative z-10 -mt-5'>
             <Stepper
               name={item.name}
               quantity={quantity}

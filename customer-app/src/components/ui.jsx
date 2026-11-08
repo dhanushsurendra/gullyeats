@@ -161,7 +161,7 @@ export function Stepper({ quantity, onAdd, onRemove, name }) {
         type='button'
         onClick={onAdd}
         aria-label={`Add ${name}`}
-        className='h-9 min-w-21 rounded-xl bg-surface px-4 text-sm font-bold text-primary shadow-card ring-1 ring-primary transition hover:bg-primary-soft active:scale-95'
+        className='h-9 min-w-21 rounded-xl bg-surface px-4 text-sm font-bold text-primary shadow-card ring-1 ring-primary/30 transition hover:bg-primary-soft active:scale-95'
       >
         ADD
       </button>
