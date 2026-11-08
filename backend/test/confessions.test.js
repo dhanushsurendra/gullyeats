@@ -105,6 +105,7 @@ test('the feed is readable without an order, but writing is not', async () => {
   const r = await feed()
   assert.strictEqual(r.status, 200)
   assert.strictEqual(r.body.data.items.length, 1)
+  assert.strictEqual(r.body.data.today, 1)
   const id = r.body.data.items[0].id
   assert.strictEqual((await api('POST', `/confessions/${id}/like`)).status, 401)
   assert.strictEqual((await api('POST', `/confessions/${id}/comments`, { body: { text: 'hi' } })).status, 401)

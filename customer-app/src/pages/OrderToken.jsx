@@ -1,15 +1,26 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { RiArrowRightSLine, RiCheckLine, RiEditLine, RiDoubleQuotesL, RiFireLine, RiHeart3Fill, RiQuillPenLine } from 'react-icons/ri'
+import {
+  RiArrowRightSLine,
+  RiChat3Line,
+  RiCheckLine,
+  RiEditLine,
+  RiDoubleQuotesL,
+  RiFireLine,
+  RiHeart3Fill,
+  RiHeart3Line,
+  RiQuillPenLine,
+} from 'react-icons/ri'
 
 import CancelOrderModal from '../components/CancelOrderModal'
-import { Toast } from '../components/Confession'
+import { Avatar, Toast } from '../components/Confession'
+import { useLike } from '../hooks/usePulse'
 import { Button, Card, LoadingScreen, Page, Row, StatusScreen, TopBar } from '../components/ui'
 import { api } from '../constants/api'
 import useOrder from '../hooks/useOrder'
 import { rupees } from '../utils/format'
-import { pulse } from '../utils/pulse'
+import { pulse, timeAgo, usePulseKey } from '../utils/pulse'
 
 const STEPS = ['Placed', 'Paid', 'Preparing', 'Served']
 
@@ -89,60 +100,132 @@ function Progress({ status, preparing }) {
   )
 }
 
-// GullyPulse while you wait: the top confession and a way to write one.
-// Posting brings the customer back here (see ConfessionNew's `from`).
+// GullyPulse while you wait: swipe the top confessions (like them right
+// here), or start one from a prompt. Posting brings the customer back here.
+const PROMPTS = ['I secretly…', 'Never told anyone, but…', 'My guilty pleasure is…', 'Unpopular opinion:', 'I still regret…']
+
 function PulseCard({ here }) {
   const navigate = useNavigate()
-  const [top, setTop] = useState(null)
+  const key = usePulseKey()
+  const [feed, setFeed] = useState(null) // { items, today }
+  const [note, setNote] = useState('')
+  const clearNote = useCallback(() => setNote(''), [])
 
   useEffect(() => {
     let live = true
-    pulse(null, '/feed')
-      .then((d) => live && setTop(d.items[0] || null))
-      .catch(() => {})
+    pulse(key, '/feed')
+      .then((d) => live && setFeed({ items: d.items.slice(0, 5), today: d.today || 0 }))
+      .catch(() => live && setFeed({ items: [], today: 0 }))
     return () => {
       live = false
     }
-  }, [])
+  }, [key])
+
+  const update = useCallback(
+    (id, fn) => setFeed((f) => f && { ...f, items: f.items.map((c) => (c.id === id ? fn(c) : c)) }),
+    [],
+  )
+  const like = useLike(key, update, setNote)
+  const write = (prefill = '') => navigate('/confessions/new', { state: { from: here, prefill } })
 
   return (
-    // Not <Card>: its p-4 can't be overridden, and the header runs edge to edge.
-    <section className='animate-fade-up overflow-hidden rounded-card bg-white shadow-card [animation-delay:100ms]'>
-      <div className='bg-grey-900 px-4 py-3 text-white'>
-        <p className='text-xs font-semibold uppercase tracking-wider text-primary'>GullyPulse · while you wait</p>
-        <p className='mt-0.5 text-[15px] font-semibold'>Got something to confess? Nobody will know it was you.</p>
-      </div>
-      {top && (
-        <button
-          type='button'
-          onClick={() => navigate(`/confessions/${top.id}`)}
-          className='flex w-full items-start gap-3 px-4 pt-3 text-left'
-        >
-          <span aria-hidden className='text-xl'>🤫</span>
-          <span className='min-w-0 flex-1'>
-            <span className='line-clamp-2 text-sm text-grey-700'>“{top.text}”</span>
-            <span className='mt-1 flex items-center gap-1 text-xs text-grey-400'>
-              <RiHeart3Fill size={12} className='text-primary' /> {top.likes} · {top.comments} comments
-            </span>
+    // Not <Card>: its p-4 can't be overridden, and the carousel runs edge to edge.
+    <section className='animate-fade-up overflow-hidden rounded-card bg-linear-to-br from-violet-50 via-white to-sky-50 shadow-card ring-1 ring-violet-100 [animation-delay:100ms]'>
+      <div className='px-4 pt-4'>
+        <div className='flex items-center justify-between gap-2'>
+          <span className='inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-violet-700'>
+            <span className='h-2 w-2 animate-pulse rounded-full bg-violet-500' /> GullyPulse
           </span>
-        </button>
+          {feed?.today > 0 && (
+            <span className='rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-grey-600 shadow-card'>
+              🔥 {feed.today} {feed.today === 1 ? 'confession' : 'confessions'} today
+            </span>
+          )}
+        </div>
+        <h2 className='mt-2 text-lg font-bold leading-snug'>While you wait… what’s your secret?</h2>
+        <p className='text-sm text-grey-500'>100% anonymous. Not even the vendor knows it’s you.</p>
+      </div>
+
+      {feed === null ? (
+        <div className='flex gap-3 overflow-hidden px-4 py-3' aria-hidden>
+          {[0, 1].map((i) => (
+            <div key={i} className='skeleton h-32 w-[80%] shrink-0 rounded-2xl' />
+          ))}
+        </div>
+      ) : feed.items.length ? (
+        <ul
+          className='flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
+          aria-label='Top confessions'
+        >
+          {feed.items.map((c) => (
+            <li key={c.id} className='w-[80%] shrink-0 snap-start'>
+              <div className='flex h-full flex-col rounded-2xl bg-white p-3.5 shadow-card ring-1 ring-grey-200/60'>
+                <button type='button' onClick={() => navigate(`/confessions/${c.id}`)} className='flex-1 text-left'>
+                  <span className='flex items-center gap-2'>
+                    <Avatar seed={c.id} small />
+                    <span className='text-xs text-grey-500'>Anonymous · {timeAgo(c.createdAt)}</span>
+                  </span>
+                  <span className='mt-2 line-clamp-3 text-sm leading-relaxed text-grey-800'>{c.text}</span>
+                </button>
+                <span className='mt-2 flex items-center gap-1'>
+                  <button
+                    type='button'
+                    onClick={() => like(c, !c.liked)}
+                    aria-pressed={c.liked}
+                    aria-label={c.liked ? 'Unlike' : 'Like'}
+                    className={`-ml-1.5 flex h-9 items-center gap-1 rounded-full px-2 text-xs font-semibold transition active:scale-90 ${c.liked ? 'text-primary' : 'text-grey-500'}`}
+                  >
+                    {c.liked ? <RiHeart3Fill size={18} className='animate-pop' /> : <RiHeart3Line size={18} />} {c.likes}
+                  </button>
+                  <button
+                    type='button'
+                    onClick={() => navigate(`/confessions/${c.id}`)}
+                    aria-label={`${c.comments} comments`}
+                    className='flex h-9 items-center gap-1 rounded-full px-2 text-xs font-semibold text-grey-500'
+                  >
+                    <RiChat3Line size={17} /> {c.comments}
+                  </button>
+                </span>
+              </div>
+            </li>
+          ))}
+          <li className='w-[40%] shrink-0 snap-start'>
+            <button
+              type='button'
+              onClick={() => navigate('/confessions')}
+              className='flex h-full w-full flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-violet-200 text-sm font-semibold text-violet-700'
+            >
+              <RiArrowRightSLine size={24} /> See all
+            </button>
+          </li>
+        </ul>
+      ) : (
+        <p className='px-4 py-3 text-sm text-grey-600'>Nobody has confessed yet. Be the first 🤫</p>
       )}
-      <div className='flex gap-2 p-4'>
+
+      <div className='flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'>
+        {PROMPTS.map((prompt) => (
+          <button
+            key={prompt}
+            type='button'
+            onClick={() => write(`${prompt.replace(/…$/, '')} `)}
+            className='shrink-0 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-violet-700 ring-1 ring-violet-200 transition active:scale-95'
+          >
+            {prompt}
+          </button>
+        ))}
+      </div>
+
+      <div className='p-4'>
         <button
           type='button'
-          onClick={() => navigate('/confessions/new', { state: { from: here } })}
-          className='flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-grey-900 text-sm font-semibold text-white transition hover:bg-grey-800 active:scale-[0.98]'
+          onClick={() => write()}
+          className='flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-violet-600 text-[15px] font-semibold text-white shadow-[0_6px_20px_-6px_rgb(124_58_237/0.55)] transition hover:bg-violet-700 active:scale-[0.98]'
         >
-          <RiQuillPenLine size={18} /> Write a confession
-        </button>
-        <button
-          type='button'
-          onClick={() => navigate('/confessions')}
-          className='flex h-11 items-center gap-1 rounded-xl px-3 text-sm font-semibold text-grey-700 ring-1 ring-grey-200 transition hover:bg-grey-50 active:scale-[0.98]'
-        >
-          Read <RiArrowRightSLine size={18} />
+          <RiQuillPenLine size={18} /> Confess anonymously
         </button>
       </div>
+      <Toast message={note} onDone={clearNote} />
     </section>
   )
 }

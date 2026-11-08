@@ -111,12 +111,18 @@ exports.feed = asyncHandler(async (req, res) => {
       )
     : new Set()
 
+  // How many went up in the last 24h, on the first page only ("12 today").
+  const today = req.query.cursor
+    ? undefined
+    : await Confession.countDocuments({ status: 'PUBLISHED', createdAt: { $gte: new Date(Date.now() - DAY) } })
+
   const last = rows[rows.length - 1]
   res.json({
     success: true,
     data: {
       items: rows.map((r) => toPublic(r, req.poster, liked.has(String(r._id)))),
       nextCursor: hasMore && last ? `${last.hot}|${last._id}` : null,
+      today,
     },
   })
 })

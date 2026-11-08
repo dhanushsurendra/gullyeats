@@ -17,9 +17,11 @@ export default function ConfessionNew() {
   const navigate = useNavigate()
   // Where to go after posting: the page that opened this one (e.g. the token
   // page, so a waiting customer is back at their order), else the feed.
-  const from = useLocation().state?.from || '/confessions'
+  const { state } = useLocation()
+  const from = state?.from || '/confessions'
   const key = usePulseKey()
-  const [text, setText] = useState('')
+  // A starter line picked on the token page ("I secretly ").
+  const [text, setText] = useState(state?.prefill || '')
   const [me, setMe] = useState(null)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState(null) // { message, blocked }
@@ -38,6 +40,8 @@ export default function ConfessionNew() {
 
   const back = () => navigate(from, { replace: true })
   const length = text.trim().length
+  // Only the starter line, nothing added yet.
+  const onlyPrompt = Boolean(state?.prefill) && text.trim() === state.prefill.trim()
 
   const submit = async () => {
     setSending(true)
@@ -131,6 +135,8 @@ export default function ConfessionNew() {
         <textarea
           id='confession'
           autoFocus
+          // Put the cursor after a starter line, not before it.
+          onFocus={(e) => e.target.setSelectionRange(e.target.value.length, e.target.value.length)}
           value={text}
           onChange={(e) => {
             setText(e.target.value)
@@ -173,7 +179,7 @@ export default function ConfessionNew() {
         </section>
       </main>
       <BottomBar>
-        <Button onClick={submit} loading={sending} disabled={length < MIN}>
+        <Button onClick={submit} loading={sending} disabled={length < MIN || onlyPrompt}>
           Post anonymously
         </Button>
       </BottomBar>
