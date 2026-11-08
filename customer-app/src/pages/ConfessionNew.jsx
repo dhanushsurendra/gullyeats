@@ -138,7 +138,7 @@ export default function ConfessionNew() {
           }}
           maxLength={MAX}
           rows={8}
-          placeholder='I secretly ask for extra sev every single time…'
+          placeholder='Say the thing you’ve never told anyone…'
           className='mt-4 w-full resize-none rounded-2xl bg-white px-4 py-3 text-[17px] leading-relaxed outline-none ring-1 ring-grey-200 placeholder:text-grey-400 focus:ring-2 focus:ring-primary/40'
         />
         <div className='mt-1 flex justify-between px-1 text-xs text-grey-400'>

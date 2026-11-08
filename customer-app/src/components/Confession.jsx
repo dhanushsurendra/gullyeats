@@ -7,17 +7,17 @@ import { compact, REPORT_REASONS, timeAgo } from '../utils/pulse'
 /* Pieces of the GullyPulse confession pages. */
 
 const AVATARS = [
-  ['bg-amber-100', '🥟'],
-  ['bg-rose-100', '🌶️'],
-  ['bg-violet-100', '🍵'],
-  ['bg-sky-100', '🧋'],
-  ['bg-lime-100', '🥗'],
-  ['bg-orange-100', '🍢'],
-  ['bg-pink-100', '🍧'],
-  ['bg-teal-100', '🥥'],
+  ['bg-amber-100', '🦊'],
+  ['bg-rose-100', '🐼'],
+  ['bg-violet-100', '🦉'],
+  ['bg-sky-100', '🐧'],
+  ['bg-lime-100', '🐸'],
+  ['bg-orange-100', '🐯'],
+  ['bg-pink-100', '🐙'],
+  ['bg-teal-100', '🐨'],
 ]
 
-// A random-looking but stable food avatar per post, so the feed isn't a wall
+// A random-looking but stable animal avatar per post, so the feed isn't a wall
 // of identical faces. It says nothing about who wrote it.
 export function Avatar({ seed = '', small = false }) {
   const n = [...seed].reduce((sum, ch) => sum + ch.charCodeAt(0), 0)

@@ -69,7 +69,7 @@ export default function Confessions() {
 
   return (
     <Page>
-      <TopBar title='GullyPulse' subtitle='Anonymous food confessions' onBack={back} />
+      <TopBar title='GullyPulse' subtitle='Anonymous confessions' onBack={back} />
 
       <main className='flex-1 space-y-4 px-4 pb-32 pt-4'>
         <section className='animate-fade-up relative overflow-hidden rounded-card bg-gradient-to-br from-primary to-orange-400 p-5 text-white shadow-card'>

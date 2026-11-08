@@ -110,7 +110,7 @@ function PulseCard({ here }) {
     <section className='animate-fade-up overflow-hidden rounded-card bg-white shadow-card [animation-delay:100ms]'>
       <div className='bg-linear-to-br from-primary to-orange-400 px-4 py-3 text-white'>
         <p className='text-xs font-semibold uppercase tracking-wider text-white/80'>GullyPulse · while you wait</p>
-        <p className='mt-0.5 text-[15px] font-semibold'>Got a food confession? Nobody will know it was you.</p>
+        <p className='mt-0.5 text-[15px] font-semibold'>Got something to confess? Nobody will know it was you.</p>
       </div>
       {top && (
         <button
