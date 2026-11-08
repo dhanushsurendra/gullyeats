@@ -22,7 +22,9 @@ export default function ActiveOrders({ cartId }) {
   const orders = saved.filter(
     (o) => o.cartId === cartId && OPEN.includes(o.status) && now - new Date(o.createdAt) < DAY,
   )
-  const ids = orders.map((o) => o._id).join(',')
+  // Sorted, so the refresh below runs when the set of orders changes, not
+  // when the same orders are listed in another order.
+  const ids = orders.map((o) => o._id).sort().join(',')
 
   useEffect(() => {
     for (const id of ids ? ids.split(',') : []) {

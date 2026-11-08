@@ -58,8 +58,13 @@ const cartSlice = createSlice({
     // Adds or refreshes an order's summary.
     rememberOrder: (state, action) => {
       const { _id, cartId, orderNumber, status, createdAt, preparingAt = null } = action.payload
-      const rest = (state.orders || []).filter((o) => o._id !== _id)
-      state.orders = [{ _id, cartId, orderNumber, status, createdAt, preparingAt }, ...rest].slice(0, KEEP)
+      const summary = { _id, cartId, orderNumber, status, createdAt, preparingAt }
+      const orders = state.orders || []
+      const i = orders.findIndex((o) => o._id === _id)
+      // A known order is updated where it is: moving it to the top on every
+      // refresh reordered the list, which triggered another refresh, forever.
+      if (i >= 0) orders[i] = summary
+      else state.orders = [summary, ...orders].slice(0, KEEP)
       delete state.order // the single order kept by older versions
     },
 
