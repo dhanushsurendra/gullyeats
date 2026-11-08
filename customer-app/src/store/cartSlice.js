@@ -68,6 +68,17 @@ const cartSlice = createSlice({
       delete state.order // the single order kept by older versions
     },
 
+    // Orders another tab saved. Only ones this tab doesn't know are added;
+    // statuses come from the server, so tabs never undo each other.
+    addOrders: (state, action) => {
+      const known = new Set((state.orders || []).map((o) => o._id))
+      const added = (action.payload || []).filter((o) => o?._id && !known.has(o._id))
+      if (!added.length) return
+      state.orders = [...(state.orders || []), ...added]
+        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+        .slice(0, KEEP)
+    },
+
     forgetOrder: (state, action) => {
       state.orders = (state.orders || []).filter((o) => o._id !== action.payload)
     },
@@ -94,6 +105,7 @@ export const {
   clearCart,
   setPhoneNumber,
   rememberOrder,
+  addOrders,
   forgetOrder,
   setCart,
   clearCartSession,

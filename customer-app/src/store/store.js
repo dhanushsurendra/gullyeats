@@ -4,7 +4,7 @@ import {
   persistReducer,
 } from 'redux-persist'
 
-import cartReducer from './cartSlice'
+import cartReducer, { addOrders } from './cartSlice'
 
 // ==========================================
 // LOCAL STORAGE ADAPTER
@@ -73,3 +73,16 @@ export const store = configureStore({
 // ==========================================
 
 export const persistor = persistStore(store)
+
+// Every tab saves its whole state to the same storage key, so a tab opened
+// before an order was placed in another tab would erase that order when it
+// saved. Take in orders other tabs save before that can happen.
+window.addEventListener('storage', (e) => {
+  if (e.key !== `persist:${persistConfig.key}` || !e.newValue) return
+  try {
+    const orders = JSON.parse(JSON.parse(e.newValue).orders || '[]')
+    store.dispatch(addOrders(orders))
+  } catch {
+    // Not our format (or corrupt): ignore it.
+  }
+})
