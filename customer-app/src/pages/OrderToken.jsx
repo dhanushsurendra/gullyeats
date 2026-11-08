@@ -108,8 +108,8 @@ function PulseCard({ here }) {
   return (
     // Not <Card>: its p-4 can't be overridden, and the header runs edge to edge.
     <section className='animate-fade-up overflow-hidden rounded-card bg-white shadow-card [animation-delay:100ms]'>
-      <div className='bg-linear-to-br from-primary to-orange-400 px-4 py-3 text-white'>
-        <p className='text-xs font-semibold uppercase tracking-wider text-white/80'>GullyPulse · while you wait</p>
+      <div className='bg-grey-900 px-4 py-3 text-white'>
+        <p className='text-xs font-semibold uppercase tracking-wider text-primary'>GullyPulse · while you wait</p>
         <p className='mt-0.5 text-[15px] font-semibold'>Got something to confess? Nobody will know it was you.</p>
       </div>
       {top && (
@@ -131,7 +131,7 @@ function PulseCard({ here }) {
         <button
           type='button'
           onClick={() => navigate('/confessions/new', { state: { from: here } })}
-          className='flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-white transition hover:bg-primary-dark active:scale-[0.98]'
+          className='flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-grey-900 text-sm font-semibold text-white transition hover:bg-grey-800 active:scale-[0.98]'
         >
           <RiQuillPenLine size={18} /> Write a confession
         </button>
