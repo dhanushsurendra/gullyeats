@@ -1220,7 +1220,7 @@ class AppLocalizationsTa extends AppLocalizations {
   String get startPreparing => 'தயாரிக்கத் தொடங்கு';
 
   @override
-  String get termsAndPrivacy => 'விதிமுறைகள் & தனியுரிமை';
+  String get termsAndConditions => 'விதிமுறைகள் மற்றும் நிபந்தனைகள்';
 
   @override
   String get termsAndPrivacySubtitle =>

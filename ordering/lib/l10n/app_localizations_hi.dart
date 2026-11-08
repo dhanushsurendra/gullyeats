@@ -1204,7 +1204,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get startPreparing => 'बनाना शुरू करें';
 
   @override
-  String get termsAndPrivacy => 'नियम और गोपनीयता';
+  String get termsAndConditions => 'नियम और शर्तें';
 
   @override
   String get termsAndPrivacySubtitle =>

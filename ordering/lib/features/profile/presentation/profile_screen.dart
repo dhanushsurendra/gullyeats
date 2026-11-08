@@ -126,6 +126,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
               MaterialPageRoute(builder: (_) => const OrdersOverviewScreen()),
             ),
           ),
+          AppGaps.h12,
+
+          // Vendor terms, served by the customer web app
+          // (customer-app/public/vendor-terms.html).
+          _sectionCard(
+            context.l10n.termsAndConditions,
+            context.l10n.termsAndPrivacySubtitle,
+            onTap: () => launchUrl(
+              Uri.parse('https://gullyeats.vercel.app/vendor-terms.html'),
+              mode: LaunchMode.externalApplication,
+            ),
+          ),
 
           AppGaps.h12,
 
@@ -423,17 +435,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const ChangePinScreen()),
-            ),
-          ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text(context.l10n.termsAndPrivacy, style: AppTextStyles.heading3),
-            subtitle: Text(context.l10n.termsAndPrivacySubtitle, style: AppTextStyles.caption),
-            trailing: const Icon(Icons.open_in_new, size: 20, color: AppColors.grey500),
-            // Served by the customer web app (customer-app/public/legal.html).
-            onTap: () => launchUrl(
-              Uri.parse('https://gullyeats.vercel.app/legal.html'),
-              mode: LaunchMode.externalApplication,
             ),
           ),
           AppGaps.h8,

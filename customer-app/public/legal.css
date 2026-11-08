@@ -1,0 +1,81 @@
+/* Shared by terms.html (customers) and vendor-terms.html (vendors and staff).
+   Mobile first: one plain column on phones, a card from 640px up. */
+:root {
+  --primary: #fe5200;
+  --primary-soft: #fff1ea;
+  --ink: #18181b;
+  --text: #3f3f46;
+  --muted: #71717a;
+  --line: #e9e9ec;
+  --bg: #ffffff;
+  --page: #fafafa;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --primary-soft: #2a1709;
+    --ink: #f4f4f5;
+    --text: #d4d4d8;
+    --muted: #a1a1aa;
+    --line: #2e2e33;
+    --bg: #18181b;
+    --page: #111113;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body {
+  margin: 0;
+  font-family: Poppins, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--text);
+  background: var(--bg);
+  overflow-wrap: break-word;
+}
+.wrap { max-width: 720px; margin: 0 auto; padding: 20px 16px 40px; }
+.brand { display: inline-block; font-weight: 700; font-size: 18px; color: var(--ink); text-decoration: none; }
+.brand span { color: var(--primary); }
+.intro { background: var(--primary-soft); border-radius: 14px; padding: 16px; margin: 16px 0 8px; }
+h1 { margin: 0 0 4px; font-size: 24px; line-height: 1.3; color: var(--ink); }
+.intro p { margin: 0; }
+.updated { font-size: 13px; color: var(--muted); margin-top: 6px !important; }
+.toc { margin: 16px 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
+.toc a {
+  display: inline-block;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  text-decoration: none;
+}
+section { border-top: 1px solid var(--line); padding-top: 8px; margin-top: 24px; }
+h2 { font-size: 19px; line-height: 1.35; color: var(--ink); margin: 12px 0 4px; }
+h3 { font-size: 15px; color: var(--ink); margin: 18px 0 2px; }
+p { margin: 6px 0; }
+ul { margin: 6px 0; padding-left: 20px; }
+li { margin: 4px 0; }
+a { color: var(--primary); }
+/* "What we collect": stacked blocks, not a table, so nothing scrolls sideways on a phone. */
+.facts { display: grid; gap: 10px; margin: 10px 0; }
+.fact { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+.fact b { display: block; color: var(--ink); }
+.fact p { margin: 2px 0 0; }
+.fact .why { color: var(--muted); font-size: 14px; }
+.contact { background: var(--primary-soft); border-radius: 12px; padding: 12px 14px; margin: 10px 0; }
+footer { margin-top: 32px; font-size: 13px; color: var(--muted); text-align: center; }
+
+@media (min-width: 640px) {
+  body { background: var(--page); }
+  .wrap { padding: 32px 24px 48px; }
+  main {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 8px 28px 28px;
+    margin-top: 16px;
+  }
+  h1 { font-size: 28px; }
+  .facts { grid-template-columns: 1fr 1fr; }
+}

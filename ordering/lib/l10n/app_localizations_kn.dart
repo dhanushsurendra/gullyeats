@@ -1206,7 +1206,7 @@ class AppLocalizationsKn extends AppLocalizations {
   String get startPreparing => 'ತಯಾರಿಸಲು ಪ್ರಾರಂಭಿಸಿ';
 
   @override
-  String get termsAndPrivacy => 'ನಿಯಮಗಳು ಮತ್ತು ಗೌಪ್ಯತೆ';
+  String get termsAndConditions => 'ನಿಯಮಗಳು ಮತ್ತು ಷರತ್ತುಗಳು';
 
   @override
   String get termsAndPrivacySubtitle =>

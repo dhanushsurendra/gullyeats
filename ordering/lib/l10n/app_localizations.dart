@@ -2292,11 +2292,11 @@ abstract class AppLocalizations {
   /// **'Start preparing'**
   String get startPreparing;
 
-  /// No description provided for @termsAndPrivacy.
+  /// No description provided for @termsAndConditions.
   ///
   /// In en, this message translates to:
-  /// **'Terms & Privacy'**
-  String get termsAndPrivacy;
+  /// **'Terms and conditions'**
+  String get termsAndConditions;
 
   /// No description provided for @termsAndPrivacySubtitle.
   ///

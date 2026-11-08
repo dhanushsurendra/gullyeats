@@ -175,8 +175,9 @@ class _TermsAndConditionFooter extends StatelessWidget {
           InkWell(
             onTap: () async {
               final url = Uri.parse(
-                // Served by the customer web app (customer-app/public/legal.html).
-                'https://gullyeats.vercel.app/legal.html',
+                // Vendor terms, served by the customer web app
+                // (customer-app/public/vendor-terms.html).
+                'https://gullyeats.vercel.app/vendor-terms.html',
               );
               if (await canLaunchUrl(url)) {
                 await launchUrl(url, mode: LaunchMode.externalApplication);

@@ -1206,7 +1206,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get startPreparing => 'Start preparing';
 
   @override
-  String get termsAndPrivacy => 'Terms & Privacy';
+  String get termsAndConditions => 'Terms and conditions';
 
   @override
   String get termsAndPrivacySubtitle =>

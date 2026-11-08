@@ -154,7 +154,7 @@ export default function CustomerCart() {
           </label>
           <p className='mt-0.5 text-xs text-grey-500'>
             Only so the vendor can reach you about this order.{' '}
-            <a href='/legal.html#privacy' target='_blank' rel='noopener' className='underline underline-offset-2'>
+            <a href='/terms.html#privacy' target='_blank' rel='noopener' className='underline underline-offset-2'>
               Privacy
             </a>
           </p>
@@ -200,7 +200,7 @@ export default function CustomerCart() {
           {count} {count === 1 ? 'item' : 'items'} · You'll get a token. Pay at the counter.
           <br />
           By ordering you agree to the{' '}
-          <a href='/legal.html' target='_blank' rel='noopener' className='underline underline-offset-2'>
+          <a href='/terms.html' target='_blank' rel='noopener' className='underline underline-offset-2'>
             Terms
           </a>
           .
