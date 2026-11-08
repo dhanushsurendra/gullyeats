@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate, useParams } from 'react-router-dom'
-import { RiMapPin2Line, RiRestaurantLine, RiTicket2Line, RiWallet3Line } from 'react-icons/ri'
+import { RiMapPin2Line, RiRestaurantLine, RiStarFill, RiTicket2Line, RiWallet3Line } from 'react-icons/ri'
 
 import illustration from '../assets/welcome.png'
 import ActiveOrders from '../components/ActiveOrders'
@@ -78,6 +78,18 @@ export default function Welcome() {
               <p className='mt-1 flex items-center gap-1 text-sm text-grey-500'>
                 <RiMapPin2Line className='shrink-0' />
                 <span className='truncate'>{shortAddress(cart.address)}</span>
+              </p>
+            )}
+            {cart.rating?.count > 0 && (
+              <p
+                className='mt-1.5 flex items-center gap-1 text-sm'
+                aria-label={`Rated ${cart.rating.average} out of 5 by ${cart.rating.count} ${cart.rating.count === 1 ? 'customer' : 'customers'}`}
+              >
+                <RiStarFill className='shrink-0 text-amber-400' size={16} />
+                <b className='tabular-nums text-grey-900'>{cart.rating.average.toFixed(1)}</b>
+                <span className='text-grey-500'>
+                  · {cart.rating.count} {cart.rating.count === 1 ? 'rating' : 'ratings'}
+                </span>
               </p>
             )}
           </div>

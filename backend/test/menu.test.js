@@ -112,3 +112,22 @@ test('renaming an item rewrites its names; the vendor spelling wins', async () =
     assert.strictEqual(r.status, 400)
   }
 })
+
+test("a cart's details include its average star rating and how many rated it", async () => {
+  const Order = require('../models/Order')
+  const doc = { _id: 'cart1', cartName: 'Chaat' }
+  stub(Cart, 'findById', () => q({ ...doc, toObject: () => doc }))
+  let match
+  stub(Order, 'aggregate', async (pipeline) => {
+    match = pipeline[0].$match
+    return [{ average: 4.333333, count: 3 }]
+  })
+  let r = await call(c.getCart, { params: { cartId: 'cart1' } })
+  assert.deepStrictEqual(r.body.data.rating, { average: 4.3, count: 3 })
+  assert.strictEqual(r.body.data.cartName, 'Chaat')
+  assert.deepStrictEqual(match.rating, { $gte: 1 })
+
+  stub(Order, 'aggregate', async () => [])
+  r = await call(c.getCart, { params: { cartId: 'cart1' } })
+  assert.deepStrictEqual(r.body.data.rating, { average: null, count: 0 })
+})

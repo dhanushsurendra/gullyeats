@@ -147,4 +147,10 @@ OrderSchema.index({
   status: 1,
 })
 
+// A cart's ratings (getCart), indexing only orders that have one.
+OrderSchema.index(
+  { cartId: 1, rating: 1 },
+  { partialFilterExpression: { rating: { $type: 'number' } } },
+)
+
 module.exports = mongoose.model('Order', OrderSchema)

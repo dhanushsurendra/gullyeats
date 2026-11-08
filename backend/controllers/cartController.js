@@ -784,9 +784,20 @@ exports.getCart = asyncHandler(async (req, res) => {
     throw new Error('Cart not found')
   }
 
+  // Customers' star ratings of this cart's orders: shown on its welcome page.
+  const [stars] = await Order.aggregate([
+    { $match: { cartId: cart._id, rating: { $gte: 1 } } },
+    { $group: { _id: null, average: { $avg: '$rating' }, count: { $sum: 1 } } },
+  ])
+
   res.status(200).json({
     success: true,
-    data: cart,
+    data: {
+      ...cart.toObject(),
+      rating: stars
+        ? { average: Math.round(stars.average * 10) / 10, count: stars.count }
+        : { average: null, count: 0 },
+    },
   })
 })
 
