@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { RiShieldCheckLine, RiSpyLine } from 'react-icons/ri'
 
 import { BottomBar, Button, LoadingScreen, Page, StatusScreen, TopBar } from '../components/ui'
@@ -15,6 +15,9 @@ const RULES = [
 
 export default function ConfessionNew() {
   const navigate = useNavigate()
+  // Where to go after posting: the page that opened this one (e.g. the token
+  // page, so a waiting customer is back at their order), else the feed.
+  const from = useLocation().state?.from || '/confessions'
   const key = usePulseKey()
   const [text, setText] = useState('')
   const [me, setMe] = useState(null)
@@ -33,7 +36,7 @@ export default function ConfessionNew() {
     }
   }, [key])
 
-  const back = () => navigate('/confessions', { replace: true })
+  const back = () => navigate(from, { replace: true })
   const length = text.trim().length
 
   const submit = async () => {
@@ -42,7 +45,7 @@ export default function ConfessionNew() {
     try {
       const r = await pulse(key, '', { method: 'POST', body: { text } })
       if (r.status === 'published') {
-        navigate('/confessions', { replace: true, state: { toast: 'Posted anonymously 🎉' } })
+        navigate(from, { replace: true, state: { toast: 'Posted anonymously 🎉' } })
       } else {
         setResult(r.status)
       }
@@ -61,7 +64,7 @@ export default function ConfessionNew() {
           title='Order first, then confess'
           message={me?.message || 'Only people who’ve ordered from a GullyEats cart can post. Scan a cart’s QR code and place an order to join in.'}
         >
-          <Button variant='secondary' onClick={back}>
+          <Button variant='secondary' onClick={() => navigate('/confessions', { replace: true })}>
             Read confessions
           </Button>
         </StatusScreen>
@@ -88,7 +91,7 @@ export default function ConfessionNew() {
           message={`Your GullyPulse posting is suspended until ${new Date(me.suspendedUntil).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })} for breaking community guidelines.`}
         >
           <Button variant='secondary' onClick={back}>
-            Back to confessions
+            Go back
           </Button>
         </StatusScreen>
       </Page>
@@ -103,7 +106,7 @@ export default function ConfessionNew() {
           title='Sent for a quick review'
           message='Something in your confession needs a human look before it goes live. You can check it under My posts.'
         >
-          <Button onClick={back}>Back to confessions</Button>
+          <Button onClick={back}>{from === '/confessions' ? 'Back to confessions' : 'Done'}</Button>
         </StatusScreen>
       </Page>
     )

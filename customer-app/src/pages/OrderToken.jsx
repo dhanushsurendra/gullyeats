@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
-import { useNavigate } from 'react-router-dom'
-import { RiCheckLine, RiEditLine, RiDoubleQuotesL, RiFireLine } from 'react-icons/ri'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { RiArrowRightSLine, RiCheckLine, RiEditLine, RiDoubleQuotesL, RiFireLine, RiHeart3Fill, RiQuillPenLine } from 'react-icons/ri'
 
 import CancelOrderModal from '../components/CancelOrderModal'
+import { Toast } from '../components/Confession'
 import { Button, Card, LoadingScreen, Page, Row, StatusScreen, TopBar } from '../components/ui'
 import { api } from '../constants/api'
 import useOrder from '../hooks/useOrder'
 import { rupees } from '../utils/format'
+import { pulse } from '../utils/pulse'
 
 const STEPS = ['Placed', 'Paid', 'Preparing', 'Served']
 
@@ -87,7 +89,66 @@ function Progress({ status, preparing }) {
   )
 }
 
+// GullyPulse while you wait: the top confession and a way to write one.
+// Posting brings the customer back here (see ConfessionNew's `from`).
+function PulseCard({ here }) {
+  const navigate = useNavigate()
+  const [top, setTop] = useState(null)
+
+  useEffect(() => {
+    let live = true
+    pulse(null, '/feed')
+      .then((d) => live && setTop(d.items[0] || null))
+      .catch(() => {})
+    return () => {
+      live = false
+    }
+  }, [])
+
+  return (
+    // Not <Card>: its p-4 can't be overridden, and the header runs edge to edge.
+    <section className='animate-fade-up overflow-hidden rounded-card bg-white shadow-card [animation-delay:100ms]'>
+      <div className='bg-linear-to-br from-primary to-orange-400 px-4 py-3 text-white'>
+        <p className='text-xs font-semibold uppercase tracking-wider text-white/80'>GullyPulse · while you wait</p>
+        <p className='mt-0.5 text-[15px] font-semibold'>Got a food confession? Nobody will know it was you.</p>
+      </div>
+      {top && (
+        <button
+          type='button'
+          onClick={() => navigate(`/confessions/${top.id}`)}
+          className='flex w-full items-start gap-3 px-4 pt-3 text-left'
+        >
+          <span aria-hidden className='text-xl'>🤫</span>
+          <span className='min-w-0 flex-1'>
+            <span className='line-clamp-2 text-sm text-grey-700'>“{top.text}”</span>
+            <span className='mt-1 flex items-center gap-1 text-xs text-grey-400'>
+              <RiHeart3Fill size={12} className='text-primary' /> {top.likes} · {top.comments} comments
+            </span>
+          </span>
+        </button>
+      )}
+      <div className='flex gap-2 p-4'>
+        <button
+          type='button'
+          onClick={() => navigate('/confessions/new', { state: { from: here } })}
+          className='flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-white transition hover:bg-primary-dark active:scale-[0.98]'
+        >
+          <RiQuillPenLine size={18} /> Write a confession
+        </button>
+        <button
+          type='button'
+          onClick={() => navigate('/confessions')}
+          className='flex h-11 items-center gap-1 rounded-xl px-3 text-sm font-semibold text-grey-700 ring-1 ring-grey-200 transition hover:bg-grey-50 active:scale-[0.98]'
+        >
+          Read <RiArrowRightSLine size={18} />
+        </button>
+      </div>
+    </section>
+  )
+}
+
 export default function OrderToken() {
+  const location = useLocation()
   const navigate = useNavigate()
   const cart = useSelector((state) => state.cart.details)
   const { order, setOrder, error, retry, cartId, orderId, queue } = useOrder({ page: '' })
@@ -96,6 +157,11 @@ export default function OrderToken() {
   const [confirming, setConfirming] = useState(false)
   const [cancelling, setCancelling] = useState(false)
   const [cancelError, setCancelError] = useState('')
+  // "Posted anonymously" after coming back from writing a confession.
+  const [toast, setToast] = useState(location.state?.toast || '')
+  useEffect(() => {
+    if (location.state?.toast) navigate(location.pathname, { replace: true, state: null })
+  }, [location, navigate])
 
   useEffect(() => {
     api('/orders/get-truth-line')
@@ -181,6 +247,8 @@ export default function OrderToken() {
 
         <Queue queue={queue} isPending={isPending} />
 
+        <PulseCard here={location.pathname} />
+
         <Card className='animate-fade-up [animation-delay:120ms]'>
           <h2 className='text-[15px] font-semibold'>Your order</h2>
           <ul className='mt-3 space-y-2'>
@@ -236,6 +304,7 @@ export default function OrderToken() {
           error={cancelError}
         />
       )}
+      <Toast message={toast} onDone={() => setToast('')} />
     </Page>
   )
 }
