@@ -19,9 +19,10 @@ export default function ActiveOrders({ cartId }) {
   const dispatch = useDispatch()
   const saved = useSelector((state) => state.cart.orders) || []
   const [now] = useState(() => Date.now())
-  const orders = saved.filter(
-    (o) => o.cartId === cartId && OPEN.includes(o.status) && now - new Date(o.createdAt) < DAY,
-  )
+  const orders = saved
+    .filter((o) => o.cartId === cartId && OPEN.includes(o.status) && now - new Date(o.createdAt) < DAY)
+    // Newest first, by when it was placed (the saved list's order isn't meaningful).
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt) || b.orderNumber - a.orderNumber)
   // Sorted, so the refresh below runs when the set of orders changes, not
   // when the same orders are listed in another order.
   const ids = orders.map((o) => o._id).sort().join(',')
