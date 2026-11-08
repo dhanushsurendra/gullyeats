@@ -323,11 +323,11 @@ class _AddNewOrderState extends State<AddNewOrder> {
 
     final menu = displayMenu;
 
-    final filteredMenu = menu
-        .where(
-          (item) => item.matches(searchQuery),
-        )
-        .toList();
+    final filteredMenu =
+        menu.where((item) => item.matches(searchQuery)).toList()
+          // Out-of-stock items sink to the bottom (a stable sort keeps the rest
+          // in menu order).
+          ..sort((a, b) => (a.isInStock ? 0 : 1) - (b.isInStock ? 0 : 1));
 
     final authProvider = context.read<AuthProvider>();
     final cartProvider = context.read<CartProvider>();
@@ -479,8 +479,12 @@ class _AddNewOrderState extends State<AddNewOrder> {
 
   Widget _buildMenuItem(MenuItemModel item, int count, OrderProvider provider) {
     final isSelected = count > 0;
+    // Out of stock and not already in this order: the server would refuse
+    // it, so it can't be added. One already in an order being edited keeps
+    // its stepper, so the vendor can still change or remove it.
+    final unavailable = !item.isInStock && count == 0;
 
-    return AppCard(
+    final card = AppCard(
       padding: const EdgeInsets.all(16),
       border: Border.all(
         color: isSelected
@@ -523,31 +527,63 @@ class _AddNewOrderState extends State<AddNewOrder> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (count > 0) ...[
-                  _qtyBtn(Icons.remove, () => provider.removeItem(item), false),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 200),
-                      transitionBuilder: (child, animation) =>
-                          ScaleTransition(scale: animation, child: child),
-                      child: Text(
-                        "$count",
-                        key: ValueKey(count),
-                        style: AppTextStyles.heading3.copyWith(
-                          color: AppColors.black,
+                if (unavailable)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.grey100,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      context.l10n.outOfStock,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.grey600,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  )
+                else ...[
+                  if (count > 0) ...[
+                    _qtyBtn(
+                      Icons.remove,
+                      () => provider.removeItem(item),
+                      false,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 200),
+                        transitionBuilder: (child, animation) =>
+                            ScaleTransition(scale: animation, child: child),
+                        child: Text(
+                          "$count",
+                          key: ValueKey(count),
+                          style: AppTextStyles.heading3.copyWith(
+                            color: AppColors.black,
+                          ),
                         ),
                       ),
                     ),
-                  ),
+                  ],
+                  _qtyBtn(Icons.add, () => provider.addItem(item), true),
                 ],
-                _qtyBtn(Icons.add, () => provider.addItem(item), true),
               ],
             ),
           ),
         ],
       ),
     );
+
+    // Greyed out, and announced as unavailable to screen readers.
+    return unavailable
+        ? Semantics(
+            label: context.l10n.outOfStock,
+            child: Opacity(opacity: 0.55, child: card),
+          )
+        : card;
   }
 
   // ============================================================
