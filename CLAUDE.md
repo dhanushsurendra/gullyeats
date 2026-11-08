@@ -11,7 +11,7 @@ GullyEats is a QR-based ordering platform for street food carts. It's a monorepo
 | `backend/` | Node (CommonJS), Express 5, Mongoose, Socket.IO | Single API for all clients |
 | `frontend/` | Flutter (package `gullyeats`) | **Onboarding** app, used by GullyEats staff (not vendors) to onboard a vendor: OTP login for the vendor's number, create or resume a cart, photo, location, menu, staff, QR poster |
 | `ordering/` | Flutter (package `ordering`) | **Vendor ordering** app: live orders, serve/paid toggles, sales charts, platform-fee payment via Razorpay |
-| `customer-app/` | React 19 + Vite 8 + Tailwind 4 + Redux Toolkit (React Compiler enabled) | Customer web app opened from a cart's QR code (`/c/:cartId/...`) |
+| `customer-app/` | React 19 + Vite 8 + Tailwind 4 + Redux Toolkit (React Compiler enabled) | Customer web app opened from a cart's QR code (`/c/:cartId/...`). Dark theme by default, switchable from every top bar: use the colour tokens in `src/index.css` (`bg-surface` for cards, `bg-ink` for dark chips), never `bg-white`/`bg-grey-900`, so both themes work |
 | `gullyeats-admin/` | React 18 + Vite 5 + Tailwind 3 + Redux Toolkit, Recharts, Leaflet | Super-admin dashboard |
 
 ## Commands
