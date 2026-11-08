@@ -45,7 +45,7 @@ export default function ActiveOrders({ cartId }) {
           key={o._id}
           type='button'
           onClick={() => navigate(`/c/${cartId}/order/${o._id}`)}
-          className='animate-fade-up flex w-full items-center gap-3 rounded-2xl bg-grey-900 px-4 py-3 text-left text-white shadow-float transition active:scale-[0.98]'
+          className='animate-fade-up flex w-full items-center gap-3 rounded-2xl bg-ink px-4 py-3 text-left text-white shadow-float transition active:scale-[0.98]'
         >
           <span className='flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-primary'>
             <RiTicket2Line size={22} />

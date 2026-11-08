@@ -177,7 +177,7 @@ export default function Menu() {
       />
 
       <div className='sticky top-16 z-20 space-y-3 bg-grey-50/95 px-4 pb-3 pt-4 backdrop-blur-md'>
-        <label className='flex h-12 items-center gap-3 rounded-2xl bg-white px-4 shadow-card ring-1 ring-grey-200/60 focus-within:ring-2 focus-within:ring-primary/40'>
+        <label className='flex h-12 items-center gap-3 rounded-2xl bg-surface px-4 shadow-card ring-1 ring-grey-200/60 focus-within:ring-2 focus-within:ring-primary/40'>
           <RiSearchLine size={20} className='shrink-0 text-grey-400' />
           <input
             type='search'
@@ -202,8 +202,8 @@ export default function Menu() {
               aria-pressed={filter === f.id}
               className={`flex h-9 items-center gap-2 rounded-full px-4 text-sm font-medium transition ${
                 filter === f.id
-                  ? 'bg-grey-900 text-white'
-                  : 'bg-white text-grey-600 ring-1 ring-grey-200'
+                  ? 'bg-ink text-white'
+                  : 'bg-surface text-grey-600 ring-1 ring-grey-200'
               }`}
             >
               {f.id !== 'all' && (
@@ -261,7 +261,7 @@ export default function Menu() {
       </main>
 
       {isAddMore ? (
-        <div className='sticky bottom-0 z-30 pb-safe border-t border-grey-200/70 bg-white/95 px-4 pt-3 backdrop-blur-md'>
+        <div className='sticky bottom-0 z-30 pb-safe border-t border-grey-200/70 bg-surface/95 px-4 pt-3 backdrop-blur-md'>
           {saveError && <p className='mb-2 text-sm text-danger'>{saveError}</p>}
           <div className='mb-3 flex items-center justify-between text-sm'>
             <span className='text-grey-500'>
@@ -280,7 +280,7 @@ export default function Menu() {
               key={count}
               type='button'
               onClick={() => navigate(`/c/${cartId}/cart`)}
-              className='animate-bump flex h-15 w-full items-center justify-between rounded-2xl bg-grey-900 px-5 text-white shadow-float transition active:scale-[0.98]'
+              className='animate-bump flex h-15 w-full items-center justify-between rounded-2xl bg-ink px-5 text-white shadow-float transition active:scale-[0.98]'
             >
               <span className='text-left'>
                 <span className='block text-xs text-white/60'>

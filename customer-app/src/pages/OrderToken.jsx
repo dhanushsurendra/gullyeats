@@ -130,14 +130,14 @@ function PulseCard({ here }) {
 
   return (
     // Not <Card>: its p-4 can't be overridden, and the carousel runs edge to edge.
-    <section className='animate-fade-up overflow-hidden rounded-card bg-white shadow-card [animation-delay:100ms]'>
+    <section className='animate-fade-up overflow-hidden rounded-card bg-surface shadow-card [animation-delay:100ms]'>
       <div className='px-4 pt-4'>
         <div className='flex items-center justify-between gap-2'>
           <span className='inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary'>
             <span className='h-2 w-2 animate-pulse rounded-full bg-primary' /> GullyPulse
           </span>
           {feed?.today > 0 && (
-            <span className='rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-grey-600 shadow-card'>
+            <span className='rounded-full bg-surface px-2.5 py-1 text-[11px] font-semibold text-grey-600 shadow-card'>
               🔥 {feed.today} {feed.today === 1 ? 'confession' : 'confessions'} today
             </span>
           )}
@@ -159,7 +159,7 @@ function PulseCard({ here }) {
         >
           {feed.items.map((c) => (
             <li key={c.id} className='w-[80%] shrink-0 snap-start'>
-              <div className='flex h-full flex-col rounded-2xl bg-white p-3.5 shadow-card ring-1 ring-grey-200/60'>
+              <div className='flex h-full flex-col rounded-2xl bg-surface p-3.5 shadow-card ring-1 ring-grey-200/60'>
                 <button type='button' onClick={() => navigate(`/confessions/${c.id}`)} className='flex-1 text-left'>
                   <span className='flex items-center gap-2'>
                     <Avatar seed={c.id} small />
@@ -209,7 +209,7 @@ function PulseCard({ here }) {
             key={prompt}
             type='button'
             onClick={() => write(`${prompt.replace(/…$/, '')} `)}
-            className='shrink-0 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-primary ring-1 ring-primary/30 transition active:scale-95'
+            className='shrink-0 rounded-full bg-surface px-3 py-1.5 text-xs font-semibold text-primary ring-1 ring-primary/30 transition active:scale-95'
           >
             {prompt}
           </button>
@@ -311,7 +311,7 @@ export default function OrderToken() {
           <p className='relative text-xs font-semibold uppercase tracking-[0.2em] text-white/80'>Your token</p>
           <p className='animate-pop relative mt-1 text-7xl font-bold tabular-nums leading-none'>{order.orderNumber}</p>
           <p className='relative mt-4 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-medium'>
-            <span className='h-2 w-2 animate-pulse rounded-full bg-white' /> Live updates on
+            <span className='h-2 w-2 animate-pulse rounded-full bg-surface' /> Live updates on
           </p>
         </section>
 
@@ -354,7 +354,7 @@ export default function OrderToken() {
         </Card>
 
         {truthLine && (
-          <Card tone='bg-grey-900 text-white' className='animate-fade-up [animation-delay:180ms]'>
+          <Card tone='bg-ink text-white' className='animate-fade-up [animation-delay:180ms]'>
             <RiDoubleQuotesL className='text-primary' size={24} />
             <p className='mt-1 text-[15px] italic leading-relaxed text-white/90'>{truthLine}</p>
             <p className='mt-2 text-xs text-white/40'>Something to read while you wait</p>

@@ -162,7 +162,7 @@ export default function CustomerCart() {
             </a>
           </p>
           <div
-            className={`mt-3 flex h-12 items-center gap-3 rounded-xl bg-grey-100 px-4 ring-1 transition focus-within:bg-white focus-within:ring-2 ${
+            className={`mt-3 flex h-12 items-center gap-3 rounded-xl bg-grey-100 px-4 ring-1 transition focus-within:bg-surface focus-within:ring-2 ${
               phoneInvalid ? 'ring-danger/50' : 'ring-transparent focus-within:ring-primary/40'
             }`}
           >

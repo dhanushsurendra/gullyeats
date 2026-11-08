@@ -61,7 +61,7 @@ export default function ConfessionNew() {
 
   if (!key || me?.eligible === false) {
     return (
-      <Page className='bg-white'>
+      <Page className='bg-surface'>
         <TopBar title='New confession' onBack={back} />
         <StatusScreen
           icon='🧾'
@@ -86,7 +86,7 @@ export default function ConfessionNew() {
 
   if (me.suspendedUntil) {
     return (
-      <Page className='bg-white'>
+      <Page className='bg-surface'>
         <TopBar title='New confession' onBack={back} />
         <StatusScreen
           icon='⏸️'
@@ -104,7 +104,7 @@ export default function ConfessionNew() {
 
   if (result === 'in_review') {
     return (
-      <Page className='bg-white'>
+      <Page className='bg-surface'>
         <StatusScreen
           icon='🕵️'
           title='Sent for a quick review'
@@ -117,11 +117,11 @@ export default function ConfessionNew() {
   }
 
   return (
-    <Page className='bg-white'>
+    <Page className='bg-surface'>
       <TopBar title='New confession' subtitle='Posted as Anonymous' onBack={back} />
       <main className='flex-1 px-4 pt-4'>
         <div className='flex items-center gap-3 rounded-2xl bg-grey-50 px-4 py-3 ring-1 ring-grey-200/70'>
-          <span className='flex h-10 w-10 items-center justify-center rounded-full bg-grey-900 text-white'>
+          <span className='flex h-10 w-10 items-center justify-center rounded-full bg-ink text-white'>
             <RiSpyLine size={20} />
           </span>
           <p className='text-sm leading-snug text-grey-600'>
@@ -145,7 +145,7 @@ export default function ConfessionNew() {
           maxLength={MAX}
           rows={8}
           placeholder='Say the thing you’ve never told anyone…'
-          className='mt-4 w-full resize-none rounded-2xl bg-white px-4 py-3 text-[17px] leading-relaxed outline-none ring-1 ring-grey-200 placeholder:text-grey-400 focus:ring-2 focus:ring-primary/40'
+          className='mt-4 w-full resize-none rounded-2xl bg-surface px-4 py-3 text-[17px] leading-relaxed outline-none ring-1 ring-grey-200 placeholder:text-grey-400 focus:ring-2 focus:ring-primary/40'
         />
         <div className='mt-1 flex justify-between px-1 text-xs text-grey-400'>
           <span>{length > 0 && length < MIN ? `${MIN - length} more characters` : ' '}</span>

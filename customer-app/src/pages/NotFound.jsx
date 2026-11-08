@@ -8,7 +8,7 @@ export default function NotFound() {
   const cart = useSelector((state) => state.cart.details)
 
   return (
-    <Page className='bg-white'>
+    <Page className='bg-surface'>
       <StatusScreen
         icon='📷'
         tone='grey'

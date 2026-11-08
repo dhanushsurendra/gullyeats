@@ -91,7 +91,7 @@ export default function ConfessionDetail() {
 
   if (missing) {
     return (
-      <Page className='bg-white'>
+      <Page className='bg-surface'>
         <TopBar title='Confession' onBack={back} />
         <StatusScreen icon='🫥' tone='grey' title='Not found' message={missing}>
           <Button onClick={() => navigate('/confessions', { replace: true })}>See other confessions</Button>
@@ -123,11 +123,11 @@ export default function ConfessionDetail() {
             {comments.items.map((c) => (
               <li key={c.id} className='animate-fade-up flex gap-3'>
                 <Avatar seed={c.id} small />
-                <div className='min-w-0 flex-1 rounded-2xl rounded-tl-md bg-white px-3.5 py-2.5 shadow-card'>
+                <div className='min-w-0 flex-1 rounded-2xl rounded-tl-md bg-surface px-3.5 py-2.5 shadow-card'>
                   <div className='flex items-center gap-2'>
                     <span className='text-[13px] font-semibold'>Anonymous</span>
                     {c.byAuthor && (
-                      <span className='rounded-full bg-grey-900 px-1.5 py-0.5 text-[10px] font-semibold text-white'>Author</span>
+                      <span className='rounded-full bg-ink px-1.5 py-0.5 text-[10px] font-semibold text-white'>Author</span>
                     )}
                     {c.mine && (
                       <span className='rounded-full bg-primary-soft px-1.5 py-0.5 text-[10px] font-semibold text-primary'>You</span>
@@ -171,7 +171,7 @@ export default function ConfessionDetail() {
       {confession && (
         <form
           onSubmit={sendComment}
-          className='fixed inset-x-0 bottom-0 z-30 mx-auto max-w-md border-t border-grey-200/70 bg-white/95 px-4 pt-3 backdrop-blur-md pb-safe'
+          className='fixed inset-x-0 bottom-0 z-30 mx-auto max-w-md border-t border-grey-200/70 bg-surface/95 px-4 pt-3 backdrop-blur-md pb-safe'
         >
           {commentError && <p className='mb-2 rounded-xl bg-danger-soft px-3 py-2 text-sm text-danger' role='alert'>{commentError}</p>}
           <div className='flex items-end gap-2'>

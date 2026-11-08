@@ -5,7 +5,7 @@ import { RiMapPin2Line, RiRestaurantLine, RiStarFill, RiTicket2Line, RiWallet3Li
 
 import illustration from '../assets/welcome.png'
 import ActiveOrders from '../components/ActiveOrders'
-import { Button, LoadingScreen, Page, StatusScreen, BottomBar } from '../components/ui'
+import { Button, LoadingScreen, Page, StatusScreen, BottomBar, ThemeToggle } from '../components/ui'
 import { api } from '../constants/api'
 import { setCartDetails } from '../store/cartSlice'
 import { shortAddress } from '../utils/format'
@@ -57,7 +57,7 @@ export default function Welcome() {
   const isOpen = cart.isOpen && cart.isActive !== false
 
   return (
-    <Page className='bg-white'>
+    <Page className='bg-surface'>
       <div className='relative h-64 overflow-hidden bg-linear-to-br from-[#ff8a3d] to-primary'>
         {cart.cartImageUrl ? (
           <img src={cart.cartImageUrl} alt='' className='h-full w-full object-cover' />
@@ -65,12 +65,13 @@ export default function Welcome() {
           <img src={illustration} alt='' className='mx-auto h-full object-contain py-4' />
         )}
         <div className='absolute inset-0 bg-linear-to-t from-black/45 to-transparent' />
-        <p className='absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-xs font-bold tracking-wide text-primary'>
+        <p className='absolute left-4 top-4 rounded-full bg-surface/90 px-3 py-1 text-xs font-bold tracking-wide text-primary'>
           GullyEats
         </p>
+        <ThemeToggle className='absolute right-3 top-3 bg-black/30 text-white backdrop-blur-sm hover:bg-black/40' />
       </div>
 
-      <main className='relative -mt-8 flex-1 rounded-t-[28px] bg-white px-5 pt-6'>
+      <main className='relative -mt-8 flex-1 rounded-t-[28px] bg-surface px-5 pt-6'>
         <div className='animate-fade-up flex items-start justify-between gap-3'>
           <div className='min-w-0'>
             <h1 className='text-2xl font-bold leading-tight'>{cart.cartName}</h1>

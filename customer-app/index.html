@@ -4,7 +4,16 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/logo.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#fe5200" />
+    <meta name="theme-color" content="#0c0c0e" />
+    <!-- Theme before first paint (dark unless the customer chose light); see src/utils/theme.js. -->
+    <script>
+      (function () {
+        var t = 'dark'
+        try { if (localStorage.getItem('gullyeats-theme') === 'light') t = 'light' } catch (e) {}
+        document.documentElement.dataset.theme = t
+        if (t === 'light') document.querySelector('meta[name="theme-color"]').setAttribute('content', '#fe5200')
+      })()
+    </script>
     <meta name="description" content="Order from this street food cart. No app, no login." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

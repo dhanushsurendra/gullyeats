@@ -7,7 +7,7 @@ export function MenuItem({ item, quantity, onAdd, onRemove, canOrder = true }) {
 
   return (
     <article
-      className={`flex gap-4 rounded-card bg-white p-3 shadow-card transition ${
+      className={`flex gap-4 rounded-card bg-surface p-3 shadow-card transition ${
         available ? '' : 'opacity-60'
       }`}
     >

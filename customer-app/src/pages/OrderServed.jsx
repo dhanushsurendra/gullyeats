@@ -45,7 +45,7 @@ export default function OrderServed() {
   }
 
   return (
-    <Page className='bg-white'>
+    <Page className='bg-surface'>
       <main className='flex-1 px-5 pt-14'>
         <div className='text-center'>
           <div className='animate-pop mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-success text-white ring-8 ring-success-soft'>
@@ -86,7 +86,7 @@ export default function OrderServed() {
                   aria-pressed={on}
                   onClick={() => setPicked((p) => (on ? p.filter((c) => c !== choice) : [...p, choice]))}
                   className={`rounded-full px-3.5 py-2 text-sm font-medium transition active:scale-95 ${
-                    on ? 'bg-primary text-white' : 'bg-white text-grey-700 ring-1 ring-grey-200'
+                    on ? 'bg-primary text-white' : 'bg-surface text-grey-700 ring-1 ring-grey-200'
                   }`}
                 >
                   {choice}
@@ -101,7 +101,7 @@ export default function OrderServed() {
             rows={3}
             placeholder='Anything else? (optional)'
             aria-label='Your feedback'
-            className='mt-4 w-full resize-none rounded-xl bg-white px-4 py-3 text-[15px] outline-none ring-1 ring-grey-200 placeholder:text-grey-400 focus:ring-2 focus:ring-primary/40'
+            className='mt-4 w-full resize-none rounded-xl bg-surface px-4 py-3 text-[15px] outline-none ring-1 ring-grey-200 placeholder:text-grey-400 focus:ring-2 focus:ring-primary/40'
           />
           {error && <p className='mt-2 text-sm text-danger'>{error}</p>}
         </Card>

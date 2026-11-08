@@ -12,12 +12,12 @@ export default function CancelOrderModal({ token, onCancel, onKeepWaiting, cance
 
   return (
     <div className='fixed inset-0 z-50 flex items-end justify-center'>
-      <div className='animate-fade absolute inset-0 bg-grey-900/40 backdrop-blur-[2px]' onClick={onKeepWaiting} />
+      <div className='animate-fade absolute inset-0 bg-black/50 backdrop-blur-[2px]' onClick={onKeepWaiting} />
       <div
         role='dialog'
         aria-modal='true'
         aria-labelledby='cancel-title'
-        className='animate-sheet pb-safe relative w-full max-w-md rounded-t-[28px] bg-white px-5 pt-3'
+        className='animate-sheet pb-safe relative w-full max-w-md rounded-t-[28px] bg-surface px-5 pt-3'
       >
         <div className='mx-auto h-1 w-10 rounded-full bg-grey-200' />
         <div className='mt-5 flex h-14 w-14 items-center justify-center rounded-full bg-danger-soft text-danger'>

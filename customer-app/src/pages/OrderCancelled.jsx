@@ -20,7 +20,7 @@ export default function OrderCancelled() {
   const refund = adjustment?.action === 'RETURN' ? Number(adjustment.amount || 0) : 0
 
   return (
-    <Page className='bg-white'>
+    <Page className='bg-surface'>
       <StatusScreen
         icon='✕'
         tone='danger'

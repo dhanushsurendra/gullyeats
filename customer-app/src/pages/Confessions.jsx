@@ -80,7 +80,7 @@ export default function Confessions() {
           <button
             type='button'
             onClick={compose}
-            className='mt-4 flex h-11 items-center gap-2 rounded-full bg-white px-5 text-sm font-semibold text-primary shadow-card transition active:scale-95'
+            className='mt-4 flex h-11 items-center gap-2 rounded-full bg-surface px-5 text-sm font-semibold text-primary shadow-card transition active:scale-95'
           >
             <RiQuillPenLine size={18} /> Write a confession
           </button>
@@ -99,7 +99,7 @@ export default function Confessions() {
                 aria-selected={tab === value}
                 onClick={() => setTab(value)}
                 className={`flex h-9 items-center gap-1.5 rounded-full px-4 text-sm font-semibold transition active:scale-95 ${
-                  tab === value ? 'bg-grey-900 text-white' : 'bg-white text-grey-600 ring-1 ring-grey-200'
+                  tab === value ? 'bg-ink text-white' : 'bg-surface text-grey-600 ring-1 ring-grey-200'
                 }`}
               >
                 {icon} {label}
@@ -129,7 +129,7 @@ export default function Confessions() {
               </div>
             )}
             {feed.error && (
-              <div className='rounded-card bg-white p-4 text-center shadow-card'>
+              <div className='rounded-card bg-surface p-4 text-center shadow-card'>
                 <p className='text-sm text-danger'>{feed.error}</p>
                 <Button variant='secondary' className='mt-3' onClick={feed.more}>
                   Try again
@@ -187,7 +187,7 @@ function MyPosts({ rows, open }) {
               type='button'
               disabled={!live}
               onClick={() => open(c.id)}
-              className='w-full rounded-card bg-white p-4 text-left shadow-card transition enabled:active:scale-[0.99]'
+              className='w-full rounded-card bg-surface p-4 text-left shadow-card transition enabled:active:scale-[0.99]'
             >
               <div className='flex items-center justify-between gap-3'>
                 <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${tone}`}>{label}</span>

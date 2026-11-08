@@ -9,7 +9,7 @@ export default function ThankYou() {
   const cartName = useSelector((state) => state.cart.details?.cartName)
 
   return (
-    <Page className='bg-white'>
+    <Page className='bg-surface'>
       <StatusScreen
         icon='🧡'
         title='Thanks for your feedback!'

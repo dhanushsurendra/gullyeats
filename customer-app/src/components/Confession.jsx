@@ -73,7 +73,7 @@ export function ConfessionCard({ confession: c, onLike, onOpen, onReport, large 
   }
 
   return (
-    <article className='animate-fade-up rounded-card bg-white p-4 shadow-card' style={style}>
+    <article className='animate-fade-up rounded-card bg-surface p-4 shadow-card' style={style}>
       <header className='flex items-center gap-3'>
         <Avatar seed={c.id} />
         <div className='min-w-0 flex-1 leading-tight'>
@@ -145,7 +145,7 @@ export function ConfessionCard({ confession: c, onLike, onOpen, onReport, large 
 
 export function ConfessionSkeleton() {
   return (
-    <div className='rounded-card bg-white p-4 shadow-card' aria-hidden>
+    <div className='rounded-card bg-surface p-4 shadow-card' aria-hidden>
       <div className='flex items-center gap-3'>
         <div className='skeleton h-10 w-10 rounded-full' />
         <div className='flex-1 space-y-2'>
@@ -186,12 +186,12 @@ export function ReportSheet({ what = 'confession', onClose, onSubmit }) {
 
   return (
     <div className='fixed inset-0 z-50 flex items-end justify-center'>
-      <div className='animate-fade absolute inset-0 bg-grey-900/40 backdrop-blur-[2px]' onClick={onClose} />
+      <div className='animate-fade absolute inset-0 bg-black/50 backdrop-blur-[2px]' onClick={onClose} />
       <div
         role='dialog'
         aria-modal='true'
         aria-labelledby='report-title'
-        className='animate-sheet pb-safe relative max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-t-[28px] bg-white px-5 pt-3'
+        className='animate-sheet pb-safe relative max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-t-[28px] bg-surface px-5 pt-3'
       >
         <div className='mx-auto h-1 w-10 rounded-full bg-grey-200' />
         <h2 id='report-title' className='mt-5 text-xl font-semibold'>
@@ -241,7 +241,7 @@ export function Toast({ message, onDone }) {
   if (!message) return null
   return (
     <div className='pointer-events-none fixed inset-x-0 bottom-28 z-50 flex justify-center px-4' role='status' aria-live='polite'>
-      <p className='animate-fade-up max-w-sm rounded-2xl bg-grey-900 px-4 py-3 text-center text-sm font-medium text-white shadow-float'>
+      <p className='animate-fade-up max-w-sm rounded-2xl bg-ink px-4 py-3 text-center text-sm font-medium text-white shadow-float'>
         {message}
       </p>
     </div>

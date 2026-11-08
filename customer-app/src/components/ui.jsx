@@ -1,4 +1,5 @@
-import { RiArrowLeftSLine } from 'react-icons/ri'
+import { RiArrowLeftSLine, RiMoonLine, RiSunLine } from 'react-icons/ri'
+import { useTheme } from '../utils/theme'
 
 /* The shared building blocks every page is made of. */
 
@@ -11,9 +12,26 @@ export function Page({ children, className = '' }) {
   )
 }
 
+// Sun/moon button that switches between the light and dark theme.
+export function ThemeToggle({ className = '' }) {
+  const [theme, toggle] = useTheme()
+  const dark = theme === 'dark'
+  return (
+    <button
+      type='button'
+      onClick={toggle}
+      aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'}
+      title={dark ? 'Light theme' : 'Dark theme'}
+      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition active:scale-90 ${className || 'text-grey-600 hover:bg-grey-100'}`}
+    >
+      {dark ? <RiSunLine size={20} /> : <RiMoonLine size={20} />}
+    </button>
+  )
+}
+
 export function TopBar({ title, subtitle, onBack, right }) {
   return (
-    <header className='sticky top-0 z-30 border-b border-grey-200/70 bg-white/90 backdrop-blur-md'>
+    <header className='sticky top-0 z-30 border-b border-grey-200/70 bg-surface/90 backdrop-blur-md'>
       <div className='flex h-16 items-center gap-3 px-4'>
         {onBack && (
           <button
@@ -30,6 +48,7 @@ export function TopBar({ title, subtitle, onBack, right }) {
           {subtitle && <p className='truncate text-xs text-grey-500'>{subtitle}</p>}
         </div>
         {right}
+        <ThemeToggle className='-mr-2 text-grey-600 hover:bg-grey-100' />
       </div>
     </header>
   )
@@ -38,8 +57,8 @@ export function TopBar({ title, subtitle, onBack, right }) {
 const VARIANTS = {
   primary:
     'bg-primary text-white shadow-[0_6px_20px_-6px_rgb(254_82_0/0.6)] hover:bg-primary-dark disabled:bg-grey-300 disabled:shadow-none',
-  secondary: 'bg-white text-grey-900 ring-1 ring-grey-200 hover:bg-grey-50',
-  danger: 'bg-white text-danger ring-1 ring-danger/25 hover:bg-danger-soft',
+  secondary: 'bg-surface text-grey-900 ring-1 ring-grey-200 hover:bg-grey-50',
+  danger: 'bg-surface text-danger ring-1 ring-danger/25 hover:bg-danger-soft',
   dangerSolid: 'bg-danger text-white hover:bg-red-700',
   ghost: 'text-grey-600 hover:bg-grey-100',
 }
@@ -73,7 +92,7 @@ export function BottomBar({ children }) {
     <>
       <div className='h-36' aria-hidden />
       <div className='fixed inset-x-0 bottom-0 z-30'>
-        <div className='pb-safe mx-auto w-full max-w-md border-t border-grey-200/70 bg-white/95 px-4 pt-3 backdrop-blur-md'>
+        <div className='pb-safe mx-auto w-full max-w-md border-t border-grey-200/70 bg-surface/95 px-4 pt-3 backdrop-blur-md'>
           {children}
         </div>
       </div>
@@ -114,9 +133,9 @@ export function LoadingScreen({ label = 'Loading…' }) {
   )
 }
 
-// White card. Pass `tone` for another background (a class like 'bg-grey-900'),
+// White card. Pass `tone` for another background (a class like 'bg-ink'),
 // since two bg- classes in one className don't reliably override each other.
-export function Card({ children, className = '', tone = 'bg-white shadow-card' }) {
+export function Card({ children, className = '', tone = 'bg-surface shadow-card' }) {
   return <section className={`rounded-card p-4 ${tone} ${className}`}>{children}</section>
 }
 
@@ -142,7 +161,7 @@ export function Stepper({ quantity, onAdd, onRemove, name }) {
         type='button'
         onClick={onAdd}
         aria-label={`Add ${name}`}
-        className='h-9 min-w-21 rounded-xl bg-white px-4 text-sm font-bold text-primary shadow-card ring-1 ring-primary/30 transition hover:bg-primary-soft active:scale-95'
+        className='h-9 min-w-21 rounded-xl bg-surface px-4 text-sm font-bold text-primary shadow-card ring-1 ring-primary/30 transition hover:bg-primary-soft active:scale-95'
       >
         ADD
       </button>
