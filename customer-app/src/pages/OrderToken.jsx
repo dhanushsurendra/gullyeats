@@ -130,7 +130,7 @@ function PulseCard({ here }) {
 
   return (
     // Not <Card>: its p-4 can't be overridden, and the carousel runs edge to edge.
-    <section className='animate-fade-up overflow-hidden rounded-card bg-linear-to-br from-primary-soft via-white to-white shadow-card ring-1 ring-primary/15 [animation-delay:100ms]'>
+    <section className='animate-fade-up overflow-hidden rounded-card bg-white shadow-card [animation-delay:100ms]'>
       <div className='px-4 pt-4'>
         <div className='flex items-center justify-between gap-2'>
           <span className='inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary'>
