@@ -130,11 +130,11 @@ function PulseCard({ here }) {
 
   return (
     // Not <Card>: its p-4 can't be overridden, and the carousel runs edge to edge.
-    <section className='animate-fade-up overflow-hidden rounded-card bg-linear-to-br from-violet-50 via-white to-sky-50 shadow-card ring-1 ring-violet-100 [animation-delay:100ms]'>
+    <section className='animate-fade-up overflow-hidden rounded-card bg-linear-to-br from-primary-soft via-white to-white shadow-card ring-1 ring-primary/15 [animation-delay:100ms]'>
       <div className='px-4 pt-4'>
         <div className='flex items-center justify-between gap-2'>
-          <span className='inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-violet-700'>
-            <span className='h-2 w-2 animate-pulse rounded-full bg-violet-500' /> GullyPulse
+          <span className='inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary'>
+            <span className='h-2 w-2 animate-pulse rounded-full bg-primary' /> GullyPulse
           </span>
           {feed?.today > 0 && (
             <span className='rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-grey-600 shadow-card'>
@@ -193,7 +193,7 @@ function PulseCard({ here }) {
             <button
               type='button'
               onClick={() => navigate('/confessions')}
-              className='flex h-full w-full flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-violet-200 text-sm font-semibold text-violet-700'
+              className='flex h-full w-full flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-primary/30 text-sm font-semibold text-primary'
             >
               <RiArrowRightSLine size={24} /> See all
             </button>
@@ -209,7 +209,7 @@ function PulseCard({ here }) {
             key={prompt}
             type='button'
             onClick={() => write(`${prompt.replace(/…$/, '')} `)}
-            className='shrink-0 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-violet-700 ring-1 ring-violet-200 transition active:scale-95'
+            className='shrink-0 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-primary ring-1 ring-primary/30 transition active:scale-95'
           >
             {prompt}
           </button>
@@ -220,7 +220,7 @@ function PulseCard({ here }) {
         <button
           type='button'
           onClick={() => write()}
-          className='flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-violet-600 text-[15px] font-semibold text-white shadow-[0_6px_20px_-6px_rgb(124_58_237/0.55)] transition hover:bg-violet-700 active:scale-[0.98]'
+          className='flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-[15px] font-semibold text-white shadow-[0_6px_20px_-6px_rgb(254_82_0/0.6)] transition hover:bg-primary-dark active:scale-[0.98]'
         >
           <RiQuillPenLine size={18} /> Confess anonymously
         </button>
