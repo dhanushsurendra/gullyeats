@@ -128,8 +128,16 @@ function tokenize(text) {
     let c = base(raw).replace(/^[^\p{L}\p{M}\p{N}@$]+|[^\p{L}\p{M}\p{N}*#]+$/gu, '')
     if (!c) continue
     const plain = c
-    if (LETTERS.test(c)) c = [...c].map((ch) => LEET[ch] ?? ch).join('')
+    // A lone "5" or "3" in "5 3 x" is a letter too.
+    if (LETTERS.test(c) || (c.length === 1 && LEET[c])) c = [...c].map((ch) => LEET[ch] ?? ch).join('')
     const leet = c !== plain
+
+    // Symbols or emoji standing in for a letter (s$x, f@ck, s😀x): leet maps
+    // $ to s and @ to a, which is wrong here, so also try "any one letter".
+    if (!/[*#]/.test(plain) && !/[^\P{L}a-z]/u.test(plain) && /[a-z][^a-z]+[a-z]/u.test(plain)) {
+      const pattern = plain.replace(/[^a-z]+/gu, '[a-z]?')
+      if (plain.replace(/[^a-z]/g, '').length >= 2) masked.push({ raw, pattern: new RegExp(`^${pattern}$`), swap: true })
+    }
     const parts = c.split(/[^\p{L}\p{M}*#]+/u).filter(Boolean)
 
     for (const p of parts) {
@@ -226,10 +234,12 @@ const describe = { exact: 'exact word', variant: 'spelling variant', phonetic: '
 function check(text) {
   const { words, extra, masked } = tokenize(text)
   const matches = []
+  // One entry per word found; a stronger match for it replaces a weaker one.
   const add = (m, raw) => {
-    if (!matches.some((x) => x.term === m.term && x.found === raw)) {
-      matches.push({ term: m.term, found: raw, category: m.category, severity: m.severity, kind: m.kind })
-    }
+    const entry = { term: m.term, found: raw, category: m.category, severity: m.severity, kind: m.kind }
+    const i = matches.findIndex((x) => x.term === m.term && x.found === raw)
+    if (i < 0) matches.push(entry)
+    else if (SEVERITY_RANK[m.severity] > SEVERITY_RANK[matches[i].severity]) matches[i] = entry
   }
 
   const ambiguous = []
@@ -244,9 +254,14 @@ function check(text) {
     const m = matchWord(x.t, x.kind)
     if (m && m.severity !== 'ambiguous') add(m, x.raw)
   }
-  for (const { pattern, raw } of masked) {
-    const e = [...exact.values()].find((v) => v.severity !== 'ambiguous' && isLatin(v.term) && pattern.test(v.term))
-    if (e) add({ ...e, severity: 'mild', kind: 'masked' }, raw)
+  for (const { pattern, raw, swap } of masked) {
+    const hits = [...exact.values()].filter((v) => v.severity !== 'ambiguous' && isLatin(v.term) && pattern.test(v.term))
+    const e = hits.find((v) => v.severity === 'severe') || hits[0]
+    if (!e) continue
+    // One symbol for one letter of a severe word (f$ck) is as clear as the word;
+    // stars (f**k) and mild words still get a human look.
+    if (swap && e.severity === 'severe' && e.term.length >= 4) add({ ...e, kind: 'variant' }, raw)
+    else add({ ...e, severity: e.severity === 'severe' ? 'mild' : e.severity, kind: 'masked' }, raw)
   }
 
   // Phrases, on squashed words so "kill youuu" still counts.

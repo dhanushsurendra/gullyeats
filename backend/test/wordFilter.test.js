@@ -43,6 +43,7 @@ test('disguised spellings are blocked', () => {
     'fuckers everywhere',
     'motherfuckers',
     'fckkk',
+    'f$ck', 'f@ck', 'f%ck', 'f!ck', 'f😀ck', 'b@tch', 'ch%tiya', 'bh0sd!ke', 'm&d&rch*d'.replace('*', 'o'),
     'B I T C H',
     'ｆｕｃｋ', // full-width letters
     'fúck',
@@ -85,6 +86,7 @@ test('close misspellings, masks, mild words and targeted ambiguous words go to r
     'go die',
     'send nudes',
     'i had sex in the car',
+    's$x', 's@x', 's!x', 's%x', 's^x', 's&x', 's~x', 's😀x', '5 3 x', 's.e.x', 's e x', 's3x', '$ex', 's*x',
     'we made out behind the chaat stall',
     'sex education is important', // any mention of sex gets a human look
     'i was raped last year', // a survivor's story must reach a person, not be auto-blocked
@@ -160,6 +162,13 @@ test('innocent text is allowed (false positives)', () => {
     'cocktails and cucumbers',
     'documents for the circumstances',
     'that pundit was so wise',
+    "it's 6:30, see you at the stall",
+    'rock&roll night, q&a after, b/w photos, w/o onions',
+    'e-mail me, co-op store, t-shirt sale, x-ray done',
+    'r&b music and m&m candy',
+    'AT&T and P&G',
+    'tea@4pm with friends',
+    'only ₹20 for 2 plates',
     'my boss is a total moron lol',
   ])
 })
