@@ -1204,4 +1204,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get startPreparing => 'Start preparing';
+
+  @override
+  String get termsAndPrivacy => 'Terms & Privacy';
+
+  @override
+  String get termsAndPrivacySubtitle =>
+      'Our terms, and how GullyEats uses your data';
 }

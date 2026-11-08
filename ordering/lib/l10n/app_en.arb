@@ -561,5 +561,7 @@
   "collected": "Collected",
   "refunded": "Refunded",
   "preparing": "Preparing",
-  "startPreparing": "Start preparing"
+  "startPreparing": "Start preparing",
+  "termsAndPrivacy": "Terms & Privacy",
+  "termsAndPrivacySubtitle": "Our terms, and how GullyEats uses your data"
 }

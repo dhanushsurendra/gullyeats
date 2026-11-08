@@ -125,7 +125,12 @@ export default function Welcome() {
         <Button onClick={() => navigate(`/c/${cartId}/menu`)}>
           {isOpen ? 'Start my order' : 'View the menu'}
         </Button>
-        <p className='mt-2 text-center text-xs text-grey-400'>No app download needed</p>
+        <p className='mt-2 text-center text-xs text-grey-400'>
+          No app download needed ·{' '}
+          <a href='/legal.html' target='_blank' rel='noopener' className='underline underline-offset-2'>
+            Terms &amp; Privacy
+          </a>
+        </p>
       </BottomBar>
     </Page>
   )

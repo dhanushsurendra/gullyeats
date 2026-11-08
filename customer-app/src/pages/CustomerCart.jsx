@@ -152,7 +152,12 @@ export default function CustomerCart() {
           <label htmlFor='phone' className='text-[15px] font-semibold'>
             Phone number <span className='font-normal text-grey-400'>(optional)</span>
           </label>
-          <p className='mt-0.5 text-xs text-grey-500'>Only so the vendor can reach you about this order.</p>
+          <p className='mt-0.5 text-xs text-grey-500'>
+            Only so the vendor can reach you about this order.{' '}
+            <a href='/legal.html#privacy' target='_blank' rel='noopener' className='underline underline-offset-2'>
+              Privacy
+            </a>
+          </p>
           <div
             className={`mt-3 flex h-12 items-center gap-3 rounded-xl bg-grey-100 px-4 ring-1 transition focus-within:bg-white focus-within:ring-2 ${
               phoneInvalid ? 'ring-danger/50' : 'ring-transparent focus-within:ring-primary/40'
@@ -193,6 +198,12 @@ export default function CustomerCart() {
         </Button>
         <p className='mt-2 text-center text-xs text-grey-400'>
           {count} {count === 1 ? 'item' : 'items'} · You'll get a token. Pay at the counter.
+          <br />
+          By ordering you agree to the{' '}
+          <a href='/legal.html' target='_blank' rel='noopener' className='underline underline-offset-2'>
+            Terms
+          </a>
+          .
         </p>
       </BottomBar>
     </Page>

@@ -1202,4 +1202,11 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get startPreparing => 'बनाना शुरू करें';
+
+  @override
+  String get termsAndPrivacy => 'नियम और गोपनीयता';
+
+  @override
+  String get termsAndPrivacySubtitle =>
+      'हमारे नियम, और GullyEats आपके डेटा का उपयोग कैसे करता है';
 }

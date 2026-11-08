@@ -364,5 +364,7 @@
   "collected": "ಸಂಗ್ರಹಿಸಿದ್ದು",
   "refunded": "ಹಿಂತಿರುಗಿಸಿದ್ದು",
   "preparing": "ತಯಾರಾಗುತ್ತಿದೆ",
-  "startPreparing": "ತಯಾರಿಸಲು ಪ್ರಾರಂಭಿಸಿ"
+  "startPreparing": "ತಯಾರಿಸಲು ಪ್ರಾರಂಭಿಸಿ",
+  "termsAndPrivacy": "ನಿಯಮಗಳು ಮತ್ತು ಗೌಪ್ಯತೆ",
+  "termsAndPrivacySubtitle": "ನಮ್ಮ ನಿಯಮಗಳು, ಮತ್ತು GullyEats ನಿಮ್ಮ ಡೇಟಾವನ್ನು ಹೇಗೆ ಬಳಸುತ್ತದೆ"
 }

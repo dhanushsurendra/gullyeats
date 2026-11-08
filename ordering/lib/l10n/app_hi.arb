@@ -364,5 +364,7 @@
   "collected": "जमा हुआ",
   "refunded": "वापस किया",
   "preparing": "बन रहा है",
-  "startPreparing": "बनाना शुरू करें"
+  "startPreparing": "बनाना शुरू करें",
+  "termsAndPrivacy": "नियम और गोपनीयता",
+  "termsAndPrivacySubtitle": "हमारे नियम, और GullyEats आपके डेटा का उपयोग कैसे करता है"
 }

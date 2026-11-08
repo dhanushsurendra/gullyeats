@@ -2291,6 +2291,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Start preparing'**
   String get startPreparing;
+
+  /// No description provided for @termsAndPrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms & Privacy'**
+  String get termsAndPrivacy;
+
+  /// No description provided for @termsAndPrivacySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Our terms, and how GullyEats uses your data'**
+  String get termsAndPrivacySubtitle;
 }
 
 class _AppLocalizationsDelegate

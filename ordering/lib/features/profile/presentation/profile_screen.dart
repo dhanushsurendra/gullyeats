@@ -20,6 +20,7 @@ import 'package:ordering/core/utils/session.dart';
 import 'package:ordering/core/error/app_exceptions.dart';
 import 'package:ordering/core/widgets/app_snack_bar.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:ordering/features/profile/providers/language_provider.dart';
 import 'package:ordering/l10n/l10n.dart';
 import 'package:ordering/core/widgets/base_screen.dart';
@@ -422,6 +423,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const ChangePinScreen()),
+            ),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(context.l10n.termsAndPrivacy, style: AppTextStyles.heading3),
+            subtitle: Text(context.l10n.termsAndPrivacySubtitle, style: AppTextStyles.caption),
+            trailing: const Icon(Icons.open_in_new, size: 20, color: AppColors.grey500),
+            // Served by the customer web app (customer-app/public/legal.html).
+            onTap: () => launchUrl(
+              Uri.parse('https://gullyeats.vercel.app/legal.html'),
+              mode: LaunchMode.externalApplication,
             ),
           ),
           AppGaps.h8,

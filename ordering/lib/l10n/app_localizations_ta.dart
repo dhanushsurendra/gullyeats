@@ -1218,4 +1218,11 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get startPreparing => 'தயாரிக்கத் தொடங்கு';
+
+  @override
+  String get termsAndPrivacy => 'விதிமுறைகள் & தனியுரிமை';
+
+  @override
+  String get termsAndPrivacySubtitle =>
+      'எங்கள் விதிமுறைகள், GullyEats உங்கள் தரவை எப்படிப் பயன்படுத்துகிறது';
 }

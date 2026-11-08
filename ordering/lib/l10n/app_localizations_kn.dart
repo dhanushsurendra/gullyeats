@@ -1204,4 +1204,11 @@ class AppLocalizationsKn extends AppLocalizations {
 
   @override
   String get startPreparing => 'ತಯಾರಿಸಲು ಪ್ರಾರಂಭಿಸಿ';
+
+  @override
+  String get termsAndPrivacy => 'ನಿಯಮಗಳು ಮತ್ತು ಗೌಪ್ಯತೆ';
+
+  @override
+  String get termsAndPrivacySubtitle =>
+      'ನಮ್ಮ ನಿಯಮಗಳು, ಮತ್ತು GullyEats ನಿಮ್ಮ ಡೇಟಾವನ್ನು ಹೇಗೆ ಬಳಸುತ್ತದೆ';
 }
