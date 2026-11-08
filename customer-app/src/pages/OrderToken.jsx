@@ -59,23 +59,28 @@ function Queue({ queue, isPending }) {
 
 function Progress({ status, preparing }) {
   const reached = status === 'SERVED' ? 3 : status === 'PAID' ? (preparing ? 2 : 1) : 0
+  // Equal columns, so the circles are evenly spaced whatever each label's
+  // length; each line runs from the previous circle's centre to this one's.
   return (
-    <ol className='flex items-center'>
+    <ol className='grid' style={{ gridTemplateColumns: `repeat(${STEPS.length}, minmax(0, 1fr))` }}>
       {STEPS.map((label, i) => (
-        <li key={label} className={`flex items-center ${i ? 'flex-1' : ''}`}>
+        <li key={label} className='relative flex flex-col items-center gap-1.5'>
           {i > 0 && (
-            <span className={`mx-2 h-0.5 flex-1 rounded-full transition-colors duration-500 ${i <= reached ? 'bg-success' : 'bg-grey-200'}`} />
-          )}
-          <span className='flex flex-col items-center gap-1.5'>
             <span
-              className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold transition-colors duration-500 ${
-                i <= reached ? 'bg-success text-white' : 'bg-grey-100 text-grey-400'
-              } ${i === reached + 1 ? 'ring-4 ring-primary-soft' : ''}`}
-            >
-              {i <= reached ? <RiCheckLine size={18} /> : i + 1}
-            </span>
-            <span className={`text-xs font-medium ${i <= reached ? 'text-grey-900' : 'text-grey-400'}`}>{label}</span>
+              aria-hidden='true'
+              className={`absolute right-1/2 top-4 h-0.5 w-full -translate-y-1/2 transition-colors duration-500 ${
+                i <= reached ? 'bg-success' : 'bg-grey-200'
+              }`}
+            />
+          )}
+          <span
+            className={`relative z-10 flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold transition-colors duration-500 ${
+              i <= reached ? 'bg-success text-white' : 'bg-grey-100 text-grey-400'
+            } ${i === reached + 1 ? 'ring-4 ring-primary-soft' : ''}`}
+          >
+            {i <= reached ? <RiCheckLine size={18} /> : i + 1}
           </span>
+          <span className={`text-center text-xs font-medium ${i <= reached ? 'text-grey-900' : 'text-grey-400'}`}>{label}</span>
         </li>
       ))}
     </ol>
