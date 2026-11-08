@@ -9,6 +9,9 @@ import ThankYou from '../pages/ThankYou'
 import Splash from '../pages/Splash'
 import OrderCancelled from '../pages/OrderCancelled'
 import RootRedirect from '../components/RootRedirect'
+import Confessions from '../pages/Confessions'
+import ConfessionNew from '../pages/ConfessionNew'
+import ConfessionDetail from '../pages/ConfessionDetail'
 
 // `:orderNumber` holds the order's _id, not its token number.
 export default function AppRoutes() {
@@ -27,6 +30,10 @@ export default function AppRoutes() {
         <Route path='/c/:cartId/order/:orderNumber/served' element={<OrderServed />} />
         <Route path='/c/:cartId/order/:orderNumber/cancelled' element={<OrderCancelled />} />
         <Route path='/c/:cartId/order/:orderNumber/thank-you' element={<ThankYou />} />
+        {/* GullyPulse: one feed for every cart, so no post is tied to a cart. */}
+        <Route path='/confessions' element={<Confessions />} />
+        <Route path='/confessions/new' element={<ConfessionNew />} />
+        <Route path='/confessions/:publicId' element={<ConfessionDetail />} />
         <Route path='*' element={<NotFound />} />
       </Routes>
     </BrowserRouter>

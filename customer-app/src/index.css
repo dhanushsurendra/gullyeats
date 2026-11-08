@@ -39,6 +39,7 @@
   --animate-sheet: sheet 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
   --animate-fade: fade 0.2s ease-out both;
   --animate-bump: bump 0.3s ease-out;
+  --animate-heart: heart 0.8s ease-out both;
 }
 
 @keyframes fade-up {
@@ -63,6 +64,15 @@
 
 @keyframes bump {
   50% { transform: scale(1.04); }
+}
+
+/* GullyPulse double-tap like. */
+@keyframes heart {
+  0% { opacity: 0; transform: scale(0.3); }
+  25% { opacity: 1; transform: scale(1.15); }
+  45% { transform: scale(0.95); }
+  70% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.1); }
 }
 
 @keyframes shimmer {

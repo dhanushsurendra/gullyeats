@@ -16,6 +16,9 @@ export default function ThankYou() {
         message={`Hope to see you again at ${cartName || 'this cart'}.`}
       >
         <Button onClick={() => navigate(`/c/${cartId}/menu`, { replace: true })}>Order again</Button>
+        <Button variant='secondary' onClick={() => navigate('/confessions')}>
+          🤫 Read GullyPulse confessions
+        </Button>
       </StatusScreen>
       <p className='pb-safe text-center text-xs text-grey-400'>
         Powered by <span className='font-semibold text-primary'>GullyEats</span>

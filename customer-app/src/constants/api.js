@@ -5,12 +5,12 @@ export const SOCKET_URL = API_BASE_URL.replace(/\/api$/, '')
 
 // Calls the API and returns its `data`. Throws the server's own message
 // (e.g. "This cart is not taking orders right now") so pages can show it.
-export async function api(path, { method = 'GET', body } = {}) {
+export async function api(path, { method = 'GET', body, headers } = {}) {
   let response
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
       method,
-      headers: body ? { 'Content-Type': 'application/json' } : undefined,
+      headers: { ...(body ? { 'Content-Type': 'application/json' } : {}), ...headers },
       body: body ? JSON.stringify(body) : undefined,
     })
   } catch {
@@ -18,7 +18,10 @@ export async function api(path, { method = 'GET', body } = {}) {
   }
   const data = await response.json().catch(() => ({}))
   if (!response.ok || data.success === false) {
-    throw new Error(data.message || 'Something went wrong. Please try again.')
+    const error = new Error(data.message || 'Something went wrong. Please try again.')
+    error.status = response.status
+    error.code = data.code
+    throw error
   }
   return data.data
 }

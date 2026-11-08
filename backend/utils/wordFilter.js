@@ -122,10 +122,14 @@ function tokenize(text) {
     singles = []
   }
 
-  for (const raw of chunks) {
+  for (const chunk of chunks) {
+    // What the admin view highlights: the chunk without surrounding punctuation.
+    const raw = chunk.replace(/^[^\p{L}\p{M}\p{N}@$*#]+|[^\p{L}\p{M}\p{N}*#]+$/gu, '') || chunk
     let c = base(raw).replace(/^[^\p{L}\p{M}\p{N}@$]+|[^\p{L}\p{M}\p{N}*#]+$/gu, '')
     if (!c) continue
+    const plain = c
     if (LETTERS.test(c)) c = [...c].map((ch) => LEET[ch] ?? ch).join('')
+    const leet = c !== plain
     const parts = c.split(/[^\p{L}\p{M}*#]+/u).filter(Boolean)
 
     for (const p of parts) {
@@ -136,7 +140,7 @@ function tokenize(text) {
         }
         continue
       }
-      words.push({ t: p, raw })
+      words.push({ t: p, raw, leet })
     }
 
     // f.u.c.k or fu-ck in one chunk: also try the letters joined up.
@@ -232,6 +236,7 @@ function check(text) {
   words.forEach((w, i) => {
     const m = matchWord(w.t)
     if (!m) return
+    if (w.leet && m.kind === 'exact') m.kind = 'variant' // b1tch, @ss
     if (m.severity === 'ambiguous') ambiguous.push({ m, w, i })
     else add(m, w.raw)
   })

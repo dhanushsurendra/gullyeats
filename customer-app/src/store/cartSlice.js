@@ -58,9 +58,12 @@ const cartSlice = createSlice({
     // Adds or refreshes an order's summary.
     rememberOrder: (state, action) => {
       const { _id, cartId, orderNumber, status, createdAt, preparingAt = null } = action.payload
-      const summary = { _id, cartId, orderNumber, status, createdAt, preparingAt }
       const orders = state.orders || []
       const i = orders.findIndex((o) => o._id === _id)
+      // Only the create-order response carries the GullyPulse key; later
+      // fetches of the order must not wipe it.
+      const accessKey = action.payload.accessKey || orders[i]?.accessKey || null
+      const summary = { _id, cartId, orderNumber, status, createdAt, preparingAt, accessKey }
       // A known order is updated where it is: moving it to the top on every
       // refresh reordered the list, which triggered another refresh, forever.
       if (i >= 0) orders[i] = summary

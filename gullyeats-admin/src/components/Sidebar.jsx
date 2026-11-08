@@ -13,6 +13,7 @@ import {
   Lightbulb,
   History,
   Settings,
+  ShieldAlert,
   LogOut,
   X,
 } from 'lucide-react'
@@ -26,6 +27,7 @@ const NAV = [
       ['Owners', '/owners', Users],
       ['Carts', '/restaurants', Store],
       ['Orders', '/orders', ShoppingBag],
+      ['Moderation', '/moderation', ShieldAlert],
     ],
   ],
   [

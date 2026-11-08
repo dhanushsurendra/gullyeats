@@ -188,6 +188,13 @@ export const api = {
   operations: () => request(`${ADMIN}/insights/operations`),
 
   actions: (p) => request(`${ADMIN}/actions`, p),
+
+  // GullyPulse moderation. kind: confession | comment.
+  moderationCounts: () => request(`${ADMIN}/moderation/counts`),
+  moderationQueue: (p) => request(`${ADMIN}/moderation/queue`, p),
+  moderationItem: (kind, id) => request(`${ADMIN}/moderation/${kind}/${id}`),
+  moderate: (kind, id, action, reason) => post(`${ADMIN}/moderation/${kind}/${id}/${action}`, { reason }),
+  suspendPoster: (kind, id, days, reason) => post(`${ADMIN}/moderation/${kind}/${id}/suspend`, { days, reason }),
   suspendCart: (cartId, reason) => post(`${ADMIN}/carts/${cartId}/suspend`, { reason }),
   resumeCart: (cartId) => post(`${ADMIN}/carts/${cartId}/resume`),
   logReminder: (cartId, amount, channel) =>

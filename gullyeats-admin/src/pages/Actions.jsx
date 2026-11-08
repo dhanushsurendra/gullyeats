@@ -16,6 +16,16 @@ const ACTIONS = {
   ENABLE_VENDOR: 'Enabled vendor',
   SEND_REMINDER: 'Sent fee reminder',
   AUTO_REFUND: 'Refunded duplicate payment',
+  APPROVE_CONFESSION: 'Approved confession',
+  REJECT_CONFESSION: 'Rejected confession',
+  REMOVE_CONFESSION: 'Removed confession',
+  RESTORE_CONFESSION: 'Restored confession',
+  APPROVE_COMMENT: 'Approved comment',
+  REJECT_COMMENT: 'Rejected comment',
+  REMOVE_COMMENT: 'Removed comment',
+  RESTORE_COMMENT: 'Restored comment',
+  SUSPEND_POSTER: 'Suspended GullyPulse poster',
+  UNSUSPEND_POSTER: 'Lifted GullyPulse suspension',
 }
 
 // One readable line per action, from the details the server stored.
@@ -36,8 +46,10 @@ function describe({ action, details: d }) {
       return d.status === 'FAILED'
         ? `${inr(d.amount)} refund FAILED (${d.error}). Refund ${d.razorpayPaymentId} in the Razorpay dashboard.`
         : `${inr(d.amount)} refunded · ${d.razorpayPaymentId} → ${d.refundId}`
+    case 'SUSPEND_POSTER':
+      return `${d.days} days · ${d.reason}`
     default:
-      return ''
+      return d.reason ? [d.reason, d.from && `${d.from} → ${d.to}`].filter(Boolean).join(' · ') : ''
   }
 }
 
