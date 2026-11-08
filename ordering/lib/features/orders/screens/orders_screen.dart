@@ -23,6 +23,33 @@ import 'package:ordering/core/widgets/list_message.dart';
 import 'package:ordering/core/utils/responsive.dart';
 import 'package:ordering/features/cart/widgets/cart_selector.dart';
 
+/// Opens the "Create order" sheet. The + button that calls it sits on the
+/// home screen, stacked on the bottom navigation bar (see HomeScreen).
+void showCreateOrderSheet(BuildContext context) {
+  Navigator.of(context).push(
+    PageRouteBuilder(
+      pageBuilder: (context, animation, secondaryAnimation) =>
+          const AddNewOrder(),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        const begin = Offset(0.0, 1.0);
+        const end = Offset.zero;
+        const curve = Curves.easeOutExpo;
+
+        var tween = Tween(
+          begin: begin,
+          end: end,
+        ).chain(CurveTween(curve: curve));
+        var offsetAnimation = animation.drive(tween);
+
+        return SlideTransition(position: offsetAnimation, child: child);
+      },
+      opaque: false,
+      barrierDismissible: true,
+      barrierColor: Colors.black54,
+    ),
+  );
+}
+
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
 
@@ -96,31 +123,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
     }
   }
 
-  void _showCreateOrderSheet(BuildContext context) {
-    Navigator.of(context).push(
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            const AddNewOrder(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(0.0, 1.0);
-          const end = Offset.zero;
-          const curve = Curves.easeOutExpo;
-
-          var tween = Tween(
-            begin: begin,
-            end: end,
-          ).chain(CurveTween(curve: curve));
-          var offsetAnimation = animation.drive(tween);
-
-          return SlideTransition(position: offsetAnimation, child: child);
-        },
-        opaque: false,
-        barrierDismissible: true,
-        barrierColor: Colors.black54,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<OrderProvider>();
@@ -154,15 +156,12 @@ class _OrdersScreenState extends State<OrdersScreen> {
       "Stock": l10n.stock,
     };
     String getOrdersTitle(String selectedTab, List<OrderModel> orders) =>
-        l10n.ordersTitle(
-          switch (selectedTab) {
-            "Active" => "active",
-            "QR Orders" => "qr",
-            "Manual" => "manual",
-            _ => "all",
-          },
-          filteredOrders.length,
-        );
+        l10n.ordersTitle(switch (selectedTab) {
+          "Active" => "active",
+          "QR Orders" => "qr",
+          "Manual" => "manual",
+          _ => "all",
+        }, filteredOrders.length);
 
     Future<void> markOrderServed(String token, String orderId) async {
       try {
@@ -186,7 +185,10 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 await provider.serveOrderUndo(token, orderId);
 
                 if (context.mounted) {
-                  AppSnackBar.show(context, message: context.l10n.serveReverted);
+                  AppSnackBar.show(
+                    context,
+                    message: context.l10n.serveReverted,
+                  );
                 }
               } catch (e) {
                 final message = AppExceptionHandler.getMessage(e);
@@ -212,12 +214,24 @@ class _OrdersScreenState extends State<OrdersScreen> {
       }
     }
 
-    Future<void> setPreparing(String token, String orderId, bool preparing) async {
+    Future<void> setPreparing(
+      String token,
+      String orderId,
+      bool preparing,
+    ) async {
       try {
-        await context.read<OrderProvider>().setPreparing(token, orderId, preparing);
+        await context.read<OrderProvider>().setPreparing(
+          token,
+          orderId,
+          preparing,
+        );
       } catch (e) {
         if (!context.mounted) return;
-        AppSnackBar.show(context, message: AppExceptionHandler.getMessage(e), isError: true);
+        AppSnackBar.show(
+          context,
+          message: AppExceptionHandler.getMessage(e),
+          isError: true,
+        );
       }
     }
 
@@ -243,7 +257,10 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 await provider.markOrderUnpaid(token, orderId);
 
                 if (context.mounted) {
-                  AppSnackBar.show(context, message: context.l10n.paymentReverted);
+                  AppSnackBar.show(
+                    context,
+                    message: context.l10n.paymentReverted,
+                  );
                 }
               } catch (e) {
                 final message = AppExceptionHandler.getMessage(e);
@@ -291,7 +308,10 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 await provider.deleteOrderUndo(token, orderId);
 
                 if (context.mounted) {
-                  AppSnackBar.show(context, message: context.l10n.orderRestored);
+                  AppSnackBar.show(
+                    context,
+                    message: context.l10n.orderRestored,
+                  );
                 }
               } catch (e) {
                 final message = AppExceptionHandler.getMessage(e);
@@ -356,34 +376,37 @@ class _OrdersScreenState extends State<OrdersScreen> {
                   color: orderStatusColor(status),
                   count: filteredOrders.where((o) => o.status == status).length,
                 ),
-              for (final order in filteredOrders.where((o) => o.status == status))
-                Padding(
-                  // Keyed, so a new order on top doesn't reuse the cards below.
-                  key: ValueKey(order.id),
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: OrderCard(
-                    isFresh: provider.isFresh(order.id),
-                    onTap: order.status == 'CANCELLED'
-                        ? null
-                        : () => showModalBottomSheet(
-                            context: context,
-                            isScrollControlled: true,
-                            backgroundColor: Colors.transparent,
-                            builder: (_) => FractionallySizedBox(
-                              heightFactor: 0.95,
-                              child: AddNewOrder(existingOrder: order),
+                for (final order in filteredOrders.where(
+                  (o) => o.status == status,
+                ))
+                  Padding(
+                    // Keyed, so a new order on top doesn't reuse the cards below.
+                    key: ValueKey(order.id),
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: OrderCard(
+                      isFresh: provider.isFresh(order.id),
+                      onTap: order.status == 'CANCELLED'
+                          ? null
+                          : () => showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              builder: (_) => FractionallySizedBox(
+                                heightFactor: 0.95,
+                                child: AddNewOrder(existingOrder: order),
+                              ),
                             ),
-                          ),
-                    order: order,
-                    onServe: () =>
-                        markOrderServed(authProvider.token ?? "", order.id),
-                    onMarkPaid: () =>
-                        markOrderPaid(authProvider.token ?? "", order.id),
-                    onDelete: () =>
-                        deleteOrder(authProvider.token ?? "", order.id),
-                    onPreparing: (on) => setPreparing(authProvider.token ?? "", order.id, on),
+                      order: order,
+                      onServe: () =>
+                          markOrderServed(authProvider.token ?? "", order.id),
+                      onMarkPaid: () =>
+                          markOrderPaid(authProvider.token ?? "", order.id),
+                      onDelete: () =>
+                          deleteOrder(authProvider.token ?? "", order.id),
+                      onPreparing: (on) =>
+                          setPreparing(authProvider.token ?? "", order.id, on),
+                    ),
                   ),
-                ),
                 AppGaps.h12,
               ],
           ],
@@ -448,17 +471,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
               AppGaps.h16,
               Expanded(child: orderList()),
             ],
-          ),
-        ),
-        Positioned(
-          right: 16,
-          bottom: 100,
-          child: FloatingActionButton(
-            onPressed: () => _showCreateOrderSheet(context),
-            backgroundColor: AppColors.primary,
-            shape: const CircleBorder(),
-            elevation: 4,
-            child: const Icon(Icons.add, color: AppColors.white),
           ),
         ),
       ],
@@ -569,7 +581,10 @@ class _LiveBadgeState extends State<_LiveBadge>
                   Container(
                     width: 6,
                     height: 6,
-                    decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: color,
+                    ),
                   ),
                 ],
               ),
@@ -578,7 +593,9 @@ class _LiveBadgeState extends State<_LiveBadge>
           AppGaps.w4,
           Flexible(
             child: Text(
-              widget.isLive ? context.l10n.liveStatus : context.l10n.reconnecting,
+              widget.isLive
+                  ? context.l10n.liveStatus
+                  : context.l10n.reconnecting,
               style: AppTextStyles.caption.copyWith(
                 color: color,
                 fontWeight: FontWeight.w600,

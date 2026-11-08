@@ -105,13 +105,40 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       }),
                     ),
                   ),
+                  // The + button rides on top of the nav bar, so it clears it
+                  // at any bar height (gesture or button navigation, large
+                  // system text) instead of sitting at a fixed offset.
                   Positioned(
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    child: BottomNavBar(
-                      currentIndex: _currentIndex,
-                      onTap: _onTabTap,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        if (_currentIndex == 1)
+                          SafeArea(
+                            top: false,
+                            bottom: false,
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: 16),
+                              child: FloatingActionButton(
+                                onPressed: () => showCreateOrderSheet(context),
+                                backgroundColor: AppColors.primary,
+                                shape: const CircleBorder(),
+                                elevation: 4,
+                                child: const Icon(
+                                  Icons.add,
+                                  color: AppColors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        BottomNavBar(
+                          currentIndex: _currentIndex,
+                          onTap: _onTabTap,
+                        ),
+                      ],
                     ),
                   ),
                 ],
