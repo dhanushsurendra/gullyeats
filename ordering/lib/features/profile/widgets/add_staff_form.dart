@@ -76,7 +76,7 @@ class _AddStaffFormState extends State<AddStaffForm> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.grey200),
       ),
@@ -112,7 +112,7 @@ class _AddStaffFormState extends State<AddStaffForm> {
               FilteringTextInputFormatter.digitsOnly,
               LengthLimitingTextInputFormatter(10),
             ],
-            prefix: const Padding(
+            prefix: Padding(
               padding: EdgeInsets.symmetric(horizontal: 12),
               child: Text("+91", style: AppTextStyles.heading3),
             ),

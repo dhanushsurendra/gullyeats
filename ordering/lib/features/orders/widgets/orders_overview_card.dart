@@ -27,12 +27,12 @@ class OrdersOverviewCardState extends State<OrdersOverviewCard> {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.grey200),
         boxShadow: [
           BoxShadow(
-            color: AppColors.black.withValues(alpha: 0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -115,7 +115,7 @@ class OrdersOverviewCardState extends State<OrdersOverviewCard> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
+              Icon(
                 Icons.receipt_long_rounded,
                 size: 12,
                 color: AppColors.grey600,

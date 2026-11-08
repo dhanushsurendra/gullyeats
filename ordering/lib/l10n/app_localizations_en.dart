@@ -1211,4 +1211,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get termsAndPrivacySubtitle =>
       'Our terms, and how GullyEats uses your data';
+
+  @override
+  String get darkTheme => 'Dark theme';
+
+  @override
+  String get darkThemeSubtitle => 'Easier on the eyes at night';
 }

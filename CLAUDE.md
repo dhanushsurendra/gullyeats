@@ -40,6 +40,8 @@ flutter run -t tool/screen_gallery.dart          # every screen with sample data
 
 Vendor-app text lives in `ordering/lib/l10n/app_{en,hi,kn,ta}.arb`; run `flutter gen-l10n` after editing them. Screens read it as `context.l10n.<key>`, and code without a `BuildContext` uses `LanguageProvider.strings`. Compare order statuses with the server's codes (`"SERVED"`), never with translated labels.
 
+The vendor app has a light and a dark theme (dark by default, switch on Profile, `ThemeProvider` saves it). `AppColors` neutrals (`background`, `surface`, `black` = main text, `greyNNN`, `lightOrange`) are getters that follow `AppColors.dark`, so they can't sit inside `const` widgets. `AppColors.white` is always white: use it only for text/icons on orange or coloured fills, and `surface`/`background` for cards and pages. The goldens are light; `--dart-define=DARK=true --dart-define=SHOTS=<dir>` renders every screen dark to look at.
+
 `tool/screen_gallery.dart` (debug builds only) opens each screen with sample data and never logs in. Switch screens with `adb shell "run-as com.example.gullyeats sh -c 'echo <index> > files/gallery_index'"`.
 
 Flutter work uses the official `dart-flutter` Claude Code plugin (`claude plugin marketplace add flutter/agent-plugins`, then `claude plugin install dart-flutter@dart-flutter`). It provides the Flutter skills (for example `flutter-build-responsive-layout`, `flutter-fix-layout-issues` and `flutter-add-widget-test`) and the Dart/Flutter MCP server (`dart mcp-server`). The MCP server can launch the app, read runtime errors, inspect the widget tree and hot reload.

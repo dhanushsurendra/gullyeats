@@ -181,7 +181,7 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
   void _showPhotoOptions() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -416,8 +416,8 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.white,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       padding: EdgeInsets.only(
@@ -449,7 +449,7 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
                   Expanded(child: Text(l10n.editItem, style: AppTextStyles.heading2)),
                   IconButton(
                     onPressed: _isLoading ? null : () => Navigator.pop(context),
-                    icon: const Icon(Icons.close_rounded, color: AppColors.grey600),
+                    icon: Icon(Icons.close_rounded, color: AppColors.grey600),
                   ),
                 ],
               ),
@@ -749,7 +749,7 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: isSelected ? color.withValues(alpha: 0.05) : AppColors.white,
+            color: isSelected ? color.withValues(alpha: 0.05) : AppColors.surface,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: isSelected ? color : AppColors.grey200),
           ),

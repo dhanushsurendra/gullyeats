@@ -563,5 +563,7 @@
   "preparing": "Preparing",
   "startPreparing": "Start preparing",
   "termsAndConditions": "Terms and conditions",
-  "termsAndPrivacySubtitle": "Our terms, and how GullyEats uses your data"
+  "termsAndPrivacySubtitle": "Our terms, and how GullyEats uses your data",
+  "darkTheme": "Dark theme",
+  "darkThemeSubtitle": "Easier on the eyes at night"
 }

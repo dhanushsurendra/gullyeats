@@ -1225,4 +1225,10 @@ class AppLocalizationsTa extends AppLocalizations {
   @override
   String get termsAndPrivacySubtitle =>
       'எங்கள் விதிமுறைகள், GullyEats உங்கள் தரவை எப்படிப் பயன்படுத்துகிறது';
+
+  @override
+  String get darkTheme => 'டார்க் தீம்';
+
+  @override
+  String get darkThemeSubtitle => 'இரவில் கண்களுக்கு இதமானது';
 }

@@ -440,7 +440,7 @@ class _AddNewOrderState extends State<AddNewOrder> {
                     context.read<OrderProvider>().clearOrder();
                     Navigator.pop(context);
                   },
-            icon: const Icon(Icons.close, color: AppColors.grey600),
+            icon: Icon(Icons.close, color: AppColors.grey600),
           ),
           AppGaps.w8,
           Expanded(
@@ -604,7 +604,7 @@ class _AddNewOrderState extends State<AddNewOrder> {
         height: 36,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: isAdd ? AppColors.primary : AppColors.white,
+          color: isAdd ? AppColors.primary : AppColors.surface,
           border: isAdd ? null : Border.all(color: AppColors.grey200),
         ),
         child: Icon(
@@ -674,7 +674,7 @@ class _AddNewOrderState extends State<AddNewOrder> {
     // The same shape as AppFooter: white, soft top shadow, safe-area padding.
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: AppColors.surface,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -709,7 +709,7 @@ class _AddNewOrderState extends State<AddNewOrder> {
 
             AppGaps.h12,
 
-            const Divider(height: 1, color: AppColors.grey200),
+            Divider(height: 1, color: AppColors.grey200),
 
             AppGaps.h12,
 
@@ -753,7 +753,7 @@ class _AddNewOrderState extends State<AddNewOrder> {
                       disabled: provider.orderItems.isEmpty || _isSubmitting,
                       label: context.l10n.skip.toUpperCase(),
                       isLoading: _isSubmitting && !_isMarkingPaid,
-                      backgroundColor: AppColors.white,
+                      backgroundColor: AppColors.surface,
                       borderColor: AppColors.primary,
                       textColor: AppColors.primary,
                       onPressed: () async {

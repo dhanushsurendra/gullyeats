@@ -7,7 +7,7 @@ class AppTextStyles {
   static const String fontFamily = 'Poppins';
 
   // Hero title on a full-screen colour background (the welcome screen)
-  static const TextStyle display = TextStyle(
+  static TextStyle get display => TextStyle(
     fontSize: 32,
     fontWeight: FontWeight.w700,
     fontFamily: fontFamily,
@@ -15,7 +15,7 @@ class AppTextStyles {
   );
 
   // Page Title
-  static const TextStyle heading1 = TextStyle(
+  static TextStyle get heading1 => TextStyle(
     fontSize: 24,
     fontWeight: FontWeight.w600,
     fontFamily: fontFamily,
@@ -23,7 +23,7 @@ class AppTextStyles {
   );
 
   // Section Titles
-  static const TextStyle heading2 = TextStyle(
+  static TextStyle get heading2 => TextStyle(
     fontSize: 18,
     fontWeight: FontWeight.w600,
     fontFamily: fontFamily,
@@ -31,7 +31,7 @@ class AppTextStyles {
   );
 
   // Card titles
-  static const TextStyle heading3 = TextStyle(
+  static TextStyle get heading3 => TextStyle(
     fontSize: 16,
     fontWeight: FontWeight.w600,
     fontFamily: fontFamily,
@@ -39,7 +39,7 @@ class AppTextStyles {
   );
 
   // Body text
-  static const TextStyle body = TextStyle(
+  static TextStyle get body => TextStyle(
     fontSize: 14,
     fontWeight: FontWeight.w400,
     fontFamily: fontFamily,
@@ -47,7 +47,7 @@ class AppTextStyles {
   );
 
   // Small helper text
-  static const TextStyle caption = TextStyle(
+  static TextStyle get caption => TextStyle(
     fontSize: 12,
     fontWeight: FontWeight.w400,
     fontFamily: fontFamily,
@@ -55,7 +55,7 @@ class AppTextStyles {
   );
 
   // Tiny uppercase tags inside badges ("IN STOCK", "CURRENT")
-  static const TextStyle tag = TextStyle(
+  static TextStyle get tag => TextStyle(
     fontSize: 10,
     fontWeight: FontWeight.w700,
     fontFamily: fontFamily,
@@ -63,7 +63,7 @@ class AppTextStyles {
   );
 
   // Button text
-  static const TextStyle button = TextStyle(
+  static TextStyle get button => TextStyle(
     fontSize: 16,
     fontWeight: FontWeight.w600,
     fontFamily: fontFamily,

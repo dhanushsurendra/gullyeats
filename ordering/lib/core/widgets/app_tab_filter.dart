@@ -48,7 +48,7 @@ class AppTabFilter extends StatelessWidget {
           vertical: 10,
         ),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.white,
+          color: isSelected ? AppColors.primary : AppColors.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? AppColors.primary : AppColors.grey200,

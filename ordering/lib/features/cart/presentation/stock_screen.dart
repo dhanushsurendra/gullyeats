@@ -162,7 +162,7 @@ class _StockScreenState extends State<StockScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: AppPadding.card,
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: isOut ? AppColors.error : AppColors.grey200),
       ),
@@ -241,7 +241,7 @@ class _StockScreenState extends State<StockScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         margin: const EdgeInsets.symmetric(horizontal: 2),
         decoration: BoxDecoration(
-          color: active ? AppColors.white : Colors.transparent,
+          color: active ? AppColors.surface : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(

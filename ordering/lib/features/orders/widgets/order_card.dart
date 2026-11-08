@@ -154,7 +154,7 @@ class _OrderCardState extends State<OrderCard> {
           child: Transform.translate(
             offset: Offset(0, -24 * slide),
             child: Material(
-              color: Color.lerp(AppColors.white, AppColors.lightOrange, glow),
+              color: Color.lerp(AppColors.surface, AppColors.lightOrange, glow),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
                 side: BorderSide(
@@ -191,7 +191,7 @@ class _OrderCardState extends State<OrderCard> {
                   AppGaps.h12,
                   ..._itemLines(),
                   AppGaps.h12,
-                  const Divider(height: 1, color: AppColors.grey200),
+                  Divider(height: 1, color: AppColors.grey200),
                   AppGaps.h12,
                   _bottomRow(),
                   if (widget.order.paymentAdjustment != null &&
@@ -532,7 +532,7 @@ class _OrderCardState extends State<OrderCard> {
           constraints: const BoxConstraints(minHeight: 32),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: on ? AppColors.warning : AppColors.white,
+            color: on ? AppColors.warning : AppColors.surface,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: AppColors.warning),
           ),

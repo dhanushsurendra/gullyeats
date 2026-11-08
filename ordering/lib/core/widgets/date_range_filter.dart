@@ -40,13 +40,13 @@ class DateRangeFilter extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: AppColors.white,
+          color: AppColors.surface,
           border: Border.all(color: AppColors.grey200),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           children: [
-            const Icon(Icons.calendar_today_outlined, size: 16, color: AppColors.grey500),
+            Icon(Icons.calendar_today_outlined, size: 16, color: AppColors.grey500),
             AppGaps.w8,
             Expanded(
               child: Text(

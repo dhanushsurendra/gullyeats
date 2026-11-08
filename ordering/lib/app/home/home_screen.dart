@@ -81,7 +81,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     ];
 
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.background,
       body: Column(
         children: [
           if (showBanner)
@@ -126,7 +126,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                 onPressed: () => showCreateOrderSheet(context),
                                 backgroundColor: AppColors.primary,
                                 shape: const CircleBorder(),
-                                elevation: 4,
+                                // A black shadow reads as a ring on the dark theme.
+                                elevation: AppColors.dark ? 0 : 4,
                                 child: const Icon(
                                   Icons.add,
                                   color: AppColors.white,

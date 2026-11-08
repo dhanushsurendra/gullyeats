@@ -1,3 +1,4 @@
+import 'package:ordering/core/widgets/app_logo.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -423,7 +424,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
             children: [
               Row(
                 children: [
-                  Image.asset("assets/images/logo_text.png", height: 24),
+                  const AppLogo(),
                   AppGaps.w16,
                   const Flexible(
                     child: Align(

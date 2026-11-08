@@ -1,3 +1,4 @@
+import 'package:ordering/core/widgets/app_logo.dart';
 import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -29,7 +30,7 @@ class HandoverScreen extends StatelessWidget {
       header: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Image.asset("assets/images/logo_text.png", height: 24),
+          const AppLogo(),
           AppGaps.h24,
           Text(l10n.handoverTitle, style: AppTextStyles.heading1),
           AppGaps.h4,
@@ -82,7 +83,7 @@ class HandoverScreen extends StatelessWidget {
             child: Column(
               children: [
                 _row(l10n.toCollect, t.toCollect, t.unpaidOrders, l10n),
-                const Divider(height: 24, color: AppColors.grey200),
+                Divider(height: 24, color: AppColors.grey200),
                 _row(l10n.refunded, t.refunded, t.refundedOrders, l10n),
               ],
             ),

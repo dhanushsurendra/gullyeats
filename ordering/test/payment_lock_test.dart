@@ -62,6 +62,7 @@ Widget _app(TestProviders p, Widget home) => MultiProvider(
     ChangeNotifierProvider.value(value: p.profile),
     ChangeNotifierProvider.value(value: p.staff),
     ChangeNotifierProvider.value(value: p.payment),
+    ChangeNotifierProvider.value(value: p.theme),
     ChangeNotifierProvider.value(value: p.language),
   ],
   child: MaterialApp(

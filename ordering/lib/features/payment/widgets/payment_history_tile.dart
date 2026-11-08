@@ -42,7 +42,7 @@ class _PaymentHistoryTileState extends State<PaymentHistoryTile> {
       width: double.infinity,
       padding: AppPadding.card,
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.grey200),
       ),

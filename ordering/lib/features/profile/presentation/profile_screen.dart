@@ -1,8 +1,10 @@
+import 'package:ordering/core/widgets/app_logo.dart';
 import 'package:flutter/material.dart';
 import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
 import 'package:ordering/core/theme/app_padding.dart';
 import 'package:ordering/core/theme/app_gaps.dart';
+import 'package:ordering/core/theme/theme_provider.dart';
 import 'package:ordering/core/widgets/app_button.dart';
 import 'package:ordering/core/widgets/app_card.dart';
 import 'package:ordering/features/auth/providers/auth_provider.dart';
@@ -63,7 +65,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       showBackButton: false,
       header: Row(
         children: [
-          Image.asset("assets/images/logo_text.png", height: 24),
+          const AppLogo(),
           AppGaps.w16,
           const Flexible(
             child: Align(
@@ -142,6 +144,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           AppGaps.h12,
 
           _languageCard(context),
+          AppGaps.h12,
+
+          _themeCard(context),
           AppGaps.h12,
 
           _securityCard(context),
@@ -341,7 +346,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           AppButton(
             label: context.l10n.viewQrCaps,
-            backgroundColor: AppColors.white,
+            backgroundColor: AppColors.surface,
             borderColor: AppColors.primary,
             textColor: AppColors.primary,
             onPressed: () => Navigator.push(
@@ -366,7 +371,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(title, style: AppTextStyles.heading3),
         subtitle: Text(subtitle, style: AppTextStyles.caption),
-        trailing: const Icon(Icons.chevron_right, color: AppColors.grey500),
+        trailing: Icon(Icons.chevron_right, color: AppColors.grey500),
       ),
     );
   }
@@ -416,6 +421,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Widget _themeCard(BuildContext context) {
+    final theme = context.watch<ThemeProvider>();
+    return AppCard(
+      padding: EdgeInsets.zero,
+      child: SwitchListTile(
+        value: theme.dark,
+        onChanged: theme.setDark,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        secondary: Icon(
+          theme.dark ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
+          color: AppColors.primary,
+        ),
+        title: Text(context.l10n.darkTheme, style: AppTextStyles.heading3),
+        subtitle: Text(context.l10n.darkThemeSubtitle, style: AppTextStyles.caption),
+        activeTrackColor: AppColors.primary,
+        inactiveTrackColor: AppColors.grey300,
+        thumbColor: WidgetStateProperty.all(Colors.white),
+        trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+      ),
+    );
+  }
+
   Widget _securityCard(BuildContext context) {
     return AppCard(
       padding: AppPadding.card,
@@ -431,14 +458,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
               context.l10n.changePin,
               style: AppTextStyles.caption,
             ),
-            trailing: const Icon(Icons.chevron_right, color: AppColors.grey500),
+            trailing: Icon(Icons.chevron_right, color: AppColors.grey500),
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const ChangePinScreen()),
             ),
           ),
           AppGaps.h8,
-          const Divider(color: AppColors.grey200),
+          Divider(color: AppColors.grey200),
           AppGaps.h16,
           AppButton(
             isLoading: _isLoggingOut,

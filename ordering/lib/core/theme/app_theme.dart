@@ -5,24 +5,25 @@ import 'app_text_styles.dart';
 class AppTheme {
   AppTheme._();
 
-  static ThemeData lightTheme = ThemeData(
+  /// The theme for the current light/dark choice ([AppColors.dark]).
+  static ThemeData get current => ThemeData(
     useMaterial3: true,
     fontFamily: 'Poppins',
-    scaffoldBackgroundColor: AppColors.white,
+    scaffoldBackgroundColor: AppColors.background,
     primaryColor: AppColors.primary,
-    colorScheme: const ColorScheme(
-      brightness: Brightness.light,
+    colorScheme: ColorScheme(
+      brightness: AppColors.dark ? Brightness.dark : Brightness.light,
       primary: AppColors.primary,
       onPrimary: AppColors.white,
       secondary: AppColors.success,
       onSecondary: AppColors.white,
       error: AppColors.error,
       onError: AppColors.white,
-      surface: AppColors.white,
+      surface: AppColors.surface,
       onSurface: AppColors.black,
     ),
 
-    textTheme: const TextTheme(
+    textTheme: TextTheme(
       headlineLarge: AppTextStyles.heading1,
       headlineMedium: AppTextStyles.heading2,
       titleLarge: AppTextStyles.heading3,

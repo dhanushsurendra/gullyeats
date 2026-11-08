@@ -366,5 +366,7 @@
   "preparing": "बन रहा है",
   "startPreparing": "बनाना शुरू करें",
   "termsAndConditions": "नियम और शर्तें",
-  "termsAndPrivacySubtitle": "हमारे नियम, और GullyEats आपके डेटा का उपयोग कैसे करता है"
+  "termsAndPrivacySubtitle": "हमारे नियम, और GullyEats आपके डेटा का उपयोग कैसे करता है",
+  "darkTheme": "डार्क थीम",
+  "darkThemeSubtitle": "रात में आँखों को आराम"
 }

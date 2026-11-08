@@ -1,3 +1,4 @@
+import 'package:ordering/core/widgets/app_logo.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:ordering/core/error/app_exceptions.dart';
@@ -124,7 +125,7 @@ class _LoginScreenState extends State<LoginScreen> {
       header: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Image.asset("assets/images/logo_text.png", height: 24),
+          const AppLogo(),
           AppGaps.h40,
           Text(l10n.welcomeBack, style: AppTextStyles.heading1),
           AppGaps.h4,
@@ -144,7 +145,7 @@ class _LoginScreenState extends State<LoginScreen> {
               label: l10n.phoneOrVendorId,
               hint: l10n.loginHint,
               keyboardType: TextInputType.text,
-              prefix: const Padding(
+              prefix: Padding(
                 padding: EdgeInsets.only(left: 12, right: 8),
                 child: Icon(Icons.person_outline, color: AppColors.grey400, size: 22),
               ),
@@ -167,7 +168,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 FilteringTextInputFormatter.digitsOnly,
                 LengthLimitingTextInputFormatter(4),
               ],
-              prefix: const Padding(
+              prefix: Padding(
                 padding: EdgeInsets.only(left: 12, right: 8),
                 child: Icon(Icons.lock_outline, color: AppColors.grey400, size: 22),
               ),

@@ -1,3 +1,4 @@
+import 'package:ordering/core/widgets/app_logo.dart';
 import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:ordering/core/error/app_exceptions.dart';
@@ -173,7 +174,7 @@ class _SalesScreenState extends State<SalesScreen> {
         children: [
           Row(
             children: [
-              Image.asset("assets/images/logo_text.png", height: 24),
+              const AppLogo(),
               AppGaps.w16,
               // Shrinks on narrow phones so it never pushes past the edge.
               const Flexible(

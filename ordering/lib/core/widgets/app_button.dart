@@ -123,7 +123,7 @@ class AppButton extends StatelessWidget {
         // On a white button a white spinner would be invisible.
         child: CircularProgressIndicator(
           strokeWidth: 2,
-          color: backgroundColor == AppColors.white
+          color: backgroundColor == AppColors.surface
               ? AppColors.primary
               : Colors.white,
         ),

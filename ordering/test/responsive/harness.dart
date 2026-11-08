@@ -7,7 +7,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:ordering/core/theme/app_text_styles.dart';
+import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_theme.dart';
+import 'package:ordering/core/theme/theme_provider.dart';
 import 'package:ordering/features/auth/providers/auth_provider.dart';
 import 'package:ordering/features/cart/providers/cart_provider.dart';
 import 'package:ordering/features/cart/providers/staff_provider.dart';
@@ -135,6 +137,7 @@ class TestProviders {
   final staff = StaffProvider();
   final payment = PaymentProvider();
   final language = LanguageProvider();
+  final theme = ThemeProvider();
 }
 
 ThemeData _withIndicFallback(ThemeData theme) {
@@ -161,6 +164,8 @@ Widget buildApp(
 }) {
   // Item names read the language from here, as in the app.
   LanguageProvider.current = Locale(locale);
+  // Goldens are light. `--dart-define=DARK=true` (with SHOTS) renders the dark theme to look at.
+  AppColors.dark = const bool.fromEnvironment('DARK');
   return MultiProvider(
     providers: [
       ChangeNotifierProvider.value(value: p.order),
@@ -170,12 +175,13 @@ Widget buildApp(
       ChangeNotifierProvider.value(value: p.profile),
       ChangeNotifierProvider.value(value: p.staff),
       ChangeNotifierProvider.value(value: p.payment),
+      ChangeNotifierProvider.value(value: p.theme),
       ChangeNotifierProvider.value(value: p.language),
     ],
     child: MaterialApp(
       debugShowCheckedModeBanner: false,
       // Nirmala (loaded in loadFonts) stands in for the phone's fallback font.
-      theme: _withIndicFallback(AppTheme.lightTheme),
+      theme: _withIndicFallback(AppTheme.current),
       locale: Locale(locale),
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,

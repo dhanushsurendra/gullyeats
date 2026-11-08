@@ -2303,6 +2303,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Our terms, and how GullyEats uses your data'**
   String get termsAndPrivacySubtitle;
+
+  /// No description provided for @darkTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark theme'**
+  String get darkTheme;
+
+  /// No description provided for @darkThemeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Easier on the eyes at night'**
+  String get darkThemeSubtitle;
 }
 
 class _AppLocalizationsDelegate

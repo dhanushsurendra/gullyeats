@@ -210,7 +210,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
   void _showPhotoOptions() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -522,7 +522,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: isSelected ? color.withValues(alpha: 0.05) : AppColors.white,
+          color: isSelected ? color.withValues(alpha: 0.05) : AppColors.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: isSelected ? color : AppColors.grey200),
         ),

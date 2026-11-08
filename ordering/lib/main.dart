@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:ordering/core/routes/routes.dart';
 import 'package:ordering/core/theme/app_theme.dart';
+import 'package:ordering/core/theme/theme_provider.dart';
 import 'package:ordering/core/utils/session.dart';
 import 'package:ordering/features/auth/providers/auth_provider.dart';
 import 'package:ordering/features/cart/providers/staff_provider.dart';
@@ -20,10 +21,13 @@ Future<void> main() async {
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   final language = LanguageProvider();
   await language.load();
+  final theme = ThemeProvider();
+  await theme.load();
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: language),
+        ChangeNotifierProvider.value(value: theme),
         ChangeNotifierProvider(create: (_) => OrderProvider()),
         ChangeNotifierProvider(create: (_) => MenuProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
@@ -42,6 +46,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     return MaterialApp(
       title: 'GullyEats Vendor Ordering',
       debugShowCheckedModeBanner: false,
@@ -49,7 +54,7 @@ class MyApp extends StatelessWidget {
       locale: context.watch<LanguageProvider>().locale,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
-      theme: AppTheme.lightTheme,
+      theme: AppTheme.current,
       routes: Routes.getRoutes(),
       home: const SplashScreen(),
     );

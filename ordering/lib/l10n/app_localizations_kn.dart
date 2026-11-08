@@ -1211,4 +1211,10 @@ class AppLocalizationsKn extends AppLocalizations {
   @override
   String get termsAndPrivacySubtitle =>
       'ನಮ್ಮ ನಿಯಮಗಳು, ಮತ್ತು GullyEats ನಿಮ್ಮ ಡೇಟಾವನ್ನು ಹೇಗೆ ಬಳಸುತ್ತದೆ';
+
+  @override
+  String get darkTheme => 'ಡಾರ್ಕ್ ಥೀಮ್';
+
+  @override
+  String get darkThemeSubtitle => 'ರಾತ್ರಿ ಕಣ್ಣಿಗೆ ಹಿತ';
 }

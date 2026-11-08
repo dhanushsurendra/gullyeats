@@ -1,3 +1,4 @@
+import 'package:ordering/core/widgets/app_logo.dart';
 import 'package:flutter/material.dart';
 import 'package:ordering/core/utils/order_alerts.dart';
 import 'package:ordering/core/routes/app_routes.dart';
@@ -316,7 +317,7 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (widget.isLocked) ...[
-            Image.asset("assets/images/logo_text.png", height: 24),
+            const AppLogo(),
             AppGaps.h40,
           ],
           Text(l10n.platformFeePending, style: AppTextStyles.heading1),
@@ -336,7 +337,7 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
                 InfoBox(lines: [l10n.askOwnerToPay], icon: Icons.person_outline),
                 AppButton(
                   label: l10n.logOutCaps,
-                  backgroundColor: AppColors.white,
+                  backgroundColor: AppColors.surface,
                   borderColor: AppColors.primary,
                   textColor: AppColors.primary,
                   onPressed: () => signOut(context),

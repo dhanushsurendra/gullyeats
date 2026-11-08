@@ -255,8 +255,8 @@ class _EditCartScreenState extends State<EditCartScreen> {
             style: AppTextStyles.body.copyWith(color: AppColors.grey400),
           ),
           isExpanded: true,
-          icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.grey400),
-          dropdownColor: Colors.white,
+          icon: Icon(Icons.keyboard_arrow_down, color: AppColors.grey400),
+          dropdownColor: AppColors.surface,
           borderRadius: BorderRadius.circular(12),
           items: _cities.map((String city) {
             return DropdownMenuItem<String>(

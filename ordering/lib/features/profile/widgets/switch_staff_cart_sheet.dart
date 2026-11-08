@@ -59,8 +59,8 @@ class _SwitchStaffCartSheetState extends State<SwitchStaffCartSheet> {
       expand: false,
       builder: (context, scrollController) {
         return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
+          decoration: BoxDecoration(
+            color: AppColors.surface,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
@@ -78,7 +78,7 @@ class _SwitchStaffCartSheetState extends State<SwitchStaffCartSheet> {
                     Text(
                       context.l10n.moveStaffToCart(widget.staffName),
                       style: AppTextStyles.caption.copyWith(
-                        color: Colors.grey.shade600,
+                        color: AppColors.grey600,
                       ),
                     ),
                   ],
@@ -91,7 +91,7 @@ class _SwitchStaffCartSheetState extends State<SwitchStaffCartSheet> {
                         child: Text(
                           context.l10n.noCartsAvailable,
                           style: AppTextStyles.body.copyWith(
-                            color: Colors.grey.shade500,
+                            color: AppColors.grey500,
                           ),
                         ),
                       )
@@ -126,14 +126,14 @@ class _SwitchStaffCartSheetState extends State<SwitchStaffCartSheet> {
                                   border: Border.all(
                                     color: isSelected
                                         ? AppColors.primary
-                                        : Colors.grey.shade200,
+                                        : AppColors.grey200,
                                     width: isSelected ? 1.5 : 1,
                                   ),
                                   color: isSelected
                                       ? AppColors.primary.withValues(
                                           alpha: 0.06,
                                         )
-                                      : Colors.white,
+                                      : AppColors.surface,
                                 ),
                                 child: Row(
                                   children: [
@@ -186,7 +186,7 @@ class _SwitchStaffCartSheetState extends State<SwitchStaffCartSheet> {
                                             overflow: TextOverflow.ellipsis,
                                             style: AppTextStyles.caption
                                                 .copyWith(
-                                                  color: Colors.grey.shade600,
+                                                  color: AppColors.grey600,
                                                 ),
                                           ),
                                         ],
@@ -199,7 +199,7 @@ class _SwitchStaffCartSheetState extends State<SwitchStaffCartSheet> {
                                           : Icons.radio_button_off,
                                       color: isSelected
                                           ? AppColors.primary
-                                          : Colors.grey.shade400,
+                                          : AppColors.grey400,
                                     ),
                                   ],
                                 ),

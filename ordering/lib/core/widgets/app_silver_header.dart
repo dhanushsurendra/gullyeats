@@ -20,10 +20,10 @@ class AppSliverHeader extends StatelessWidget {
       pinned: true,
       elevation: 0,
       scrolledUnderElevation: 4,
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.background,
       leading: leading ??
           IconButton(
-            icon: const Icon(Icons.arrow_back, color: AppColors.black),
+            icon: Icon(Icons.arrow_back, color: AppColors.black),
             onPressed: () => Navigator.pop(context),
           ),
       title: Text(

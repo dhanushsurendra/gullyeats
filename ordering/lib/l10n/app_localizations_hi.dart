@@ -1209,4 +1209,10 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get termsAndPrivacySubtitle =>
       'हमारे नियम, और GullyEats आपके डेटा का उपयोग कैसे करता है';
+
+  @override
+  String get darkTheme => 'डार्क थीम';
+
+  @override
+  String get darkThemeSubtitle => 'रात में आँखों को आराम';
 }

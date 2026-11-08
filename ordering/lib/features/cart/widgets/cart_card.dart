@@ -27,7 +27,7 @@ class CartCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: isSelected
             ? AppColors.primary.withValues(alpha: 0.02)
-            : AppColors.white,
+            : AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isSelected ? AppColors.primary : AppColors.grey200,

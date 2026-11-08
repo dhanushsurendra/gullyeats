@@ -34,7 +34,7 @@ class CartSelector extends StatelessWidget {
         decoration: BoxDecoration(
           border: Border.all(color: AppColors.grey200),
           borderRadius: BorderRadius.circular(12),
-          color: AppColors.white,
+          color: AppColors.surface,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -64,7 +64,7 @@ class CartSelector extends StatelessWidget {
               ),
             ),
             AppGaps.w8,
-            const Icon(Icons.keyboard_arrow_down, size: 18, color: AppColors.grey500),
+            Icon(Icons.keyboard_arrow_down, size: 18, color: AppColors.grey500),
           ],
         ),
       ),

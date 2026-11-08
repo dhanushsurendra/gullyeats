@@ -75,7 +75,7 @@ class _FoodNameFieldState extends State<FoodNameField> {
           alignment: Alignment.topLeft,
           child: Material(
             elevation: 4,
-            color: AppColors.white,
+            color: AppColors.surface,
             borderRadius: BorderRadius.circular(12),
             clipBehavior: Clip.antiAlias,
             child: ConstrainedBox(

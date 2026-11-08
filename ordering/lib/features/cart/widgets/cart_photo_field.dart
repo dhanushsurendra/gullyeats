@@ -170,7 +170,7 @@ class _CartPhotoFieldState extends State<CartPhotoField> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(Icons.storefront_rounded, size: 40, color: AppColors.grey400),
+        Icon(Icons.storefront_rounded, size: 40, color: AppColors.grey400),
         const SizedBox(height: 8),
         Text(
           context.l10n.tapToAddCartPhoto,

@@ -233,8 +233,8 @@ class _SwitchCartScreenState extends State<SwitchCartScreen> {
       maxChildSize: 0.95,
       expand: false,
       builder: (_, controller) => Container(
-        decoration: const BoxDecoration(
-          color: AppColors.white,
+        decoration: BoxDecoration(
+          color: AppColors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
         ),
         child: SafeArea(
@@ -267,7 +267,7 @@ class _SwitchCartScreenState extends State<SwitchCartScreen> {
                     ),
                     IconButton(
                       onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.close, color: AppColors.grey600),
+                      icon: Icon(Icons.close, color: AppColors.grey600),
                     ),
                   ],
                 ),
