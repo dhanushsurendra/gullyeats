@@ -2,16 +2,16 @@ import { api } from '../constants/api'
 import { istDay } from '../game/nebula'
 
 /*
- * GullyPlay (Nebula Rush) helpers: the server's score and leaderboard routes,
- * and today's best kept on the phone. Players are the same people as in
- * GullyPulse: the order key (usePulseKey) proves they ordered.
+ * GullyPlay helpers, per game ('nebula', 'reflex'): the server's score and
+ * leaderboard routes, and today's best kept on the phone. Players are the same
+ * people as in GullyPulse: the order key (usePulseKey) proves they ordered.
  */
 
-export const play = (key, path, options = {}) =>
-  api(`/games/nebula${path}`, { ...options, headers: key ? { 'X-Gully-Order': key } : undefined })
+export const play = (game, key, path, options = {}) =>
+  api(`/games/${game}${path}`, { ...options, headers: key ? { 'X-Gully-Order': key } : undefined })
 
-const BEST = 'nebula-best' // { day, score }
-const PENDING = 'nebula-pending' // the best round not yet sent: { day, score, durationMs, stats }
+const BEST = (game) => `${game}-best` // { day, score }
+const PENDING = (game) => `${game}-pending` // the best round not yet sent: { day, score, durationMs, stats }
 
 // Storage can be missing or blocked (private mode): the game still works.
 function read(key) {
@@ -30,17 +30,17 @@ function write(key, value) {
   }
 }
 
-export function bestToday() {
-  const b = read(BEST)
+export function bestToday(game) {
+  const b = read(BEST(game))
   return b?.day === istDay() ? b.score : 0
 }
 
 // Records a finished round. Returns { best, newBest }.
-export function saveRound(day, round) {
-  const old = read(BEST)
+export function saveRound(game, day, round) {
+  const old = read(BEST(game))
   const before = old?.day === day ? old.score : 0
   const newBest = round.score > before
-  if (newBest) write(BEST, { day, score: round.score })
+  if (newBest) write(BEST(game), { day, score: round.score })
   return { best: Math.max(before, round.score), newBest }
 }
 
@@ -49,25 +49,25 @@ export function saveRound(day, round) {
  * waits on the phone and goes with the next one. Returns the server's
  * { best, rank } or null.
  */
-export async function submitRound(key, day, round) {
+export async function submitRound(game, key, day, round) {
   if (!key) return null
-  const body = { day, score: round.score, durationMs: round.durationMs, stats: { kills: round.kills, energy: round.energy, hits: round.hits } }
-  const waiting = read(PENDING)
+  const body = { day, score: round.score, durationMs: round.durationMs, stats: round.stats }
+  const waiting = read(PENDING(game))
   if (waiting && waiting.day >= istDay(Date.now() - 864e5) && waiting.score > body.score) {
     try {
-      await play(key, '/scores', { method: 'POST', body: waiting })
+      await play(game, key, '/scores', { method: 'POST', body: waiting })
     } catch {
       /* try again next round */
     }
   }
   try {
-    const r = await play(key, '/scores', { method: 'POST', body })
-    write(PENDING, null)
+    const r = await play(game, key, '/scores', { method: 'POST', body })
+    write(PENDING(game), null)
     return r
   } catch (e) {
     // Offline or server down: keep the better round for later. A refused round (400) is dropped.
     if (!e.status || e.status >= 500) {
-      if (!waiting || body.score > waiting.score) write(PENDING, body)
+      if (!waiting || body.score > waiting.score) write(PENDING(game), body)
     }
     throw e
   }

@@ -24,7 +24,8 @@ export const ENERGY_POINTS = 25
 export const MAX_COMBO = 5
 // Ceilings the server checks against (backend/controllers/gameController.js
 // GAMES.nebula). The spawn schedule below can't produce more than these.
-export const LIMITS = { maxScore: 20000, maxKills: 400, maxEnergy: 40, killPoints: 20, energyPoints: ENERGY_POINTS * MAX_COMBO }
+// energyPoints = ENERGY_POINTS x MAX_COMBO.
+export const LIMITS = { maxScore: 20000, maxKills: 400, maxEnergy: 40, killPoints: 20, energyPoints: 125 }
 
 const FLIP_EVERY = 10000
 const FLIP_WARNING = 1500
@@ -338,10 +339,8 @@ export function step(game, dtMs, input = {}) {
 
 export const result = (game) => ({
   score: game.score,
-  kills: game.kills,
-  energy: game.energy,
-  hits: game.hits,
   durationMs: Math.round(game.t),
+  stats: { kills: game.kills, energy: game.energy, hits: game.hits },
 })
 
 // ---- Drawing ---------------------------------------------------------------

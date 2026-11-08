@@ -84,7 +84,7 @@ test('a better round raises the day’s best, a worse one does not', async () =>
 test('impossible rounds are refused', async () => {
   const p = await player()
   const bad = [
-    round(GAMES.nebula.maxScore + 20, { stats: { kills: 2000, energy: 0, hits: 0 } }),
+    round(GAMES.nebula.limits.maxScore + 20, { stats: { kills: 2000, energy: 0, hits: 0 } }),
     round(500, { durationMs: 120000 }),
     round(500, { durationMs: 10 }),
     round(500, { stats: { kills: 1, energy: 0, hits: 0 } }), // more points than the kills can give
@@ -138,13 +138,33 @@ test('each day has its own board', async () => {
   assert.deepStrictEqual((await api('GET', '/nebula/leaderboard')).body.top.map((r) => r.score), [200])
 })
 
-test('server ceilings match the game’s own', () => {
-  const file = path.join(__dirname, '../../customer-app/src/game/nebula.js')
-  if (!fs.existsSync(file)) return // backend checked out on its own
-  const src = fs.readFileSync(file, 'utf8')
-  const m = src.match(/LIMITS = \{ maxScore: (\d+), maxKills: (\d+), maxEnergy: (\d+), killPoints: (\d+)/)
-  assert.ok(m, 'LIMITS line not found in nebula.js')
-  const { maxScore, maxKills, maxEnergy, killPoints } = GAMES.nebula
-  assert.deepStrictEqual(m.slice(1).map(Number), [maxScore, maxKills, maxEnergy, killPoints])
-  assert.ok(/MAX_COMBO = 5\b/.test(src) && /ENERGY_POINTS = 25\b/.test(src) && GAMES.nebula.energyPoints === 125)
+test('server ceilings match each game’s own', () => {
+  for (const [game, rules] of Object.entries(GAMES)) {
+    const file = path.join(__dirname, `../../customer-app/src/game/${game}.js`)
+    if (!fs.existsSync(file)) continue // backend checked out on its own
+    const m = fs.readFileSync(file, 'utf8').match(/export const LIMITS = (\{[^}]*\})/)
+    assert.ok(m, `LIMITS not found in ${game}.js`)
+    assert.deepStrictEqual(new Function(`return ${m[1]}`)(), rules.limits, game)
+  }
+})
+
+// A believable Zero Reflex round.
+const reflex = (score, stats = {}) => ({
+  score,
+  durationMs: 20000,
+  day: istDay(),
+  stats: { hits: 20, wrong: 1, missed: 2, holds: 1, avgMs: 420, bestMs: 260, ...stats },
+})
+
+test('Zero Reflex has its own board and refuses superhuman reflexes', async () => {
+  const p = await player()
+  const send = (body) => api('POST', '/reflex/scores', { who: p, body })
+  assert.strictEqual((await send(reflex(2400))).status, 200)
+  assert.strictEqual((await send(reflex(2400, { avgMs: 90, bestMs: 60 }))).status, 400)
+  assert.strictEqual((await send(reflex(2400, { bestMs: 500 }))).status, 400) // best slower than average
+  assert.strictEqual((await send(reflex(99999))).status, 400)
+  assert.strictEqual((await send({ ...reflex(2400), durationMs: 45000 })).status, 400)
+  assert.strictEqual((await send({ ...reflex(2400), stats: { kills: 3 } })).status, 400) // another game's stats
+  assert.deepStrictEqual((await api('GET', '/reflex/leaderboard')).body.top.map((r) => r.score), [2400])
+  assert.deepStrictEqual((await api('GET', '/nebula/leaderboard')).body.top, [])
 })

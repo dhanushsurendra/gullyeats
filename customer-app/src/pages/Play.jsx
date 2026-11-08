@@ -1,23 +1,31 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { RiArrowLeftSLine, RiFlashlightFill, RiPauseFill, RiPlayFill, RiRestaurant2Line, RiTrophyLine } from 'react-icons/ri'
 
 import useOrder from '../hooks/useOrder'
-import { createGame, draw, istDay, MAX_HITS, result, ROUND_MS, seedFor, step, WORLD_WIDTH } from '../game/nebula'
+import { GAMES, istDay } from '../game/catalog'
 import { usePulseKey } from '../utils/pulse'
 import { play, saveRound, submitRound } from '../utils/play'
 
 /*
- * Nebula Rush, opened from the token page. The order stays live while playing
- * (useOrder without `page`, so nothing navigates mid-round): a pill shows its
- * status, and when the food is served the game pauses with a big banner.
- * Nothing is sent to the server until a round ends.
+ * The GullyPlay arcade: runs any game from game/catalog.js (/play/:game),
+ * opened from the token page. The order stays live while playing (useOrder
+ * without `page`, so nothing navigates mid-round): a pill shows its status,
+ * and when the food is served the game pauses with a big banner. Nothing is
+ * sent to the server until a round ends.
  */
 
 const STATUS = { PENDING: 'Pay at counter', PAID: 'In the queue', SERVED: 'Ready!', CANCELLED: 'Cancelled' }
-const DRAG = 1.5 // ship moves this much faster than the finger, so short swipes cross the screen
+const DRAG = 1.5 // in drag games the ship moves this much faster than the finger, so short swipes cross the screen
 
-export default function NebulaRush() {
+export default function Play() {
+  const game = GAMES[useParams().game]
+  const { cartId, orderNumber } = useParams()
+  // A key per game, so switching games starts fresh.
+  return game ? <Arcade key={game.id} def={game} /> : <Navigate to={`/c/${cartId}/order/${orderNumber}`} replace />
+}
+
+function Arcade({ def }) {
   const navigate = useNavigate()
   const { order, cartId, orderId } = useOrder()
   const key = usePulseKey()
@@ -58,12 +66,13 @@ export default function NebulaRush() {
   // New round: same daily seed, 3-2-1, go.
   useEffect(() => {
     const { width, height } = boxRef.current.getBoundingClientRect()
-    gameRef.current = createGame(seedFor(istDay()), { width: width || WORLD_WIDTH, height: height || 640 })
-    gameRef.current.day = istDay()
+    const day = istDay()
+    gameRef.current = def.create(day, { width: width || 360, height: height || 640 })
+    gameRef.current.day = day
     fit()
     setSummary(null)
     setPhase('countdown')
-  }, [round, fit, setPhase])
+  }, [round, fit, setPhase, def])
 
   // The countdown (also used when resuming).
   useEffect(() => {
@@ -83,19 +92,19 @@ export default function NebulaRush() {
 
   const finish = useCallback(
     async (game) => {
-      const r = result(game)
-      const { best, newBest } = saveRound(game.day, r)
+      const r = def.result(game)
+      const { best, newBest } = saveRound(def.id, game.day, r)
       setSummary({ ...r, best, newBest, rank: null, sending: Boolean(key), error: '' })
       setPhase('over')
       if (!key) return
       try {
-        const s = await submitRound(key, game.day, r)
+        const s = await submitRound(def.id, key, game.day, r)
         setSummary((x) => x && { ...x, rank: s?.rank ?? null, best: Math.max(x.best, s?.best || 0), sending: false })
       } catch (e) {
         setSummary((x) => x && { ...x, sending: false, error: e.status ? e.message : 'Offline: your score will be sent next round.' })
       }
     },
-    [key, setPhase],
+    [key, setPhase, def],
   )
 
   // The loop: step only while playing, draw always (so pause shows the frozen scene).
@@ -110,7 +119,7 @@ export default function NebulaRush() {
       if (game && canvas) {
         if (phaseRef.current === 'playing') {
           const input = inputRef.current
-          step(game, dt, { dx: input.dx, dy: input.dy })
+          def.step(game, dt, { dx: input.dx, dy: input.dy })
           input.dx = 0
           input.dy = 0
           if (game.over) finish(game)
@@ -123,8 +132,7 @@ export default function NebulaRush() {
         ctx.fillStyle = '#070b1f'
         ctx.fillRect(0, 0, canvas.width, canvas.height)
         ctx.setTransform(dpr * scale, 0, 0, dpr * scale, dpr * ox, dpr * oy)
-        draw(ctx, game)
-        hud(ctx, game)
+        def.draw(ctx, game)
       }
       raf = requestAnimationFrame(frame)
     }
@@ -134,7 +142,7 @@ export default function NebulaRush() {
       cancelAnimationFrame(raf)
       window.removeEventListener('resize', fit)
     }
-  }, [fit, finish])
+  }, [fit, finish, def])
 
   const pause = useCallback(() => {
     if (phaseRef.current === 'playing' || phaseRef.current === 'countdown') setPhase('paused')
@@ -161,9 +169,17 @@ export default function NebulaRush() {
     navigator.vibrate?.([200, 100, 200])
   }, [status, pause])
 
-  // Relative drag: the ship moves with the finger wherever it touches.
+  // Drag games: relative drag, the ship moves with the finger wherever it
+  // touches. Tap games: each touch is a tap at that spot in the world.
   const last = useRef(null)
   const onPointerDown = (e) => {
+    if (def.controls === 'tap') {
+      if (phaseRef.current !== 'playing') return
+      const { scale, ox, oy } = viewRef.current
+      const box = boxRef.current.getBoundingClientRect()
+      def.tap(gameRef.current, (e.clientX - box.left - ox) / scale, (e.clientY - box.top - oy) / scale)
+      return
+    }
     e.currentTarget.setPointerCapture?.(e.pointerId)
     last.current = { x: e.clientX, y: e.clientY }
   }
@@ -181,7 +197,7 @@ export default function NebulaRush() {
   const openBoard = async () => {
     setBoard('loading')
     try {
-      setBoard(await play(key, `/leaderboard?day=${gameRef.current?.day || istDay()}`))
+      setBoard(await play(def.id, key, `/leaderboard?day=${gameRef.current?.day || istDay()}`))
     } catch (e) {
       setBoard({ error: e.message })
     }
@@ -228,14 +244,15 @@ export default function NebulaRush() {
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
       >
-        <canvas ref={canvasRef} className='absolute inset-0 h-full w-full' aria-label='Nebula Rush game. Drag anywhere to fly the ship.' />
+        <canvas ref={canvasRef} className='absolute inset-0 h-full w-full' aria-label={`${def.title}. ${def.hint}`} />
 
         {phase === 'countdown' && (
           <Overlay>
             <p key={count} className='animate-pop text-8xl font-bold text-[#7df9ff]'>
               {count}
             </p>
-            <p className='mt-4 text-sm text-white/70'>Drag anywhere to fly · grab ⚡ energy · dodge rocks</p>
+            <p className='mt-2 text-lg font-bold'>{def.title}</p>
+            <p className='mt-1 text-center text-sm text-white/70'>{def.hint}</p>
           </Overlay>
         )}
 
@@ -254,15 +271,16 @@ export default function NebulaRush() {
         {phase === 'over' && summary && (
           <Overlay dim>
             <p className='text-xs font-bold uppercase tracking-[0.25em] text-[#a78bfa]'>
-              {summary.hits >= MAX_HITS ? 'Ship down' : 'Time’s up'}
+              {def.overTitle(summary)}
             </p>
             <p className='animate-pop mt-1 text-6xl font-bold tabular-nums'>{summary.score}</p>
             {summary.newBest && summary.score > 0 && (
               <p className='mt-2 rounded-full bg-[#fde047] px-3 py-1 text-xs font-bold text-[#1c0b33]'>New best today!</p>
             )}
             <div className='mt-5 grid w-full max-w-xs grid-cols-3 gap-2 text-center'>
-              <Stat label='Rocks' value={summary.kills} />
-              <Stat label='Energy' value={summary.energy} />
+              {def.stats(summary).map(([label, value]) => (
+                <Stat key={label} label={label} value={value} />
+              ))}
               <Stat label='Best today' value={summary.best} />
             </div>
             <p className='mt-4 h-5 text-sm text-white/80'>
@@ -313,40 +331,9 @@ export default function NebulaRush() {
         )}
       </div>
 
-      {board && <Leaderboard board={board} onClose={() => setBoard(null)} />}
+      {board && <Leaderboard board={board} note={def.boardNote} onClose={() => setBoard(null)} />}
     </div>
   )
-}
-
-// Score, time bar, hits and combo, drawn on the canvas over the game.
-function hud(ctx, game) {
-  const { w } = game
-  const left = Math.max(0, ROUND_MS - game.t)
-  ctx.fillStyle = 'rgba(255,255,255,0.12)'
-  ctx.fillRect(16, 10, w - 32, 4)
-  ctx.fillStyle = left < 10000 ? '#ff6b6b' : '#22d3ee'
-  ctx.fillRect(16, 10, (w - 32) * (left / ROUND_MS), 4)
-
-  ctx.textAlign = 'left'
-  ctx.fillStyle = '#ffffff'
-  ctx.font = '700 26px Poppins, system-ui, sans-serif'
-  ctx.fillText(String(game.score), 16, 46)
-  if (game.combo > 1) {
-    ctx.fillStyle = '#fde047'
-    ctx.font = '700 13px Poppins, system-ui, sans-serif'
-    ctx.fillText(`⚡ x${game.combo}`, 16, 66)
-  }
-
-  ctx.textAlign = 'right'
-  ctx.fillStyle = left < 10000 ? '#ff6b6b' : '#ffffff'
-  ctx.font = '700 20px Poppins, system-ui, sans-serif'
-  ctx.fillText(`${Math.ceil(left / 1000)}s`, w - 16, 42)
-  for (let i = 0; i < MAX_HITS; i++) {
-    ctx.fillStyle = i < MAX_HITS - game.hits ? '#fe5200' : 'rgba(255,255,255,0.18)'
-    ctx.beginPath()
-    ctx.arc(w - 22 - i * 16, 60, 5, 0, Math.PI * 2)
-    ctx.fill()
-  }
 }
 
 function Overlay({ children, dim = false }) {
@@ -381,7 +368,7 @@ function Stat({ label, value }) {
   )
 }
 
-function Leaderboard({ board, onClose }) {
+function Leaderboard({ board, note, onClose }) {
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose()
     window.addEventListener('keydown', onKey)
@@ -402,7 +389,7 @@ function Leaderboard({ board, onClose }) {
         <h2 id='board-title' className='mt-5 flex items-center gap-2 text-xl font-bold'>
           <RiTrophyLine className='text-[#fde047]' /> Today’s top pilots
         </h2>
-        <p className='mt-1 text-sm text-white/60'>Same rocks for everyone today. Resets at midnight.</p>
+        <p className='mt-1 text-sm text-white/60'>{note}</p>
         {board === 'loading' ? (
           <p className='py-10 text-center text-white/60'>Loading…</p>
         ) : board.error ? (

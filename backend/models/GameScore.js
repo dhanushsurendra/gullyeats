@@ -9,7 +9,7 @@ const gameScoreSchema = new mongoose.Schema(
     authorKey: { type: String, required: true }, // same identity as GullyPulse
     alias: { type: String, required: true },
     score: { type: Number, required: true },
-    stats: { kills: Number, energy: Number, hits: Number },
+    stats: { type: Object }, // the round that set the best; keys depend on the game
   },
   { timestamps: true },
 )

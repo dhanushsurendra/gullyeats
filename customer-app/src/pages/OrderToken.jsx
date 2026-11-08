@@ -8,11 +8,12 @@ import {
   RiEditLine,
   RiDoubleQuotesL,
   RiFireLine,
+  RiFlashlightLine,
   RiHeart3Fill,
   RiHeart3Line,
   RiPlayFill,
   RiQuillPenLine,
-  RiRocket2Line,
+  RiSpaceShipLine,
 } from 'react-icons/ri'
 
 import CancelOrderModal from '../components/CancelOrderModal'
@@ -24,6 +25,7 @@ import useOrder from '../hooks/useOrder'
 import { rupees } from '../utils/format'
 import { pulse, timeAgo, usePulseKey } from '../utils/pulse'
 import { bestToday } from '../utils/play'
+import { GAMES } from '../game/catalog'
 
 const STEPS = ['Placed', 'Paid', 'Preparing', 'Served']
 
@@ -103,32 +105,47 @@ function Progress({ status, preparing }) {
   )
 }
 
-// Nebula Rush: the daily space game, two taps from the token. Always dark
-// (it's space), in either app theme.
+// GullyPlay: today's games, two taps from the token. Always dark (they're
+// arcade games), in either app theme.
+const PLAY = [
+  { id: 'nebula', icon: <RiSpaceShipLine size={22} className='text-[#7df9ff]' />, ring: 'ring-[#22d3ee]/40' },
+  { id: 'reflex', icon: <RiFlashlightLine size={22} className='text-[#fde047]' />, ring: 'ring-[#fde047]/40' },
+]
+
 function GameCard({ here }) {
   const navigate = useNavigate()
-  const best = bestToday()
   return (
-    <button
-      type='button'
-      onClick={() => navigate(`${here}/play`)}
-      className='animate-fade-up relative flex w-full items-center gap-4 overflow-hidden rounded-card bg-linear-to-br from-[#0b1230] via-[#1a0f45] to-[#2a0f45] p-4 text-left text-white shadow-card transition active:scale-[0.99] [animation-delay:90ms]'
-    >
-      <span className='absolute right-16 top-3 h-1 w-1 rounded-full bg-white/70' />
-      <span className='absolute right-28 bottom-4 h-0.5 w-0.5 rounded-full bg-white/60' />
-      <span className='absolute left-1/2 top-5 h-0.5 w-0.5 rounded-full bg-white/50' />
-      <span className='flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-[#22d3ee]/40'>
-        <RiRocket2Line size={28} className='text-[#7df9ff]' />
-      </span>
-      <span className='min-w-0 flex-1'>
-        <span className='text-[11px] font-bold uppercase tracking-wider text-[#a78bfa]'>Daily challenge · 45s</span>
-        <span className='block text-lg font-bold leading-tight'>Nebula Rush</span>
-        <span className='block text-xs text-white/70'>{best ? `Your best today: ${best}` : 'Dodge rocks, grab energy, top today’s board'}</span>
-      </span>
-      <span className='flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary shadow-[0_6px_18px_-6px_rgb(254_82_0/0.8)]'>
-        <RiPlayFill size={22} />
-      </span>
-    </button>
+    <section className='animate-fade-up relative overflow-hidden rounded-card bg-linear-to-br from-[#0b1230] via-[#1a0f45] to-[#2a0f45] p-4 text-white shadow-card [animation-delay:90ms]'>
+      <span className='absolute right-10 top-4 h-1 w-1 rounded-full bg-white/70' />
+      <span className='absolute left-1/2 top-6 h-0.5 w-0.5 rounded-full bg-white/50' />
+      <p className='text-[11px] font-bold uppercase tracking-wider text-[#a78bfa]'>GullyPlay · daily challenge</p>
+      <h2 className='text-lg font-bold leading-tight'>Play while you wait</h2>
+      <div className='mt-3 grid grid-cols-2 gap-2.5'>
+        {PLAY.map(({ id, icon, ring }) => {
+          const g = GAMES[id]
+          const best = bestToday(id)
+          return (
+            <button
+              key={id}
+              type='button'
+              onClick={() => navigate(`${here}/play/${id}`)}
+              className='flex flex-col items-start gap-2 rounded-2xl bg-white/8 p-3 text-left ring-1 ring-white/10 transition active:scale-[0.97]'
+            >
+              <span className={`flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 ring-1 ${ring}`}>
+                {icon}
+              </span>
+              <span>
+                <span className='block text-[15px] font-bold leading-tight'>{g.title}</span>
+                <span className='block text-xs text-white/65'>{best ? `Best today: ${best}` : `${g.tagline} · ${g.seconds}s`}</span>
+              </span>
+              <span className='mt-auto inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-xs font-bold'>
+                <RiPlayFill size={14} /> Play
+              </span>
+            </button>
+          )
+        })}
+      </div>
+    </section>
   )
 }
 

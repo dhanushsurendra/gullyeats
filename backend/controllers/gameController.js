@@ -12,10 +12,35 @@ const GameScore = require('../models/GameScore')
  * fun board, never tie rewards to it without replaying rounds on the server.
  */
 
-// Ceilings for one round, from the game's rules. Keep in sync with
-// customer-app/src/game/nebula.js (games.test.js compares them).
+/*
+ * Each game's ceilings for one round, from its rules, and a check that the
+ * round's numbers fit together. `limits` must equal LIMITS in the game's file
+ * under customer-app/src/game/ (games.test.js compares them).
+ */
 const GAMES = {
-  nebula: { maxScore: 20000, maxKills: 400, maxEnergy: 40, killPoints: 20, energyPoints: 125, maxMs: 47000 },
+  nebula: {
+    maxMs: 47000,
+    stats: ['kills', 'energy', 'hits'],
+    limits: { maxScore: 20000, maxKills: 400, maxEnergy: 40, killPoints: 20, energyPoints: 125 },
+    fits: (score, s, l) =>
+      score <= l.maxScore &&
+      s.kills <= l.maxKills &&
+      s.energy <= l.maxEnergy &&
+      s.hits <= 3 &&
+      score <= s.kills * l.killPoints + s.energy * l.energyPoints,
+  },
+  reflex: {
+    maxMs: 22000,
+    stats: ['hits', 'wrong', 'missed', 'holds', 'avgMs', 'bestMs'],
+    limits: { maxScore: 25000, maxHits: 70, maxHolds: 6, hitPoints: 450, holdPoints: 100, minAvgMs: 150, minBestMs: 100 },
+    // Nobody reacts to a target at a random spot in under ~100 ms.
+    fits: (score, s, l) =>
+      score <= l.maxScore &&
+      s.hits <= l.maxHits &&
+      s.holds <= l.maxHolds &&
+      score <= s.hits * l.hitPoints + s.holds * l.holdPoints &&
+      (s.hits === 0 || (s.avgMs >= l.minAvgMs && s.bestMs >= l.minBestMs && s.bestMs <= s.avgMs)),
+  },
 }
 const BOARD_SIZE = 20
 
@@ -50,33 +75,24 @@ async function rankOf(game, day, row) {
   return ahead + 1
 }
 
-// POST /api/games/:game/scores  { score, durationMs, day, stats: { kills, energy, hits } }
+// POST /api/games/:game/scores  { score, durationMs, day, stats: { ...the game's stats } }
 exports.submit = asyncHandler(async (req, res) => {
   const rules = findGame(req, res)
   const { game } = req.params
-  const { score: s, durationMs: d, day, stats = {} } = req.body || {}
+  const { score: s, durationMs: d, day, stats: raw } = req.body || {}
   const score = int(s)
   const durationMs = int(d)
-  const kills = int(stats.kills)
-  const energy = int(stats.energy)
-  const hits = int(stats.hits)
-  const today = istDay()
+  const stats = Object.fromEntries(rules.stats.map((k) => [k, int(raw?.[k])]))
   // A round finished just after midnight (or sent late from offline) still counts for its day.
-  const days = [today, istDay(Date.now() - 864e5)]
+  const days = [istDay(), istDay(Date.now() - 864e5)]
   const believable =
     score !== null &&
     durationMs !== null &&
-    kills !== null &&
-    energy !== null &&
-    hits !== null &&
+    Object.values(stats).every((v) => v !== null) &&
     days.includes(day) &&
     durationMs >= 1000 &&
     durationMs <= rules.maxMs &&
-    score <= rules.maxScore &&
-    kills <= rules.maxKills &&
-    energy <= rules.maxEnergy &&
-    hits <= 3 &&
-    score <= kills * rules.killPoints + energy * rules.energyPoints
+    rules.fits(score, stats, rules.limits)
   if (!believable) {
     res.status(400)
     throw new Error('That score doesn’t add up.')
@@ -84,7 +100,7 @@ exports.submit = asyncHandler(async (req, res) => {
 
   const { authorKey } = req.poster
   const where = { game, day, authorKey }
-  const set = { score, stats: { kills, energy, hits } }
+  const set = { score, stats }
   // Only a better round touches the row: updatedAt breaks ties, so a worse or
   // equal round must not move it.
   const raised = await GameScore.updateOne(

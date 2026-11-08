@@ -2,7 +2,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert'
 
-import { createGame, istDay, LIMITS, MAX_HITS, ROUND_MS, result, seedFor, step } from './nebula.js'
+import { createGame, ENERGY_POINTS, istDay, LIMITS, MAX_COMBO, MAX_HITS, ROUND_MS, result, seedFor, step } from './nebula.js'
 
 // Play a whole round at 60 fps with a scripted finger; log every rock spawned.
 function play(seed, move = () => ({})) {
@@ -43,12 +43,14 @@ test('a round ends at 45 s or after three hits', () => {
 
 test('scores stay inside what the server accepts', () => {
   for (let i = 1; i <= 30; i++) {
-    const r = result(play(seedFor(`2026-12-${i}`), weaver).game)
+    const { score, durationMs, stats } = result(play(seedFor(`2026-12-${i}`), weaver).game)
+    const r = { score, durationMs, ...stats }
     assert.ok(r.score > 0)
     assert.ok(r.score <= LIMITS.maxScore)
     assert.ok(r.kills <= LIMITS.maxKills)
     assert.ok(r.energy <= LIMITS.maxEnergy)
     assert.ok(r.score <= r.kills * LIMITS.killPoints + r.energy * LIMITS.energyPoints)
+    assert.ok(LIMITS.energyPoints === ENERGY_POINTS * MAX_COMBO)
     assert.ok(r.durationMs >= 1000 && r.durationMs <= 47000)
   }
 })
