@@ -19,10 +19,10 @@ const GameScore = require('../models/GameScore')
  */
 const GAMES = {
   nebula: {
-    maxMs: 47000,
-    stats: ['kills', 'drones', 'energy', 'near', 'hits'],
-    limits: { maxScore: 40000, maxKills: 500, maxDrones: 6, maxEnergy: 40, maxNear: 400, killPoints: 20, dronePoints: 50, energyPoints: 125, nearPoints: 5, surge: 2 },
-    // Every point can be doubled by the Surge (the last 10 s).
+    maxMs: 57000,
+    stats: ['kills', 'drones', 'energy', 'near', 'hits', 'boss', 'bossHits'],
+    limits: { maxScore: 50000, maxKills: 600, maxDrones: 6, maxEnergy: 40, maxNear: 500, maxBossHits: 120, killPoints: 20, dronePoints: 50, energyPoints: 125, nearPoints: 5, bossHitPoints: 5, bossPoints: 1000, surge: 2 },
+    // Every point can be doubled by the Surge (the Mothership fight).
     fits: (score, s, l) =>
       score <= l.maxScore &&
       s.kills <= l.maxKills &&
@@ -30,7 +30,11 @@ const GAMES = {
       s.energy <= l.maxEnergy &&
       s.near <= l.maxNear &&
       s.hits <= 3 &&
-      score <= l.surge * (s.kills * l.killPoints + s.drones * l.dronePoints + s.energy * l.energyPoints + s.near * l.nearPoints),
+      s.boss <= 1 &&
+      s.bossHits <= l.maxBossHits &&
+      score <=
+        l.surge *
+          (s.kills * l.killPoints + s.drones * l.dronePoints + s.energy * l.energyPoints + s.near * l.nearPoints + s.bossHits * l.bossHitPoints + s.boss * l.bossPoints),
   },
   reflex: {
     maxMs: 22000,

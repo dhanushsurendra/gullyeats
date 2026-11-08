@@ -54,9 +54,9 @@ async function api(method, p, { who, body } = {}) {
 // A believable round: score made of kills and energy.
 const round = (score, extra = {}) => ({
   score,
-  durationMs: 45000,
+  durationMs: 55000,
   day: istDay(),
-  stats: { kills: Math.ceil(score / 20), drones: 0, energy: 0, near: 0, hits: 0 },
+  stats: { kills: Math.ceil(score / 20), drones: 0, energy: 0, near: 0, hits: 0, boss: 0, bossHits: 0 },
   ...extra,
 })
 const submit = (who, score, extra) => api('POST', '/nebula/scores', { who, body: round(score, extra) })
@@ -81,15 +81,25 @@ test('a better round raises the day’s best, a worse one does not', async () =>
   assert.strictEqual(await GameScore.countDocuments(), 1)
 })
 
+test('a Mothership kill counts', async () => {
+  const p = await player()
+  const r = await submit(p, 2600, { stats: { kills: 10, drones: 0, energy: 0, near: 0, hits: 1, boss: 1, bossHits: 100 } })
+  assert.strictEqual(r.status, 200)
+  assert.strictEqual(r.body.best, 2600)
+})
+
 test('impossible rounds are refused', async () => {
   const p = await player()
   const bad = [
-    round(GAMES.nebula.limits.maxScore + 20, { stats: { kills: 2000, drones: 0, energy: 0, near: 0, hits: 0 } }),
+    round(GAMES.nebula.limits.maxScore + 20, { stats: { kills: 2000, drones: 0, energy: 0, near: 0, hits: 0, boss: 0, bossHits: 0 } }),
     round(500, { durationMs: 120000 }),
     round(500, { durationMs: 10 }),
-    round(500, { stats: { kills: 1, drones: 0, energy: 0, near: 0, hits: 0 } }), // more points than the kills can give
-    round(500, { stats: { kills: 25, drones: 0, energy: 0, near: 0, hits: 4 } }),
-    round(500, { stats: { kills: 25, drones: 9, energy: 0, near: 0, hits: 0 } }), // more drones than ever fly
+    round(500, { stats: { kills: 1, drones: 0, energy: 0, near: 0, hits: 0, boss: 0, bossHits: 0 } }), // more points than the kills can give
+    round(500, { stats: { kills: 25, drones: 0, energy: 0, near: 0, hits: 4, boss: 0, bossHits: 0 } }),
+    round(500, { stats: { kills: 25, drones: 9, energy: 0, near: 0, hits: 0, boss: 0, bossHits: 0 } }), // more drones than ever fly
+    round(500, { stats: { kills: 0, drones: 0, energy: 0, near: 0, hits: 0, boss: 2, bossHits: 0 } }), // only one Mothership
+    round(500, { stats: { kills: 0, drones: 0, energy: 0, near: 0, hits: 0, boss: 0, bossHits: 121 } }), // more hits than it has hull
+    round(500, { stats: { kills: 25, drones: 0, energy: 0, near: 0, hits: 0 } }), // a v3 round, without boss stats
     round(500, { day: '2020-01-01' }),
     round(-5),
     round(12.5),

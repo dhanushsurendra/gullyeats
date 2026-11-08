@@ -33,10 +33,10 @@ const POWER_LABEL = { overdrive: 'OVERDRIVE', magnet: 'MAGNET' }
 const nebulaGame = {
   id: 'nebula',
   title: 'Nebula Rush',
-  tagline: 'Dodge rocks, blast drones',
-  seconds: 45,
+  tagline: 'Dodge, blast, take down the Mothership',
+  seconds: 55,
   controls: 'drag',
-  hint: 'Drag anywhere to fly · grab ⚡ energy and power-ups · skim rocks for bonus',
+  hint: 'Drag to fly · double-tap for a Nova bomb · grab ⚡ and power-ups',
   boardNote: 'Same rocks for everyone today. Resets at midnight.',
   music: true,
   intense: (game) => game.surge,
@@ -57,6 +57,27 @@ const nebulaGame = {
     if (game.surge) {
       ctx.fillStyle = '#fe5200'
       ctx.fillText('SURGE x2', 16, y)
+    }
+    // The Mothership's hull, under the time bar.
+    if (game.boss) {
+      ctx.fillStyle = 'rgba(255,255,255,0.12)'
+      ctx.fillRect(16, 18, game.w - 32, 5)
+      ctx.fillStyle = '#f472b6'
+      ctx.fillRect(16, 18, (game.w - 32) * Math.max(0, game.boss.hp / nebula.BOSS_HP), 5)
+    }
+    // Nova bomb: ready, or how charged.
+    ctx.textAlign = 'left'
+    ctx.font = '700 11px Poppins, system-ui, sans-serif'
+    if (game.bomb) {
+      ctx.fillStyle = Math.floor(game.t / 300) % 2 ? '#7df9ff' : '#ffffff'
+      ctx.fillText('◎ NOVA READY · double-tap', 16, game.h - 16)
+    } else {
+      ctx.fillStyle = 'rgba(255,255,255,0.15)'
+      ctx.fillRect(16, game.h - 22, 60, 4)
+      ctx.fillStyle = '#7df9ff'
+      ctx.fillRect(16, game.h - 22, (60 * game.bombCharge) / nebula.BOMB_ENERGY, 4)
+      ctx.fillStyle = 'rgba(255,255,255,0.5)'
+      ctx.fillText('NOVA', 82, game.h - 16)
     }
     // Hull: three pips, plus a ring when shielded.
     for (let i = 0; i < nebula.MAX_HITS; i++) {
@@ -91,8 +112,10 @@ const nebulaGame = {
   overTitle: (r) => (r.stats.hits >= nebula.MAX_HITS ? 'Ship down' : 'Time’s up'),
   stats: (r) => [
     ['Destroyed', r.stats.kills + r.stats.drones],
-    ['Energy', r.stats.energy],
+    ['Mothership', r.stats.boss ? 'Down!' : `${Math.round((100 * r.stats.bossHits) / nebula.BOSS_HP)}%`],
     ['Near misses', r.stats.near],
+    ['Energy', r.stats.energy],
+    ['Best combo', `x${r.stats.maxCombo}`],
   ],
 }
 

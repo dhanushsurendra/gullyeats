@@ -140,6 +140,32 @@ const SOUNDS = {
     tone({ freq: 110, to: 880, type: 'sawtooth', dur: 0.7, gain: 0.07 })
     ;[440, 554, 659].forEach((f) => tone({ freq: f, type: 'square', dur: 0.5, gain: 0.03, at: 0.6 }))
   },
+  sector: () => [392, 523, 659].forEach((f, i) => tone({ freq: f, type: 'triangle', dur: 0.14, gain: 0.05, at: i * 0.07 })),
+  enemyShot({ big }) {
+    tone({ freq: big ? 520 : 700, to: big ? 260 : 420, type: 'sawtooth', dur: big ? 0.18 : 0.1, gain: big ? 0.05 : 0.03 })
+  },
+  bossIn() {
+    tone({ freq: 55, to: 110, type: 'sawtooth', dur: 1.4, gain: 0.14 })
+    tone({ freq: 82, to: 165, type: 'square', dur: 1.4, gain: 0.04 })
+    noise({ dur: 1.2, gain: 0.08, freq: 200, to: 1200, type: 'bandpass', q: 1.5 })
+  },
+  laserWarn() {
+    for (let i = 0; i < 4; i++) tone({ freq: 1240, type: 'square', dur: 0.05, gain: 0.035, at: i * 0.2 })
+  },
+  laser() {
+    tone({ freq: 140, to: 90, type: 'sawtooth', dur: 0.6, gain: 0.12 })
+    noise({ dur: 0.6, gain: 0.15, freq: 3000, to: 800, type: 'bandpass', q: 1 })
+  },
+  bossDown() {
+    noise({ dur: 1.6, gain: 0.5, freq: 3000, to: 80 })
+    tone({ freq: 160, to: 30, type: 'sawtooth', dur: 1.4, gain: 0.18 })
+    ;[523, 659, 784, 1047, 1319].forEach((f, i) => tone({ freq: f, type: 'square', dur: 0.2, gain: 0.05, at: 0.6 + i * 0.08 }))
+  },
+  bomb() {
+    noise({ dur: 0.9, gain: 0.4, freq: 600, to: 6000, type: 'bandpass', q: 0.8 })
+    tone({ freq: 90, to: 30, type: 'sine', dur: 0.8, gain: 0.3 })
+  },
+  bombReady: () => [880, 1320].forEach((f, i) => tone({ freq: f, type: 'triangle', dur: 0.14, gain: 0.06, at: i * 0.09 })),
   over({ crashed }) {
     const notes = crashed ? [392, 330, 262, 196] : [523, 659, 784, 1047]
     notes.forEach((f, i) => tone({ freq: f, type: 'triangle', dur: 0.22, gain: 0.08, at: i * 0.13 }))

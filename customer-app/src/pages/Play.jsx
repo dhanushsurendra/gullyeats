@@ -27,6 +27,7 @@ import { play, saveRound, submitRound } from '../utils/play'
 
 const STATUS = { PENDING: 'Pay at counter', PAID: 'In the queue', SERVED: 'Ready!', CANCELLED: 'Cancelled' }
 const DRAG = 1.5 // in drag games the ship moves this much faster than the finger, so short swipes cross the screen
+const DOUBLE_TAP_MS = 300
 
 export default function Play() {
   const game = GAMES[useParams().game]
@@ -45,7 +46,7 @@ function Arcade({ def }) {
   const boxRef = useRef(null)
   const gameRef = useRef(null)
   const viewRef = useRef({ scale: 1, ox: 0, oy: 0, dpr: 1 })
-  const inputRef = useRef({ dx: 0, dy: 0 })
+  const inputRef = useRef({ dx: 0, dy: 0, bomb: false })
   const phaseRef = useRef('countdown')
   const [phase, setPhaseState] = useState('countdown') // countdown | playing | paused | over
   const [count, setCount] = useState(3)
@@ -152,13 +153,14 @@ function Arcade({ def }) {
       if (game && canvas) {
         if (phaseRef.current === 'playing') {
           const input = inputRef.current
-          def.step(game, dt, { dx: input.dx, dy: input.dy })
+          def.step(game, dt, { dx: input.dx, dy: input.dy, bomb: input.bomb })
           input.dx = 0
           input.dy = 0
+          input.bomb = false
           audio.music.setIntense(Boolean(def.intense?.(game)))
           if (game.over) finish(game)
         } else {
-          inputRef.current = { dx: 0, dy: 0 }
+          inputRef.current = { dx: 0, dy: 0, bomb: false }
         }
         // What happened this frame (and taps since the last one), as sound.
         if (game.events?.length) {
@@ -212,6 +214,7 @@ function Arcade({ def }) {
   // Drag games: relative drag, the ship moves with the finger wherever it
   // touches. Tap games: each touch is a tap at that spot in the world.
   const last = useRef(null)
+  const lastDown = useRef(null)
   const onPointerDown = (e) => {
     if (def.controls === 'tap') {
       if (phaseRef.current !== 'playing') return
@@ -221,6 +224,12 @@ function Arcade({ def }) {
       return
     }
     e.currentTarget.setPointerCapture?.(e.pointerId)
+    // Two quick touches in about the same spot: a double-tap.
+    const prev = lastDown.current
+    if (prev && e.timeStamp - prev.t < DOUBLE_TAP_MS && Math.hypot(e.clientX - prev.x, e.clientY - prev.y) < 40 && phaseRef.current === 'playing') {
+      inputRef.current.bomb = true
+      lastDown.current = null
+    } else lastDown.current = { x: e.clientX, y: e.clientY, t: e.timeStamp }
     last.current = { x: e.clientX, y: e.clientY }
   }
   const onPointerMove = (e) => {
