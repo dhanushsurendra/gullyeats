@@ -20,14 +20,17 @@ const GameScore = require('../models/GameScore')
 const GAMES = {
   nebula: {
     maxMs: 47000,
-    stats: ['kills', 'energy', 'hits'],
-    limits: { maxScore: 20000, maxKills: 400, maxEnergy: 40, killPoints: 20, energyPoints: 125 },
+    stats: ['kills', 'drones', 'energy', 'near', 'hits'],
+    limits: { maxScore: 40000, maxKills: 500, maxDrones: 6, maxEnergy: 40, maxNear: 400, killPoints: 20, dronePoints: 50, energyPoints: 125, nearPoints: 5, surge: 2 },
+    // Every point can be doubled by the Surge (the last 10 s).
     fits: (score, s, l) =>
       score <= l.maxScore &&
       s.kills <= l.maxKills &&
+      s.drones <= l.maxDrones &&
       s.energy <= l.maxEnergy &&
+      s.near <= l.maxNear &&
       s.hits <= 3 &&
-      score <= s.kills * l.killPoints + s.energy * l.energyPoints,
+      score <= l.surge * (s.kills * l.killPoints + s.drones * l.dronePoints + s.energy * l.energyPoints + s.near * l.nearPoints),
   },
   reflex: {
     maxMs: 22000,

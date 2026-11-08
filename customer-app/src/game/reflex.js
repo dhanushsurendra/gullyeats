@@ -1,13 +1,13 @@
 /*
- * Zero Reflex: the game itself, with no React (the arcade shell in
- * components/Arcade.jsx owns the canvas, loop and screens).
+ * Zero Reflex: the game itself, with no React (the arcade page owns the
+ * canvas, loop, screens and speakers).
  *
  *   const game = createGame(seed, { width, height })
  *   step(game, dtMs)
  *   tap(game, x, y)          // a tap, in world units
  *   draw(ctx, game)
  *
- * A 20-second round in rules. Each rule says what to tap ("Tap CYAN",
+ * The arcade shell is pages/Play.jsx. A 20-second round in rules. Each rule says what to tap ("Tap CYAN",
  * "Tap ▲", "Tap anything but ORANGE"); a FREEZE rule says tap nothing at all,
  * while targets still pop up to tempt you. Fast correct taps score more, and a
  * streak multiplies them. Wrong taps cost points and break the streak.
@@ -128,6 +128,7 @@ export function createGame(seed, { width = WORLD_WIDTH, height = 640 } = {}) {
     flash: null, // { color, life }: screen edge flash for right/wrong
     popups: [],
     rings: [],
+    events: [], // for sound; the page empties it
   }
 }
 
@@ -195,6 +196,7 @@ export function step(game, dtMs) {
       game.holds += 1
       game.score += HOLD_BONUS
       game.popups.push({ x: game.w / 2, y: game.h / 2, text: `Held it! +${HOLD_BONUS}`, color: '#7df9ff', life: 1.2 })
+      game.events.push({ type: 'hold' })
     }
     game.ruleIndex = Math.min(game.ruleIndex + 1, game.rules.length - 1)
     game.tappedInRule = false
@@ -202,6 +204,7 @@ export function step(game, dtMs) {
     game.targets = []
     rule = currentRule(game)
     game.spawnAt = Math.max(game.spawnAt, rule.start + RULE_INTRO)
+    game.events.push({ type: 'rule', freeze: rule.kind === 'freeze' })
   }
 
   while (game.t >= game.spawnAt && game.spawnAt < rule.end - 250) {
@@ -217,6 +220,7 @@ export function step(game, dtMs) {
       game.missed += 1
       game.streak = 0
       game.popups.push({ x: tg.x, y: tg.y, text: 'missed', color: 'rgba(255,255,255,0.6)', life: 0.8 })
+      game.events.push({ type: 'missed' })
     }
   }
   game.targets = game.targets.filter((tg) => !tg.gone)
@@ -236,6 +240,7 @@ export function step(game, dtMs) {
   if (game.t >= ROUND_MS) {
     game.t = ROUND_MS
     game.over = true
+    game.events.push({ type: 'over', crashed: false })
   }
   return game
 }
@@ -254,6 +259,7 @@ export function tap(game, x, y) {
     game.flash = { color: '#ff3b3b', life: 1 }
     game.popups.push({ x, y, text: `FREEZE! -${FREEZE_PENALTY}`, color: '#ff6b6b', life: 1 })
     if (hit) game.targets = game.targets.filter((tg) => tg !== hit)
+    game.events.push({ type: 'wrong' })
     return 'wrong'
   }
   if (!hit) return null
@@ -269,6 +275,7 @@ export function tap(game, x, y) {
     game.rings.push({ x: hit.x, y: hit.y, r: TARGET_R, life: 1, color: COLORS[hit.color].fill })
     game.popups.push({ x: hit.x, y: hit.y - 10, text: `+${pts}`, color: '#ffffff', life: 1 })
     game.popups.push({ x: hit.x, y: hit.y + 22, text: `${ms} ms`, color: 'rgba(255,255,255,0.7)', life: 0.9 })
+    game.events.push({ type: 'right', streak: game.streak })
     return 'right'
   }
   game.wrong += 1
@@ -276,6 +283,7 @@ export function tap(game, x, y) {
   game.score = Math.max(0, game.score - WRONG_PENALTY)
   game.flash = { color: '#ff3b3b', life: 1 }
   game.popups.push({ x: hit.x, y: hit.y, text: `-${WRONG_PENALTY}`, color: '#ff6b6b', life: 1 })
+  game.events.push({ type: 'wrong' })
   return 'wrong'
 }
 

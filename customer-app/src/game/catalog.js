@@ -2,8 +2,10 @@ import * as nebula from './nebula'
 import * as reflex from './reflex'
 
 /*
- * The GullyPlay games, as the arcade shell (components/Arcade.jsx) needs them:
- * how to make, run, draw and control a round, and what to show at the end.
+ * The GullyPlay games, as the arcade page (pages/Play.jsx) needs them: how to
+ * make, run, draw and control a round, and what to show at the end. Each
+ * engine leaves what happened in `game.events` ({ type, ... }); the page plays
+ * those through game/audio.js under the same names.
  * `id` is also the server's game name (/api/games/:id).
  */
 
@@ -26,37 +28,71 @@ function hudBase(ctx, game, roundMs) {
   ctx.fillText(`${Math.ceil(left / 1000)}s`, w - 16, 42)
 }
 
+const POWER_LABEL = { overdrive: 'OVERDRIVE', magnet: 'MAGNET' }
+
 const nebulaGame = {
   id: 'nebula',
   title: 'Nebula Rush',
-  tagline: 'Dodge rocks, grab energy',
+  tagline: 'Dodge rocks, blast drones',
   seconds: 45,
   controls: 'drag',
-  hint: 'Drag anywhere to fly · grab ⚡ energy · dodge rocks',
+  hint: 'Drag anywhere to fly · grab ⚡ energy and power-ups · skim rocks for bonus',
   boardNote: 'Same rocks for everyone today. Resets at midnight.',
+  music: true,
+  intense: (game) => game.surge,
   create: (day, size) => nebula.createGame(nebula.seedFor(day), size),
   step: nebula.step,
   result: nebula.result,
   draw(ctx, game) {
     nebula.draw(ctx, game)
     hudBase(ctx, game, nebula.ROUND_MS)
+    ctx.textAlign = 'left'
+    ctx.font = '700 13px Poppins, system-ui, sans-serif'
+    let y = 66
     if (game.combo > 1) {
-      ctx.textAlign = 'left'
       ctx.fillStyle = '#fde047'
-      ctx.font = '700 13px Poppins, system-ui, sans-serif'
-      ctx.fillText(`⚡ x${game.combo}`, 16, 66)
+      ctx.fillText(`⚡ x${game.combo}`, 16, y)
+      y += 18
     }
+    if (game.surge) {
+      ctx.fillStyle = '#fe5200'
+      ctx.fillText('SURGE x2', 16, y)
+    }
+    // Hull: three pips, plus a ring when shielded.
     for (let i = 0; i < nebula.MAX_HITS; i++) {
       ctx.fillStyle = i < nebula.MAX_HITS - game.hits ? '#fe5200' : 'rgba(255,255,255,0.18)'
       ctx.beginPath()
       ctx.arc(game.w - 22 - i * 16, 60, 5, 0, Math.PI * 2)
       ctx.fill()
     }
+    if (game.ship.shield) {
+      ctx.strokeStyle = '#22d3ee'
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.arc(game.w - 22 - nebula.MAX_HITS * 16, 60, 6, 0, Math.PI * 2)
+      ctx.stroke()
+    }
+    // Timed power-ups, as draining bars.
+    let py = 78
+    for (const [k, ms] of Object.entries(game.power)) {
+      if (ms <= 0) continue
+      const st = nebula.POWER_STYLE[k]
+      ctx.textAlign = 'right'
+      ctx.fillStyle = st.color
+      ctx.font = '700 10px Poppins, system-ui, sans-serif'
+      ctx.fillText(POWER_LABEL[k], game.w - 16, py)
+      ctx.fillStyle = 'rgba(255,255,255,0.15)'
+      ctx.fillRect(game.w - 76, py + 4, 60, 3)
+      ctx.fillStyle = st.color
+      ctx.fillRect(game.w - 76, py + 4, 60 * (ms / nebula.POWER_MS[k]), 3)
+      py += 20
+    }
   },
   overTitle: (r) => (r.stats.hits >= nebula.MAX_HITS ? 'Ship down' : 'Time’s up'),
   stats: (r) => [
-    ['Rocks', r.stats.kills],
+    ['Destroyed', r.stats.kills + r.stats.drones],
     ['Energy', r.stats.energy],
+    ['Near misses', r.stats.near],
   ],
 }
 
@@ -68,6 +104,8 @@ const reflexGame = {
   controls: 'tap',
   hint: 'Follow the rule at the top · on FREEZE, don’t tap',
   boardNote: 'Same rules for everyone today. Resets at midnight.',
+  music: true,
+  intense: (game) => game.t >= 15000,
   create: (day, size) => reflex.createGame(reflex.seedFor(day), size),
   step: (game, dt) => reflex.step(game, dt),
   tap: reflex.tap,

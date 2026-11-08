@@ -1,8 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
-import { RiArrowLeftSLine, RiFlashlightFill, RiPauseFill, RiPlayFill, RiRestaurant2Line, RiTrophyLine } from 'react-icons/ri'
+import {
+  RiArrowLeftSLine,
+  RiFlashlightFill,
+  RiPauseFill,
+  RiPlayFill,
+  RiRestaurant2Line,
+  RiTrophyLine,
+  RiVolumeMuteLine,
+  RiVolumeUpLine,
+} from 'react-icons/ri'
 
 import useOrder from '../hooks/useOrder'
+import { audio } from '../game/audio'
 import { GAMES, istDay } from '../game/catalog'
 import { usePulseKey } from '../utils/pulse'
 import { play, saveRound, submitRound } from '../utils/play'
@@ -44,6 +54,18 @@ function Arcade({ def }) {
   const [ready, setReady] = useState(false)
   const [board, setBoard] = useState(null) // null closed, 'loading', or data
   const alerted = useRef(false)
+  const [muted, setMuted] = useState(audio.muted)
+
+  // Sound: wake the speakers (the tap that opened the game counts), and hush on the way out.
+  useEffect(() => {
+    audio.unlock()
+    return () => audio.music.stop()
+  }, [])
+  const toggleSound = () => {
+    audio.unlock()
+    audio.setMuted(!muted)
+    setMuted(!muted)
+  }
 
   const setPhase = useCallback((p) => {
     phaseRef.current = p
@@ -78,17 +100,27 @@ function Arcade({ def }) {
   useEffect(() => {
     if (phase !== 'countdown') return undefined
     setCount(3)
+    audio.play('count')
     let n = 3
     const id = setInterval(() => {
       n -= 1
-      if (n > 0) setCount(n)
-      else {
+      if (n > 0) {
+        setCount(n)
+        audio.play('count')
+      } else {
         clearInterval(id)
+        audio.play('go')
         setPhase('playing')
       }
     }, 650)
     return () => clearInterval(id)
   }, [phase, setPhase])
+
+  // Music only while actually playing.
+  useEffect(() => {
+    if (phase === 'playing' && def.music) audio.music.start()
+    else audio.music.stop()
+  }, [phase, def])
 
   const finish = useCallback(
     async (game) => {
@@ -96,6 +128,7 @@ function Arcade({ def }) {
       const { best, newBest } = saveRound(def.id, game.day, r)
       setSummary({ ...r, best, newBest, rank: null, sending: Boolean(key), error: '' })
       setPhase('over')
+      if (newBest && r.score > 0) audio.play('best')
       if (!key) return
       try {
         const s = await submitRound(def.id, key, game.day, r)
@@ -122,9 +155,15 @@ function Arcade({ def }) {
           def.step(game, dt, { dx: input.dx, dy: input.dy })
           input.dx = 0
           input.dy = 0
+          audio.music.setIntense(Boolean(def.intense?.(game)))
           if (game.over) finish(game)
         } else {
           inputRef.current = { dx: 0, dy: 0 }
+        }
+        // What happened this frame (and taps since the last one), as sound.
+        if (game.events?.length) {
+          for (const e of game.events) audio.play(e.type, e)
+          game.events.length = 0
         }
         const ctx = canvas.getContext('2d')
         const { scale, ox, oy, dpr } = viewRef.current
@@ -166,6 +205,7 @@ function Arcade({ def }) {
     alerted.current = true
     pause()
     setReady(true)
+    audio.play('ready')
     navigator.vibrate?.([200, 100, 200])
   }, [status, pause])
 
@@ -204,7 +244,7 @@ function Arcade({ def }) {
   }
 
   return (
-    <div className='fixed inset-0 z-0 mx-auto flex max-w-md flex-col bg-[#070b1f] text-white select-none'>
+    <div className='fixed inset-0 z-0 mx-auto flex max-w-md flex-col bg-[#070b1f] text-white select-none' onPointerDownCapture={() => audio.unlock()}>
       <header className='relative z-10 flex h-14 items-center gap-2 px-3'>
         <button
           type='button'
@@ -224,6 +264,15 @@ function Arcade({ def }) {
             Token #{order?.orderNumber ?? '…'} · {STATUS[status] || 'Loading'}
           </span>
           {status === 'SERVED' && <span className='h-2 w-2 shrink-0 animate-pulse rounded-full bg-[#22c55e]' />}
+        </button>
+        <button
+          type='button'
+          onClick={toggleSound}
+          aria-label={muted ? 'Turn sound on' : 'Turn sound off'}
+          aria-pressed={!muted}
+          className='flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 transition active:scale-90'
+        >
+          {muted ? <RiVolumeMuteLine size={20} className='text-white/60' /> : <RiVolumeUpLine size={20} />}
         </button>
         <button
           type='button'
@@ -277,7 +326,7 @@ function Arcade({ def }) {
             {summary.newBest && summary.score > 0 && (
               <p className='mt-2 rounded-full bg-[#fde047] px-3 py-1 text-xs font-bold text-[#1c0b33]'>New best today!</p>
             )}
-            <div className='mt-5 grid w-full max-w-xs grid-cols-3 gap-2 text-center'>
+            <div className={`mt-5 grid w-full max-w-xs gap-2 text-center ${def.stats(summary).length === 3 ? 'grid-cols-2' : 'grid-cols-3'}`}>
               {def.stats(summary).map(([label, value]) => (
                 <Stat key={label} label={label} value={value} />
               ))}
