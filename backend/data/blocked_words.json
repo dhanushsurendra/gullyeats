@@ -1,0 +1,85 @@
+{
+  "_readme": "Word lists for utils/wordFilter.js. severe: blocked outright. mild: sent to admin review. ambiguous: has an innocent meaning too, so reviewed only when a second-person word (you, teri, nee...) sits right next to it or the text has another flagged word. stems: severe roots also matched inside longer words. allow: innocent words that look like, or contain, a listed word; never flagged. Entries with a space are phrases. Latin entries are lowercase; Indian-language words are listed transliterated and in native script.",
+
+  "severe": {
+    "sexual": [
+      "fuck", "fuk", "fuq", "fck", "fcuk", "phuck", "phuk", "fucker", "fucking", "fukin", "fuckin", "motherfucker", "mofo",
+      "cunt", "blowjob", "handjob", "dildo", "porn", "porno", "pornhub", "xvideos", "cumshot", "jizz", "boner",
+      "chut", "choot", "chudai", "chudwa", "chodu", "lund", "lauda", "lavda", "lawda", "loda", "lodu",
+      "gaand", "gaandu", "bhosda", "bhosdi", "bhosdike", "bhosadike", "bhosdiwala", "jhaat", "jhaatu", "jhatu", "tatte",
+      "tunne", "thunne", "tullu", "thullu", "tunni",
+      "pundai", "punda", "koothi", "oombu", "oombi", "sunniya", "otha", "ootha", "ommala", "okkala",
+      "dengu", "dengey", "dengutha", "modda", "pooku", "puku", "erripuka",
+      "kunna", "kunnan", "pooru", "poorimone", "poorimon", "koothichi",
+      "चूत", "चुत", "चुदाई", "लंड", "लौड़ा", "लौडा", "लवडा", "गांड", "गाँड", "गांडू", "भोसड़ी", "भोसडी", "भोसड़ा", "झाट", "झांट",
+      "ತುಣ್ಣೆ", "ತುಲ್ಲು", "ಗಾಂಡು",
+      "புண்டை", "புண்ட", "கூதி", "ஓம்பு", "ஓத்தா", "சுன்னி",
+      "దెంగు", "దెంగెయ్", "మొడ్డ", "పూకు",
+      "പൂറ്", "പൂറി", "പൂറിമോൻ", "കുണ്ണ", "കൂതി"
+    ],
+    "abuse": [
+      "bitch", "bich", "biatch", "bytch", "btch", "beetch", "whore", "slut", "asshole", "arsehole", "dickhead",
+      "madarchod", "maderchod", "madarchot", "behenchod", "bhenchod", "bahenchod", "bsdk", "maa chod", "maa ki chut",
+      "chutiya", "chutia", "chutiye", "chootiya", "randi", "raand", "randwa", "randibaaz", "kuttiya", "kutiya", "bhadwa", "bhadwe", "bhadva", "haramzada", "haramzadi",
+      "sule", "soole", "sulemaga", "sulemagane", "bolimaga", "bolimagane", "bolimaklu", "nin amman", "ninn amman", "ninamman", "hadarsule", "bevarsi",
+      "thevidiya", "thevdiya", "thevudiya", "thayoli", "thaayoli", "baadu",
+      "lanja", "lanjakoduku", "lanja koduku", "dengichuko",
+      "myre", "myru", "mairu", "maire", "kazhuveri", "pulayadi", "pulayadimone", "poori mone",
+      "मादरचोद", "मादरचोत", "बहनचोद", "बहेनचोद", "भेनचोद", "चूतिया", "चुतिया", "रंडी", "रण्डी", "कुतिया", "भड़वा", "भडवा", "हरामज़ादा", "हरामजादा",
+      "ಸೂಳೆ", "ಸೂಳೆಮಗ", "ಬೋಳಿಮಗ", "ಬೋಳಿಮಗನೆ", "ಬೇವರ್ಸಿ",
+      "தேவடியா", "தேவிடியா", "தேவுடியா", "தாயோளி",
+      "లంజ", "లంజకొడుకు", "లంజాకొడుకు",
+      "മൈര്", "മൈരേ", "മൈരൻ", "തായോളി", "പുലയാടി", "കഴുവേറി"
+    ],
+    "slur": [
+      "nigger", "nigga", "niggas", "faggot", "fagot", "tranny", "kike", "chinki", "chinky", "katua", "katwa", "katue", "chamar", "chamaar", "bhangi", "chuhra",
+      "कटुआ", "कटवा", "चमार", "भंगी"
+    ],
+    "threat": [
+      "kys", "kill yourself", "kill urself", "rape you", "rape u", "acid attack", "acid on you",
+      "maar dalunga", "maar dunga", "jaan se maar", "jaan se maarunga", "saaysbidtini", "saayisbidtini", "kolluven", "champesta", "champestha", "konnu kalayum", "konnukalayum"
+    ]
+  },
+
+  "mild": {
+    "sexual": ["sex chat", "sexting", "nude", "nudes", "boobs", "boob", "tits", "titties", "penis", "vagina", "horny", "orgasm", "rape", "raped", "rapist", "molest", "masturbate", "sexy", "xxx", "onlyfans"],
+    "abuse": ["shit", "bullshit", "bastard", "jackass", "dumbass", "harami", "haraami", "kamina", "kamine", "kaminey", "bakchod", "bakchodi", "tatti", "suar", "loosu", "naaye", "ullu ka pattha", "kutta kamina", "thendi",
+      "हरामी", "कमीना", "कमीने", "सूअर", "லூசு", "நாயே"],
+    "hate": ["jihadi", "sanghi", "madrasi", "paki", "pakis", "napunsak", "kojja", "pottai"],
+    "threat": ["go die", "kill you", "kill u", "kill ur", "murder you", "stab you", "shoot you", "beat you up", "i will find you", "watch your back", "you will die", "u will die", "maar daalo", "maarunga", "hodithini", "adichuduven"]
+  },
+
+  "ambiguous": {
+    "sexual": ["sex", "cock", "pussy", "dick", "balls", "screw", "hoe", "hoes", "boli", "poori", "kambi", "sunni", "tika", "thika", "kundi", "cum", "chod", "chodna", "gudda", "gandu"],
+    "abuse": ["ass", "kutta", "kutti", "kutte", "sala", "saala", "sali", "saali", "pig", "donkey", "ullu", "patti", "naayi", "nayi", "kothi", "mc", "bc"],
+    "hate": ["mulla", "hijra", "chakka", "chink", "fag", "terrorist"],
+    "threat": ["kill", "maar"]
+  },
+
+  "stems": [
+    "fuck", "cunt", "bitch", "whore", "slut", "nigger", "nigga", "faggot", "dildo", "porn", "blowjob", "handjob",
+    "madarchod", "maderchod", "behenchod", "bhenchod", "bahenchod", "chutiya", "chutiye", "chootiya", "bhosd", "bhosad", "randibaaz", "gaandu", "jhaatu",
+    "bolimaga", "sulemaga", "thevidiya", "thevdiya", "thayoli", "lanjakoduku", "pulayadi", "poorimon", "kazhuveri", "koothichi", "dengichuko", "pundai", "kunnan"
+  ],
+
+  "targets": ["you", "u", "ur", "your", "youre", "ya", "yo", "tu", "tum", "tera", "teri", "tere", "tujhe", "tujh", "tumhari", "tumhara", "nee", "ninna", "ninge", "nin", "ninn", "nuvvu", "nuvu", "nee", "ni", "ninte", "ninakku", "unga", "un", "unnoda", "thu"],
+
+  "allow": [
+    "scunthorpe", "assassin", "assassins", "assassinate", "assistant", "assist", "assess", "assessment", "asset", "assets", "class", "classic", "classy", "glass", "grass", "brass", "mass", "pass", "passion", "bass", "embassy", "harass", "sassy", "lass", "massage", "assam", "assamese",
+    "cocktail", "cocktails", "peacock", "hancock", "cockroach", "shuttlecock", "dickens", "dickson", "benedict", "pussycat", "shiitake", "shitake", "therapist", "therapists", "grape", "grapes", "rapeseed", "drape", "drapes", "scrape", "scraped", "sextet", "sussex", "essex", "middlesex",
+    "cumin", "cucumber", "cumulative", "document", "circumstance", "scum", "accumulate",
+    "duck", "luck", "lucky", "buck", "tuck", "truck", "puck", "muck", "suck", "sucks", "stuck", "fluke", "fuchsia",
+    "batch", "pitch", "ditch", "witch", "hitch", "bitcoin", "titanic", "title", "titles", "constitution", "shuttle", "shift", "shirt",
+    "chutney", "chutneys", "chute", "chutes", "parachute", "chuddar",
+    "blunder", "plunder", "laudable", "applaud", "fraud", "loud", "lodge", "lodging", "lode", "load", "loads", "lodi",
+    "gandh", "gandha", "sugandh", "gandhi", "gandhinagar", "ganda", "gande", "gandi", "gandum", "ganesh", "grand", "grandma", "grandpa", "grandson", "granddaughter", "grandiose",
+    "tune", "tunes", "tuned", "tunnel", "tulle",
+    "panda", "pandu", "pundit", "pundits", "pondy", "pondicherry",
+    "other", "others", "mother", "brother", "bother", "another", "thotha",
+    "dengue", "pukka", "pucca", "kuna", "pooram", "poorna", "purna",
+    "randy", "randhir", "randeep", "random", "randomly", "brand", "brands", "errand", "errands",
+    "sulemani", "suleiman", "sulaiman", "mcdonalds",
+    "badu", "bhangra", "chamarajpet", "chamarajanagar", "chamaraja", "chamarajendra",
+    "kulfi", "kattu", "myrtle", "cute", "cutie", "cuties", "cutest"
+  ]
+}

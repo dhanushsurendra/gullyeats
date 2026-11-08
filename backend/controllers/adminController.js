@@ -1690,3 +1690,8 @@ exports.actions = asyncHandler(async (req, res) => {
     },
   })
 })
+
+// Shared with moderationController.
+exports.afterCursor = afterCursor
+exports.nextCursor = nextCursor
+exports.cartInfo = cartInfo

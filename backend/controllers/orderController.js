@@ -1,3 +1,4 @@
+const crypto = require('crypto')
 const mongoose = require('mongoose')
 const asyncHandler = require('../utils/asyncHandler')
 const Order = require('../models/Order')
@@ -195,9 +196,14 @@ exports.createOrder = asyncHandler(async (req, res) => {
     status: orderStatus,
     paidAt: isPaid ? new Date() : null,
     paidAmount: isPaid ? totals.totalPrice : 0,
+    // Only the customer's own phone gets this (see Order.accessKey).
+    accessKey: isVendor ? undefined : crypto.randomBytes(16).toString('hex'),
   })
 
-  req.io.to(cart._id.toString()).emit('new_order_received', order)
+  // The vendor's copy must not carry the customer's key.
+  const forVendor = typeof order.toObject === 'function' ? order.toObject() : { ...order }
+  delete forVendor.accessKey
+  req.io.to(cart._id.toString()).emit('new_order_received', forVendor)
   if (isPaid) req.io.to(`queue:${cart._id}`).emit('queue_changed')
 
   res.status(201).json({

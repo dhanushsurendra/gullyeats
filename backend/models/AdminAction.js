@@ -21,11 +21,24 @@ const adminActionSchema = new mongoose.Schema(
         'ENABLE_VENDOR',
         'SEND_REMINDER',
         'AUTO_REFUND',
+        // Confession moderation (target kind confession, comment or poster).
+        'APPROVE_CONFESSION',
+        'REJECT_CONFESSION',
+        'REMOVE_CONFESSION',
+        'RESTORE_CONFESSION',
+        'APPROVE_COMMENT',
+        'REJECT_COMMENT',
+        'REMOVE_COMMENT',
+        'RESTORE_COMMENT',
+        'SUSPEND_POSTER',
+        'UNSUSPEND_POSTER',
       ],
     },
     // What it was done to, e.g. { kind: 'cart', id, label: "Raju's Momos" }.
     target: {
-      kind: { type: String, enum: ['cart', 'vendor', 'payment'] },
+      kind: { type: String, enum: ['cart', 'vendor', 'payment', 'confession', 'comment', 'poster'] },
+      // A poster is known only by their private authorKey.
+      key: String,
       id: { type: mongoose.Schema.Types.ObjectId },
       label: String,
     },
@@ -37,5 +50,7 @@ const adminActionSchema = new mongoose.Schema(
 
 // Newest-first paging for the log page.
 adminActionSchema.index({ createdAt: -1, _id: -1 })
+// One item's moderation history.
+adminActionSchema.index({ 'target.id': 1, createdAt: -1 })
 
 module.exports = mongoose.model('AdminAction', adminActionSchema)

@@ -291,3 +291,14 @@ test('feedback takes a 1-5 star rating, with or without words', async () => {
     assert.strictEqual((await send(body)).status, 400, JSON.stringify(body))
   }
 })
+
+test('a customer order returns its confession key; the vendor socket copy and vendor orders have none', async () => {
+  setup()
+  const r = await call(c.createOrder, { body: { cartId, orderItems: [line(dosa, 1)] } })
+  assert.match(r.body.data.accessKey, /^[a-f0-9]{32}$/)
+  const emitted = r.emits.find((e) => e.event === 'new_order_received').data
+  assert.strictEqual(emitted.accessKey, undefined)
+
+  const v = await call(c.createOrder, { body: { cartId, orderItems: [line(dosa, 1)] }, user: owner })
+  assert.strictEqual(v.body.data.accessKey, undefined)
+})

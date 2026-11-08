@@ -94,6 +94,11 @@ const OrderSchema = new mongoose.Schema(
       default: null,
     },
 
+    // Random secret handed only to the customer who placed a QR order; proves
+    // the order is theirs for confessions (order ids are guessable). Never
+    // returned by queries unless asked for with +accessKey.
+    accessKey: { type: String, select: false },
+
     servedAt: Date,
     paidAt: Date,
 
