@@ -12,6 +12,7 @@ import RootRedirect from '../components/RootRedirect'
 import Confessions from '../pages/Confessions'
 import ConfessionNew from '../pages/ConfessionNew'
 import ConfessionDetail from '../pages/ConfessionDetail'
+import NebulaRush from '../pages/NebulaRush'
 
 // `:orderNumber` holds the order's _id, not its token number.
 export default function AppRoutes() {
@@ -30,6 +31,7 @@ export default function AppRoutes() {
         <Route path='/c/:cartId/order/:orderNumber/served' element={<OrderServed />} />
         <Route path='/c/:cartId/order/:orderNumber/cancelled' element={<OrderCancelled />} />
         <Route path='/c/:cartId/order/:orderNumber/thank-you' element={<ThankYou />} />
+        <Route path='/c/:cartId/order/:orderNumber/play' element={<NebulaRush />} />
         {/* GullyPulse: one feed for every cart, so no post is tied to a cart. */}
         <Route path='/confessions' element={<Confessions />} />
         <Route path='/confessions/new' element={<ConfessionNew />} />
