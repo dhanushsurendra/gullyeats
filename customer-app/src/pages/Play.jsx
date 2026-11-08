@@ -6,16 +6,19 @@ import {
   RiPauseFill,
   RiPlayFill,
   RiRestaurant2Line,
+  RiShareForwardLine,
   RiTrophyLine,
   RiVolumeMuteLine,
   RiVolumeUpLine,
 } from 'react-icons/ri'
 
 import useOrder from '../hooks/useOrder'
+import { PilotLobby, PilotResult } from '../components/PilotPanel'
 import { audio } from '../game/audio'
 import { GAMES, istDay } from '../game/catalog'
+import { applyRound, ghostOf, skinFor } from '../game/pilot'
 import { usePulseKey } from '../utils/pulse'
-import { play, saveRound, submitRound } from '../utils/play'
+import { loadGhost, loadPilot, loadPrefs, play, saveGhost, savePilot, savePrefs, saveRound, submitRound } from '../utils/play'
 
 /*
  * The GullyPlay arcade: runs any game from game/catalog.js (/play/:game),
@@ -23,6 +26,9 @@ import { play, saveRound, submitRound } from '../utils/play'
  * without `page`, so nothing navigates mid-round): a pill shows its status,
  * and when the food is served the game pauses with a big banner. Nothing is
  * sent to the server until a round ends.
+ *
+ * The first round starts from a lobby (today's twist, pilot progress,
+ * settings); "Play again" goes straight to the countdown.
  */
 
 const STATUS = { PENDING: 'Pay at counter', PAID: 'In the queue', SERVED: 'Ready!', CANCELLED: 'Cancelled' }
@@ -47,8 +53,8 @@ function Arcade({ def }) {
   const gameRef = useRef(null)
   const viewRef = useRef({ scale: 1, ox: 0, oy: 0, dpr: 1 })
   const inputRef = useRef({ dx: 0, dy: 0, bomb: false })
-  const phaseRef = useRef('countdown')
-  const [phase, setPhaseState] = useState('countdown') // countdown | playing | paused | over
+  const phaseRef = useRef('lobby')
+  const [phase, setPhaseState] = useState('lobby') // lobby | countdown | playing | paused | over
   const [count, setCount] = useState(3)
   const [round, setRound] = useState(0) // bumps to start a new round
   const [summary, setSummary] = useState(null) // { ...result, best, newBest, rank, sending, error }
@@ -56,6 +62,10 @@ function Arcade({ def }) {
   const [board, setBoard] = useState(null) // null closed, 'loading', or data
   const alerted = useRef(false)
   const [muted, setMuted] = useState(audio.muted)
+  const [prefs, setPrefsState] = useState(loadPrefs) // { calm, haptics }
+  const prefsRef = useRef(prefs)
+  const [pilot, setPilot] = useState(loadPilot)
+  const [shared, setShared] = useState('')
 
   // Sound: wake the speakers (the tap that opened the game counts), and hush on the way out.
   useEffect(() => {
@@ -66,6 +76,20 @@ function Arcade({ def }) {
     audio.unlock()
     audio.setMuted(!muted)
     setMuted(!muted)
+  }
+
+  const setPref = (k) => {
+    const next = { ...prefsRef.current, [k]: !prefsRef.current[k] }
+    prefsRef.current = next
+    setPrefsState(next)
+    savePrefs(next)
+    if (gameRef.current) gameRef.current.calm = next.calm
+  }
+  const pickSkin = (id) => {
+    const next = { ...pilot, skin: id }
+    savePilot(next)
+    setPilot(next)
+    if (gameRef.current) gameRef.current.skin = skinFor(next)
   }
 
   const setPhase = useCallback((p) => {
@@ -86,15 +110,24 @@ function Arcade({ def }) {
     viewRef.current = { scale, ox: (width - game.w * scale) / 2, oy: (height - game.h * scale) / 2, dpr }
   }, [])
 
-  // New round: same daily seed, 3-2-1, go.
+  // New round: same daily seed, 3-2-1, go (the first one waits in the lobby).
   useEffect(() => {
     const { width, height } = boxRef.current.getBoundingClientRect()
     const day = istDay()
-    gameRef.current = def.create(day, { width: width || 360, height: height || 640 })
-    gameRef.current.day = day
+    const game = def.create(day, { width: width || 360, height: height || 640 })
+    game.day = day
+    game.calm = prefsRef.current.calm
+    if (def.pilot) {
+      const p = loadPilot()
+      game.skin = skinFor(p)
+      game.ghost = loadGhost(day, game.h)
+      game.tips = !p.tipsDone
+    }
+    gameRef.current = game
     fit()
     setSummary(null)
-    setPhase('countdown')
+    setShared('')
+    setPhase(round ? 'countdown' : 'lobby')
   }, [round, fit, setPhase, def])
 
   // The countdown (also used when resuming).
@@ -127,7 +160,15 @@ function Arcade({ def }) {
     async (game) => {
       const r = def.result(game)
       const { best, newBest } = saveRound(def.id, game.day, r)
-      setSummary({ ...r, best, newBest, rank: null, sending: Boolean(key), error: '' })
+      let news = null
+      if (def.pilot) {
+        news = applyRound(loadPilot(), game.day, r)
+        if (game.tips) news.profile.tipsDone = true
+        savePilot(news.profile)
+        setPilot(news.profile)
+        if (newBest) saveGhost(game.day, game.h, ghostOf(game.trail))
+      }
+      setSummary({ ...r, best, newBest, pilot: news, rank: null, sending: Boolean(key), error: '' })
       setPhase('over')
       if (newBest && r.score > 0) audio.play('best')
       if (!key) return
@@ -153,10 +194,14 @@ function Arcade({ def }) {
       if (game && canvas) {
         if (phaseRef.current === 'playing') {
           const input = inputRef.current
-          def.step(game, dt, { dx: input.dx, dy: input.dy, bomb: input.bomb })
-          input.dx = 0
-          input.dy = 0
-          input.bomb = false
+          // Hit-stop: the world holds still for a beat after a big kill (the round's clock waits too).
+          if (game.freeze > 0) game.freeze = Math.max(0, game.freeze - dt)
+          else {
+            def.step(game, dt, { dx: input.dx, dy: input.dy, bomb: input.bomb })
+            input.dx = 0
+            input.dy = 0
+            input.bomb = false
+          }
           audio.music.setIntense(Boolean(def.intense?.(game)))
           if (game.over) finish(game)
         } else {
@@ -164,7 +209,11 @@ function Arcade({ def }) {
         }
         // What happened this frame (and taps since the last one), as sound.
         if (game.events?.length) {
-          for (const e of game.events) audio.play(e.type, e)
+          for (const e of game.events) {
+            audio.play(e.type, e)
+            const buzz = def.haptics?.[e.type]
+            if (buzz && prefsRef.current.haptics) navigator.vibrate?.(buzz)
+          }
           game.events.length = 0
         }
         const ctx = canvas.getContext('2d')
@@ -243,6 +292,20 @@ function Arcade({ def }) {
     last.current = null
   }
 
+  const share = async () => {
+    const url = `${window.location.origin}/c/${cartId}`
+    const text = `I scored ${summary.score} in today’s ${def.title} on GullyEats. Can you beat it?`
+    try {
+      if (navigator.share) await navigator.share({ title: def.title, text, url })
+      else {
+        await navigator.clipboard.writeText(`${text} ${url}`)
+        setShared('Copied! Paste it to a friend.')
+      }
+    } catch (e) {
+      if (e?.name !== 'AbortError') setShared('Couldn’t share from this browser.')
+    }
+  }
+
   const openBoard = async () => {
     setBoard('loading')
     try {
@@ -286,7 +349,7 @@ function Arcade({ def }) {
         <button
           type='button'
           onClick={() => (phase === 'paused' ? setPhase('countdown') : pause())}
-          disabled={phase === 'over'}
+          disabled={phase === 'over' || phase === 'lobby'}
           aria-label={phase === 'paused' ? 'Resume' : 'Pause'}
           className='flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition active:scale-90 disabled:opacity-30'
         >
@@ -303,6 +366,41 @@ function Arcade({ def }) {
         onPointerCancel={onPointerUp}
       >
         <canvas ref={canvasRef} className='absolute inset-0 h-full w-full' aria-label={`${def.title}. ${def.hint}`} />
+
+        {phase === 'lobby' && (
+          <Overlay dim>
+            <div className='flex max-h-full w-full max-w-xs flex-col items-center overflow-y-auto py-4'>
+              <p className='text-xs font-bold uppercase tracking-[0.25em] text-[#a78bfa]'>GullyPlay</p>
+              <p className='mt-1 text-3xl font-bold'>{def.title}</p>
+              <p className='text-sm text-white/70'>{def.tagline}</p>
+              {def.today && (
+                <div className='mt-4 w-full rounded-2xl bg-[#c084fc]/15 px-4 py-3 text-left ring-1 ring-[#c084fc]/40'>
+                  <p className='text-[11px] font-bold uppercase tracking-wider text-[#c084fc]'>Today’s anomaly</p>
+                  <p className='font-semibold'>{def.today(istDay()).label}</p>
+                  <p className='text-xs text-white/70'>{def.today(istDay()).text}</p>
+                </div>
+              )}
+              {def.pilot && <PilotLobby day={istDay()} profile={pilot} onSkin={pickSkin} />}
+              <p className='mt-4 text-center text-xs text-white/60'>{def.hint}</p>
+              <GameButton onClick={() => setPhase('countdown')}>
+                <RiPlayFill size={20} /> Launch
+              </GameButton>
+              <div className='mt-3 flex gap-2'>
+                <Toggle on={prefs.calm} onClick={() => setPref('calm')}>
+                  Reduced motion
+                </Toggle>
+                {'vibrate' in navigator && (
+                  <Toggle on={prefs.haptics} onClick={() => setPref('haptics')}>
+                    Vibration
+                  </Toggle>
+                )}
+              </div>
+              <button type='button' onClick={openBoard} className='mt-3 flex items-center gap-1.5 text-sm font-semibold text-white/80'>
+                <RiTrophyLine size={16} className='text-[#fde047]' /> Today’s leaderboard
+              </button>
+            </div>
+          </Overlay>
+        )}
 
         {phase === 'countdown' && (
           <Overlay>
@@ -328,44 +426,78 @@ function Arcade({ def }) {
 
         {phase === 'over' && summary && (
           <Overlay dim>
-            <p className='text-xs font-bold uppercase tracking-[0.25em] text-[#a78bfa]'>
-              {def.overTitle(summary)}
-            </p>
-            <p className='animate-pop mt-1 text-6xl font-bold tabular-nums'>{summary.score}</p>
-            {summary.newBest && summary.score > 0 && (
-              <p className='mt-2 rounded-full bg-[#fde047] px-3 py-1 text-xs font-bold text-[#1c0b33]'>New best today!</p>
-            )}
-            <div className={`mt-5 grid w-full max-w-xs gap-2 text-center ${def.stats(summary).length === 3 ? 'grid-cols-2' : 'grid-cols-3'}`}>
-              {def.stats(summary).map(([label, value]) => (
-                <Stat key={label} label={label} value={value} />
-              ))}
-              <Stat label='Best today' value={summary.best} />
-            </div>
-            <p className='mt-4 h-5 text-sm text-white/80'>
-              {summary.sending
-                ? 'Saving your score…'
-                : summary.error
-                  ? summary.error
-                  : summary.rank
-                    ? `You’re #${summary.rank} today`
-                    : key
-                      ? ''
-                      : 'Place an order to join the leaderboard'}
-            </p>
-            <div className='mt-4 flex w-full max-w-xs flex-col gap-2.5'>
-              <GameButton onClick={() => setRound((r) => r + 1)}>
-                <RiPlayFill size={20} /> Play again
-              </GameButton>
-              <button
-                type='button'
-                onClick={openBoard}
-                className='flex h-12 items-center justify-center gap-2 rounded-2xl bg-white/10 font-semibold ring-1 ring-white/20 transition active:scale-[0.98]'
-              >
-                <RiTrophyLine size={18} className='text-[#fde047]' /> Today’s leaderboard
-              </button>
-              <button type='button' onClick={() => navigate(back)} className='mt-1 text-sm font-semibold text-white/70'>
-                Back to my order
-              </button>
+            <div className='flex max-h-full w-full max-w-xs flex-col items-center overflow-y-auto py-4'>
+              <p className='text-xs font-bold uppercase tracking-[0.25em] text-[#a78bfa]'>
+                {def.overTitle(summary)}
+              </p>
+              <div className='mt-1 flex items-center gap-3'>
+                {def.grade && (
+                  <span className='animate-pop flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fde047] text-2xl font-black text-[#1c0b33]' aria-label={`Grade ${def.grade(summary)}`}>
+                    {def.grade(summary)}
+                  </span>
+                )}
+                <p className='animate-pop text-6xl font-bold tabular-nums'>{summary.score}</p>
+              </div>
+              {summary.newBest && summary.score > 0 && (
+                <p className='mt-2 rounded-full bg-[#fde047] px-3 py-1 text-xs font-bold text-[#1c0b33]'>New best today!</p>
+              )}
+              <div className={`mt-5 grid w-full max-w-xs gap-2 text-center ${def.stats(summary).length === 3 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                {def.stats(summary).map(([label, value]) => (
+                  <Stat key={label} label={label} value={value} />
+                ))}
+                <Stat label='Best today' value={summary.best} />
+              </div>
+              {def.breakdown && (
+                <dl className='mt-3 w-full space-y-0.5 text-xs'>
+                  {def.breakdown(summary).filter(([, v]) => v > 0).map(([label, v]) => (
+                    <div key={label} className='flex justify-between text-white/70'>
+                      <dt>{label}</dt>
+                      <dd className='font-semibold tabular-nums text-white'>{v}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+              {summary.pilot && <PilotResult news={summary.pilot} />}
+              <p className='mt-4 h-5 text-sm text-white/80'>
+                {summary.sending
+                  ? 'Saving your score…'
+                  : summary.error
+                    ? summary.error
+                    : summary.rank
+                      ? `You’re #${summary.rank} today`
+                      : key
+                        ? ''
+                        : 'Place an order to join the leaderboard'}
+              </p>
+              <div className='mt-4 flex w-full max-w-xs flex-col gap-2.5'>
+                <GameButton onClick={() => setRound((r) => r + 1)}>
+                  <RiPlayFill size={20} /> Play again
+                </GameButton>
+                <div className='flex gap-2'>
+                  <button
+                    type='button'
+                    onClick={openBoard}
+                    className='flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-white/10 font-semibold ring-1 ring-white/20 transition active:scale-[0.98]'
+                  >
+                    <RiTrophyLine size={18} className='text-[#fde047]' /> Leaderboard
+                  </button>
+                  <button
+                    type='button'
+                    onClick={share}
+                    className='flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-white/10 font-semibold ring-1 ring-white/20 transition active:scale-[0.98]'
+                  >
+                    <RiShareForwardLine size={18} className='text-[#7df9ff]' /> Share
+                  </button>
+                </div>
+                {shared && (
+                  <p className='text-center text-xs text-white/70' role='status'>
+                    {shared}
+                  </p>
+                )}
+                <button type='button' onClick={() => navigate(back)} className='mt-1 text-sm font-semibold text-white/70'>
+                  Back to my order
+                </button>
+              </div>
             </div>
           </Overlay>
         )}
@@ -413,6 +545,20 @@ function GameButton({ children, onClick }) {
       className='mt-5 flex h-12 w-full max-w-xs items-center justify-center gap-2 rounded-2xl bg-primary font-semibold text-white shadow-[0_8px_24px_-8px_rgb(254_82_0/0.7)] transition active:scale-[0.98]'
     >
       {children}
+    </button>
+  )
+}
+
+function Toggle({ on, onClick, children }) {
+  return (
+    <button
+      type='button'
+      role='switch'
+      aria-checked={on}
+      onClick={onClick}
+      className={`rounded-full px-3 py-1.5 text-xs font-semibold ring-1 transition active:scale-95 ${on ? 'bg-[#7df9ff]/20 text-white ring-[#7df9ff]/60' : 'bg-white/5 text-white/60 ring-white/15'}`}
+    >
+      {children} · {on ? 'on' : 'off'}
     </button>
   )
 }

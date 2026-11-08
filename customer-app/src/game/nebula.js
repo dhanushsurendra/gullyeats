@@ -299,7 +299,7 @@ function placeBoss(game) {
   const across = d.y ? game.w / 2 : game.h / 2
   const along = d.y ? game.h / 2 : game.w / 2
   const ease = 1 - (1 - b.enter) ** 3
-  const back = along - 78 + (1 - ease) * 170
+  const back = along - (d.y ? 130 : 80) + (1 - ease) * 170 // clear of the score and timer when it hangs at the top
   const sway = Math.sin((game.t - BOSS_AT) / 1400) * (across - 80) * ease
   b.x = game.w / 2 - d.x * back - d.y * sway
   b.y = game.h / 2 - d.y * back + d.x * sway

@@ -109,6 +109,21 @@ const nebulaGame = {
       py += 20
     }
   },
+  // Ranks, missions, skins and the ghost (game/pilot.js); cosmetic only.
+  pilot: true,
+  today(day) {
+    const a = nebula.ANOMALIES[nebula.anomalyFor(nebula.seedFor(day))]
+    return { label: a.name, text: a.text }
+  },
+  grade: (r) => (r.score >= 7000 ? 'S' : r.score >= 4500 ? 'A' : r.score >= 2500 ? 'B' : 'C'),
+  breakdown: (r) => [
+    ['Rocks & comets', r.points.rocks],
+    ['Drones', r.points.drones],
+    ['Energy', r.points.energy],
+    ['Near misses', r.points.near],
+    ['Mothership', r.points.boss],
+  ],
+  haptics: { hit: 120, shieldBreak: 50, bomb: [40, 30, 90], bossDown: [120, 60, 260] },
   overTitle: (r) => (r.stats.hits >= nebula.MAX_HITS ? 'Ship down' : 'Time’s up'),
   stats: (r) => [
     ['Destroyed', r.stats.kills + r.stats.drones],

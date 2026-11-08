@@ -1,5 +1,6 @@
 import { api } from '../constants/api'
 import { istDay } from '../game/nebula'
+import { NEW_PILOT } from '../game/pilot'
 
 /*
  * GullyPlay helpers, per game ('nebula', 'reflex'): the server's score and
@@ -72,3 +73,23 @@ export async function submitRound(game, key, day, round) {
     throw e
   }
 }
+
+// Nebula Rush pilot (game/pilot.js) and the ghost of today's best run.
+const PILOT = 'nebula-pilot'
+const GHOST = 'nebula-ghost' // { day, h, pts }
+export const loadPilot = () => ({ ...NEW_PILOT, ...read(PILOT) })
+export const savePilot = (p) => write(PILOT, p)
+// Only for the same day and the same world height (the trail is in world units).
+export function loadGhost(day, h) {
+  const g = read(GHOST)
+  return g?.day === day && g.h === h ? g.pts : null
+}
+export const saveGhost = (day, h, pts) => write(GHOST, { day, h, pts })
+
+// Arcade settings, for every game.
+const PREFS = 'gullyplay-prefs'
+export function loadPrefs() {
+  const calm = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  return { calm: Boolean(calm), haptics: true, ...read(PREFS) }
+}
+export const savePrefs = (p) => write(PREFS, p)
