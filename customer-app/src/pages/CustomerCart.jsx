@@ -108,16 +108,19 @@ export default function CustomerCart() {
                 <img
                   src={item.imageUrl || defaultFoodImage}
                   alt=''
-                  className='h-14 w-14 shrink-0 rounded-xl bg-grey-100 object-cover'
+                  className='h-12 w-12 shrink-0 rounded-xl bg-grey-100 object-cover'
                   onError={(e) => {
                     e.currentTarget.onerror = null
                     e.currentTarget.src = defaultFoodImage
                   }}
                 />
                 <div className='min-w-0 flex-1'>
-                  <div className='flex items-center gap-2'>
-                    <VegMark isVeg={item.isVeg} />
-                    <p className='truncate text-[15px] font-medium'>{item.name}</p>
+                  {/* Up to two lines: one line cut most names after a word or two. */}
+                  <div className='flex items-start gap-2'>
+                    <span className='mt-1 shrink-0'>
+                      <VegMark isVeg={item.isVeg} />
+                    </span>
+                    <p className='line-clamp-2 min-w-0 break-words text-sm font-medium leading-snug'>{item.name}</p>
                   </div>
                   <p className='mt-0.5 text-sm text-grey-500'>{rupees(item.price * basket[item._id])}</p>
                 </div>

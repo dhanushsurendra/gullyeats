@@ -75,9 +75,9 @@ export default function Welcome() {
           <div className='min-w-0'>
             <h1 className='text-2xl font-bold leading-tight'>{cart.cartName}</h1>
             {cart.address && (
-              <p className='mt-1 flex items-center gap-1 text-sm text-grey-500'>
-                <RiMapPin2Line className='shrink-0' />
-                <span className='truncate'>{shortAddress(cart.address)}</span>
+              <p className='mt-1 flex items-start gap-1 text-sm text-grey-500'>
+                <RiMapPin2Line className='mt-0.5 shrink-0' />
+                <span className='line-clamp-2 min-w-0 break-words'>{shortAddress(cart.address)}</span>
               </p>
             )}
             {cart.rating?.count > 0 && (
