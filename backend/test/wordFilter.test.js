@@ -84,6 +84,9 @@ test('close misspellings, masks, mild words and targeted ambiguous words go to r
     'i will kill you',
     'go die',
     'send nudes',
+    'i had sex in the car',
+    'we made out behind the chaat stall',
+    'sex education is important', // any mention of sex gets a human look
     'i was raped last year', // a survivor's story must reach a person, not be auto-blocked
     'jihadi',
     'saala tu', // ambiguous next to "tu"
@@ -126,7 +129,6 @@ test('innocent text is allowed (false positives)', () => {
     'my brother and mother love bhel puri',
     'chod do yaar, kal milte hai', // "leave it, man" in Hindi
     'kutta was sleeping near the cart', // "dog", nobody targeted
-    'sex education is important', // ambiguous, nobody targeted
     'Dick Grayson is my favourite hero',
     'we went to the pool after eating poori',
     'kambi pole near the shop',

@@ -42,7 +42,7 @@
   },
 
   "mild": {
-    "sexual": ["sex chat", "sexting", "nude", "nudes", "boobs", "boob", "tits", "titties", "penis", "vagina", "horny", "orgasm", "rape", "raped", "rapist", "molest", "masturbate", "sexy", "xxx", "onlyfans"],
+    "sexual": ["sex", "sexual", "intercourse", "hook up", "hooked up", "make out", "made out", "making out", "one night stand", "condom", "sex chat", "sexting", "nude", "nudes", "boobs", "boob", "tits", "titties", "penis", "vagina", "horny", "orgasm", "rape", "raped", "rapist", "molest", "masturbate", "sexy", "xxx", "onlyfans"],
     "abuse": ["shit", "bullshit", "bastard", "jackass", "dumbass", "harami", "haraami", "kamina", "kamine", "kaminey", "bakchod", "bakchodi", "tatti", "suar", "loosu", "naaye", "ullu ka pattha", "kutta kamina", "thendi",
       "हरामी", "कमीना", "कमीने", "सूअर", "லூசு", "நாயே"],
     "hate": ["jihadi", "sanghi", "madrasi", "paki", "pakis", "napunsak", "kojja", "pottai"],
@@ -50,7 +50,7 @@
   },
 
   "ambiguous": {
-    "sexual": ["sex", "cock", "pussy", "dick", "balls", "screw", "hoe", "hoes", "boli", "poori", "kambi", "sunni", "tika", "thika", "kundi", "cum", "chod", "chodna", "gudda", "gandu"],
+    "sexual": ["cock", "pussy", "dick", "balls", "screw", "hoe", "hoes", "boli", "poori", "kambi", "sunni", "tika", "thika", "kundi", "cum", "chod", "chodna", "gudda", "gandu"],
     "abuse": ["ass", "kutta", "kutti", "kutte", "sala", "saala", "sali", "saali", "pig", "donkey", "ullu", "patti", "naayi", "nayi", "kothi", "mc", "bc"],
     "hate": ["mulla", "hijra", "chakka", "chink", "fag", "terrorist"],
     "threat": ["kill", "maar"]
