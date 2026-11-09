@@ -114,7 +114,7 @@ class _MenuReviewScreenState extends State<MenuReviewScreen> {
         AppButton(
           label: '+ ADD MORE ITEMS',
           onPressed: () => Navigator.pop(context, widget.menuItems),
-          backgroundColor: AppColors.white,
+          backgroundColor: AppColors.background,
           borderColor: AppColors.primary,
           textColor: AppColors.primary,
         ),

@@ -35,9 +35,9 @@ class _AddStaffFormState extends State<AddStaffForm> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade100),
+        border: Border.all(color: AppColors.grey200),
       ),
       child: Form(
         key: _formKey,
@@ -67,7 +67,7 @@ class _AddStaffFormState extends State<AddStaffForm> {
               label: "Staff Mobile Number",
               hint: "0000000000",
               keyboardType: TextInputType.phone,
-              prefix: const Padding(
+              prefix: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 12),
                 child: Text("+91", style: AppTextStyles.heading3),
               ),

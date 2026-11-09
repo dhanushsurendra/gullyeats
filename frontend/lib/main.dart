@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:gullyeats/core/routes/app_routes.dart';
 import 'package:gullyeats/core/routes/routes.dart';
 import 'package:gullyeats/core/theme/app_theme.dart';
+import 'package:gullyeats/core/theme/theme_provider.dart';
 import 'package:gullyeats/features/activation/providers/activation_provider.dart';
 import 'package:gullyeats/features/auth/providers/auth_provider.dart';
 import 'package:gullyeats/features/menu/providers/menu_provider.dart';
@@ -11,13 +12,16 @@ import 'package:gullyeats/features/splash/presentation/splash_screen.dart';
 import 'package:gullyeats/features/staff_management/providers/staff_provider.dart';
 import 'package:provider/provider.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final theme = ThemeProvider();
+  await theme.load();
 
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider.value(value: theme),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
         ChangeNotifierProvider(create: (_) => CartActivatedProvider()),
@@ -34,10 +38,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<ThemeProvider>();
     return MaterialApp(
       title: 'GullyEats Vendor Onboarding',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
+      theme: AppTheme.current,
       home: SplashScreen(),
       initialRoute: AppRoutes.splash,
       routes: Routes.getRoutes(),

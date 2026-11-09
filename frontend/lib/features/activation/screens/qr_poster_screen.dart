@@ -125,7 +125,7 @@ class _QrPosterScreenState extends State<QrPosterScreen> {
               isLoading: _isBtnLoading,
               onPressed: _shareQr,
               // Once shared, going back to the outlets is the main action.
-              backgroundColor: _hasShared ? AppColors.white : null,
+              backgroundColor: _hasShared ? AppColors.surface : null,
               borderColor: _hasShared ? AppColors.primary : null,
               textColor: _hasShared ? AppColors.primary : null,
             ),
@@ -195,6 +195,7 @@ class _QrPosterCard extends StatelessWidget {
       height: height,
       padding: EdgeInsets.symmetric(vertical: width * 0.05),
       decoration: BoxDecoration(
+        // The poster is printed and shared as an image: always light.
         color: Colors.white,
         border: Border.all(color: AppColors.primary, width: 2),
         borderRadius: BorderRadius.circular(20),
@@ -230,7 +231,7 @@ class _QrPosterCard extends StatelessWidget {
           ),
           Text(
             "The Street Food Revolution",
-            style: TextStyle(color: AppColors.grey500, fontSize: width * 0.03),
+            style: TextStyle(color: const Color(0xFF6B7280), fontSize: width * 0.03),
           ),
           AppGaps.h16,
           Container(
@@ -275,7 +276,7 @@ class _QrPosterCard extends StatelessWidget {
                   errorBuilder: (context, error, stackTrace) => Icon(
                     Icons.broken_image,
                     size: width * 0.6,
-                    color: AppColors.grey400,
+                    color: const Color(0xFF757575),
                   ),
                 ),
 
@@ -285,7 +286,7 @@ class _QrPosterCard extends StatelessWidget {
               text: "Powered by ",
               style: TextStyle(
                 fontSize: width * 0.03,
-                color: AppColors.grey600,
+                color: const Color(0xFF4B5563),
               ),
               children: [
                 TextSpan(
@@ -303,14 +304,14 @@ class _QrPosterCard extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: width * 0.05),
             child: Text(
               cartName,
-              style: AppTextStyles.heading2.copyWith(fontSize: width * 0.06),
+              style: AppTextStyles.heading2.copyWith(fontSize: width * 0.06, color: Colors.black),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
           ),
           Text(
             "Cart ID: $cartId",
-            style: TextStyle(color: AppColors.grey400, fontSize: width * 0.03),
+            style: TextStyle(color: const Color(0xFF757575), fontSize: width * 0.03),
           ),
         ],
       ),

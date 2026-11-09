@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gullyeats/core/theme/app_colors.dart';
 import 'package:gullyeats/core/theme/app_gaps.dart';
 import 'package:gullyeats/core/theme/app_text_styles.dart';
 
@@ -21,21 +22,21 @@ class StaffMemberCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade100),
+        border: Border.all(color: AppColors.grey200),
       ),
       child: Row(
         children: [
           CircleAvatar(
             radius: 25,
-            backgroundColor: Colors.orange.shade50,
+            backgroundColor: AppColors.lightOrange,
             child: Text(
               name.isNotEmpty 
                   ? name.split(' ').map((l) => l[0]).take(2).join().toUpperCase() 
                   : "?",
               style: TextStyle(
-                color: Colors.orange.shade900,
+                color: AppColors.primary,
                 fontWeight: FontWeight.bold,
                 fontSize: 18,
               ),
@@ -56,7 +57,7 @@ class StaffMemberCard extends StatelessWidget {
                 Text(
                   phone,
                   style: AppTextStyles.body.copyWith(
-                    color: Colors.grey.shade600, 
+                    color: AppColors.grey600, 
                     fontSize: 13
                   ),
                 ),
@@ -68,7 +69,7 @@ class StaffMemberCard extends StatelessWidget {
             icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
             constraints: const BoxConstraints(),
             padding: const EdgeInsets.all(8),
-            style: IconButton.styleFrom(backgroundColor: Colors.red.shade50),
+            style: IconButton.styleFrom(backgroundColor: AppColors.lightRed),
           ),
         ],
       ),

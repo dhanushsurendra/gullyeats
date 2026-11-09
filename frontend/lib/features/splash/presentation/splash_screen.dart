@@ -34,7 +34,7 @@ class _SplashScreenState extends State<SplashScreen> {
     final double screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Padding(
           padding: AppPadding.screen,
@@ -129,7 +129,7 @@ class _SplashScreenState extends State<SplashScreen> {
           width: width * 0.4, 
           child: ClipRRect(
             borderRadius: BorderRadius.circular(10),
-            child: const LinearProgressIndicator(
+            child: LinearProgressIndicator(
               minHeight: 6,
               backgroundColor: AppColors.grey300,
               valueColor: AlwaysStoppedAnimation(AppColors.primary),

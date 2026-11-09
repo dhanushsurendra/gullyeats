@@ -4,6 +4,7 @@ import 'package:gullyeats/core/theme/app_gaps.dart';
 import 'package:gullyeats/core/theme/app_padding.dart';
 import 'package:gullyeats/core/theme/app_text_styles.dart';
 import 'package:gullyeats/core/widgets/app_back_button.dart';
+import 'package:gullyeats/core/widgets/theme_toggle.dart';
 
 class BaseScreen extends StatelessWidget {
   final String? title;
@@ -28,6 +29,17 @@ class BaseScreen extends StatelessWidget {
     this.showBackButton = true,
     this.bottomNavigationBar,
   });
+
+  // Back (when there is one) on the left, the theme switch on the right.
+  Widget _buildTopBar() {
+    return Row(
+      children: [
+        if (showBackButton && onBack != null) AppBackButton(onPressed: onBack),
+        const Spacer(),
+        const ThemeToggle(),
+      ],
+    );
+  }
 
   Widget _buildHeader() {
     return Column(
@@ -57,7 +69,7 @@ class BaseScreen extends StatelessWidget {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: expandToFullHeight
             ? Center(
@@ -77,10 +89,8 @@ class BaseScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (showBackButton && onBack != null) ...[
-                          AppBackButton(onPressed: onBack),
-                          AppGaps.h16,
-                        ],
+                        _buildTopBar(),
+                        AppGaps.h16,
 
                         _buildHeader(),
 
@@ -108,10 +118,8 @@ class BaseScreen extends StatelessWidget {
 
   Widget _buildExpanded(BuildContext context, BoxConstraints constraints) {
     final top = [
-      if (showBackButton && onBack != null) ...[
-        AppBackButton(onPressed: onBack),
-        AppGaps.h16,
-      ],
+      _buildTopBar(),
+      AppGaps.h16,
       _buildHeader(),
       AppGaps.h32,
     ];

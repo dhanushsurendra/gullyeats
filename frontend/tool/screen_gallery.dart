@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:gullyeats/core/theme/theme_provider.dart';
 import 'package:gullyeats/core/theme/app_theme.dart';
 import 'package:gullyeats/features/activation/providers/activation_provider.dart';
 import 'package:gullyeats/features/activation/screens/cart_activated_screen.dart';
@@ -158,6 +159,7 @@ class _GalleryState extends State<_Gallery> {
     return MultiProvider(
       key: ValueKey(_index),
       providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()..loadToken()),
         ChangeNotifierProvider(
           create: (_) => CartProvider()
@@ -170,7 +172,7 @@ class _GalleryState extends State<_Gallery> {
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
+        theme: AppTheme.current,
         onGenerateRoute: (settings) => MaterialPageRoute(
           settings: settings.name == '/'
               ? RouteSettings(name: '/', arguments: entry.arguments)

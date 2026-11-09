@@ -66,8 +66,8 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.only(
@@ -87,7 +87,7 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
+                  color: AppColors.grey300,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -156,7 +156,7 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
       style: AppTextStyles.caption.copyWith(
         fontWeight: FontWeight.bold,
         letterSpacing: 1.1,
-        color: Colors.grey.shade600,
+        color: AppColors.grey600,
       ),
     ),
   );
@@ -185,7 +185,7 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
         style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: TextStyle(color: Colors.grey.shade400),
+          hintStyle: TextStyle(color: AppColors.grey400),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
@@ -208,7 +208,7 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
-            color: isSelected ? activeColor.withValues(alpha: 0.08) : Colors.white,
+            color: isSelected ? activeColor.withValues(alpha: 0.08) : AppColors.surface,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isSelected ? activeColor : AppColors.grey200,
@@ -221,13 +221,13 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
               Icon(
                 Icons.circle,
                 size: 10,
-                color: isSelected ? activeColor : Colors.grey.shade300,
+                color: isSelected ? activeColor : AppColors.grey300,
               ),
               AppGaps.w8,
               Text(
                 label,
                 style: TextStyle(
-                  color: isSelected ? activeColor : Colors.grey.shade600,
+                  color: isSelected ? activeColor : AppColors.grey600,
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
                 ),

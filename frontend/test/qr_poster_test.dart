@@ -31,7 +31,7 @@ Future<void> _openPoster(WidgetTester tester) async {
     ],
     child: MaterialApp(
       navigatorKey: _navigator,
-      theme: AppTheme.lightTheme,
+      theme: AppTheme.current,
       initialRoute: AppRoutes.carts,
       routes: {
         AppRoutes.carts: (_) => const Scaffold(body: Text('OUTLETS')),

@@ -225,7 +225,7 @@ class _AddMenuScreenState extends State<AddMenuScreen> {
           alignment: Alignment.topLeft,
           child: Material(
             elevation: 4,
-            color: Colors.white,
+            color: AppColors.surface,
             borderRadius: BorderRadius.circular(12),
             clipBehavior: Clip.antiAlias,
             child: ConstrainedBox(
@@ -294,8 +294,8 @@ class _AddMenuScreenState extends State<AddMenuScreen> {
                   padding: const EdgeInsets.only(left: 16, right: 4),
                   child: Text(
                     prefix,
-                    style: const TextStyle(
-                      color: Colors.black,
+                    style: TextStyle(
+                      color: AppColors.black,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -322,7 +322,7 @@ class _AddMenuScreenState extends State<AddMenuScreen> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? color.withValues(alpha: 0.1) : Colors.white,
+          color: isSelected ? color.withValues(alpha: 0.1) : AppColors.surface,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: isSelected

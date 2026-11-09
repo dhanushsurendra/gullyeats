@@ -302,7 +302,7 @@ class _EnableLocationScreenState extends State<EnableLocationScreen> {
       width: double.infinity,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: AppColors.primary.withValues(alpha: 0.1),
@@ -453,7 +453,7 @@ class _EnableLocationScreenState extends State<EnableLocationScreen> {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.surface,
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(

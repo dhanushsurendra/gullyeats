@@ -92,7 +92,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 "assets/images/login.png",
                 height: illustrationHeight(context, 180),
                 fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) => const Icon(
+                errorBuilder: (context, error, stackTrace) => Icon(
                   Icons.mobile_friendly,
                   size: 80,
                   color: AppColors.grey300,
@@ -109,7 +109,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 FilteringTextInputFormatter.digitsOnly,
                 LengthLimitingTextInputFormatter(10),
               ],
-              prefix: const Padding(
+              prefix: Padding(
                 padding: EdgeInsets.only(left: 12, right: 8),
                 child: Text("+91", style: AppTextStyles.heading3),
               ),

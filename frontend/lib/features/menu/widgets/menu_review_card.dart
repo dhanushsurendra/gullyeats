@@ -26,9 +26,9 @@ class MenuReviewCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade100),
+        border: Border.all(color: AppColors.grey200),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.02),
@@ -79,10 +79,10 @@ class MenuReviewCard extends StatelessWidget {
           ),
           IconButton(
             onPressed: onEdit, // Triggers parent function
-            icon: Icon(Icons.edit_outlined, color: Colors.grey.shade400, size: 20),
+            icon: Icon(Icons.edit_outlined, color: AppColors.grey400, size: 20),
             constraints: const BoxConstraints(),
             padding: const EdgeInsets.all(8),
-            style: IconButton.styleFrom(backgroundColor: Colors.grey.shade50),
+            style: IconButton.styleFrom(backgroundColor: AppColors.grey100),
           ),
           const SizedBox(width: 8),
           IconButton(
@@ -90,7 +90,7 @@ class MenuReviewCard extends StatelessWidget {
             icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
             constraints: const BoxConstraints(),
             padding: const EdgeInsets.all(8),
-            style: IconButton.styleFrom(backgroundColor: Colors.red.shade50),
+            style: IconButton.styleFrom(backgroundColor: AppColors.lightRed),
           ),
         ],
       ),

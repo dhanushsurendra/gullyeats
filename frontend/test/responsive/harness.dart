@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gullyeats/core/theme/app_colors.dart';
 import 'package:gullyeats/core/theme/app_theme.dart';
 import 'package:gullyeats/features/activation/providers/activation_provider.dart';
 import 'package:gullyeats/features/auth/providers/auth_provider.dart';
@@ -108,6 +109,8 @@ Widget buildApp(
   Object? arguments,
   List<NavigatorObserver> navigatorObservers = const [],
 }) {
+  // Goldens are light. `--dart-define=DARK=true` (with SHOTS) renders the dark theme to look at.
+  AppColors.dark = const bool.fromEnvironment('DARK');
   return MultiProvider(
     providers: [
       ChangeNotifierProvider.value(value: p.auth),
@@ -118,7 +121,7 @@ Widget buildApp(
     ],
     child: MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
+      theme: AppTheme.current,
       navigatorObservers: navigatorObservers,
       onGenerateRoute: (settings) => MaterialPageRoute(
         settings: settings.name == '/'

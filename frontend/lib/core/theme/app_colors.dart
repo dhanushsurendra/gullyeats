@@ -1,26 +1,39 @@
 import 'package:flutter/material.dart';
 
+/// Colour tokens. Neutrals follow the light/dark choice ([dark], set by
+/// ThemeProvider), so screens never pick a theme themselves. [white] is always
+/// white: use it for text and icons on orange or coloured fills, and [surface]
+/// / [background] for cards and pages.
 class AppColors {
   AppColors._();
+
+  static bool dark = false;
+  static Color _pick(int light, int night) => Color(dark ? night : light);
 
   // Primary brand
   static const Color primary = Color(0xFFFE5200);
 
-  // Neutral colors
-  static const Color black = Color(0xFF000000);
+  // Always white: text and icons on coloured fills.
   static const Color white = Color(0xFFFFFFFF);
 
+  // Pages, and cards/sheets on them.
+  static Color get background => _pick(0xFFFFFFFF, 0xFF0C0C0E);
+  static Color get surface => _pick(0xFFFFFFFF, 0xFF17171A);
+
+  // Main text ("black" in the light theme).
+  static Color get black => _pick(0xFF000000, 0xFFF4F4F5);
+
   // Greys
-  static const Color grey600 = Color(0xFF4B5563);
-  static const Color grey500 = Color(0xFF6B7280);
-  static const Color grey400 = Color(0xFF757575);
-  static const Color grey300 = Color(0xFFE5E5E5);
-  static const Color grey200 = Color(0xFFEEEEEE);
-  static const Color grey100 = Color(0xFFF5F5F5);
+  static Color get grey600 => _pick(0xFF4B5563, 0xFFC4C4CC);
+  static Color get grey500 => _pick(0xFF6B7280, 0xFFA1A1AA);
+  static Color get grey400 => _pick(0xFF757575, 0xFF8A8A94);
+  static Color get grey300 => _pick(0xFFE5E5E5, 0xFF45454C);
+  static Color get grey200 => _pick(0xFFEEEEEE, 0xFF2E2E33);
+  static Color get grey100 => _pick(0xFFF5F5F5, 0xFF222226);
 
   // Light backgrounds
-  static const Color lightOrange = Color(0xFFFFF0E5);
-  static const Color lightRed = Color(0xFFFEF2F2);
+  static Color get lightOrange => _pick(0xFFFFF0E5, 0xFF3A1D0F);
+  static Color get lightRed => _pick(0xFFFEF2F2, 0xFF3B1616);
 
   // Status colors
   static const Color success = Color(0xFF16A34A);

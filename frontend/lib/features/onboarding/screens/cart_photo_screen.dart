@@ -190,7 +190,7 @@ class _CartPhotoScreenState extends State<CartPhotoScreen> {
                       style: BorderStyle.solid,
                     ),
                     borderRadius: BorderRadius.circular(12),
-                    color: Colors.grey[50],
+                    color: AppColors.grey100,
                   ),
                   clipBehavior: Clip.hardEdge,
                   child: hasPhoto

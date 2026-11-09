@@ -110,7 +110,7 @@ class _OperatingSetupScreenState extends State<OperatingSetupScreen> {
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.primary.withValues(alpha: 0.04)
-              : Colors.white,
+              : AppColors.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected ? AppColors.primary : AppColors.grey200,
@@ -149,7 +149,7 @@ class _OperatingSetupScreenState extends State<OperatingSetupScreen> {
                     title,
                     style: AppTextStyles.body.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: isSelected ? Colors.black : AppColors.grey400,
+                      color: isSelected ? AppColors.black : AppColors.grey400,
                     ),
                   ),
                   Text(

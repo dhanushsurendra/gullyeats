@@ -135,7 +135,7 @@ class _ConfirmLocationScreenState extends State<ConfirmLocationScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.grey300),
       ),
@@ -150,7 +150,7 @@ class _ConfirmLocationScreenState extends State<ConfirmLocationScreen> {
             ),
           ),
           AppGaps.h12,
-          const Divider(color: AppColors.grey300),
+          Divider(color: AppColors.grey300),
           AppGaps.h12,
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,

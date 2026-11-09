@@ -139,7 +139,7 @@ class _CartDetailsScreenState extends State<CartDetailsScreen> {
                   "assets/images/cart.png",
                   height: illustrationHeight(context, 180),
                   fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => const Icon(
+                  errorBuilder: (context, error, stackTrace) => Icon(
                     Icons.storefront,
                     size: 100,
                     color: AppColors.grey200,
@@ -150,7 +150,7 @@ class _CartDetailsScreenState extends State<CartDetailsScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.surface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppColors.grey200),
                   boxShadow: [
@@ -215,8 +215,8 @@ class _CartDetailsScreenState extends State<CartDetailsScreen> {
             style: AppTextStyles.body.copyWith(color: AppColors.grey400),
           ),
           isExpanded: true,
-          icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.grey400),
-          dropdownColor: Colors.white,
+          icon: Icon(Icons.keyboard_arrow_down, color: AppColors.grey400),
+          dropdownColor: AppColors.surface,
           borderRadius: BorderRadius.circular(12),
           items: _cities.map((String city) {
             return DropdownMenuItem(
