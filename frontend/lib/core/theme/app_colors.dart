@@ -35,6 +35,13 @@ class AppColors {
   static Color get lightOrange => _pick(0xFFFFF0E5, 0xFF3A1D0F);
   static Color get lightRed => _pick(0xFFFEF2F2, 0xFF3B1616);
 
+  // Night: deep purple for celebration moments, always with orange actions
+  // and white text. The same in both themes; use it for those moments only.
+  static const Color nightDeep = Color(0xFF0B1230);
+  static const Color night = Color(0xFF1A0F45);
+  static const Color nightSoft = Color(0xFF2A0F45);
+  static const Color lilac = Color(0xFFA78BFA);
+
   // Status colors
   static const Color success = Color(0xFF16A34A);
   static const Color successAlt = Color(0xFF039855);

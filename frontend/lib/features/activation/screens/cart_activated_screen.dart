@@ -63,13 +63,30 @@ class _CartActivatedScreenState extends State<CartActivatedScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Image.asset(
-            "assets/images/activated.png",
-            height: illustrationHeight(context, 200),
-            fit: BoxFit.contain,
+          // A milestone: night purple with an orange check, in both themes.
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 28),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [AppColors.nightDeep, AppColors.night, AppColors.nightSoft],
+              ),
+            ),
+            child: Column(
+              children: [
+                Image.asset(
+                  "assets/images/activated.png",
+                  height: illustrationHeight(context, 180),
+                  fit: BoxFit.contain,
+                ),
+                AppGaps.h16,
+                _buildCongratulationsSection(),
+              ],
+            ),
           ),
-          AppGaps.h24,
-          _buildCongratulationsSection(),
           AppGaps.h24,
           GeneratedCartIdCard(
             generatedCartId: cartProvider.cartGeneratedId ?? "",
@@ -85,19 +102,38 @@ class _CartActivatedScreenState extends State<CartActivatedScreen> {
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: AppColors.successAlt.withValues(alpha: 0.05),
+            color: AppColors.primary,
             shape: BoxShape.circle,
+            border: Border.all(
+              color: AppColors.primary.withValues(alpha: 0.3),
+              width: 6,
+              strokeAlign: BorderSide.strokeAlignOutside,
+            ),
           ),
-          child: const Icon(Icons.check, color: AppColors.successAlt, size: 32),
+          child: const Icon(Icons.check, color: AppColors.white, size: 28),
         ),
-        AppGaps.h12,
-        Text("Congratulations!", style: AppTextStyles.heading2),
+        AppGaps.h16,
+        Text(
+          "LIVE ON GULLYEATS",
+          style: AppTextStyles.caption.copyWith(
+            color: AppColors.lilac,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.2,
+          ),
+        ),
+        AppGaps.h4,
+        Text(
+          "Congratulations!",
+          style: AppTextStyles.heading2.copyWith(color: AppColors.white),
+        ),
         AppGaps.h4,
         Text(
           "Your cart is now active and customers\ncan start ordering.",
-          style: AppTextStyles.body.copyWith(color: AppColors.grey600),
+          style: AppTextStyles.body.copyWith(
+            color: AppColors.white.withValues(alpha: 0.75),
+          ),
           textAlign: TextAlign.center,
         ),
       ],
