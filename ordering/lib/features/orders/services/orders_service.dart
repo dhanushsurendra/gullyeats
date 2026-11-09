@@ -183,32 +183,6 @@ class OrderService {
     }
   }
 
-  Future<Map<String, dynamic>> getOrdersOverview(
-    String? token,
-    String cartId,
-    String startDate,
-    String endDate,
-  ) async {
-    final uri = Uri.parse(
-      '${ApiConstants.orders}/overview/$cartId',
-    ).replace(queryParameters: {'startDate': startDate, 'endDate': endDate});
-
-    final response = await http
-        .get(uri, headers: _headers(token))
-        .timeout(const Duration(seconds: 10));
-
-    final data = json.decode(response.body);
-
-    if (response.statusCode == 200) {
-      return data;
-    } else {
-      throw ApiException(
-        data["message"] ?? "Failed to fetch orders overview",
-        response.statusCode,
-      );
-    }
-  }
-
   Future<OrderModel> serveOrderUndo(String? token, String orderId) async {
     final response = await http.put(
       Uri.parse('${ApiConstants.orders}/serve-order-undo/$orderId'),

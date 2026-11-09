@@ -2,6 +2,7 @@ const crypto = require('crypto')
 const asyncHandler = require('../utils/asyncHandler')
 const GameScore = require('../models/GameScore')
 const Order = require('../models/Order')
+const ConfessionBan = require('../models/ConfessionBan')
 const { authorKeyFor } = require('../middlewares/confessionPoster')
 
 /*
@@ -183,6 +184,17 @@ exports.linkPhone = asyncHandler(async (req, res) => {
   }
 
   const to = authorKeyFor(order)
+  // A GullyPulse ban follows the player to the number, or adding one would lift it.
+  const ban = await ConfessionBan.findOne({ authorKey: req.poster.authorKey, until: { $gt: new Date() } }).lean()
+  if (ban) {
+    await ConfessionBan.updateOne(
+      { authorKey: to, until: { $not: { $gte: ban.until } } },
+      { $set: { until: ban.until, reason: ban.reason, adminId: ban.adminId } },
+      { upsert: true },
+    ).catch((e) => {
+      if (e.code !== 11000) throw e // a longer ban is already on the number
+    })
+  }
   for (const row of await GameScore.find({ authorKey: req.poster.authorKey }).lean()) {
     const where = { game: row.game, day: row.day, authorKey: to }
     const theirs = await GameScore.findOne(where).select('score').lean()

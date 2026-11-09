@@ -72,10 +72,6 @@ class CartProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  CartModel? findById(String id) {
-    return _carts.firstWhere((cart) => cart.id == id);
-  }
-
   List<CartModel> searchCarts(String query) {
     if (query.isEmpty) return carts;
 

@@ -344,6 +344,9 @@ async function getCartPaymentStatus(cartId) {
     await createBillPayment(cart, billingDate, {
       status: 'VERIFIED',
       verificationSource: 'CREDIT',
+    }).catch((e) => {
+      // Another request settled this day first.
+      if (e.code !== 11000) throw e
     })
     billingDate = await getBillingDate(cartId)
     bill = billingDate ? await getBillingFee(cartId, billingDate) : null

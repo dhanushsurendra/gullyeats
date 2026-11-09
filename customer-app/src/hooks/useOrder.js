@@ -3,7 +3,7 @@ import { useDispatch } from 'react-redux'
 import { useNavigate, useParams } from 'react-router-dom'
 import { io } from 'socket.io-client'
 
-import { api, SOCKET_URL } from '../constants/api'
+import { api, orderKey, SOCKET_URL } from '../constants/api'
 import { rememberOrder } from '../store/cartSlice'
 
 // Which order page belongs to each status. PENDING and PAID share the token page.
@@ -47,7 +47,7 @@ export default function useOrder({ page } = {}) {
     api(`/orders/order/${orderId}`).then(setOrder, (e) => setError(e.message))
     const socket = io(SOCKET_URL, { transports: ['websocket'] })
     socket.on('connect', () => {
-      socket.emit('join_order', orderId)
+      socket.emit('join_order', orderKey(orderId) || orderId)
       socket.emit('join_queue', cartId)
       load()
     })

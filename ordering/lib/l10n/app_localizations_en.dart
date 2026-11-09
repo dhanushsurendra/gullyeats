@@ -738,6 +738,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Payment was received but verification is still pending.';
 
   @override
+  String get duplicatePaymentRefunded =>
+      'This bill was already paid, so your online payment will be refunded in 5–7 working days.';
+
+  @override
   String get paymentFailedRetry =>
       'Payment failed. You can retry using the same payment.';
 

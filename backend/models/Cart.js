@@ -41,6 +41,8 @@
     { timestamps: true },
   )
 
-  cartSchema.index({ location: '2dsphere' })
+  // No 2dsphere index: coordinates are [lat, lng], which a geo index reads as
+  // [lng, lat] and refuses east of 90°E (the North-East, the Andamans). Nothing
+  // queries by distance. scripts/drop-cart-geo-index.js removes the old index.
 
   module.exports = mongoose.model('Cart', cartSchema)

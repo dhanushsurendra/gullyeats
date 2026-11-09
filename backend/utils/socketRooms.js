@@ -2,6 +2,7 @@ const mongoose = require('mongoose')
 const jwt = require('jsonwebtoken')
 const Cart = require('../models/Cart')
 const { canManageCart } = require('./cartAccess')
+const { holdsOrderKey } = require('./orderKey')
 
 /*
  * Who may listen to which live updates.
@@ -11,8 +12,8 @@ const { canManageCart } = require('./cartAccess')
  *   connecting) from someone who manages the cart: its owner, staff or an
  *   admin.
  * - An order room (`order:<orderId>`) carries one order. The customer's
- *   order page joins it without logging in; the order's ID is random and
- *   only the customer has it.
+ *   order page joins it without logging in, sending "<orderId>.<accessKey>"
+ *   (the key only their phone got; ids alone are guessable).
  */
 async function joinVendor(socket, cartId) {
   try {
@@ -31,8 +32,14 @@ async function joinVendor(socket, cartId) {
   return false
 }
 
-function joinOrder(socket, orderId) {
-  if (!mongoose.isValidObjectId(String(orderId))) return false
+async function joinOrder(socket, orderKey) {
+  const orderId = String(orderKey).split('.')[0]
+  if (!mongoose.isValidObjectId(orderId)) return false
+  try {
+    if (!(await holdsOrderKey(orderId, orderKey))) return false
+  } catch {
+    return false
+  }
   socket.join(`order:${orderId}`)
   return true
 }
@@ -48,7 +55,11 @@ function joinQueue(socket, cartId) {
 function registerSocketHandlers(io) {
   io.on('connection', (socket) => {
     socket.on('join_order', (orderId) => joinOrder(socket, orderId))
-    socket.on('join_vendor', (cartId) => joinVendor(socket, cartId))
+    // The vendor app waits for the ack, then refetches what it missed.
+    socket.on('join_vendor', async (cartId, ack) => {
+      const joined = await joinVendor(socket, cartId)
+      if (typeof ack === 'function') ack(joined)
+    })
     socket.on('join_queue', (cartId) => joinQueue(socket, cartId))
   })
 }

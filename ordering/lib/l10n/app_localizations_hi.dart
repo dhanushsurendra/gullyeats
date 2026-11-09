@@ -739,6 +739,10 @@ class AppLocalizationsHi extends AppLocalizations {
       'भुगतान मिल गया, लेकिन पुष्टि अभी बाकी है।';
 
   @override
+  String get duplicatePaymentRefunded =>
+      'यह बिल पहले ही भर दिया गया था, इसलिए आपका ऑनलाइन भुगतान 5–7 कार्यदिवसों में वापस कर दिया जाएगा।';
+
+  @override
   String get paymentFailedRetry =>
       'भुगतान नहीं हुआ। आप इसी भुगतान से फिर कोशिश कर सकते हैं।';
 

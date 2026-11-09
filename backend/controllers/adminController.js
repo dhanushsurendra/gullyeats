@@ -98,7 +98,7 @@ async function cartInfo(ids) {
 exports.login = asyncHandler(async (req, res) => {
   const { email, password } = req.body
 
-  if (!email || !password) {
+  if (typeof email !== 'string' || typeof password !== 'string' || !email || !password) {
     res.status(400)
     throw new Error('email and password are required')
   }
@@ -1430,7 +1430,8 @@ exports.activity = asyncHandler(async (req, res) => {
       .limit(6)
       .select('orderNumber totalPrice cartId createdAt')
       .lean(),
-    Payment.find().sort({ updatedAt: -1 }).limit(4).lean(),
+    // Payments have no updatedAt (timestamps off).
+    Payment.find().sort({ createdAt: -1 }).limit(4).lean(),
   ])
   const info = await cartInfo([
     ...orders.map((o) => o.cartId),
@@ -1624,8 +1625,8 @@ async function findVendor(req, res) {
   return user
 }
 
-// Disabling a vendor blocks their logins and suspends every cart they own.
-// shortcut: their existing app session keeps read access until its token expires (30 days); add a disabledAt check to auth if that matters.
+// Disabling a vendor blocks their (and their staff's) logins and sessions
+// (middlewares/auth.js) and suspends every cart they own.
 exports.disableVendor = asyncHandler(async (req, res) => {
   const user = await findVendor(req, res)
   const reason = reasonOf(req)

@@ -150,7 +150,6 @@ export const logoutRequest = async () => {
       method: 'POST',
       credentials: 'include',
     })
-    console.log('Logout response:', res)
   } catch {
     throw new Error(`Cannot reach the API at ${BASE}.`)
   }

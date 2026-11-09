@@ -11,18 +11,41 @@ const overdueBefore = (now = new Date()) =>
   new Date(+getISTMidnight(new Date(+now - BILLING_LOCK_MS)) + DAY)
 
 /*
- * Overdue platform fees per cart, largest first: the fee on every PAID or
- * SERVED order that no verified fee payment has covered, from billing days
- * (the IST day the customer paid, as in cartPaymentLock) whose grace has
- * passed. Orders are only cancelled on their own day, before that day is
- * billed, so there are no billing credits to subtract.
+ * Overdue platform fees per cart, largest first, by the same rules as
+ * cartPaymentLock's bills: the fee on every billable order (paid, or edited
+ * back to PENDING after being paid) that no verified fee payment has covered,
+ * or that was credited and then restored, from billing days whose grace has
+ * passed; minus credits (billed orders cancelled since, not yet credited).
  * Rows: { _id: cartId, amount, orders, oldest } (oldest = earliest unpaid order's billing time).
  */
 async function overdueByCart(now = new Date()) {
   // shortcut: loads every billed order id; move to a $lookup on an indexed Payment.orderIds once there are ~100k+ billed orders.
   const billed = await Payment.distinct('orderIds', { status: 'VERIFIED' })
+  const [owed, credits] = await Promise.all([
+    owedByCart(billed, now),
+    Order.aggregate([
+      { $match: { status: 'CANCELLED', feeCredited: { $ne: true }, _id: { $in: billed } } },
+      { $group: { _id: '$cartId', amount: { $sum: '$platformFee' } } },
+    ]),
+  ])
+  const credit = new Map(credits.map((c) => [String(c._id), c.amount]))
+  return owed
+    .map((row) => ({ ...row, amount: Math.max(0, row.amount - (credit.get(String(row._id)) || 0)) }))
+    .filter((row) => row.amount > 0)
+    .sort((a, b) => b.amount - a.amount || String(a._id).localeCompare(String(b._id)))
+}
+
+function owedByCart(billed, now) {
   return Order.aggregate([
-    { $match: { status: { $in: ['PAID', 'SERVED'] }, _id: { $nin: billed } } },
+    {
+      $match: {
+        status: { $ne: 'CANCELLED' },
+        $and: [
+          { $or: [{ paidAt: { $ne: null } }, { status: { $in: ['PAID', 'SERVED'] } }] },
+          { $or: [{ _id: { $nin: billed } }, { feeCredited: true }] },
+        ],
+      },
+    },
     { $addFields: { billedAt: { $ifNull: ['$paidAt', '$orderDate', '$createdAt'] } } },
     { $match: { billedAt: { $lt: overdueBefore(now) } } },
     {
@@ -33,7 +56,6 @@ async function overdueByCart(now = new Date()) {
         oldest: { $min: '$billedAt' },
       },
     },
-    { $sort: { amount: -1, _id: 1 } },
   ])
 }
 

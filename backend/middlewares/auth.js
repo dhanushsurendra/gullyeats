@@ -1,4 +1,22 @@
 const jwt = require("jsonwebtoken");
+const mongoose = require("mongoose");
+const User = require("../models/User");
+const Cart = require("../models/Cart");
+
+const DISABLED = "This account has been disabled. Please contact GullyEats support.";
+
+// Tokens last 30 days, so a vendor GullyEats disables (and their staff) are
+// refused here, not only at login.
+async function isDisabled({ _id, role }) {
+  if (!mongoose.isValidObjectId(String(_id))) return true;
+  const user = await User.findById(_id).select("disabledAt cartId").lean();
+  if (!user) return true;
+  if (user.disabledAt) return true;
+  if (role !== "staff" || !user.cartId) return false;
+  const cart = await Cart.findById(user.cartId).select("userId").lean();
+  const owner = cart && (await User.findById(cart.userId).select("disabledAt").lean());
+  return Boolean(owner?.disabledAt);
+}
 
 function isAdminOrigin(origin) {
   if (!origin) return false;
@@ -41,13 +59,18 @@ const authMiddleware = (req, res, next) => {
       _id: decoded._id,
       role: decoded.role,
     };
-
-    next();
   } catch (err) {
     return res.status(401).json({
       message: "Invalid or expired token",
     });
   }
+
+  if (req.user.role === "admin") return next();
+  isDisabled(req.user).then(
+    (disabled) =>
+      disabled ? res.status(403).json({ success: false, message: DISABLED }) : next(),
+    next,
+  );
 };
 
 module.exports = authMiddleware;

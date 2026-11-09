@@ -224,6 +224,7 @@
   "paymentResponseIncomplete": "भुगतान का जवाब अधूरा था। कृपया भुगतान की स्थिति जाँचें।",
   "paymentVerifiedUnlocked": "भुगतान की पुष्टि हो गई। आपकी कार्ट अनलॉक हो गई।",
   "paymentVerificationPending": "भुगतान मिल गया, लेकिन पुष्टि अभी बाकी है।",
+  "duplicatePaymentRefunded": "यह बिल पहले ही भर दिया गया था, इसलिए आपका ऑनलाइन भुगतान 5–7 कार्यदिवसों में वापस कर दिया जाएगा।",
   "paymentFailedRetry": "भुगतान नहीं हुआ। आप इसी भुगतान से फिर कोशिश कर सकते हैं।",
   "salesOverview": "बिक्री सारांश",
   "trackEarningsAndFees": "कमाई और प्लेटफ़ॉर्म शुल्क देखें",

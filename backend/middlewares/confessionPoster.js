@@ -6,12 +6,16 @@ const ConfessionBan = require('../models/ConfessionBan')
 
 /*
  * Confession callers prove they've ordered by sending
- *   X-Gully-Order: <orderId>.<accessKey>
- * (the key createOrder gave the customer's phone). Sets req.poster to
- * { orderId, cartId, authorKey, bannedUntil }. authorKey is an HMAC of the
- * phone number given with the order (or the order id when there was none), so
- * one customer's orders count as one person and nothing stored with a
- * confession says who they are.
+ *   X-Gully-Order: <orderId>.<accessKey>[,<orderId>.<accessKey>...]
+ * (the keys createOrder gave the customer's phone; the first is the order
+ * acting now). Sets req.poster to
+ * { orderId, cartId, authorKey, bannedUntil, orderIds }. authorKey is an HMAC
+ * of the phone number given with the order (or the order id when there was
+ * none), so one customer's orders count as one person for likes, reports and
+ * bans, and nothing stored with a confession says who they are.
+ *
+ * The phone number is never verified, so it must not reveal posts: "mine"
+ * means posted from one of orderIds, the orders whose keys this phone holds.
  */
 function authorKeyFor(order) {
   const phone = String(order.phoneNumber || '').replace(/\D/g, '').slice(-10)
@@ -22,15 +26,26 @@ function authorKeyFor(order) {
 const sameKey = (a, b) =>
   typeof a === 'string' && a.length === b.length && crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b))
 
+const MAX_KEYS = 20
+
 async function findPoster(header) {
-  const [orderId, key] = String(header || '').split('.')
+  const pairs = String(header || '').split(',').slice(0, MAX_KEYS).map((p) => p.trim().split('.'))
+  const [orderId, key] = pairs[0]
   if (!mongoose.isValidObjectId(orderId) || !/^[a-f0-9]{32}$/.test(key || '')) return { error: 401 }
-  const order = await Order.findById(orderId).select('+accessKey status phoneNumber cartId').lean()
-  if (!order || !sameKey(order.accessKey, key)) return { error: 401 }
+  const wellFormed = pairs.filter(([id, k]) => mongoose.isValidObjectId(id) && /^[a-f0-9]{32}$/.test(k || ''))
+  const orders = await Order.find({ _id: { $in: wellFormed.map(([id]) => id) } })
+    .select('+accessKey status phoneNumber cartId')
+    .lean()
+  const byId = new Map(orders.map((o) => [String(o._id), o]))
+  const owned = wellFormed.filter(([id, k]) => byId.has(id) && sameKey(byId.get(id).accessKey, k)).map(([id]) => id)
+  const order = byId.get(orderId)
+  if (!order || !owned.includes(orderId)) return { error: 401 }
   if (order.status === 'CANCELLED') return { error: 403 }
   const authorKey = authorKeyFor(order)
   const ban = await ConfessionBan.findOne({ authorKey, until: { $gt: new Date() } }).select('until').lean()
-  return { poster: { orderId: order._id, cartId: order.cartId, authorKey, bannedUntil: ban?.until || null } }
+  return {
+    poster: { orderId: order._id, cartId: order.cartId, authorKey, bannedUntil: ban?.until || null, orderIds: owned },
+  }
 }
 
 const MESSAGES = {

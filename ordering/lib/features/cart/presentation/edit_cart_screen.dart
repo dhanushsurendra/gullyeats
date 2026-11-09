@@ -209,7 +209,7 @@ class _EditCartScreenState extends State<EditCartScreen> {
       canPop: !_isDirty,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
-        if (await _confirmDiscard() && mounted) Navigator.pop(context);
+        if (await _confirmDiscard() && context.mounted) Navigator.pop(context);
       },
       child: BaseScreen(
         title: context.l10n.editCartDetails,

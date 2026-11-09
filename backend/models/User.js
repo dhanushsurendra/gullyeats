@@ -10,7 +10,7 @@ const userSchema = new mongoose.Schema(
     },
     cartId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: 'Cart',
       required: function () {
         return this.role === 'staff'
       },

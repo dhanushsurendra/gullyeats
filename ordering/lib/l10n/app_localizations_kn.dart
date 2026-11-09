@@ -742,6 +742,10 @@ class AppLocalizationsKn extends AppLocalizations {
       'ಪಾವತಿ ಸ್ವೀಕರಿಸಲಾಗಿದೆ, ಆದರೆ ದೃಢೀಕರಣ ಇನ್ನೂ ಬಾಕಿ ಇದೆ.';
 
   @override
+  String get duplicatePaymentRefunded =>
+      'ಈ ಬಿಲ್ ಈಗಾಗಲೇ ಪಾವತಿಯಾಗಿದೆ, ಆದ್ದರಿಂದ ನಿಮ್ಮ ಆನ್‌ಲೈನ್ ಪಾವತಿಯನ್ನು 5–7 ಕೆಲಸದ ದಿನಗಳಲ್ಲಿ ಹಿಂತಿರುಗಿಸಲಾಗುತ್ತದೆ.';
+
+  @override
   String get paymentFailedRetry =>
       'ಪಾವತಿ ವಿಫಲವಾಗಿದೆ. ಅದೇ ಪಾವತಿಯಿಂದ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಬಹುದು.';
 

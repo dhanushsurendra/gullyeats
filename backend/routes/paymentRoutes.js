@@ -2,7 +2,6 @@ const express = require('express')
 const router = express.Router()
 
 const {
-  getPaymentOverview,
   getPaymentStatus,
   createRazorpayOrder,
   verifyRazorpayPayment,
@@ -21,12 +20,6 @@ const authMiddleware = require('../middlewares/auth')
  * raw bytes Razorpay sent (needed for signature verification) instead of
  * an already-parsed/re-serialized body. See app.js.
  */
-
-router.get(
-  '/payments-overview/:cartId',
-  authMiddleware,
-  getPaymentOverview,
-)
 
 router.get(
   '/payment-status/:cartId',

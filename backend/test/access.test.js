@@ -10,6 +10,7 @@ process.env.FRONTEND_URL_ADMIN = 'https://admin.gullyeats.test'
 
 const Cart = require('../models/Cart')
 const User = require('../models/User')
+const Order = require('../models/Order')
 const { joinVendor, joinOrder, joinQueue } = require('../utils/socketRooms')
 const auth = require('../middlewares/auth')
 
@@ -64,11 +65,15 @@ test("anyone else is refused a cart's live orders", async () => {
   }
 })
 
-test('a customer can follow their own order by its ID, but not by junk', () => {
+test('a customer can follow their own order only with its key', async () => {
   const socket = fakeSocket()
-  const orderId = String(new mongoose.Types.ObjectId())
-  assert.equal(joinOrder(socket, orderId), true)
-  assert.equal(joinOrder(socket, '1'), false)
+  const orderId = new mongoose.Types.ObjectId()
+  const key = 'a'.repeat(32)
+  await Order.collection.insertOne({ _id: orderId, cartId, accessKey: key })
+  assert.equal(await joinOrder(socket, `${orderId}.${'b'.repeat(32)}`), false)
+  assert.equal(await joinOrder(socket, String(orderId)), false) // the guessable id alone
+  assert.equal(await joinOrder(socket, '1'), false)
+  assert.equal(await joinOrder(socket, `${orderId}.${key}`), true)
   assert.deepEqual(socket.rooms, [`order:${orderId}`])
 })
 
@@ -198,4 +203,22 @@ test('payments page newest first and keep the all-time summary on every page', a
   assert.equal(p2.body.data.items.length, 1)
   assert.equal(p2.body.data.pagination.hasMore, false)
   assert.deepEqual(p2.body.data.summary.VERIFIED, { count: 3, amount: 6 })
+})
+
+test("a disabled vendor's existing token stops working, and so do their staff's", async () => {
+  await User.collection.insertOne({ _id: ownerId, userId: 'V-OWNER', phoneNumber: '9000000001', role: 'vendor', disabledAt: null })
+  const run = (id, role) =>
+    new Promise((resolve) => {
+      const req = { method: 'GET', headers: { authorization: `Bearer ${token(id, role)}` } }
+      const res = { status(code) { resolve(code); return this }, json() { return this } }
+      auth(req, res, (err) => resolve(err ? 500 : 'next'))
+    })
+  assert.equal(await run(ownerId, 'vendor'), 'next')
+  assert.equal(await run(staffId, 'staff'), 'next')
+
+  await User.collection.updateOne({ _id: ownerId }, { $set: { disabledAt: new Date() } })
+  assert.equal(await run(ownerId, 'vendor'), 403)
+  assert.equal(await run(staffId, 'staff'), 403)
+  assert.equal(await run(strangerId, 'vendor'), 403) // no such account
+  await User.collection.deleteOne({ _id: ownerId })
 })

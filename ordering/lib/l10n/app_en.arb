@@ -331,6 +331,7 @@
   "paymentResponseIncomplete": "Payment response was incomplete. Please check payment status.",
   "paymentVerifiedUnlocked": "Payment verified successfully. Your cart is unlocked.",
   "paymentVerificationPending": "Payment was received but verification is still pending.",
+  "duplicatePaymentRefunded": "This bill was already paid, so your online payment will be refunded in 5–7 working days.",
   "paymentFailedRetry": "Payment failed. You can retry using the same payment.",
   "salesOverview": "Sales Overview",
   "trackEarningsAndFees": "Track earnings & platform fees",

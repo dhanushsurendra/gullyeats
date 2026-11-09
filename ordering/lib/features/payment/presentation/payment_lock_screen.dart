@@ -250,7 +250,10 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
 
       if (!mounted) return;
 
-      if (verified) {
+      if (verified && paymentProvider.lastPaymentRefunded) {
+        AppSnackBar.show(context, message: context.l10n.duplicatePaymentRefunded);
+        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.home, (_) => false);
+      } else if (verified) {
         await _showPaidDialog();
         if (!mounted) return;
 

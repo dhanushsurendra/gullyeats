@@ -189,6 +189,13 @@ PaymentSchema.index({
   createdAt: -1,
 })
 
+// A day settled by credits is settled once, even when two status checks
+// (GET requests) run at the same moment.
+PaymentSchema.index(
+  { cartId: 1, billingDate: 1 },
+  { unique: true, partialFilterExpression: { verificationSource: 'CREDIT' } },
+)
+
 // Newest-first paging across all carts (admin payments list).
 PaymentSchema.index({ createdAt: -1, _id: -1 })
 

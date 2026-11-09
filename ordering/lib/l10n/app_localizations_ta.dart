@@ -748,6 +748,10 @@ class AppLocalizationsTa extends AppLocalizations {
       'பணம் பெறப்பட்டது, ஆனால் சரிபார்ப்பு இன்னும் நிலுவையில் உள்ளது.';
 
   @override
+  String get duplicatePaymentRefunded =>
+      'இந்த பில் ஏற்கனவே செலுத்தப்பட்டது, எனவே உங்கள் ஆன்லைன் கட்டணம் 5–7 வேலை நாட்களில் திருப்பித் தரப்படும்.';
+
+  @override
   String get paymentFailedRetry =>
       'பணம் செலுத்தல் தோல்வியடைந்தது. அதே பணம் செலுத்தலில் மீண்டும் முயற்சிக்கலாம்.';
 

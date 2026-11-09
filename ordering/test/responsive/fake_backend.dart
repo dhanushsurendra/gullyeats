@@ -194,13 +194,6 @@ final fakeBackend = MockClient((request) async {
     return _json({'data': {'cartId': 'GE-BLR-000123', 'cartName': longCartName, 'qrImageUrl': ''}});
   }
   if (has('/orders/orders-today/') || has('/orders/c1')) return _json({'data': ordersJson});
-  if (has('/payments/payments-overview/')) {
-    return _json({
-      'cartId': 'c1', 'cartName': longCartName, 'totalOrders': 64,
-      'totalPlatformFee': 128, 'totalPaid': 100, 'totalPending': 28,
-      'isLocked': false,
-    });
-  }
   if (has('/payments/payment-history/')) return _json({'payments': [_payment, {..._payment, '_id': 'p2', 'status': 'PENDING'}]});
   if (has('/payments/payment-status/')) {
     // Slow, so the welcome screen is shown checking rather than already gone.

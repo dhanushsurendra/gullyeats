@@ -1446,6 +1446,12 @@ abstract class AppLocalizations {
   /// **'Payment was received but verification is still pending.'**
   String get paymentVerificationPending;
 
+  /// No description provided for @duplicatePaymentRefunded.
+  ///
+  /// In en, this message translates to:
+  /// **'This bill was already paid, so your online payment will be refunded in 5–7 working days.'**
+  String get duplicatePaymentRefunded;
+
   /// No description provided for @paymentFailedRetry.
   ///
   /// In en, this message translates to:

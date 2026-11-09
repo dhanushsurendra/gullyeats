@@ -30,16 +30,23 @@ beforeEach(async () => {
 })
 
 let n = 0
+const KEY = 'e'.repeat(32)
 async function order(status, paidMinutesAgo, extra = {}) {
   const doc = {
     _id: new mongoose.Types.ObjectId(), cartId, orderNumber: ++n, status, subtotal: 10, totalPrice: 12, platformFee: 2,
     orderItems: [{ menuItemId: new mongoose.Types.ObjectId(), name: 'Tea', price: 10, quantity: 1 }],
-    paidAt: paidMinutesAgo == null ? null : min(paidMinutesAgo), createdAt: min(60), ...extra,
+    paidAt: paidMinutesAgo == null ? null : min(paidMinutesAgo), createdAt: min(60), accessKey: KEY, ...extra,
   }
   await Order.collection.insertOne(doc)
   return doc
 }
-const queueOf = async (o) => (await call(c.getQueue, { params: { orderId: String(o._id) } })).body.data
+const queueOf = async (o) =>
+  (await call(c.getQueue, { headers: { 'x-gully-order': `${o._id}.${KEY}` }, params: { orderId: String(o._id) } })).body.data
+
+test("the queue needs the order's key", async () => {
+  const o = await order('PAID', 1)
+  assert.strictEqual((await call(c.getQueue, { params: { orderId: String(o._id) } })).status, 404)
+})
 
 test('the queue is paid, unserved orders in payment order', async () => {
   const first = await order('PAID', 10)

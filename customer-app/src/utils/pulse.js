@@ -7,11 +7,14 @@ import { api } from '../constants/api'
  * returned, sent as X-Gully-Order.
  */
 
-// "<orderId>.<key>" of the newest usable order on this phone, or null.
+// "<orderId>.<key>" of the newest usable order on this phone, then every other
+// order it holds a key for (the server shows posts from those as "mine"), or null.
 export function usePulseKey() {
   return useSelector((state) => {
-    const order = (state.cart.orders || []).find((o) => o.accessKey && o.status !== 'CANCELLED')
-    return order ? `${order._id}.${order.accessKey}` : null
+    const keyed = (state.cart.orders || []).filter((o) => o.accessKey)
+    const order = keyed.find((o) => o.status !== 'CANCELLED')
+    if (!order) return null
+    return [order, ...keyed.filter((o) => o !== order)].map((o) => `${o._id}.${o.accessKey}`).join(',')
   })
 }
 

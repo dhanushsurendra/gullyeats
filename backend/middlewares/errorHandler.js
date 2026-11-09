@@ -5,7 +5,14 @@ const errorHandler = (err, req, res, next) => {
     return res.status(400).json({ success: false, message: "Invalid ID" });
   }
 
-  const statusCode = res.statusCode !== 200 ? res.statusCode : 500;
+  // Controllers set res.status before throwing; body-parser (400 bad JSON,
+  // 413 too large), CORS and validators put a 4xx on the error instead.
+  const statusCode =
+    res.statusCode >= 400
+      ? res.statusCode
+      : err.status >= 400 && err.status < 500
+        ? err.status
+        : 500;
 
   res.status(statusCode).json({
     success: false,

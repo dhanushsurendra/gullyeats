@@ -431,3 +431,17 @@ test('queue counts for the tab badges', async () => {
   const r = await api('GET', '/admin/moderation/counts', { admin: true })
   assert.deepStrictEqual(r.body.data, { review: 1, reviewComments: 0, reported: 0, reportedComments: 0, blocked: 1, blockedComments: 0 })
 })
+
+test("ordering with someone's phone number doesn't reveal their posts", async () => {
+  const victim = await customer({ phone: '9876543210' })
+  await post(victim, 'a secret only I should see as mine')
+  const impostor = await customer({ phone: '9876543210' }) // same number, typed by someone else
+
+  assert.deepStrictEqual((await api('GET', '/confessions/mine', { who: impostor })).body.data, [])
+  assert.ok((await feed(impostor)).body.data.items.every((c) => !c.mine))
+
+  // The real owner's later order still sees it, by sending all its keys.
+  const later = await customer({ phone: '9876543210' })
+  const both = { header: `${later.header},${victim.header}` }
+  assert.strictEqual((await api('GET', '/confessions/mine', { who: both })).body.data.length, 1)
+})

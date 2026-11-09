@@ -1,12 +1,15 @@
+// errorHandler sends err.status, so bad input is a 400, not a server error.
+const badRequest = (message) => Object.assign(new Error(message), { status: 400 });
+
 const normalizePhone = (phone) => {
-  return phone.replace(/\D/g, '');
+  return String(phone).replace(/\D/g, '');
 };
 
 const validatePhone = (phone) => {
   const normalized = normalizePhone(phone);
 
   if (normalized.length < 10 || normalized.length > 15) {
-    throw new Error('Invalid phone number');
+    throw badRequest('Invalid phone number');
   }
 
   return normalized;
@@ -14,7 +17,7 @@ const validatePhone = (phone) => {
 
 const validateRole = (role) => {
   if (!['vendor', 'staff'].includes(role)) {
-    throw new Error('Invalid role');
+    throw badRequest('Invalid role');
   }
 };
 

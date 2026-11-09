@@ -103,9 +103,14 @@ test('another vendor gets customer rules', async () => {
   assert.strictEqual(r.body.data.status, 'PENDING')
 })
 
+// The secret create-order gave the customer's phone, sent back as X-Gully-Order.
+const KEY = 'c'.repeat(32)
+const cust = (order) => ({ 'x-gully-order': `${order._id}.${KEY}` })
+
 function paidOrder() {
   return {
     _id: id(),
+    accessKey: KEY,
     cartId,
     status: 'PAID',
     orderItems: [{ menuItemId: dosa._id, name: 'Dosa', price: 30, quantity: 1 }],
@@ -121,6 +126,7 @@ test('adding to a legacy paid order collects only the difference', async () => {
   const order = paidOrder() // no paidAmount: saved before it existed
   setup({ order })
   const r = await call(c.updateOrder, {
+    headers: cust(order),
     params: { orderId: order._id },
     body: { orderItems: [line(dosa, 1), line(tea, 1)] },
   })
@@ -143,6 +149,7 @@ test('customers cannot shrink a paid order; the vendor can and returns money', a
   order.paidAmount = 62
   setup({ order })
   let r = await call(c.updateOrder, {
+    headers: cust(order),
     params: { orderId: order._id },
     body: { orderItems: [line(dosa, 1)] },
   })
@@ -164,6 +171,7 @@ test('editing an unpaid order needs no payment adjustment', async () => {
   const order = { ...paidOrder(), status: 'PENDING', paidAt: null }
   setup({ order })
   const r = await call(c.updateOrder, {
+    headers: cust(order),
     params: { orderId: order._id },
     body: { orderItems: [line(dosa, 3)] },
   })
@@ -175,11 +183,11 @@ test('editing an unpaid order needs no payment adjustment', async () => {
 test('customers can cancel only unpaid orders, and the cart room hears it', async () => {
   const order = paidOrder()
   setup({ order })
-  let r = await call(c.deleteOrder, { params: { orderId: order._id } })
+  let r = await call(c.deleteOrder, { headers: cust(order), params: { orderId: order._id } })
   assert.strictEqual(r.status, 400)
 
   order.status = 'PENDING'
-  r = await call(c.deleteOrder, { params: { orderId: order._id } })
+  r = await call(c.deleteOrder, { headers: cust(order), params: { orderId: order._id } })
   assert.strictEqual(r.status, 200)
   assert.strictEqual(order.status, 'CANCELLED')
   assert.ok(r.emits.some((e) => e.room === cartId && e.event === 'order_cancelled'))
@@ -214,7 +222,7 @@ test('a customer cannot cancel a partly paid order; the vendor cancel records th
   // Paid 32, then the customer added a tea: PENDING again, 10 still owed.
   const order = { ...paidOrder(), status: 'PENDING', paidAmount: 32, totalPrice: 42 }
   setup({ order })
-  let r = await call(c.deleteOrder, { params: { orderId: order._id } })
+  let r = await call(c.deleteOrder, { headers: cust(order), params: { orderId: order._id } })
   assert.strictEqual(r.status, 400)
   assert.strictEqual(order.status, 'PENDING')
 
@@ -244,12 +252,12 @@ test('customers cannot add items while the cart is closed or locked', async () =
   const body = { orderItems: [line(dosa, 2)] }
   let order = { ...paidOrder(), status: 'PENDING', paidAt: null }
   setup({ order, isOpen: false })
-  let r = await call(c.updateOrder, { params: { orderId: order._id }, body })
+  let r = await call(c.updateOrder, { headers: cust(order), params: { orderId: order._id }, body })
   assert.strictEqual(r.status, 403)
 
   restoreAll()
   setup({ order, isLocked: true })
-  r = await call(c.updateOrder, { params: { orderId: order._id }, body })
+  r = await call(c.updateOrder, { headers: cust(order), params: { orderId: order._id }, body })
   assert.strictEqual(r.status, 403)
 
   // The vendor can still fix the order.
@@ -258,11 +266,11 @@ test('customers cannot add items while the cart is closed or locked', async () =
 })
 
 test('feedback must be text, and is cut to 500 characters', async () => {
-  const order = paidOrder()
+  const order = { ...paidOrder(), status: 'SERVED' }
   setup({ order })
-  let r = await call(c.submitOrderFeedback, { params: { orderNumber: order._id }, body: { feedback: { $gt: '' } } })
+  let r = await call(c.submitOrderFeedback, { headers: cust(order), params: { orderNumber: order._id }, body: { feedback: { $gt: '' } } })
   assert.strictEqual(r.status, 400)
-  r = await call(c.submitOrderFeedback, { params: { orderNumber: order._id }, body: { feedback: 'x'.repeat(900) } })
+  r = await call(c.submitOrderFeedback, { headers: cust(order), params: { orderNumber: order._id }, body: { feedback: 'x'.repeat(900) } })
   assert.strictEqual(r.status, 200)
   assert.strictEqual(order.feedback.length, 500)
 })
@@ -277,9 +285,9 @@ test('a malformed id is a 400, not a server error', async () => {
 })
 
 test('feedback takes a 1-5 star rating, with or without words', async () => {
-  const order = paidOrder()
+  const order = { ...paidOrder(), status: 'SERVED' }
   setup({ order })
-  const send = (body) => call(c.submitOrderFeedback, { params: { orderNumber: order._id }, body })
+  const send = (body) => call(c.submitOrderFeedback, { headers: cust(order), params: { orderNumber: order._id }, body })
   assert.strictEqual((await send({ rating: 4 })).status, 200)
   assert.strictEqual(order.rating, 4)
   assert.strictEqual(order.feedback, undefined)
@@ -301,4 +309,47 @@ test('a customer order returns its confession key; the vendor socket copy and ve
 
   const v = await call(c.createOrder, { body: { cartId, orderItems: [line(dosa, 1)] }, user: owner })
   assert.strictEqual(v.body.data.accessKey, undefined)
+})
+
+test("a customer needs the order's key, not just its guessable id", async () => {
+  const order = { ...paidOrder(), status: 'PENDING', paidAt: null }
+  setup({ order })
+  const wrong = { 'x-gully-order': `${order._id}.${'d'.repeat(32)}` }
+  for (const headers of [{}, wrong]) {
+    for (const [fn, extra] of [
+      [c.getOrder, {}],
+      [c.updateOrder, { body: { orderItems: [line(dosa, 9)] } }],
+      [c.deleteOrder, {}],
+    ]) {
+      const r = await call(fn, { headers, params: { orderId: order._id }, ...extra })
+      assert.strictEqual(r.status, 404)
+    }
+    const r = await call(c.submitOrderFeedback, { headers, params: { orderNumber: order._id }, body: { rating: 1 } })
+    assert.strictEqual(r.status, 404)
+  }
+  assert.strictEqual(order.status, 'PENDING')
+  assert.strictEqual(order.rating, undefined)
+  assert.strictEqual((await call(c.getOrder, { headers: cust(order), params: { orderId: order._id } })).status, 200)
+  // The vendor app uses its login instead.
+  assert.strictEqual((await call(c.getOrder, { user: owner, params: { orderId: order._id } })).status, 200)
+})
+
+test('only a served order can be rated', async () => {
+  const order = paidOrder()
+  setup({ order })
+  const r = await call(c.submitOrderFeedback, { headers: cust(order), params: { orderNumber: order._id }, body: { rating: 1 } })
+  assert.strictEqual(r.status, 400)
+  assert.strictEqual(order.rating, undefined)
+})
+
+test('an order edited back to what was paid is PAID again, not stuck owing', async () => {
+  // Paid 32, a tea was added (PENDING, collect 10), then the vendor removes it.
+  const order = { ...paidOrder(), status: 'PENDING', paidAmount: 32, totalPrice: 42 }
+  order.orderItems.push({ menuItemId: tea._id, name: 'Tea', price: 10, quantity: 1 })
+  setup({ order })
+  const r = await call(c.updateOrder, { user: owner, params: { orderId: order._id }, body: { orderItems: [line(dosa, 1)] } })
+  assert.strictEqual(r.status, 200)
+  assert.strictEqual(order.status, 'PAID')
+  assert.strictEqual(order.paymentAdjustment, null)
+  assert.strictEqual(order.paidAmount, 32)
 })

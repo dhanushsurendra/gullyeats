@@ -458,7 +458,7 @@ export function SettingsPage() {
         <dt className='text-neutral-500'>API</dt>
         <dd>{API_BASE}</dd>
         <dt className='text-neutral-500'>Auth</dt>
-        <dd>Dummy JWT (temporary)</dd>
+        <dd>Login cookie (httpOnly, 7 days)</dd>
       </dl>
       <div className='border-t border-line px-4 py-3'>
         <Btn onClick={() => dispatch(logout())}>Log out</Btn>

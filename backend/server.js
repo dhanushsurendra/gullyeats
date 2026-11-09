@@ -39,7 +39,7 @@ const corsOptions = {
       return callback(null, true)
     }
 
-    return callback(new Error('Origin not allowed by CORS'))
+    return callback(Object.assign(new Error('Origin not allowed by CORS'), { status: 403 }))
   },
   credentials: true,
 }

@@ -100,7 +100,6 @@ test("staff can't edit the menu or cart, or see sales and fee bills, but can mar
     cartCtl.updateCart,
     cartCtl.updateCartImage,
     pay.getPaymentHistory,
-    pay.getPaymentOverview,
   ]) {
     const query = { startDate: '2026-11-01', endDate: '2026-11-07' }
     const r = await call(handler, { params, query, body: { name: 'Tea', price: 10 }, user })

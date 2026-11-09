@@ -29,7 +29,8 @@ export function MenuItem({ item, quantity, onAdd, onRemove, canOrder = true }) {
             e.currentTarget.src = defaultFoodImage
           }}
         />
-        {available && canOrder && (
+        {/* A sold-out item already in the order can still be taken off. */}
+        {canOrder && (available || quantity > 0) && (
           // z-10: the dark theme dims the placeholder photo with a filter, which lifts it above the button.
           <div className='relative z-10 -mt-5'>
             <Stepper
@@ -37,6 +38,7 @@ export function MenuItem({ item, quantity, onAdd, onRemove, canOrder = true }) {
               quantity={quantity}
               onAdd={() => onAdd(item._id)}
               onRemove={() => onRemove(item._id)}
+              canAdd={available}
             />
           </div>
         )}

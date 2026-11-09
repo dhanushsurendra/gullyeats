@@ -45,6 +45,10 @@ function readText(res, body, kind) {
  * The only shapes that leave the server. Never add authorKey, orderId,
  * cartId or _id here: they could tie a post to a person.
  */
+// Posted from an order this phone holds the key to (not just the same,
+// unverified, phone number: see middlewares/confessionPoster).
+const isMine = (c, poster) => Boolean(poster?.orderIds?.includes(String(c.orderId)))
+
 const toPublic = (c, poster, liked = false) => ({
   id: c.publicId,
   text: c.text,
@@ -52,14 +56,14 @@ const toPublic = (c, poster, liked = false) => ({
   comments: c.commentCount || 0,
   createdAt: c.publishedAt || c.createdAt,
   liked: Boolean(liked),
-  mine: Boolean(poster && poster.authorKey === c.authorKey),
+  mine: isMine(c, poster),
 })
 const commentToPublic = (c, poster) => ({
   id: c.publicId,
   text: c.text,
   createdAt: c.createdAt,
   byAuthor: Boolean(c.byAuthor),
-  mine: Boolean(poster && poster.authorKey === c.authorKey),
+  mine: isMine(c, poster),
 })
 
 async function findPublished(res, id) {
@@ -130,7 +134,7 @@ exports.feed = asyncHandler(async (req, res) => {
 // The poster's own confessions with their status, so a post in review or
 // taken down doesn't just vanish.
 exports.mine = asyncHandler(async (req, res) => {
-  const rows = await Confession.find({ authorKey: req.poster.authorKey, status: { $ne: 'BLOCKED' } })
+  const rows = await Confession.find({ orderId: { $in: req.poster.orderIds }, status: { $ne: 'BLOCKED' } })
     .sort({ createdAt: -1 })
     .limit(30)
     .lean()

@@ -5,7 +5,6 @@ import 'package:http/http.dart' as http;
 import 'package:ordering/core/constants/api_constants.dart';
 import 'package:ordering/core/error/api_exception.dart';
 import 'package:ordering/features/payment/models/payment_model.dart';
-import 'package:ordering/features/payment/models/payment_overview_model.dart';
 import 'package:ordering/features/payment/models/payment_status_model.dart';
 import 'package:ordering/features/payment/models/razorpay_checkout_model.dart';
 
@@ -26,26 +25,6 @@ class CreatePaymentResult {
 }
 
 class PaymentService {
-  Future<PaymentOverviewModel> getOverview(String? token, String cartId) async {
-    final response = await http
-        .get(
-          Uri.parse('${ApiConstants.payments}/payments-overview/$cartId'),
-          headers: _headers(token),
-        )
-        .timeout(const Duration(seconds: 10));
-
-    final data = _decode(response);
-
-    if (response.statusCode == 200) {
-      return PaymentOverviewModel.fromJson(data as Map<String, dynamic>);
-    }
-
-    throw ApiException(
-      data['message'] ?? 'Failed to load payment overview',
-      response.statusCode,
-    );
-  }
-
   /// Creates/retrieves the backend payment and Razorpay order.
   ///
   /// The amount is NEVER supplied by Flutter.
@@ -91,7 +70,9 @@ class PaymentService {
   /// Sends Razorpay's checkout callback to the backend.
   ///
   /// The backend verifies the signature using the Razorpay secret.
-  Future<PaymentModel> verifyPayment({
+  /// [refunded] is true when the bill was already paid (say, by an admin), so
+  /// this online payment is being refunded.
+  Future<({PaymentModel payment, bool refunded})> verifyPayment({
     required String? token,
     required String paymentId,
     required String razorpayPaymentId,
@@ -113,7 +94,10 @@ class PaymentService {
     final data = _decode(response);
 
     if (response.statusCode == 200) {
-      return PaymentModel.fromJson(data['payment'] as Map<String, dynamic>);
+      return (
+        payment: PaymentModel.fromJson(data['payment'] as Map<String, dynamic>),
+        refunded: data['refunded'] == true,
+      );
     }
 
     throw ApiException(

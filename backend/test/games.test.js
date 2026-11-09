@@ -211,3 +211,15 @@ test('Zero Reflex has its own board and refuses superhuman reflexes', async () =
   assert.deepStrictEqual((await api('GET', '/reflex/leaderboard')).body.top.map((r) => r.score), [2400])
   assert.deepStrictEqual((await api('GET', '/nebula/leaderboard')).body.top, [])
 })
+
+test('adding a number keeps a GullyPulse ban', async () => {
+  const ConfessionBan = require('../models/ConfessionBan')
+  const { authorKeyFor } = require('../middlewares/confessionPoster')
+  const anon = await player()
+  const until = new Date(Date.now() + 864e5)
+  await ConfessionBan.collection.insertOne({ authorKey: authorKeyFor({ _id: anon.orderId }), until, reason: 'abuse' })
+  assert.strictEqual((await api('POST', '/phone', { who: anon, body: { phone: '9123456782' } })).status, 200)
+  const moved = await ConfessionBan.findOne({ authorKey: authorKeyFor({ phoneNumber: '9123456782' }) }).lean()
+  assert.strictEqual(moved?.until.getTime(), until.getTime())
+  await ConfessionBan.collection.deleteMany({})
+})

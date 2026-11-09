@@ -77,6 +77,9 @@ class OrderProvider with ChangeNotifier {
 
   socket_io.Socket? _socket;
 
+  // The cart and login the socket was opened for, so a refresh reuses it.
+  String? _socketKey;
+
   StreamSubscription<List<ConnectivityResult>>? _network;
 
   bool _isLive = false;
@@ -117,6 +120,10 @@ class OrderProvider with ChangeNotifier {
 
       await prefs.setString("last_order", json.encode(order.toJson()));
 
+      // Shown at once, even if the live connection is down. Not "new": the
+      // vendor entered it, so no alert.
+      if (!_orders.any((o) => o.id == order.id)) _orders.insert(0, order);
+
       return order;
     } finally {
       notifyListeners();
@@ -136,7 +143,8 @@ class OrderProvider with ChangeNotifier {
 
       if (isNew) {
         _freshIds.add(updatedOrder.id);
-        incomingOrder.value = updatedOrder;
+        // Only customers' orders ring; manual ones were entered at the cart.
+        if (updatedOrder.isQrOrder) incomingOrder.value = updatedOrder;
         Future.delayed(const Duration(seconds: 6), () {
           if (_freshIds.remove(updatedOrder.id)) notifyListeners();
         });
@@ -156,7 +164,10 @@ class OrderProvider with ChangeNotifier {
   /// Joins the cart's live-order room. The server only lets someone who
   /// manages the cart in, so the login token goes with the connection.
   void initSocket(String cartId, String token) {
+    // Already following this cart (pull-to-refresh): keep the connection.
+    if (_socket != null && _socketKey == '$cartId|$token') return;
     _socket?.dispose();
+    _socketKey = '$cartId|$token';
 
     _socket = socket_io.io(
       ApiConstants.socketUrl,
@@ -169,21 +180,21 @@ class OrderProvider with ChangeNotifier {
     );
 
     final socket = _socket!;
-    var connectedBefore = false;
 
     socket.connect();
 
     socket.onConnect((_) {
       debugPrint('Connected to Socket.io');
 
-      socket.emit('join_vendor', cartId);
       _setLive(true);
 
-      // Orders placed while the connection was down never reached us.
-      if (connectedBefore) {
+      // Once the server has let us into the cart's room, fetch again: orders
+      // placed while the connection was down, or between the first load and
+      // joining, never reached us live.
+      socket.emitWithAck('join_vendor', cartId, ack: (_) {
+        if (_socket != socket) return;
         reloadAfterReconnect(token, cartId, isCurrent: () => _socket == socket);
-      }
-      connectedBefore = true;
+      });
     });
 
     // The socket only notices a dead connection after a missed heartbeat
@@ -258,8 +269,9 @@ class OrderProvider with ChangeNotifier {
         if (_freshIds.remove(order.id)) notifyListeners();
       });
     }
-    // The list is newest first.
-    if (missed.isNotEmpty) incomingOrder.value = missed.first;
+    // The list is newest first. Only customers' orders ring.
+    final newestQr = missed.where((order) => order.isQrOrder).firstOrNull;
+    if (newestQr != null) incomingOrder.value = newestQr;
 
     notifyListeners();
   }
@@ -721,6 +733,7 @@ class OrderProvider with ChangeNotifier {
     // Socket
     _socket?.dispose();
     _socket = null;
+    _socketKey = null;
     _network?.cancel();
     _network = null;
     _isLive = false;

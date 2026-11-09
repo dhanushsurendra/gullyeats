@@ -10,6 +10,7 @@ const { canManageCart, findManagedCart, findManagedOrder } = require('../utils/c
 const Payment = require('../models/Payment')
 const paymentLock = require('../utils/cartPaymentLock')
 const { getISTMidnight } = paymentLock
+const { holdsOrderKey } = require('../utils/orderKey')
 
 /** Whether a bill already covers the day [order] was paid on. */
 async function isPaidDayBilled(order) {
@@ -132,6 +133,13 @@ async function managesOrderCart(req, order) {
   if (!req.user) return false
   const cart = await Cart.findById(order.cartId)
   return Boolean(cart) && canManageCart(req.user, cart)
+}
+
+// Customers must hold the order's key; a wrong one looks like no order.
+async function requireOrderKey(req, res, order) {
+  if (!(await holdsOrderKey(order._id, req.headers['x-gully-order']))) {
+    fail(res, 404, 'Order not found')
+  }
 }
 
 /*
@@ -311,11 +319,8 @@ exports.getAllOrders = asyncHandler(async (req, res) => {
 
 exports.getOrder = asyncHandler(async (req, res) => {
   const order = await Order.findById(req.params.orderId)
-
-  if (!order) {
-    res.status(404)
-    throw new Error('Order not found')
-  }
+  if (!order) fail(res, 404, 'Order not found')
+  if (!(await managesOrderCart(req, order))) await requireOrderKey(req, res, order)
 
   res.status(200).json({ success: true, data: order })
 })
@@ -424,6 +429,7 @@ exports.updateOrder = asyncHandler(async (req, res) => {
 
   const cart = await Cart.findById(order.cartId)
   const isVendor = Boolean(cart) && (await canManageCart(req.user, cart))
+  if (!isVendor) await requireOrderKey(req, res, order)
 
   if (order.status !== 'PENDING' && order.status !== 'PAID') {
     fail(res, 400, 'This order can no longer be changed')
@@ -480,8 +486,10 @@ exports.updateOrder = asyncHandler(async (req, res) => {
   if (paidAmount > 0 && difference > 0) {
     // The extra must be collected before the order continues.
     order.status = 'PENDING'
-  } else if (paidAmount > 0 && difference < 0) {
-    // The vendor hands back the difference, so the new total is what's paid.
+  } else if (paidAmount > 0) {
+    // Covered by what was paid (e.g. an added item taken off again): paid
+    // again. The vendor hands back any difference, so the total is what's paid.
+    order.status = 'PAID'
     order.paidAmount = totals.totalPrice
   }
 
@@ -530,6 +538,7 @@ exports.deleteOrder = asyncHandler(async (req, res) => {
   if (!order) fail(res, 404, 'Order not found')
 
   const isVendor = await managesOrderCart(req, order)
+  if (!isVendor) await requireOrderKey(req, res, order)
 
   if (order.status !== 'PENDING' && order.status !== 'PAID') {
     fail(res, 400, 'This order can no longer be cancelled')
@@ -588,7 +597,7 @@ exports.setPreparing = asyncHandler(async (req, res) => {
 
 /*
  * Where an order stands in its cart's queue, for the customer's token page
- * (no login; the order id is the customer's secret). Only token numbers of
+ * (no login; the customer sends the order's key). Only token numbers of
  * other orders are returned, never their details.
  *
  * The queue is the cart's paid, unserved orders in the order they were
@@ -600,6 +609,7 @@ exports.getQueue = asyncHandler(async (req, res) => {
     .select('cartId status paidAt preparingAt')
     .lean()
   if (!order) fail(res, 404, 'Order not found')
+  await requireOrderKey(req, res, order)
 
   const queue = await Order.find({
     cartId: order.cartId,
@@ -656,11 +666,10 @@ exports.submitOrderFeedback = asyncHandler(async (req, res) => {
   if (!text.trim() && rating == null) fail(res, 400, 'Add a rating or some feedback')
 
   const order = await Order.findById(orderNumber)
-
-  if (!order) {
-    res.status(404)
-    throw new Error('Order not found')
-  }
+  if (!order) fail(res, 404, 'Order not found')
+  await requireOrderKey(req, res, order)
+  // Only food that was handed over can be rated.
+  if (order.status !== 'SERVED') fail(res, 400, 'You can rate an order once it is served')
 
   if (text.trim()) order.feedback = text.trim().slice(0, 500)
   if (rating != null) order.rating = rating

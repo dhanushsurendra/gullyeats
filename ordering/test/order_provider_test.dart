@@ -84,8 +84,9 @@ void main() {
   });
 
   group('reload after reconnect', () {
-    Map<String, dynamic> order(String id, String number) => {
+    Map<String, dynamic> order(String id, String number, {String type = 'QR'}) => {
       '_id': id,
+      'orderType': type,
       'orderNumber': number,
       'status': 'PENDING',
       'totalPrice': 40,
@@ -130,6 +131,15 @@ void main() {
       expect(provider.isFresh('c') && provider.isFresh('b'), isTrue);
       expect(provider.isFresh('a'), isFalse);
       expect(provider.incomingOrder.value?.id, 'c');
+    });
+
+    test("a missed manual order glows but doesn't ring", () async {
+      final provider = await loaded([order('a', '101')]);
+
+      await reload(provider, [order('m', '102', type: 'MANUAL'), order('a', '101')]);
+
+      expect(provider.isFresh('m'), isTrue);
+      expect(provider.incomingOrder.value, isNull);
     });
 
     test('no missed orders: no alert', () async {

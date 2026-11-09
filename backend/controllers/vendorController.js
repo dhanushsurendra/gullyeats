@@ -141,7 +141,9 @@ exports.verifyOtp = asyncHandler(async (req, res) => {
 exports.vendorLogin = asyncHandler(async (req, res) => {
   const { vendorIdentifier, pin } = req.body
 
-  if (!vendorIdentifier || !pin) {
+  // Strings only: an array would match the same account as $in while the
+  // rate limiter counts it under a new key, so PINs could be guessed freely.
+  if (typeof vendorIdentifier !== 'string' || !['string', 'number'].includes(typeof pin) || !vendorIdentifier || !pin) {
     return res.status(400).json({
       success: false,
       message: 'Please provide Vendor ID/Phone and PIN',

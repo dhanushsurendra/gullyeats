@@ -3,6 +3,7 @@ const MenuItem = require('../models/Menu')
 const User = require('../models/User')
 const Order = require('../models/Order')
 const { findManagedCart, findOwnedCart } = require('../utils/cartAccess')
+const crypto = require('crypto')
 const QRCode = require('qrcode')
 const asyncHandler = require('../utils/asyncHandler')
 const bcrypt = require('bcrypt')
@@ -11,6 +12,7 @@ const { PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3')
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner')
 const { s3Client } = require('../utils/s3Client')
 const generatePin = require('../utils/generatePin')
+const { validatePhone } = require('../utils/validators')
 const Menu = require('../models/Menu')
 const translit = require('../utils/transliterate')
 const FoodName = require('../models/FoodName')
@@ -19,6 +21,21 @@ const FoodName = require('../models/FoodName')
 // page, say) would be served from our address.
 // The vendor app sends "image/jpg" for .jpg files, so that is allowed too.
 const IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+
+// The cart photo getPresignedUploadUrl hands out: uploads/<cartId>.<ext>?v=<n>.
+function isCartImage(cartId, url) {
+  const prefix = `https://${process.env.BUCKET_NAME}.s3.amazonaws.com/uploads/${cartId}.`
+  return typeof url === 'string' && url.startsWith(prefix) && /^(jpeg|jpg|png|webp)(\?v=\d+)?$/.test(url.slice(prefix.length))
+}
+
+// { type: 'Point', coordinates: [lat, lng] } (lat first, see CLAUDE.md), or null if invalid.
+function locationPoint(location) {
+  const coords = location?.coordinates
+  if (!Array.isArray(coords) || coords.length !== 2) return null
+  const [lat, lng] = coords.map((n) => (typeof n === 'number' ? n : NaN))
+  if (!(Math.abs(lat) <= 90 && Math.abs(lng) <= 180)) return null
+  return { type: 'Point', coordinates: [lat, lng] }
+}
 
 // A cart suspended by GullyEats can't be reopened from the vendor app.
 function refuseIfSuspended(res, cart, opening) {
@@ -81,6 +98,28 @@ exports.updateCart = asyncHandler(async (req, res) => {
 
   const cart = await findOwnedCart(req, res, cartId);
 
+  const bad = (message) => {
+    res.status(400);
+    throw new Error(message);
+  };
+  for (const [key, value] of Object.entries({ cartName, cartCity, address })) {
+    if (value !== undefined && (typeof value !== 'string' || !value.trim())) bad(`${key} must be text`);
+  }
+  for (const [key, value] of Object.entries({ isActive, isOpen })) {
+    if (value !== undefined && typeof value !== 'boolean') bad(`${key} must be true or false`);
+  }
+  // Only this cart's own photo (or the one it already has, or none).
+  if (
+    cartImageUrl !== undefined &&
+    cartImageUrl &&
+    cartImageUrl !== cart.cartImageUrl &&
+    !isCartImage(cartId, cartImageUrl)
+  ) {
+    bad('Invalid image URL');
+  }
+  const point = location === undefined ? undefined : locationPoint(location);
+  if (point === null) bad('Invalid location');
+
   if (parcelCharge !== undefined) {
     const value = Number(parcelCharge);
     if (parcelCharge === null || !Number.isFinite(value) || value < 0) {
@@ -103,11 +142,11 @@ exports.updateCart = asyncHandler(async (req, res) => {
   }
 
   if (cartImageUrl !== undefined) {
-    cart.cartImageUrl = cartImageUrl;
+    cart.cartImageUrl = cartImageUrl || null;
   }
 
-  if (location !== undefined) {
-    cart.location = location;
+  if (point) {
+    cart.location = point;
   }
 
   if (isActive !== undefined) {
@@ -207,7 +246,8 @@ exports.createMenuItems = asyncHandler(async (req, res) => {
   }
 
   const processedItems = items.map((item) => {
-    if (!item.name || item.price === undefined || item.isVeg === undefined) {
+    if (typeof item?.name !== 'string' || item.price === undefined || typeof item.isVeg !== 'boolean') {
+      res.status(400)
       throw new Error('Each item must have name, price and isVeg')
     }
 
@@ -216,10 +256,12 @@ exports.createMenuItems = asyncHandler(async (req, res) => {
     const isVeg = item.isVeg
 
     if (name.length < 2) {
+      res.status(400)
       throw new Error(`Invalid item name: ${name}`)
     }
 
-    if (isNaN(price) || price < 0) {
+    if (item.price === null || item.price === '' || !Number.isFinite(price) || price < 0) {
+      res.status(400)
       throw new Error(`Invalid price for item: ${name}`)
     }
 
@@ -288,8 +330,19 @@ function menuImagePrefix(cartId) {
   return `https://${process.env.BUCKET_NAME}.s3.amazonaws.com/uploads/${cartId}/menu/`
 }
 
+// One file directly in that folder (<uuid>.<ext>): no "..", "%2F" or
+// subfolders, which S3 or new URL() could resolve to another cart's file.
+function isMenuImage(cartId, imageUrl) {
+  const prefix = menuImagePrefix(cartId)
+  return (
+    typeof imageUrl === 'string' &&
+    imageUrl.startsWith(prefix) &&
+    /^[\w-]+\.\w+$/.test(imageUrl.slice(prefix.length))
+  )
+}
+
 async function deleteMenuImage(cartId, imageUrl) {
-  if (!imageUrl || !imageUrl.startsWith(menuImagePrefix(cartId))) return
+  if (!isMenuImage(cartId, imageUrl)) return
 
   try {
     const s3Key = decodeURIComponent(new URL(imageUrl).pathname.substring(1))
@@ -357,8 +410,7 @@ function menuItemFields(req, res, { requireAll }) {
     if (
       imageUrl !== null &&
       imageUrl !== '' &&
-      (typeof imageUrl !== 'string' ||
-        !imageUrl.startsWith(menuImagePrefix(req.params.cartId)))
+      !isMenuImage(req.params.cartId, imageUrl)
     ) {
       res.status(400)
       throw new Error('Invalid image URL')
@@ -642,13 +694,13 @@ exports.addStaff = asyncHandler(async (req, res) => {
   const cartId = req.params.cartId
   let { name, phoneNumber } = req.body
 
-  if (!name || !phoneNumber || !cartId) {
+  if (typeof name !== 'string' || !name || !phoneNumber || !cartId) {
     res.status(400)
     throw new Error('name, phoneNumber, cartId are required')
   }
 
   name = name.trim()
-  phoneNumber = phoneNumber.replace(/\D/g, '')
+  phoneNumber = validatePhone(phoneNumber)
 
   if (name.length < 2) {
     res.status(400)
@@ -747,7 +799,8 @@ exports.getPresignedUploadUrl = asyncHandler(async (req, res) => {
   const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 60 })
 
   const s3Key = `uploads/${cartId}.${extension}`
-  const fileUrl = `https://${process.env.BUCKET_NAME}.s3.amazonaws.com/${s3Key}`
+  // The key never changes, so ?v= makes phones and CDNs fetch the new photo.
+  const fileUrl = `https://${process.env.BUCKET_NAME}.s3.amazonaws.com/${s3Key}?v=${Date.now()}`
 
   res.status(200).json({
     success: true,
@@ -761,6 +814,10 @@ exports.updateCartImage = asyncHandler(async (req, res) => {
   const { imageUrl } = req.body
 
   await findOwnedCart(req, res, cartId)
+  if (imageUrl && !isCartImage(cartId, imageUrl)) {
+    res.status(400)
+    throw new Error('Invalid image URL')
+  }
 
   const updatedCart = await Cart.findByIdAndUpdate(
     cartId,
@@ -790,10 +847,13 @@ exports.getCart = asyncHandler(async (req, res) => {
     { $group: { _id: null, average: { $avg: '$rating' }, count: { $sum: 1 } } },
   ])
 
+  // Public (customers): not the owner's account id or GullyEats' notes.
+  const { userId, suspendReason, ...publicCart } = cart.toObject()
+
   res.status(200).json({
     success: true,
     data: {
-      ...cart.toObject(),
+      ...publicCart,
       rating: stars
         ? { average: Math.round(stars.average * 10) / 10, count: stars.count }
         : { average: null, count: 0 },

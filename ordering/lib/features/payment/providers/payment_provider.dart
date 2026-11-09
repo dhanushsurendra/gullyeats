@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:ordering/core/error/app_exceptions.dart';
 import 'package:ordering/features/payment/models/payment_model.dart';
-import 'package:ordering/features/payment/models/payment_overview_model.dart';
 import 'package:ordering/features/payment/models/payment_status_model.dart';
 import 'package:ordering/features/payment/services/payment_service.dart';
 
 class PaymentProvider with ChangeNotifier {
   final PaymentService _service = PaymentService();
 
-  PaymentOverviewModel? overview;
   PaymentStatusModel? paymentStatus;
   PaymentModel? currentPayment;
   List<PaymentModel> history = [];
@@ -20,25 +18,8 @@ class PaymentProvider with ChangeNotifier {
 
   String? error;
 
-  bool get isPaymentLocked {
-    return overview?.isLocked ?? currentPayment?.isPending ?? true;
-  }
-
-  Future<void> loadPaymentOverview(String? token, String cartId) async {
-    isLoading = true;
-    error = null;
-    notifyListeners();
-
-    try {
-      overview = await _service.getOverview(token, cartId);
-      currentPayment = overview?.currentPayment;
-    } catch (e) {
-      error = AppExceptionHandler.getMessage(e);
-    } finally {
-      isLoading = false;
-      notifyListeners();
-    }
-  }
+  /// The last verified payment was a duplicate and is being refunded.
+  bool lastPaymentRefunded = false;
 
   Future<CreatePaymentResult?> createPayment(
     String? token,
@@ -72,10 +53,11 @@ class PaymentProvider with ChangeNotifier {
   }) async {
     isVerifyingPayment = true;
     error = null;
+    lastPaymentRefunded = false;
     notifyListeners();
 
     try {
-      final payment = await _service.verifyPayment(
+      final (:payment, :refunded) = await _service.verifyPayment(
         token: token,
         paymentId: paymentId,
         razorpayPaymentId: razorpayPaymentId,
@@ -84,6 +66,7 @@ class PaymentProvider with ChangeNotifier {
       );
 
       currentPayment = payment;
+      lastPaymentRefunded = refunded;
 
       return payment.isVerified;
     } catch (e) {
@@ -98,13 +81,6 @@ class PaymentProvider with ChangeNotifier {
   Future<PaymentStatusModel?> refreshStatus(String token, String cartId) async {
     try {
       final status = await _service.checkPaymentStatus(token, cartId);
-
-      if (overview != null) {
-        overview = overview!.copyWith(
-          isLocked: status.isLocked,
-          totalPending: status.totalPending,
-        );
-      }
 
       return status;
     } catch (e) {
@@ -142,16 +118,7 @@ class PaymentProvider with ChangeNotifier {
     }
   }
 
-  // void reset() {
-  //   overview = null;
-  //   currentPayment = null;
-  //   history = [];
-  //   error = null;
-  //   notifyListeners();
-  // }
-
   void clear() {
-    overview = null;
     paymentStatus = null;
     currentPayment = null;
     history = [];

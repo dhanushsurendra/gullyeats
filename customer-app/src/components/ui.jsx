@@ -154,7 +154,7 @@ export function VegMark({ isVeg }) {
   )
 }
 
-export function Stepper({ quantity, onAdd, onRemove, name }) {
+export function Stepper({ quantity, onAdd, onRemove, name, canAdd = true }) {
   if (!quantity) {
     return (
       <button
@@ -177,7 +177,13 @@ export function Stepper({ quantity, onAdd, onRemove, name }) {
       <span className='text-sm font-bold tabular-nums' aria-live='polite'>
         {quantity}
       </span>
-      <button type='button' onClick={onAdd} aria-label={`Add one more ${name}`} className={btn}>
+      <button
+        type='button'
+        onClick={onAdd}
+        disabled={!canAdd}
+        aria-label={`Add one more ${name}`}
+        className={`${btn} disabled:opacity-40`}
+      >
         +
       </button>
     </div>

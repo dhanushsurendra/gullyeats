@@ -43,7 +43,7 @@ router.put('/preparing/:orderId', auth, setPreparing)
 
 router.get('/:cartId', auth, getAllOrders)
 
-router.get('/order/:orderId', getOrder)
+router.get('/order/:orderId', optionalAuth, getOrder)
 
 router.put('/serve-order/:orderId', auth, serveOrder)
 

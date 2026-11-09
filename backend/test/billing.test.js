@@ -284,3 +284,16 @@ test('an abandoned checkout locks the cart only once its bill is due', async () 
   status = await getCartPaymentStatus(cartId)
   assert.equal(status.isLocked, true)
 })
+
+test('two status checks at once settle a credit-covered day only once', async () => {
+  await Payment.init() // the unique index on credit settlements
+  const billed = order(4, 'PAID')
+  await Order.collection.insertMany([billed, order(3), order(2)])
+  await billFor(4, [billed])
+  await Order.collection.updateOne({ _id: billed._id }, { $set: { status: 'CANCELLED' } })
+
+  const [a, b] = await Promise.all([getCartPaymentStatus(cartId), getCartPaymentStatus(cartId)])
+  assert.equal(await Payment.countDocuments({ verificationSource: 'CREDIT' }), 1)
+  assert.equal(a.billingDate.getTime(), daysAgo(2).getTime())
+  assert.equal(b.billingDate.getTime(), daysAgo(2).getTime())
+})
