@@ -12,6 +12,7 @@ import 'package:ordering/features/cart/providers/cart_provider.dart';
 import 'package:ordering/features/auth/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
 import 'package:ordering/l10n/l10n.dart';
 import 'package:ordering/core/widgets/base_screen.dart';
 import 'package:ordering/core/widgets/app_card.dart';
@@ -69,6 +70,9 @@ class _SalesScreenState extends State<SalesScreen> {
 
   // Set when loading fails and there is no earlier data to show.
   String? _error;
+
+  /// Days in the chosen range (1 for a single day).
+  int get _days => _endDate.difference(_startDate).inDays + 1;
 
   Future<void> _loadSales() async {
     final authProvider = context.read<AuthProvider>();
@@ -221,20 +225,17 @@ class _SalesScreenState extends State<SalesScreen> {
                   Column(
                     children: [
                       _revenueHero(data),
-                      AppGaps.h16,
-                      _quickStatsRow(data),
-                      AppGaps.h16,
-                      _orderFunnelCard(data),
-                      AppGaps.h16,
-                      _itemsCard(data),
-                      AppGaps.h16,
-                      _orderTypeCard(data),
-                      AppGaps.h16,
-                      _busyHoursCard(data),
-                      AppGaps.h16,
-                      _timingCard(data),
-                      AppGaps.h16,
-                      _leaderboardCard(data),
+                      // A card with nothing to say leaves itself out (null).
+                      for (final card in [
+                        _compareCard(data),
+                        _missedCard(data),
+                        if (_days > 1) _dailyCard(data),
+                        _busyHoursCard(data),
+                        _customersCard(data),
+                        _itemsCard(data),
+                        _orderTypeCard(data),
+                      ])
+                        if (card != null) ...[AppGaps.h16, card],
                     ],
                   ),
                   // Changing the dates keeps the old numbers under a veil.
@@ -242,7 +243,7 @@ class _SalesScreenState extends State<SalesScreen> {
                     Positioned.fill(
                       child: Container(
                         decoration: BoxDecoration(
-                          color: AppColors.white.withValues(alpha: 0.7),
+                          color: AppColors.background.withValues(alpha: 0.7),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: const Center(child: CircularProgressIndicator()),
@@ -308,9 +309,13 @@ class _SalesScreenState extends State<SalesScreen> {
 
   String _money(num value) => "₹${formatPrice(value.round())}";
 
-  String _pct(num value) => "${value.toStringAsFixed(1)}%";
-
-  Widget _statBox(String title, String value, {Color? valueColor}) {
+  Widget _statBox(
+    String title,
+    String value, {
+    Color? valueColor,
+    String? note,
+    Widget? noteWidget,
+  }) {
     return Expanded(
       child: Container(
         padding: AppPadding.smallCard,
@@ -333,73 +338,11 @@ class _SalesScreenState extends State<SalesScreen> {
                 ),
               ),
             ),
+            if (note != null)
+              Text(note, textAlign: TextAlign.center, style: AppTextStyles.caption),
+            ?noteWidget,
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _progressRow(String label, double percent, Color color) {
-    final clamped = percent.isNaN ? 0.0 : percent.clamp(0, 100).toDouble();
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(child: Text(label, style: AppTextStyles.caption)),
-              AppGaps.w8,
-              Text(
-                _pct(clamped),
-                style: AppTextStyles.caption.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          AppGaps.h4,
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0, end: clamped / 100),
-              duration: const Duration(milliseconds: 800),
-              builder: (context, value, _) {
-                return LinearProgressIndicator(
-                  value: value,
-                  minHeight: 8,
-                  backgroundColor: AppColors.grey200,
-                  valueColor: AlwaysStoppedAnimation(color),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _timingRow(IconData icon, String label, String? value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, size: 16, color: AppColors.primary),
-          ),
-          AppGaps.w8,
-          Expanded(child: Text(label, style: AppTextStyles.caption)),
-          Text(
-            value ?? "-",
-            style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600),
-          ),
-        ],
       ),
     );
   }
@@ -414,13 +357,11 @@ class _SalesScreenState extends State<SalesScreen> {
       padding: AppPadding.card,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        gradient: LinearGradient(
+        // Night purple with an orange total: a small reward to look at, in both themes.
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            AppColors.primary,
-            AppColors.primary.withValues(alpha: 0.75),
-          ],
+          colors: [AppColors.nightDeep, AppColors.night, AppColors.nightSoft],
         ),
       ),
       child: Column(
@@ -429,7 +370,8 @@ class _SalesScreenState extends State<SalesScreen> {
           Text(
             context.l10n.totalRevenue,
             style: AppTextStyles.caption.copyWith(
-              color: AppColors.white.withValues(alpha: 0.85),
+              color: AppColors.lilac,
+              fontWeight: FontWeight.w600,
             ),
           ),
           AppGaps.h8,
@@ -439,12 +381,12 @@ class _SalesScreenState extends State<SalesScreen> {
             builder: (context, value, _) {
               return Text(
                 _money(value),
-                style: AppTextStyles.heading1.copyWith(color: AppColors.white),
+                style: AppTextStyles.heading1.copyWith(color: AppColors.primary),
               );
             },
           ),
           AppGaps.h16,
-          Container(height: 1, color: AppColors.white.withValues(alpha: 0.2)),
+          Container(height: 1, color: AppColors.white.withValues(alpha: 0.12)),
           AppGaps.h16,
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -484,7 +426,7 @@ class _SalesScreenState extends State<SalesScreen> {
             label,
             textAlign: TextAlign.center,
             style: AppTextStyles.caption.copyWith(
-              color: AppColors.white.withValues(alpha: 0.8),
+              color: AppColors.white.withValues(alpha: 0.7),
             ),
           ),
         ],
@@ -493,98 +435,408 @@ class _SalesScreenState extends State<SalesScreen> {
   }
 
   // ---------------------------------------------------------------------
-  // Quick stats: avg order value, revenue/order, highest, lowest
+  // At a glance: revenue, paid orders, average order, each compared with
+  // the same number of days just before (when the backend sends that)
   // ---------------------------------------------------------------------
 
-  Widget _quickStatsRow(SalesModel data) {
-    return Row(
-      children: [
-        _statBox(context.l10n.avgOrder, _money(data.avgOrderValue)),
-        AppGaps.w8,
-        _statBox(context.l10n.highest, _money(data.highestOrder)),
-        AppGaps.w8,
-        _statBox(context.l10n.lowest, _money(data.lowestOrder)),
-      ],
-    );
-  }
-
-  // ---------------------------------------------------------------------
-  // Order funnel: counts + rates
-  // ---------------------------------------------------------------------
-
-  Widget _orderFunnelCard(SalesModel data) {
+  Widget _compareCard(SalesModel data) {
+    final l10n = context.l10n;
+    final compare = data.previousRevenue != null;
+    Widget box(String label, String value, num now, num? before) =>
+        before == null ? _statBox(label, value) : _compareBox(label, value, now, before);
     return _sectionCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _sectionTitle(context.l10n.orders, trailing: context.l10n.totalCount(data.totalOrders)),
-          AppGaps.h16,
-          _statGrid([
-            _statBox(
-              context.l10n.unpaid,
-              "${data.pendingOrders}",
-              valueColor: AppColors.grey500,
-            ),
-            _statBox(context.l10n.paid, "${data.paidOrders}"),
-            _statBox(
-              context.l10n.served,
-              "${data.servedOrders}",
-              valueColor: AppColors.success,
-            ),
-            _statBox(
-              context.l10n.cancelled,
-              "${data.cancelledOrders}",
-              valueColor: AppColors.error,
-            ),
-          ]),
-          AppGaps.h16,
-          _progressRow(
-            context.l10n.completionRate,
-            data.completionRate,
-            AppColors.success,
+          _sectionTitle(
+            !compare
+                ? l10n.atAGlance
+                : _days == 1
+                    ? l10n.comparedDayBefore
+                    : l10n.comparedDaysBefore(_days),
           ),
-          _progressRow(context.l10n.paymentRate, data.paymentRate, AppColors.primary),
-          _progressRow(
-            context.l10n.cancellationRate,
-            data.cancellationRate,
-            AppColors.error,
+          AppGaps.h12,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              box(l10n.revenueLabel, _money(data.revenue), data.revenue, data.previousRevenue),
+              AppGaps.w8,
+              box(l10n.paidOrdersLabel, '${data.paidOrders}', data.paidOrders, data.previousOrders),
+              AppGaps.w8,
+              box(l10n.avgOrder, _money(data.avgOrderValue), data.avgOrderValue, data.previousAvgOrderValue),
+            ],
           ),
         ],
       ),
     );
   }
 
+  /// A stat box with the change since the period before under the value.
+  Widget _compareBox(String label, String value, num now, num before) {
+    final change = before == 0 ? null : (now - before) / before * 100;
+    final up = (change ?? 0) >= 0;
+    final color = change == null ? AppColors.grey500 : (up ? AppColors.success : AppColors.error);
+    return _statBox(
+      label,
+      value,
+      noteWidget: change == null
+          ? Text(
+              now == 0 ? '-' : context.l10n.noSalesBefore,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.caption.copyWith(color: color),
+            )
+          : Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(up ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded, size: 14, color: color),
+                Flexible(
+                  child: Text(
+                    '${change.abs().round()}%',
+                    style: AppTextStyles.caption.copyWith(color: color, fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+
   // ---------------------------------------------------------------------
-  // Items
+  // Missed money: unpaid and cancelled orders
   // ---------------------------------------------------------------------
 
-  Widget _itemsCard(SalesModel data) {
+  Widget? _missedCard(SalesModel data) {
+    if (data.pendingOrders == 0 && data.cancelledOrders == 0) return null;
+    final l10n = context.l10n;
+    Widget row(IconData icon, Color color, String text) => Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: color),
+          AppGaps.w8,
+          Expanded(child: Text(text, style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600))),
+        ],
+      ),
+    );
     return _sectionCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _sectionTitle(context.l10n.itemsSold),
-          AppGaps.h16,
-          _statGrid([
-            _statBox(context.l10n.totalSold, "${data.totalItemsSold}"),
-            _statBox(context.l10n.unique, "${data.uniqueItemsSold}"),
-            _statBox(context.l10n.avgPerOrder, data.avgItemsPerOrder.toStringAsFixed(1)),
-            _statBox(context.l10n.maxInOneOrder, "${data.highestItemsInOrder}"),
-          ]),
+          _sectionTitle(
+            l10n.missedMoney,
+            trailing: _money(data.unpaidValue + data.cancelledValue),
+            trailingColor: AppColors.error,
+          ),
+          if (data.pendingOrders > 0)
+            row(Icons.hourglass_empty_rounded, AppColors.warning,
+                l10n.missedUnpaid(data.pendingOrders, _money(data.unpaidValue))),
+          if (data.cancelledOrders > 0)
+            row(Icons.cancel_outlined, AppColors.error,
+                l10n.missedCancelled(data.cancelledOrders, _money(data.cancelledValue))),
+          if (data.pendingOrders > 0) ...[
+            AppGaps.h8,
+            Text(l10n.missedHint, style: AppTextStyles.caption),
+          ],
         ],
       ),
     );
   }
 
   // ---------------------------------------------------------------------
-  // Order type (QR vs Manual) + parcel
+  // Charts: revenue per day, orders per hour
+  // ---------------------------------------------------------------------
+
+  /// Bars with the highlighted one orange, labels thinned out to fit.
+  Widget _bars(List<double> values, List<String> labels, int? highlight) {
+    final maxVal = values.fold<double>(0, (a, b) => b > a ? b : a);
+    final every = (values.length / 7).ceil().clamp(1, 99);
+    return SizedBox(
+      height: 170,
+      child: BarChart(
+        BarChartData(
+          maxY: maxVal == 0 ? 1 : maxVal * 1.15,
+          gridData: const FlGridData(show: false),
+          borderData: FlBorderData(show: false),
+          barTouchData: BarTouchData(enabled: false),
+          titlesData: FlTitlesData(
+            leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 28,
+                getTitlesWidget: (value, _) {
+                  final i = value.toInt();
+                  if (i >= labels.length || i % every != 0) return const SizedBox();
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(labels[i], style: AppTextStyles.caption),
+                  );
+                },
+              ),
+            ),
+          ),
+          barGroups: [
+            for (var i = 0; i < values.length; i++)
+              BarChartGroupData(
+                x: i,
+                barRods: [
+                  BarChartRodData(
+                    toY: values[i] * _animationValue,
+                    width: values.length > 16 ? 8 : (values.length > 8 ? 12 : 20),
+                    borderRadius: BorderRadius.circular(6),
+                    color: i == highlight ? AppColors.primary : AppColors.grey300,
+                  ),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget? _dailyCard(SalesModel data) {
+    if (data.days.length < 2) return null; // older backend
+    var best = 0;
+    for (var i = 1; i < data.days.length; i++) {
+      if (data.days[i].revenue > data.days[best].revenue) best = i;
+    }
+    String label(DateTime d) => '${d.day}/${d.month}';
+    final hasSales = data.days[best].revenue > 0;
+    return _sectionCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _sectionTitle(
+            context.l10n.dailySales,
+            trailing: hasSales ? context.l10n.bestDay(label(data.days[best].day)) : null,
+          ),
+          AppGaps.h16,
+          _bars(
+            [for (final d in data.days) d.revenue],
+            [for (final d in data.days) label(d.day)],
+            hasSales ? best : null,
+          ),
+          if (_bestWeekday(data.days) case final day?) ...[
+            AppGaps.h8,
+            Text(
+              context.l10n.bestWeekday(
+                DateFormat.EEEE(Localizations.localeOf(context).toString()).format(day),
+              ),
+              style: AppTextStyles.caption,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// A day with the weekday that earns most on average, once there are at
+  /// least two of each weekday to compare; null before that or with no sales.
+  DateTime? _bestWeekday(List<DaySales> days) {
+    if (days.length < 14) return null;
+    final total = <int, double>{}, count = <int, int>{}, sample = <int, DateTime>{};
+    for (final d in days) {
+      total[d.day.weekday] = (total[d.day.weekday] ?? 0) + d.revenue;
+      count[d.day.weekday] = (count[d.day.weekday] ?? 0) + 1;
+      sample[d.day.weekday] = d.day;
+    }
+    final best = total.keys.reduce((a, b) => total[a]! / count[a]! >= total[b]! / count[b]! ? a : b);
+    return total[best]! > 0 ? sample[best] : null;
+  }
+
+  Widget _busyHoursCard(SalesModel data) {
+    final hours = data.hours;
+    return _sectionCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _sectionTitle(
+            context.l10n.busyHours,
+            trailing: data.peakHour != null
+                ? context.l10n.peakHour(HourCount(hour: data.peakHour!, count: 0).label)
+                : null,
+          ),
+          AppGaps.h16,
+          if (hours.isEmpty)
+            Text(context.l10n.noOrdersInPeriod, style: AppTextStyles.caption)
+          else
+            _bars(
+              [for (final h in hours) h.count.toDouble()],
+              [for (final h in hours) h.label],
+              hours.indexWhere((h) => h.hour == data.peakHour),
+            ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------
+  // Customers and service
+  // ---------------------------------------------------------------------
+
+  Widget _customersCard(SalesModel data) {
+    final l10n = context.l10n;
+    return _sectionCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _sectionTitle(l10n.customersAndService),
+          AppGaps.h16,
+          _statGrid([
+            _statBox(
+              l10n.customersLabel,
+              '${data.customers}',
+              note: l10n.returningCount(data.returningCustomers),
+            ),
+            _statBox(
+              l10n.overallRating,
+              data.avgRating == null ? '-' : '${data.avgRating!.toStringAsFixed(1)}/5',
+              valueColor: data.avgRating == null ? null : AppColors.warning,
+              note: data.ratingCount == 0 ? l10n.noRatingsYet : l10n.ratingCount(data.ratingCount),
+            ),
+            _statBox(l10n.avgWait, data.avgWaitAfterPayment ?? '-'),
+          ]),
+          AppGaps.h8,
+          Text(l10n.customersHint, style: AppTextStyles.caption),
+          if (data.recentFeedback.isNotEmpty) ...[
+            AppGaps.h16,
+            Text(l10n.recentFeedback, style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600)),
+            for (final f in data.recentFeedback) _feedbackRow(f),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _feedbackRow(FeedbackNote f) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: AppColors.grey100, borderRadius: BorderRadius.circular(12)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('"${f.text}"', style: AppTextStyles.body),
+          if (f.rating != null || f.at != null) ...[
+            AppGaps.h4,
+            Text(
+              [
+                if (f.rating != null) '${f.rating}/5',
+                if (f.at != null) '${f.at!.day}/${f.at!.month}',
+              ].join(' · '),
+              style: AppTextStyles.caption,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------
+  // Items: top sellers and what didn't sell
+  // ---------------------------------------------------------------------
+
+  Widget? _itemsCard(SalesModel data) {
+    if (data.totalItemsSold == 0 && data.topItems.isEmpty && data.unsoldItems.isEmpty) return null;
+    final l10n = context.l10n;
+    final best = data.topItems.isEmpty ? 0.0 : data.topItems.first.revenue;
+    const shown = 8;
+    return _sectionCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (data.totalItemsSold > 0) ...[
+            _statGrid([
+              _statBox(l10n.itemsSoldLabel, '${data.totalItemsSold}'),
+              _statBox(l10n.itemsPerOrder, data.avgItemsPerOrder.toStringAsFixed(1)),
+            ]),
+            AppGaps.h16,
+          ],
+          if (data.topItems.isNotEmpty) ...[
+            _sectionTitle(l10n.topSellers),
+            AppGaps.h8,
+            for (var i = 0; i < data.topItems.length; i++)
+              _itemRow(i + 1, data.topItems[i], best == 0 ? 0 : data.topItems[i].revenue / best),
+          ],
+          if (data.unsoldItems.isNotEmpty) ...[
+            if (data.topItems.isNotEmpty) AppGaps.h16,
+            _sectionTitle(l10n.notSold),
+            AppGaps.h4,
+            Text(l10n.notSoldHint, style: AppTextStyles.caption),
+            AppGaps.h12,
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final name in data.unsoldItems.take(shown))
+                  _chip(name, AppColors.grey100, AppColors.black),
+                if (data.unsoldItems.length > shown)
+                  _chip(l10n.andMore(data.unsoldItems.length - shown), AppColors.lightOrange, AppColors.primary),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _chip(String text, Color background, Color color) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+    decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(20)),
+    child: Text(text, style: AppTextStyles.caption.copyWith(color: color)),
+  );
+
+  /// Rank, name, sold count and revenue, over a bar for its share of the best seller.
+  Widget _itemRow(int rank, ItemStat item, double share) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              SizedBox(
+                width: 22,
+                child: Text(
+                  '$rank',
+                  style: AppTextStyles.caption.copyWith(color: AppColors.primary, fontWeight: FontWeight.w700),
+                ),
+              ),
+              Expanded(
+                child: Text(item.name, overflow: TextOverflow.ellipsis, style: AppTextStyles.body),
+              ),
+              AppGaps.w8,
+              Text(context.l10n.soldCount(item.qty), style: AppTextStyles.caption),
+              AppGaps.w8,
+              Text(_money(item.revenue), style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600)),
+            ],
+          ),
+          AppGaps.h4,
+          Padding(
+            padding: const EdgeInsets.only(left: 22),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: share.clamp(0, 1).toDouble() * _animationValue,
+                minHeight: 4,
+                backgroundColor: AppColors.grey200,
+                valueColor: const AlwaysStoppedAnimation(AppColors.primary),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------
+  // Order type (QR vs counter) + parcel
   // ---------------------------------------------------------------------
 
   Widget _orderTypeCard(SalesModel data) {
     final totalTypeOrders = data.qrOrders + data.manualOrders;
-    final qrShare = totalTypeOrders == 0
-        ? 0.0
-        : data.qrOrders / totalTypeOrders;
+    final qrShare = totalTypeOrders == 0 ? 0.0 : data.qrOrders / totalTypeOrders;
 
     return _sectionCard(
       child: Column(
@@ -651,281 +903,7 @@ class _SalesScreenState extends State<SalesScreen> {
           ),
           AppGaps.w8,
           Expanded(
-            child: Text(
-              label,
-              style: AppTextStyles.caption,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ---------------------------------------------------------------------
-  // Busy hours
-  // ---------------------------------------------------------------------
-
-  Widget _busyHoursCard(SalesModel data) {
-    final entries = data.busyHours.where((e) => e.count > 0).toList();
-
-    if (entries.isEmpty) {
-      return _sectionCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _sectionTitle(context.l10n.busyHours),
-            AppGaps.h8,
-            Text(context.l10n.noOrdersInPeriod, style: AppTextStyles.caption),
-          ],
-        ),
-      );
-    }
-
-    final maxVal = entries.map((e) => e.count).reduce((a, b) => a > b ? a : b);
-
-    return _sectionCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _sectionTitle(
-            context.l10n.busyHours,
-            trailing: data.peakHour != null
-                ? context.l10n.peakHour(HourCount(hour: data.peakHour!, count: 0).label)
-                : null,
-          ),
-          AppGaps.h16,
-          SizedBox(
-            height: 180,
-            child: BarChart(
-              BarChartData(
-                maxY: maxVal.toDouble() + (maxVal * 0.2),
-                gridData: const FlGridData(show: false),
-                borderData: FlBorderData(show: false),
-                titlesData: FlTitlesData(
-                  leftTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 28,
-                      getTitlesWidget: (value, _) {
-                        final index = value.toInt();
-                        if (index >= entries.length) return const SizedBox();
-
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 6),
-                          child: Text(
-                            entries[index].label,
-                            style: AppTextStyles.caption,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                barGroups: List.generate(entries.length, (i) {
-                  final entry = entries[i];
-                  final isPeak = entry.hour == data.peakHour;
-
-                  return BarChartGroupData(
-                    x: i,
-                    barRods: [
-                      BarChartRodData(
-                        toY: entry.count.toDouble() * _animationValue,
-                        width: entries.length > 10 ? 14 : 24,
-                        borderRadius: BorderRadius.circular(8),
-                        color: isPeak ? AppColors.primary : AppColors.grey300,
-                      ),
-                    ],
-                  );
-                }),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-  // ---------------------------------------------------------------------
-  // Timing
-  // ---------------------------------------------------------------------
-
-  Widget _timingCard(SalesModel data) {
-    return _sectionCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _sectionTitle(context.l10n.timing),
-          _timingRow(Icons.timer_outlined, context.l10n.avgPrepTime, data.avgPrepTime),
-          _timingRow(Icons.bolt_outlined, context.l10n.fastestOrder, data.fastestOrder),
-          _timingRow(
-            Icons.hourglass_bottom_outlined,
-            context.l10n.slowestOrder,
-            data.slowestOrder,
-          ),
-          _timingRow(
-            Icons.payments_outlined,
-            context.l10n.avgPaymentTime,
-            data.avgPaymentTime,
-          ),
-          _timingRow(
-            Icons.check_circle_outline,
-            context.l10n.avgServeAfterPayment,
-            data.avgServeAfterPaymentTime,
-          ),
-          _timingRow(
-            Icons.swap_horiz,
-            context.l10n.avgTimeBetweenOrders,
-            data.averageTimeBetweenOrders,
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ---------------------------------------------------------------------
-  // Top / bottom items
-  // ---------------------------------------------------------------------
-
-  Widget _leaderboardCard(SalesModel data) {
-    return _sectionCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _sectionTitle(context.l10n.itemLeaderboard),
-          AppGaps.h12,
-          if (data.topRevenueItem != null || data.topVolumeItem != null)
-            Row(
-              children: [
-                if (data.topRevenueItem != null)
-                  _badge(
-                    Icons.star_rounded,
-                    context.l10n.topRevenue,
-                    data.topRevenueItem!,
-                    AppColors.primary,
-                  ),
-                if (data.topRevenueItem != null && data.topVolumeItem != null)
-                  AppGaps.w8,
-                if (data.topVolumeItem != null)
-                  _badge(
-                    Icons.local_fire_department_rounded,
-                    context.l10n.topVolume,
-                    data.topVolumeItem!,
-                    AppColors.success,
-                  ),
-              ],
-            ),
-          AppGaps.h16,
-          if (data.topItems.isNotEmpty) ...[
-            Text(
-              context.l10n.topSellers,
-              style: AppTextStyles.caption.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            AppGaps.h8,
-            ...List.generate(
-              data.topItems.length,
-              (i) => _itemRow(i + 1, data.topItems[i], AppColors.success),
-            ),
-          ],
-          if (data.bottomItems.isNotEmpty) ...[
-            AppGaps.h16,
-            Text(
-              context.l10n.needsAPush,
-              style: AppTextStyles.caption.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            AppGaps.h8,
-            ...List.generate(
-              data.bottomItems.length,
-              (i) => _itemRow(i + 1, data.bottomItems[i], AppColors.error),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _badge(IconData icon, String label, String value, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, size: 14, color: color),
-                AppGaps.w4,
-                Flexible(
-                  child: Text(
-                    label,
-                    style: AppTextStyles.caption.copyWith(color: color),
-                  ),
-                ),
-              ],
-            ),
-            AppGaps.h4,
-            Text(
-              value,
-              overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _itemRow(int rank, ItemStat item, Color rankColor) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Container(
-            width: 22,
-            height: 22,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: rankColor.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-            ),
-            child: Text(
-              "$rank",
-              style: AppTextStyles.caption.copyWith(
-                color: rankColor,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          AppGaps.w8,
-          Expanded(
-            child: Text(
-              item.name,
-              overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.body,
-            ),
-          ),
-          // Two narrow lines: count above revenue, so the name keeps room.
-          Text(context.l10n.soldCount(item.qty), style: AppTextStyles.caption),
-          AppGaps.w8,
-          Text(
-            _money(item.revenue),
-            style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600),
+            child: Text(label, style: AppTextStyles.caption, overflow: TextOverflow.ellipsis),
           ),
         ],
       ),

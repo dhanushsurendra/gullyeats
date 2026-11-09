@@ -315,36 +315,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get avgOrder => 'औसत ऑर्डर';
 
   @override
-  String get highest => 'सबसे ज़्यादा';
-
-  @override
-  String get lowest => 'सबसे कम';
-
-  @override
-  String get completionRate => 'पूरा होने की दर';
-
-  @override
-  String get paymentRate => 'भुगतान दर';
-
-  @override
-  String get cancellationRate => 'रद्द होने की दर';
-
-  @override
-  String get itemsSold => 'बिके आइटम';
-
-  @override
-  String get totalSold => 'कुल बिके';
-
-  @override
-  String get unique => 'अलग-अलग';
-
-  @override
-  String get avgPerOrder => 'औसत / ऑर्डर';
-
-  @override
-  String get maxInOneOrder => '1 ऑर्डर में सबसे ज़्यादा';
-
-  @override
   String get orderType => 'ऑर्डर का प्रकार';
 
   @override
@@ -354,40 +324,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get avgParcelCharge => 'औसत पार्सल चार्ज';
 
   @override
-  String get timing => 'समय';
-
-  @override
-  String get avgPrepTime => 'औसत तैयारी समय';
-
-  @override
-  String get fastestOrder => 'सबसे तेज़ ऑर्डर';
-
-  @override
-  String get slowestOrder => 'सबसे धीमा ऑर्डर';
-
-  @override
-  String get avgPaymentTime => 'औसत भुगतान समय';
-
-  @override
-  String get avgServeAfterPayment => 'भुगतान के बाद परोसने का औसत समय';
-
-  @override
-  String get avgTimeBetweenOrders => 'ऑर्डरों के बीच औसत समय';
-
-  @override
-  String get itemLeaderboard => 'आइटम रैंकिंग';
-
-  @override
-  String get topRevenue => 'सबसे ज़्यादा कमाई';
-
-  @override
-  String get topVolume => 'सबसे ज़्यादा बिके';
-
-  @override
   String get topSellers => 'सबसे लोकप्रिय';
-
-  @override
-  String get needsAPush => 'कम बिक रहे';
 
   @override
   String qrOrdersSummary(int count, String amount) {
@@ -1150,6 +1087,10 @@ class AppLocalizationsHi extends AppLocalizations {
       'आपका लॉगिन खत्म हो गया है। कृपया फिर से लॉगिन करें।';
 
   @override
+  String get wrongIdOrPin =>
+      'वेंडर ID या PIN गलत है। कृपया जांचें और फिर से कोशिश करें।';
+
+  @override
   String get checkInternet => 'अपना इंटरनेट कनेक्शन जाँचें';
 
   @override
@@ -1219,4 +1160,104 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get darkThemeSubtitle => 'रात में आँखों को आराम';
+
+  @override
+  String get comparedDayBefore => 'पिछले दिन की तुलना में';
+
+  @override
+  String comparedDaysBefore(int days) {
+    return 'पिछले $days दिनों की तुलना में';
+  }
+
+  @override
+  String get revenueLabel => 'कमाई';
+
+  @override
+  String get paidOrdersLabel => 'भुगतान वाले ऑर्डर';
+
+  @override
+  String get noSalesBefore => 'पहले नहीं';
+
+  @override
+  String get dailySales => 'रोज़ की बिक्री';
+
+  @override
+  String bestDay(String day) {
+    return 'सबसे अच्छा: $day';
+  }
+
+  @override
+  String get missedMoney => 'छूटा हुआ पैसा';
+
+  @override
+  String missedUnpaid(int count, String amount) {
+    return '$count बिना भुगतान · $amount';
+  }
+
+  @override
+  String missedCancelled(int count, String amount) {
+    return '$count रद्द · $amount';
+  }
+
+  @override
+  String get missedHint =>
+      'बिना भुगतान वाले ऑर्डर वे ग्राहक हैं जिन्होंने QR से ऑर्डर किया पर पैसे नहीं दिए।';
+
+  @override
+  String get customersAndService => 'ग्राहक और सेवा';
+
+  @override
+  String get customersLabel => 'ग्राहक';
+
+  @override
+  String returningCount(int count) {
+    return '$count दोबारा आए';
+  }
+
+  @override
+  String ratingCount(int count) {
+    return '$count रेटिंग';
+  }
+
+  @override
+  String get noRatingsYet => 'अभी कोई रेटिंग नहीं';
+
+  @override
+  String get avgWait => 'भुगतान के बाद औसत इंतज़ार';
+
+  @override
+  String get customersHint =>
+      'केवल वे ग्राहक गिने गए हैं जिन्होंने भुगतान किया और फ़ोन नंबर दिया।';
+
+  @override
+  String get notSold => 'नहीं बिका';
+
+  @override
+  String get notSoldHint =>
+      'मेन्यू में है, पर इस समय में कोई भुगतान वाला ऑर्डर नहीं।';
+
+  @override
+  String andMore(int count) {
+    return '+$count और';
+  }
+
+  @override
+  String get atAGlance => 'एक नज़र में';
+
+  @override
+  String get itemsSoldLabel => 'बिके आइटम';
+
+  @override
+  String get itemsPerOrder => 'प्रति ऑर्डर आइटम';
+
+  @override
+  String get overallRating => 'कुल रेटिंग';
+
+  @override
+  String get recentFeedback => 'ताज़ा राय';
+
+  @override
+  String bestWeekday(String day) {
+    return 'आपका सबसे अच्छा दिन आमतौर पर $day होता है';
+  }
 }

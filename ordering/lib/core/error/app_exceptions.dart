@@ -10,8 +10,9 @@ class AppExceptionHandler {
       // Every screen reports errors through here, so this is the one place
       // that notices an expired login.
       if (error.statusCode == 401) {
-        handleUnauthorized();
-        return LanguageProvider.strings.sessionExpired;
+        return handleUnauthorized()
+            ? LanguageProvider.strings.sessionExpired
+            : LanguageProvider.strings.wrongIdOrPin;
       }
       return error.message;
     }

@@ -132,6 +132,22 @@ final salesJson = {
   'bottomItems': [
     {'name': 'Filter Coffee', 'revenue': 120, 'qty': 6},
   ],
+  'hours': [
+    for (var h = 8; h < 22; h++) {'hour': h, 'count': (h * 7) % 23},
+  ],
+  'days': [
+    {'day': '2026-11-06', 'revenue': 15840, 'orders': 110},
+  ],
+  'previous': {'revenue': 14100, 'orders': 118, 'avgOrderValue': 119.5},
+  'unpaidValue': 520, 'cancelledValue': 780,
+  'customers': 64, 'returningCustomers': 21,
+  'avgRating': 4.4, 'ratingCount': 18,
+  'avgWaitAfterPayment': '3 min 30 sec',
+  'recentFeedback': [
+    {'text': 'Best masala dosa on this road, but the chutney ran out by 1 PM. Please make more on weekends!', 'rating': 4, 'at': '2026-11-06T08:30:00Z'},
+    {'text': 'Too slow at lunch', 'rating': 2, 'at': '2026-11-05T07:10:00Z'},
+  ],
+  'unsoldItems': ['Rava Kesari Bath with Ghee and Cashews', 'Onion Uttapam', 'Lemon Rice', 'Curd Rice', 'Vada', 'Pongal', 'Bisi Bele Bath', 'Rose Milk', 'Badam Milk', 'Buttermilk'],
 };
 
 final _payment = {

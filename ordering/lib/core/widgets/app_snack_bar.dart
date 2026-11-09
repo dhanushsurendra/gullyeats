@@ -37,7 +37,7 @@ class AppSnackBar {
           ],
         ),
         backgroundColor: isInfo
-            ? AppColors.grey600
+            ? AppColors.snackBar
             : isError
             ? AppColors.error
             : AppColors.success,

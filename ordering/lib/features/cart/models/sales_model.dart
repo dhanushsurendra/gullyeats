@@ -32,66 +32,84 @@ class HourCount {
   }
 }
 
+/// Paid revenue on one IST day ("2026-11-06").
+class DaySales {
+  final DateTime day;
+  final double revenue;
+
+  const DaySales({required this.day, required this.revenue});
+
+  factory DaySales.fromJson(Map<String, dynamic> json) => DaySales(
+    day: DateTime.tryParse(json['day']?.toString() ?? '') ?? DateTime(2000),
+    revenue: _toDouble(json['revenue']),
+  );
+}
+
+/// A customer's written feedback (with their star rating, if they gave one).
+class FeedbackNote {
+  final String text;
+  final int? rating;
+  final DateTime? at;
+
+  const FeedbackNote({required this.text, this.rating, this.at});
+
+  factory FeedbackNote.fromJson(Map<String, dynamic> json) => FeedbackNote(
+    text: json['text']?.toString() ?? '',
+    rating: json['rating'] == null ? null : _toInt(json['rating']),
+    at: DateTime.tryParse(json['at']?.toString() ?? '')?.toLocal(),
+  );
+}
+
+/// The vendor's sales report for a date range. Fields added later
+/// (comparison, days, customers, ratings, feedback, unsold items) are null or empty
+/// when the backend is older, and the screen leaves those parts out.
 class SalesModel {
-  // revenue
+  // revenue (the hero card)
   final double revenue;
   final double subtotalRevenue;
   final double parcelRevenue;
   final double platformFeeRevenue;
   final double netRevenue;
 
-  // order counts
-  final int totalOrders;
-  final int pendingOrders;
-  final int paidOrders;
-  final int servedOrders;
-  final int cancelledOrders;
-
-  // rates (0-100)
-  final double completionRate;
-  final double cancellationRate;
-  final double paymentRate;
-
-  // order value
+  // orders
+  final int paidOrders; // PAID + SERVED: every order that brought money in
   final double avgOrderValue;
-  final double highestOrder;
-  final double lowestOrder;
-  final double revenuePerOrder;
+  final int pendingOrders;
+  final int cancelledOrders;
+  final double unpaidValue;
+  final double cancelledValue;
 
-  // items
-  final int totalItemsSold;
-  final double avgItemsPerOrder;
-  final int highestItemsInOrder;
-  final int uniqueItemsSold;
+  // the same number of days just before
+  final double? previousRevenue;
+  final int? previousOrders;
+  final double? previousAvgOrderValue;
 
-  // timings (already formatted strings from backend, e.g. "4 min 12 sec")
-  final String? avgPrepTime;
-  final String? fastestOrder;
-  final String? slowestOrder;
-  final String? avgPaymentTime;
-  final String? avgServeAfterPaymentTime;
-
-  // timing patterns
+  // trends
+  final List<DaySales> days;
+  final List<HourCount> hours;
   final int? peakHour;
-  final int? slowestHour;
-  final List<HourCount> busyHours;
-  final String? averageTimeBetweenOrders;
 
-  // order type
+  // customers and service; the rating and feedback are all-time
+  final int customers;
+  final int returningCustomers;
+  final double? avgRating;
+  final int ratingCount;
+  final List<FeedbackNote> recentFeedback;
+  final String? avgWaitAfterPayment;
+
+  // order type and parcel
   final int qrOrders;
   final int manualOrders;
   final double qrRevenue;
   final double manualRevenue;
-
-  // parcel
   final int parcelOrders;
   final double avgParcelCharge;
 
-  // items leaderboard
-  final String? topRevenueItem;
-  final String? topVolumeItem;
+  // items
+  final int totalItemsSold;
+  final double avgItemsPerOrder;
   final List<ItemStat> topItems;
-  final List<ItemStat> bottomItems;
+  final List<String> unsoldItems;
 
   const SalesModel({
     required this.revenue,
@@ -99,91 +117,76 @@ class SalesModel {
     required this.parcelRevenue,
     required this.platformFeeRevenue,
     required this.netRevenue,
-    required this.totalOrders,
-    required this.pendingOrders,
     required this.paidOrders,
-    required this.servedOrders,
-    required this.cancelledOrders,
-    required this.completionRate,
-    required this.cancellationRate,
-    required this.paymentRate,
     required this.avgOrderValue,
-    required this.highestOrder,
-    required this.lowestOrder,
-    required this.revenuePerOrder,
-    required this.totalItemsSold,
-    required this.avgItemsPerOrder,
-    required this.highestItemsInOrder,
-    required this.uniqueItemsSold,
-    this.avgPrepTime,
-    this.fastestOrder,
-    this.slowestOrder,
-    this.avgPaymentTime,
-    this.avgServeAfterPaymentTime,
+    required this.pendingOrders,
+    required this.cancelledOrders,
+    required this.unpaidValue,
+    required this.cancelledValue,
+    this.previousRevenue,
+    this.previousOrders,
+    this.previousAvgOrderValue,
+    required this.days,
+    required this.hours,
     this.peakHour,
-    this.slowestHour,
-    required this.busyHours,
-    this.averageTimeBetweenOrders,
+    required this.customers,
+    required this.returningCustomers,
+    this.avgRating,
+    required this.ratingCount,
+    required this.recentFeedback,
+    this.avgWaitAfterPayment,
     required this.qrOrders,
     required this.manualOrders,
     required this.qrRevenue,
     required this.manualRevenue,
     required this.parcelOrders,
     required this.avgParcelCharge,
-    this.topRevenueItem,
-    this.topVolumeItem,
+    required this.totalItemsSold,
+    required this.avgItemsPerOrder,
     required this.topItems,
-    required this.bottomItems,
+    required this.unsoldItems,
   });
 
   factory SalesModel.fromJson(Map<String, dynamic> json) {
+    final previous = json['previous'] as Map<String, dynamic>?;
+    List<T> list<T>(String key, T Function(Map<String, dynamic>) parse) =>
+        ((json[key] as List?) ?? []).map((e) => parse(e as Map<String, dynamic>)).toList();
+
     return SalesModel(
       revenue: _toDouble(json['revenue']),
       subtotalRevenue: _toDouble(json['subtotalRevenue']),
       parcelRevenue: _toDouble(json['parcelRevenue']),
       platformFeeRevenue: _toDouble(json['platformFeeRevenue']),
       netRevenue: _toDouble(json['netRevenue']),
-      totalOrders: _toInt(json['totalOrders']),
-      pendingOrders: _toInt(json['pendingOrders']),
-      paidOrders: _toInt(json['paidOrders']),
-      servedOrders: _toInt(json['servedOrders']),
-      cancelledOrders: _toInt(json['cancelledOrders']),
-      completionRate: _toDouble(json['completionRate']),
-      cancellationRate: _toDouble(json['cancellationRate']),
-      paymentRate: _toDouble(json['paymentRate']),
+      paidOrders: _toInt(json['paidOrders']) + _toInt(json['servedOrders']),
       avgOrderValue: _toDouble(json['avgOrderValue']),
-      highestOrder: _toDouble(json['highestOrder']),
-      lowestOrder: _toDouble(json['lowestOrder']),
-      revenuePerOrder: _toDouble(json['revenuePerOrder']),
-      totalItemsSold: _toInt(json['totalItemsSold']),
-      avgItemsPerOrder: _toDouble(json['avgItemsPerOrder']),
-      highestItemsInOrder: _toInt(json['highestItemsInOrder']),
-      uniqueItemsSold: _toInt(json['uniqueItemsSold']),
-      avgPrepTime: json['avgPrepTime']?.toString(),
-      fastestOrder: json['fastestOrder']?.toString(),
-      slowestOrder: json['slowestOrder']?.toString(),
-      avgPaymentTime: json['avgPaymentTime']?.toString(),
-      avgServeAfterPaymentTime: json['avgServeAfterPaymentTime']?.toString(),
+      pendingOrders: _toInt(json['pendingOrders']),
+      cancelledOrders: _toInt(json['cancelledOrders']),
+      unpaidValue: _toDouble(json['unpaidValue']),
+      cancelledValue: _toDouble(json['cancelledValue']),
+      previousRevenue: previous == null ? null : _toDouble(previous['revenue']),
+      previousOrders: previous == null ? null : _toInt(previous['orders']),
+      previousAvgOrderValue: previous == null ? null : _toDouble(previous['avgOrderValue']),
+      days: list('days', DaySales.fromJson),
+      // An older backend sends only the top five hours, as busyHours.
+      hours: list(json['hours'] == null ? 'busyHours' : 'hours', HourCount.fromJson),
       peakHour: json['peakHour'] == null ? null : _toInt(json['peakHour']),
-      slowestHour: json['slowestHour'] == null ? null : _toInt(json['slowestHour']),
-      busyHours: ((json['busyHours'] as List?) ?? [])
-          .map((e) => HourCount.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      averageTimeBetweenOrders: json['averageTimeBetweenOrders']?.toString(),
+      customers: _toInt(json['customers']),
+      returningCustomers: _toInt(json['returningCustomers']),
+      avgRating: json['avgRating'] == null ? null : _toDouble(json['avgRating']),
+      ratingCount: _toInt(json['ratingCount']),
+      recentFeedback: list('recentFeedback', FeedbackNote.fromJson),
+      avgWaitAfterPayment: (json['avgWaitAfterPayment'] ?? json['avgServeAfterPaymentTime'])?.toString(),
       qrOrders: _toInt(json['qrOrders']),
       manualOrders: _toInt(json['manualOrders']),
       qrRevenue: _toDouble(json['qrRevenue']),
       manualRevenue: _toDouble(json['manualRevenue']),
       parcelOrders: _toInt(json['parcelOrders']),
       avgParcelCharge: _toDouble(json['avgParcelCharge']),
-      topRevenueItem: json['topRevenueItem']?.toString(),
-      topVolumeItem: json['topVolumeItem']?.toString(),
-      topItems: ((json['topItems'] as List?) ?? [])
-          .map((e) => ItemStat.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      bottomItems: ((json['bottomItems'] as List?) ?? [])
-          .map((e) => ItemStat.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      totalItemsSold: _toInt(json['totalItemsSold']),
+      avgItemsPerOrder: _toDouble(json['avgItemsPerOrder']),
+      topItems: list('topItems', ItemStat.fromJson),
+      unsoldItems: ((json['unsoldItems'] as List?) ?? []).map((e) => e.toString()).toList(),
     );
   }
 }

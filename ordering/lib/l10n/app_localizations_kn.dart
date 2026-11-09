@@ -316,36 +316,6 @@ class AppLocalizationsKn extends AppLocalizations {
   String get avgOrder => 'ಸರಾಸರಿ ಆರ್ಡರ್';
 
   @override
-  String get highest => 'ಅತಿ ಹೆಚ್ಚು';
-
-  @override
-  String get lowest => 'ಅತಿ ಕಡಿಮೆ';
-
-  @override
-  String get completionRate => 'ಪೂರ್ಣಗೊಂಡ ದರ';
-
-  @override
-  String get paymentRate => 'ಪಾವತಿ ದರ';
-
-  @override
-  String get cancellationRate => 'ರದ್ದತಿ ದರ';
-
-  @override
-  String get itemsSold => 'ಮಾರಾಟವಾದ ಐಟಂಗಳು';
-
-  @override
-  String get totalSold => 'ಒಟ್ಟು ಮಾರಾಟ';
-
-  @override
-  String get unique => 'ವಿಭಿನ್ನ';
-
-  @override
-  String get avgPerOrder => 'ಸರಾಸರಿ / ಆರ್ಡರ್';
-
-  @override
-  String get maxInOneOrder => '1 ಆರ್ಡರ್‌ನಲ್ಲಿ ಗರಿಷ್ಠ';
-
-  @override
   String get orderType => 'ಆರ್ಡರ್ ಪ್ರಕಾರ';
 
   @override
@@ -355,40 +325,7 @@ class AppLocalizationsKn extends AppLocalizations {
   String get avgParcelCharge => 'ಸರಾಸರಿ ಪಾರ್ಸೆಲ್ ಶುಲ್ಕ';
 
   @override
-  String get timing => 'ಸಮಯ';
-
-  @override
-  String get avgPrepTime => 'ಸರಾಸರಿ ತಯಾರಿ ಸಮಯ';
-
-  @override
-  String get fastestOrder => 'ಅತಿ ವೇಗದ ಆರ್ಡರ್';
-
-  @override
-  String get slowestOrder => 'ಅತಿ ನಿಧಾನದ ಆರ್ಡರ್';
-
-  @override
-  String get avgPaymentTime => 'ಸರಾಸರಿ ಪಾವತಿ ಸಮಯ';
-
-  @override
-  String get avgServeAfterPayment => 'ಪಾವತಿಯ ನಂತರ ಸರ್ವ್ ಮಾಡುವ ಸರಾಸರಿ ಸಮಯ';
-
-  @override
-  String get avgTimeBetweenOrders => 'ಆರ್ಡರ್‌ಗಳ ನಡುವಿನ ಸರಾಸರಿ ಸಮಯ';
-
-  @override
-  String get itemLeaderboard => 'ಐಟಂ ಶ್ರೇಯಾಂಕ';
-
-  @override
-  String get topRevenue => 'ಅತಿ ಹೆಚ್ಚು ಆದಾಯ';
-
-  @override
-  String get topVolume => 'ಅತಿ ಹೆಚ್ಚು ಮಾರಾಟ';
-
-  @override
   String get topSellers => 'ಜನಪ್ರಿಯ ಐಟಂಗಳು';
-
-  @override
-  String get needsAPush => 'ಕಡಿಮೆ ಮಾರಾಟ';
 
   @override
   String qrOrdersSummary(int count, String amount) {
@@ -1152,6 +1089,10 @@ class AppLocalizationsKn extends AppLocalizations {
       'ನಿಮ್ಮ ಲಾಗಿನ್ ಅವಧಿ ಮುಗಿದಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಲಾಗಿನ್ ಮಾಡಿ.';
 
   @override
+  String get wrongIdOrPin =>
+      'ವೆಂಡರ್ ID ಅಥವಾ PIN ತಪ್ಪಾಗಿದೆ. ದಯವಿಟ್ಟು ಪರಿಶೀಲಿಸಿ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.';
+
+  @override
   String get checkInternet => 'ನಿಮ್ಮ ಇಂಟರ್ನೆಟ್ ಸಂಪರ್ಕ ಪರಿಶೀಲಿಸಿ';
 
   @override
@@ -1221,4 +1162,104 @@ class AppLocalizationsKn extends AppLocalizations {
 
   @override
   String get darkThemeSubtitle => 'ರಾತ್ರಿ ಕಣ್ಣಿಗೆ ಹಿತ';
+
+  @override
+  String get comparedDayBefore => 'ಹಿಂದಿನ ದಿನಕ್ಕೆ ಹೋಲಿಸಿದರೆ';
+
+  @override
+  String comparedDaysBefore(int days) {
+    return 'ಹಿಂದಿನ $days ದಿನಗಳಿಗೆ ಹೋಲಿಸಿದರೆ';
+  }
+
+  @override
+  String get revenueLabel => 'ಆದಾಯ';
+
+  @override
+  String get paidOrdersLabel => 'ಪಾವತಿಸಿದ ಆರ್ಡರ್‌ಗಳು';
+
+  @override
+  String get noSalesBefore => 'ಹಿಂದೆ ಇಲ್ಲ';
+
+  @override
+  String get dailySales => 'ದಿನದ ಮಾರಾಟ';
+
+  @override
+  String bestDay(String day) {
+    return 'ಉತ್ತಮ: $day';
+  }
+
+  @override
+  String get missedMoney => 'ಕೈತಪ್ಪಿದ ಹಣ';
+
+  @override
+  String missedUnpaid(int count, String amount) {
+    return '$count ಪಾವತಿಯಾಗಿಲ್ಲ · $amount';
+  }
+
+  @override
+  String missedCancelled(int count, String amount) {
+    return '$count ರದ್ದು · $amount';
+  }
+
+  @override
+  String get missedHint =>
+      'ಪಾವತಿಯಾಗದ ಆರ್ಡರ್‌ಗಳು ಅಂದರೆ QR ನಲ್ಲಿ ಆರ್ಡರ್ ಮಾಡಿ ಹಣ ಕೊಡದ ಗ್ರಾಹಕರು.';
+
+  @override
+  String get customersAndService => 'ಗ್ರಾಹಕರು ಮತ್ತು ಸೇವೆ';
+
+  @override
+  String get customersLabel => 'ಗ್ರಾಹಕರು';
+
+  @override
+  String returningCount(int count) {
+    return '$count ಮತ್ತೆ ಬಂದರು';
+  }
+
+  @override
+  String ratingCount(int count) {
+    return '$count ರೇಟಿಂಗ್‌ಗಳು';
+  }
+
+  @override
+  String get noRatingsYet => 'ಇನ್ನೂ ರೇಟಿಂಗ್ ಇಲ್ಲ';
+
+  @override
+  String get avgWait => 'ಪಾವತಿಯ ನಂತರ ಸರಾಸರಿ ಕಾಯುವಿಕೆ';
+
+  @override
+  String get customersHint =>
+      'ಪಾವತಿಸಿ ಫೋನ್ ನಂಬರ್ ಕೊಟ್ಟ ಗ್ರಾಹಕರನ್ನು ಮಾತ್ರ ಎಣಿಸಲಾಗಿದೆ.';
+
+  @override
+  String get notSold => 'ಮಾರಾಟವಾಗಲಿಲ್ಲ';
+
+  @override
+  String get notSoldHint =>
+      'ಮೆನುವಿನಲ್ಲಿದೆ, ಆದರೆ ಈ ಅವಧಿಯಲ್ಲಿ ಪಾವತಿಸಿದ ಆರ್ಡರ್ ಇಲ್ಲ.';
+
+  @override
+  String andMore(int count) {
+    return '+$count ಇನ್ನಷ್ಟು';
+  }
+
+  @override
+  String get atAGlance => 'ಒಂದು ನೋಟದಲ್ಲಿ';
+
+  @override
+  String get itemsSoldLabel => 'ಮಾರಾಟವಾದ ಐಟಂಗಳು';
+
+  @override
+  String get itemsPerOrder => 'ಪ್ರತಿ ಆರ್ಡರ್‌ಗೆ ಐಟಂಗಳು';
+
+  @override
+  String get overallRating => 'ಒಟ್ಟು ರೇಟಿಂಗ್';
+
+  @override
+  String get recentFeedback => 'ಇತ್ತೀಚಿನ ಅಭಿಪ್ರಾಯ';
+
+  @override
+  String bestWeekday(String day) {
+    return 'ನಿಮ್ಮ ಉತ್ತಮ ದಿನ ಸಾಮಾನ್ಯವಾಗಿ $day';
+  }
 }

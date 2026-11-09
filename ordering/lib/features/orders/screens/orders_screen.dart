@@ -386,7 +386,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
                     padding: const EdgeInsets.only(bottom: 12),
                     child: OrderCard(
                       isFresh: provider.isFresh(order.id),
-                      onTap: order.status == 'CANCELLED'
+                      // The server refuses edits to served and cancelled orders.
+                      onTap: order.status == 'CANCELLED' || order.status == 'SERVED'
                           ? null
                           : () => showModalBottomSheet(
                               context: context,
@@ -483,11 +484,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
       padding: const EdgeInsets.symmetric(vertical: 32),
       child: Column(
         children: [
-          Image.asset(
-            'assets/images/no_orders.png',
-            height: illustrationHeight(context, 180),
-            fit: BoxFit.contain,
-          ),
+          _NoOrdersArt(size: illustrationHeight(context, 180)),
           AppGaps.h16,
           Text(
             switch (selectedTab) {
@@ -499,6 +496,54 @@ class _OrdersScreenState extends State<OrdersScreen> {
             textAlign: TextAlign.center,
             style: AppTextStyles.body.copyWith(color: AppColors.grey400),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Empty-orders illustration drawn from theme colours, so it sits on the page
+/// in both themes: a receipt in a soft orange circle, with a clock badge.
+class _NoOrdersArt extends StatelessWidget {
+  final double size;
+  const _NoOrdersArt({required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox.square(
+      dimension: size,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(
+            width: size * 0.82,
+            height: size * 0.82,
+            decoration: BoxDecoration(color: AppColors.lightOrange, shape: BoxShape.circle),
+          ),
+          Icon(Icons.receipt_long_rounded, size: size * 0.42, color: AppColors.primary),
+          Positioned(
+            right: size * 0.16,
+            bottom: size * 0.18,
+            child: Container(
+              padding: EdgeInsets.all(size * 0.035),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.lightOrange, width: 3),
+              ),
+              child: Icon(Icons.schedule_rounded, size: size * 0.14, color: AppColors.grey500),
+            ),
+          ),
+          for (final (dx, dy, r) in [(0.12, 0.22, 0.03), (0.86, 0.26, 0.022), (0.2, 0.84, 0.02)])
+            Positioned(
+              left: size * dx,
+              top: size * dy,
+              child: Container(
+                width: size * r * 2,
+                height: size * r * 2,
+                decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+              ),
+            ),
         ],
       ),
     );

@@ -41,13 +41,15 @@ Future<void> signOut(BuildContext context) async {
 }
 
 /// Called for every 401. With a saved session, the token has expired or
-/// was revoked, so log out. Without one it's a failed login, left alone.
-void handleUnauthorized() {
+/// was revoked, so log out and return true. Without one it's a failed login
+/// (wrong ID or PIN): left alone, returns false.
+bool handleUnauthorized() {
   final context = navigatorKey.currentContext;
-  if (context == null) return;
+  if (context == null) return false;
 
   final token = context.read<AuthProvider>().token;
-  if (token == null || token.isEmpty) return;
+  if (token == null || token.isEmpty) return false;
 
   signOut(context);
+  return true;
 }

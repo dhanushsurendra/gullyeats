@@ -51,6 +51,15 @@ class AppTheme {
       ),
     ),
 
+    // For plain SnackBars; AppSnackBar sets its own colours.
+    snackBarTheme: SnackBarThemeData(
+      backgroundColor: AppColors.snackBar,
+      contentTextStyle: AppTextStyles.body.copyWith(color: AppColors.white),
+      actionTextColor: AppColors.primary,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ),
+
     dividerColor: AppColors.grey100,
   );
 }

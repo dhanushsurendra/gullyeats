@@ -702,66 +702,6 @@ abstract class AppLocalizations {
   /// **'Avg Order'**
   String get avgOrder;
 
-  /// No description provided for @highest.
-  ///
-  /// In en, this message translates to:
-  /// **'Highest'**
-  String get highest;
-
-  /// No description provided for @lowest.
-  ///
-  /// In en, this message translates to:
-  /// **'Lowest'**
-  String get lowest;
-
-  /// No description provided for @completionRate.
-  ///
-  /// In en, this message translates to:
-  /// **'Completion Rate'**
-  String get completionRate;
-
-  /// No description provided for @paymentRate.
-  ///
-  /// In en, this message translates to:
-  /// **'Payment Rate'**
-  String get paymentRate;
-
-  /// No description provided for @cancellationRate.
-  ///
-  /// In en, this message translates to:
-  /// **'Cancellation Rate'**
-  String get cancellationRate;
-
-  /// No description provided for @itemsSold.
-  ///
-  /// In en, this message translates to:
-  /// **'Items Sold'**
-  String get itemsSold;
-
-  /// No description provided for @totalSold.
-  ///
-  /// In en, this message translates to:
-  /// **'Total Sold'**
-  String get totalSold;
-
-  /// No description provided for @unique.
-  ///
-  /// In en, this message translates to:
-  /// **'Unique'**
-  String get unique;
-
-  /// No description provided for @avgPerOrder.
-  ///
-  /// In en, this message translates to:
-  /// **'Avg / Order'**
-  String get avgPerOrder;
-
-  /// No description provided for @maxInOneOrder.
-  ///
-  /// In en, this message translates to:
-  /// **'Max in 1 Order'**
-  String get maxInOneOrder;
-
   /// No description provided for @orderType.
   ///
   /// In en, this message translates to:
@@ -780,77 +720,11 @@ abstract class AppLocalizations {
   /// **'Avg Parcel Charge'**
   String get avgParcelCharge;
 
-  /// No description provided for @timing.
-  ///
-  /// In en, this message translates to:
-  /// **'Timing'**
-  String get timing;
-
-  /// No description provided for @avgPrepTime.
-  ///
-  /// In en, this message translates to:
-  /// **'Avg Prep Time'**
-  String get avgPrepTime;
-
-  /// No description provided for @fastestOrder.
-  ///
-  /// In en, this message translates to:
-  /// **'Fastest Order'**
-  String get fastestOrder;
-
-  /// No description provided for @slowestOrder.
-  ///
-  /// In en, this message translates to:
-  /// **'Slowest Order'**
-  String get slowestOrder;
-
-  /// No description provided for @avgPaymentTime.
-  ///
-  /// In en, this message translates to:
-  /// **'Avg Payment Time'**
-  String get avgPaymentTime;
-
-  /// No description provided for @avgServeAfterPayment.
-  ///
-  /// In en, this message translates to:
-  /// **'Avg Serve After Payment'**
-  String get avgServeAfterPayment;
-
-  /// No description provided for @avgTimeBetweenOrders.
-  ///
-  /// In en, this message translates to:
-  /// **'Avg Time Between Orders'**
-  String get avgTimeBetweenOrders;
-
-  /// No description provided for @itemLeaderboard.
-  ///
-  /// In en, this message translates to:
-  /// **'Item Leaderboard'**
-  String get itemLeaderboard;
-
-  /// No description provided for @topRevenue.
-  ///
-  /// In en, this message translates to:
-  /// **'Top Revenue'**
-  String get topRevenue;
-
-  /// No description provided for @topVolume.
-  ///
-  /// In en, this message translates to:
-  /// **'Top Volume'**
-  String get topVolume;
-
   /// No description provided for @topSellers.
   ///
   /// In en, this message translates to:
   /// **'Top Sellers'**
   String get topSellers;
-
-  /// No description provided for @needsAPush.
-  ///
-  /// In en, this message translates to:
-  /// **'Needs a Push'**
-  String get needsAPush;
 
   /// No description provided for @qrOrdersSummary.
   ///
@@ -2190,6 +2064,12 @@ abstract class AppLocalizations {
   /// **'Your login has expired. Please log in again.'**
   String get sessionExpired;
 
+  /// No description provided for @wrongIdOrPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong Vendor ID or PIN. Please check and try again.'**
+  String get wrongIdOrPin;
+
   /// No description provided for @checkInternet.
   ///
   /// In en, this message translates to:
@@ -2321,6 +2201,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Easier on the eyes at night'**
   String get darkThemeSubtitle;
+
+  /// No description provided for @comparedDayBefore.
+  ///
+  /// In en, this message translates to:
+  /// **'Compared with the day before'**
+  String get comparedDayBefore;
+
+  /// No description provided for @comparedDaysBefore.
+  ///
+  /// In en, this message translates to:
+  /// **'Compared with the {days} days before'**
+  String comparedDaysBefore(int days);
+
+  /// No description provided for @revenueLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Revenue'**
+  String get revenueLabel;
+
+  /// No description provided for @paidOrdersLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid orders'**
+  String get paidOrdersLabel;
+
+  /// No description provided for @noSalesBefore.
+  ///
+  /// In en, this message translates to:
+  /// **'None before'**
+  String get noSalesBefore;
+
+  /// No description provided for @dailySales.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily sales'**
+  String get dailySales;
+
+  /// No description provided for @bestDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Best: {day}'**
+  String bestDay(String day);
+
+  /// No description provided for @missedMoney.
+  ///
+  /// In en, this message translates to:
+  /// **'Missed money'**
+  String get missedMoney;
+
+  /// No description provided for @missedUnpaid.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} unpaid · {amount}'**
+  String missedUnpaid(int count, String amount);
+
+  /// No description provided for @missedCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} cancelled · {amount}'**
+  String missedCancelled(int count, String amount);
+
+  /// No description provided for @missedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpaid orders are customers who ordered on the QR but never paid.'**
+  String get missedHint;
+
+  /// No description provided for @customersAndService.
+  ///
+  /// In en, this message translates to:
+  /// **'Customers & service'**
+  String get customersAndService;
+
+  /// No description provided for @customersLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Customers'**
+  String get customersLabel;
+
+  /// No description provided for @returningCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} came back'**
+  String returningCount(int count);
+
+  /// No description provided for @ratingCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} ratings'**
+  String ratingCount(int count);
+
+  /// No description provided for @noRatingsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No ratings yet'**
+  String get noRatingsYet;
+
+  /// No description provided for @avgWait.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg wait after paying'**
+  String get avgWait;
+
+  /// No description provided for @customersHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only paying customers who gave a phone number are counted.'**
+  String get customersHint;
+
+  /// No description provided for @notSold.
+  ///
+  /// In en, this message translates to:
+  /// **'Didn\'t sell'**
+  String get notSold;
+
+  /// No description provided for @notSoldHint.
+  ///
+  /// In en, this message translates to:
+  /// **'On your menu, but no paid orders in this period.'**
+  String get notSoldHint;
+
+  /// No description provided for @andMore.
+  ///
+  /// In en, this message translates to:
+  /// **'+{count} more'**
+  String andMore(int count);
+
+  /// No description provided for @atAGlance.
+  ///
+  /// In en, this message translates to:
+  /// **'At a glance'**
+  String get atAGlance;
+
+  /// No description provided for @itemsSoldLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Items sold'**
+  String get itemsSoldLabel;
+
+  /// No description provided for @itemsPerOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Items per order'**
+  String get itemsPerOrder;
+
+  /// No description provided for @overallRating.
+  ///
+  /// In en, this message translates to:
+  /// **'Overall rating'**
+  String get overallRating;
+
+  /// No description provided for @recentFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest feedback'**
+  String get recentFeedback;
+
+  /// No description provided for @bestWeekday.
+  ///
+  /// In en, this message translates to:
+  /// **'Your best day is usually {day}'**
+  String bestWeekday(String day);
 }
 
 class _AppLocalizationsDelegate

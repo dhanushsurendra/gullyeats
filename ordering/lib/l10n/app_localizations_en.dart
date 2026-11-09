@@ -315,36 +315,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get avgOrder => 'Avg Order';
 
   @override
-  String get highest => 'Highest';
-
-  @override
-  String get lowest => 'Lowest';
-
-  @override
-  String get completionRate => 'Completion Rate';
-
-  @override
-  String get paymentRate => 'Payment Rate';
-
-  @override
-  String get cancellationRate => 'Cancellation Rate';
-
-  @override
-  String get itemsSold => 'Items Sold';
-
-  @override
-  String get totalSold => 'Total Sold';
-
-  @override
-  String get unique => 'Unique';
-
-  @override
-  String get avgPerOrder => 'Avg / Order';
-
-  @override
-  String get maxInOneOrder => 'Max in 1 Order';
-
-  @override
   String get orderType => 'Order Type';
 
   @override
@@ -354,40 +324,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get avgParcelCharge => 'Avg Parcel Charge';
 
   @override
-  String get timing => 'Timing';
-
-  @override
-  String get avgPrepTime => 'Avg Prep Time';
-
-  @override
-  String get fastestOrder => 'Fastest Order';
-
-  @override
-  String get slowestOrder => 'Slowest Order';
-
-  @override
-  String get avgPaymentTime => 'Avg Payment Time';
-
-  @override
-  String get avgServeAfterPayment => 'Avg Serve After Payment';
-
-  @override
-  String get avgTimeBetweenOrders => 'Avg Time Between Orders';
-
-  @override
-  String get itemLeaderboard => 'Item Leaderboard';
-
-  @override
-  String get topRevenue => 'Top Revenue';
-
-  @override
-  String get topVolume => 'Top Volume';
-
-  @override
   String get topSellers => 'Top Sellers';
-
-  @override
-  String get needsAPush => 'Needs a Push';
 
   @override
   String qrOrdersSummary(int count, String amount) {
@@ -1151,6 +1088,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sessionExpired => 'Your login has expired. Please log in again.';
 
   @override
+  String get wrongIdOrPin =>
+      'Wrong Vendor ID or PIN. Please check and try again.';
+
+  @override
   String get checkInternet => 'Check your internet connection';
 
   @override
@@ -1221,4 +1162,103 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get darkThemeSubtitle => 'Easier on the eyes at night';
+
+  @override
+  String get comparedDayBefore => 'Compared with the day before';
+
+  @override
+  String comparedDaysBefore(int days) {
+    return 'Compared with the $days days before';
+  }
+
+  @override
+  String get revenueLabel => 'Revenue';
+
+  @override
+  String get paidOrdersLabel => 'Paid orders';
+
+  @override
+  String get noSalesBefore => 'None before';
+
+  @override
+  String get dailySales => 'Daily sales';
+
+  @override
+  String bestDay(String day) {
+    return 'Best: $day';
+  }
+
+  @override
+  String get missedMoney => 'Missed money';
+
+  @override
+  String missedUnpaid(int count, String amount) {
+    return '$count unpaid · $amount';
+  }
+
+  @override
+  String missedCancelled(int count, String amount) {
+    return '$count cancelled · $amount';
+  }
+
+  @override
+  String get missedHint =>
+      'Unpaid orders are customers who ordered on the QR but never paid.';
+
+  @override
+  String get customersAndService => 'Customers & service';
+
+  @override
+  String get customersLabel => 'Customers';
+
+  @override
+  String returningCount(int count) {
+    return '$count came back';
+  }
+
+  @override
+  String ratingCount(int count) {
+    return '$count ratings';
+  }
+
+  @override
+  String get noRatingsYet => 'No ratings yet';
+
+  @override
+  String get avgWait => 'Avg wait after paying';
+
+  @override
+  String get customersHint =>
+      'Only paying customers who gave a phone number are counted.';
+
+  @override
+  String get notSold => 'Didn\'t sell';
+
+  @override
+  String get notSoldHint => 'On your menu, but no paid orders in this period.';
+
+  @override
+  String andMore(int count) {
+    return '+$count more';
+  }
+
+  @override
+  String get atAGlance => 'At a glance';
+
+  @override
+  String get itemsSoldLabel => 'Items sold';
+
+  @override
+  String get itemsPerOrder => 'Items per order';
+
+  @override
+  String get overallRating => 'Overall rating';
+
+  @override
+  String get recentFeedback => 'Latest feedback';
+
+  @override
+  String bestWeekday(String day) {
+    return 'Your best day is usually $day';
+  }
 }

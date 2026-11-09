@@ -100,31 +100,10 @@
   "totalRevenue": "Total Revenue",
   "net": "Net",
   "avgOrder": "Avg Order",
-  "highest": "Highest",
-  "lowest": "Lowest",
-  "completionRate": "Completion Rate",
-  "paymentRate": "Payment Rate",
-  "cancellationRate": "Cancellation Rate",
-  "itemsSold": "Items Sold",
-  "totalSold": "Total Sold",
-  "unique": "Unique",
-  "avgPerOrder": "Avg / Order",
-  "maxInOneOrder": "Max in 1 Order",
   "orderType": "Order Type",
   "parcelOrders": "Parcel Orders",
   "avgParcelCharge": "Avg Parcel Charge",
-  "timing": "Timing",
-  "avgPrepTime": "Avg Prep Time",
-  "fastestOrder": "Fastest Order",
-  "slowestOrder": "Slowest Order",
-  "avgPaymentTime": "Avg Payment Time",
-  "avgServeAfterPayment": "Avg Serve After Payment",
-  "avgTimeBetweenOrders": "Avg Time Between Orders",
-  "itemLeaderboard": "Item Leaderboard",
-  "topRevenue": "Top Revenue",
-  "topVolume": "Top Volume",
   "topSellers": "Top Sellers",
-  "needsAPush": "Needs a Push",
   "qrOrdersSummary": "QR · {count} orders · {amount}",
   "@qrOrdersSummary": {
     "placeholders": {
@@ -531,6 +510,7 @@
   "payEarlySubtitle": "Pay now to keep taking orders after the lock time.",
   "askOwnerToPay": "Ask the cart owner to pay the platform fee to unlock the cart.",
   "sessionExpired": "Your login has expired. Please log in again.",
+  "wrongIdOrPin": "Wrong Vendor ID or PIN. Please check and try again.",
   "checkInternet": "Check your internet connection",
   "requestTimedOut": "Request timed out. Try again",
   "somethingWentWrong": "Something went wrong. Please try again.",
@@ -566,5 +546,94 @@
   "termsAndConditions": "Terms and conditions",
   "termsAndPrivacySubtitle": "Our terms, and how GullyEats uses your data",
   "darkTheme": "Dark theme",
-  "darkThemeSubtitle": "Easier on the eyes at night"
+  "darkThemeSubtitle": "Easier on the eyes at night",
+  "comparedDayBefore": "Compared with the day before",
+  "comparedDaysBefore": "Compared with the {days} days before",
+  "@comparedDaysBefore": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "revenueLabel": "Revenue",
+  "paidOrdersLabel": "Paid orders",
+  "noSalesBefore": "None before",
+  "dailySales": "Daily sales",
+  "bestDay": "Best: {day}",
+  "@bestDay": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "missedMoney": "Missed money",
+  "missedUnpaid": "{count} unpaid · {amount}",
+  "@missedUnpaid": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "missedCancelled": "{count} cancelled · {amount}",
+  "@missedCancelled": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "missedHint": "Unpaid orders are customers who ordered on the QR but never paid.",
+  "customersAndService": "Customers & service",
+  "customersLabel": "Customers",
+  "returningCount": "{count} came back",
+  "@returningCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ratingCount": "{count} ratings",
+  "@ratingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noRatingsYet": "No ratings yet",
+  "avgWait": "Avg wait after paying",
+  "customersHint": "Only paying customers who gave a phone number are counted.",
+  "notSold": "Didn't sell",
+  "notSoldHint": "On your menu, but no paid orders in this period.",
+  "andMore": "+{count} more",
+  "@andMore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "atAGlance": "At a glance",
+  "itemsSoldLabel": "Items sold",
+  "itemsPerOrder": "Items per order",
+  "overallRating": "Overall rating",
+  "recentFeedback": "Latest feedback",
+  "bestWeekday": "Your best day is usually {day}",
+  "@bestWeekday": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  }
 }
