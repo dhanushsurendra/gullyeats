@@ -1,6 +1,7 @@
 const mongoose = require('mongoose')
 const asyncHandler = require('../utils/asyncHandler')
 const Order = require('../models/Order')
+const MenuItem = require('../models/Menu')
 const { findOwnedCart } = require('../utils/cartAccess')
 
 const TZ = 'Asia/Kolkata'
@@ -142,6 +143,31 @@ function salesPipeline(cartId, start, end) {
         bottomItems: [...itemsByMenuItem, { $sort: { revenue: 1, name: 1 } }, { $limit: 5 }, itemFields],
         topVolumeItem: [...itemsByMenuItem, { $sort: { qty: -1, name: 1 } }, { $limit: 1 }, itemFields],
         uniqueItems: [...itemsByMenuItem, { $count: 'count' }],
+        soldIds: [...itemsByMenuItem, { $project: { _id: 1 } }],
+
+        // Money that never arrived: orders left unpaid, and cancelled ones.
+        lost: [
+          { $match: { status: { $in: ['PENDING', 'CANCELLED'] } } },
+          { $group: { _id: '$status', value: { $sum: '$totalPrice' }, count: { $sum: 1 } } },
+        ],
+
+        // Paid revenue per IST day, for the trend chart.
+        byDay: [
+          { $match: paidOnly },
+          {
+            $group: {
+              _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt', timezone: TZ } },
+              revenue: { $sum: '$totalPrice' },
+              orders: { $sum: 1 },
+            },
+          },
+        ],
+
+        // Paying customers who gave a number; returning ones are found after.
+        phones: [
+          { $match: { ...paidOnly, phoneNumber: { $nin: [null, ''] } } },
+          { $group: { _id: '$phoneNumber' } },
+        ],
 
         // Busy hours count every order that wasn't cancelled: it is about
         // traffic. Busiest first, so the first row is the peak.
@@ -154,7 +180,6 @@ function salesPipeline(cartId, start, end) {
             },
           },
           { $sort: { count: -1, _id: 1 } },
-          { $limit: 5 },
           { $project: { _id: 0, hour: '$_id', count: 1 } },
         ],
 
@@ -198,6 +223,7 @@ function toSalesReport(result) {
   const platformFeeRevenue = n(paid.platformFeeRevenue)
   const parcelRevenue = n(paid.parcelRevenue)
   const busiest = result.busyHours || []
+  const lost = Object.fromEntries((result.lost || []).map((r) => [r._id, r]))
 
   return {
     // revenue
@@ -241,7 +267,10 @@ function toSalesReport(result) {
     // timing patterns: the peak is the busiest hour; the chart wants the
     // hours in time order
     peakHour: busiest.length ? busiest[0].hour : null,
-    busyHours: [...busiest].sort((a, b) => a.hour - b.hour),
+    // Older apps chart these top 5; hours is every hour from the first order
+    // to the last, quiet ones as 0, so the chart doesn't hide the gaps.
+    busyHours: busiest.slice(0, 5).sort((a, b) => a.hour - b.hour),
+    hours: fillHours(busiest),
     averageTimeBetweenOrders: formatDuration(result.orderGaps[0]?.averageGap),
 
     // order type breakdown
@@ -259,6 +288,84 @@ function toSalesReport(result) {
     topVolumeItem: result.topVolumeItem[0]?.name ?? null,
     topItems: result.topItems,
     bottomItems: result.bottomItems,
+
+    // missed money
+    unpaidValue: n(lost.PENDING?.value),
+    cancelledValue: n(lost.CANCELLED?.value),
+
+    avgWaitAfterPayment: formatDuration(paid.avgServeTimeAfterPayment),
+  }
+}
+
+function fillHours(rows) {
+  if (!rows.length) return []
+  const count = new Map(rows.map((r) => [r.hour, r.count]))
+  const hours = [...count.keys()]
+  const out = []
+  for (let h = Math.min(...hours); h <= Math.max(...hours); h++) out.push({ hour: h, count: count.get(h) || 0 })
+  return out
+}
+
+const DAY_MS = 86400000
+const istDay = (d) => new Date(d.getTime() + 330 * 60000).toISOString().slice(0, 10)
+
+/** Every IST day in [start, end] with its paid revenue, 0 for quiet days. */
+function fillDays(rows, start, end) {
+  const by = new Map(rows.map((r) => [r._id, r]))
+  const out = []
+  for (let t = start.getTime(); t <= end.getTime(); t += DAY_MS) {
+    const day = istDay(new Date(t))
+    out.push({ day, revenue: by.get(day)?.revenue || 0, orders: by.get(day)?.orders || 0 })
+  }
+  return out
+}
+
+/**
+ * What needs other queries: the same-length period just before (for the
+ * comparison), how many paying customers had paid here before, menu items
+ * that sold nothing, and the cart's all-time rating with its latest written
+ * feedback (few customers rate, so one period rarely has enough).
+ */
+async function extras(cartId, start, end, result) {
+  const id = new mongoose.Types.ObjectId(cartId)
+  const length = end.getTime() + 1 - start.getTime()
+  const phones = result.phones.map((p) => p._id)
+  const sold = result.soldIds.map((r) => r._id).filter((v) => mongoose.isValidObjectId(v))
+
+  const [prev, returning, unsold, rating, feedback] = await Promise.all([
+    Order.aggregate([
+      { $match: { cartId: id, ...paidOnly, createdAt: { $gte: new Date(start.getTime() - length), $lt: start } } },
+      { $group: { _id: null, revenue: { $sum: '$totalPrice' }, orders: { $sum: 1 } } },
+    ]),
+    phones.length
+      ? Order.distinct('phoneNumber', { cartId: id, ...paidOnly, createdAt: { $lt: start }, phoneNumber: { $in: phones } })
+      : [],
+    MenuItem.find({ cartId: id, _id: { $nin: sold } }).select('name').sort({ name: 1 }).lean(),
+    Order.aggregate([
+      { $match: { cartId: id, rating: { $gte: 1 } } },
+      { $group: { _id: null, avg: { $avg: '$rating' }, count: { $sum: 1 } } },
+    ]),
+    Order.find({ cartId: id, feedback: { $nin: [null, ''] } })
+      .sort({ createdAt: -1 })
+      .limit(3)
+      .select('feedback rating createdAt')
+      .lean(),
+  ])
+  const p = prev[0] || {}
+  return {
+    previous: {
+      revenue: p.revenue || 0,
+      orders: p.orders || 0,
+      avgOrderValue: safeDivide(p.revenue || 0, p.orders || 0),
+    },
+    days: fillDays(result.byDay, start, end),
+    customers: phones.length,
+    returningCustomers: returning.length,
+    unsoldItems: unsold.map((m) => m.name),
+    avgRating: rating[0] ? Math.round(rating[0].avg * 10) / 10 : null,
+    ratingCount: rating[0]?.count || 0,
+    // No phone or name: the vendor sees what was said, not who said it.
+    recentFeedback: feedback.map((f) => ({ text: f.feedback, rating: f.rating || null, at: f.createdAt })),
   }
 }
 
@@ -293,5 +400,8 @@ exports.getSalesDashboard = asyncHandler(async (req, res) => {
 
   const [result] = await Order.aggregate(salesPipeline(cartId, start, end))
 
-  res.json({ success: true, data: toSalesReport(result) })
+  res.json({
+    success: true,
+    data: { ...toSalesReport(result), ...(await extras(cartId, start, end, result)) },
+  })
 })

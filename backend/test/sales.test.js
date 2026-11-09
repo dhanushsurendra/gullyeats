@@ -7,6 +7,7 @@ const { MongoMemoryServer } = require('mongodb-memory-server')
 const { call } = require('./helpers')
 const Order = require('../models/Order')
 const Cart = require('../models/Cart')
+const MenuItem = require('../models/Menu')
 const { getSalesDashboard } = require('../controllers/salesController')
 
 let mongo
@@ -104,6 +105,76 @@ test('the peak hour is the busiest hour, not the earliest of the busy ones', asy
   assert.equal(r.peakHour, 13)
   // The chart still lists the hours in time order.
   assert.deepEqual(r.busyHours.map((h) => h.hour), [9, 13])
+})
+
+test('hours lists every hour from the first order to the last, quiet ones as 0', async () => {
+  const r = await report([
+    order('PAID', '09:05', [line(tea, 'Tea', 10, 1)], { paidAfter: 1 }),
+    order('PAID', '12:10', [line(tea, 'Tea', 10, 1)], { paidAfter: 1 }),
+  ])
+  assert.deepEqual(r.hours, [
+    { hour: 9, count: 1 }, { hour: 10, count: 0 }, { hour: 11, count: 0 }, { hour: 12, count: 1 },
+  ])
+})
+
+test('missed money adds up unpaid and cancelled orders', async () => {
+  const r = await report([
+    order('PENDING', '10:00', [line(tea, 'Tea', 10, 3)]),
+    order('CANCELLED', '10:30', [line(dosa, 'Dosa', 60, 1)]),
+    order('PAID', '11:00', [line(dosa, 'Dosa', 60, 1)], { paidAfter: 1 }),
+  ])
+  assert.equal(r.unpaidValue, 32)
+  assert.equal(r.cancelledValue, 62)
+})
+
+test('compares with the same number of days just before', async () => {
+  const r = await report(
+    [
+      order('PAID', '2026-11-04T10:00', [line(dosa, 'Dosa', 60, 1)], { paidAfter: 1 }), // previous period
+      order('PAID', '2026-11-02T10:00', [line(dosa, 'Dosa', 60, 9)], { paidAfter: 1 }), // too early
+      order('PAID', '2026-11-05T10:00', [line(dosa, 'Dosa', 60, 2)], { paidAfter: 1 }),
+      order('PAID', '2026-11-06T10:00', [line(tea, 'Tea', 10, 1)], { paidAfter: 1 }),
+    ],
+    { startDate: '2026-11-05', endDate: '2026-11-06' },
+  )
+  assert.deepEqual(r.previous, { revenue: 62, orders: 1, avgOrderValue: 62 })
+  assert.deepEqual(r.days, [
+    { day: '2026-11-05', revenue: 122, orders: 1 },
+    { day: '2026-11-06', revenue: 12, orders: 1 },
+  ])
+})
+
+test('returning customers paid here before the period; unsold items sold nothing', async () => {
+  const withPhone = (o, phoneNumber) => ({ ...o, phoneNumber })
+  await MenuItem.collection.deleteMany({})
+  await MenuItem.collection.insertMany([
+    { _id: dosa, cartId, name: 'Dosa', price: 60 },
+    { _id: tea, cartId, name: 'Tea', price: 10 },
+    { cartId, name: 'Vada', price: 30 },
+    { cartId: otherCartId, name: 'Elsewhere', price: 30 },
+  ])
+  const r = await report([
+    withPhone(order('PAID', '2026-11-01T10:00', [line(dosa, 'Dosa', 60, 1)], { paidAfter: 1 }), '111'),
+    withPhone(order('PAID', '10:00', [line(dosa, 'Dosa', 60, 1)], { paidAfter: 1 }), '111'),
+    withPhone(order('SERVED', '11:00', [line(dosa, 'Dosa', 60, 1)], { paidAfter: 1, servedAfter: 4 }), '222'),
+    withPhone(order('PENDING', '12:00', [line(tea, 'Tea', 10, 1)]), '333'), // never paid: not a customer
+  ])
+  assert.equal(r.customers, 2)
+  assert.equal(r.returningCustomers, 1)
+  assert.deepEqual(r.unsoldItems, ['Tea', 'Vada'])
+  assert.equal(r.avgWaitAfterPayment, '3 min')
+})
+
+test('the rating is all-time, with the latest written feedback', async () => {
+  const r = await report([
+    { ...order('SERVED', '2026-10-01T10:00', [line(dosa, 'Dosa', 60, 1)], { paidAfter: 1, servedAfter: 4 }), rating: 5, feedback: 'Old but gold' },
+    { ...order('SERVED', '10:00', [line(dosa, 'Dosa', 60, 1)], { paidAfter: 1, servedAfter: 4 }), rating: 2, feedback: 'Too salty' },
+    { ...order('SERVED', '11:00', [line(dosa, 'Dosa', 60, 1)], { paidAfter: 1, servedAfter: 4 }), rating: 4 },
+    { ...order('SERVED', '12:00', [line(dosa, 'Dosa', 60, 1)], { paidAfter: 1, servedAfter: 4, cart: otherCartId }), rating: 1, feedback: 'Elsewhere' },
+  ])
+  assert.equal(r.avgRating, 3.7)
+  assert.equal(r.ratingCount, 3)
+  assert.deepEqual(r.recentFeedback.map((f) => [f.text, f.rating]), [['Too salty', 2], ['Old but gold', 5]])
 })
 
 test('max in one order adds up the whole order, not one line', async () => {

@@ -1232,7 +1232,7 @@ exports.carts = asyncHandler(async (req, res) => {
           orders: cnt({ $and: [notCancelled, isToday] }),
           gmv: sumIf({ $and: [paid, isToday] }, '$totalPrice'),
           current: cnt({
-            $and: [isToday, { $or: [is('PENDING'), is('PAID')] }],
+            $and: [isToday, is('PAID')],
           }),
         },
       },
@@ -1268,6 +1268,7 @@ exports.carts = asyncHandler(async (req, res) => {
       ordersToday: r.orders || 0,
       gmvToday: r.gmv || 0,
       current: r.current || 0,
+      isOpen: Boolean(c.isOpen),
       lastActive: r.last || null,
       createdAt: c.createdAt,
     }
