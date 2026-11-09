@@ -182,12 +182,8 @@ export function createGame(seed, { width = WORLD_WIDTH, height = 640 } = {}) {
     sparks: [],
     popups: [],
     flashes: [], // full-screen tints: { color, life }
-    trail: [], // the ship every 100 ms, flat [x, y, x, y, ...]: tomorrow's ghost
-    trailAt: 0,
     freeze: 0, // ms of hit-stop asked of the page (looks only)
-    // Set by the page: ghost (a trail to replay), skin (ship colours),
-    // tips (first round ever), calm (reduced motion).
-    ghost: null,
+    // Set by the page: skin (ship colours), tips (first round ever), calm (reduced motion).
     skin: null,
     tips: false,
     tipsShown: {},
@@ -483,10 +479,6 @@ function tick(game, dt, input) {
       game.power[k] = 0
       emit(game, 'powerEnd', { kind: k })
     }
-  }
-  while (game.t >= game.trailAt) {
-    game.trail.push(Math.round(ship.x), Math.round(ship.y))
-    game.trailAt += 100
   }
 
   // Nova bomb: a double-tap sets off the one held.
@@ -1178,14 +1170,6 @@ export function draw(ctx, game) {
   }
 
   const skin = game.skin || DEFAULT_SKIN
-  // Your best run today, flown again as a faint ghost.
-  const gi = Math.floor(game.t / 100) * 2
-  if (game.ghost && gi + 1 < game.ghost.length) {
-    ctx.globalAlpha = 0.28
-    drawShip(ctx, game, game.ghost[gi], game.ghost[gi + 1], skin, false)
-    ctx.globalAlpha = 1
-  }
-
   // Ship: points against gravity, leans into turns, flame trails with gravity. Blinks while recovering.
   const ship = game.ship
   if (!ship.inv || Math.floor(ship.inv / 100) % 2 === 0) {

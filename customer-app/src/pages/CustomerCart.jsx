@@ -156,7 +156,7 @@ export default function CustomerCart() {
             Phone number <span className='font-normal text-grey-400'>(optional)</span>
           </label>
           <p className='mt-0.5 text-xs text-grey-500'>
-            Only so the vendor can reach you about this order.{' '}
+            So the vendor can reach you about this order, and to keep your GullyPlay rank across orders.{' '}
             <a href='/terms.html#privacy' target='_blank' rel='noopener' className='underline underline-offset-2'>
               Privacy
             </a>

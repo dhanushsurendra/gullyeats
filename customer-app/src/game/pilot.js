@@ -68,7 +68,3 @@ export function applyRound(profile, day, result) {
   const next = { ...p, xp: p.xp + gained, done: [...p.done, ...completed.map((m) => m.id)] }
   return { profile: next, gained, completed, rankUp: rankOf(next.xp).index > rankOf(p.xp).index }
 }
-
-// The ship's path, trimmed to one round (100 ms samples as x, y pairs).
-const GHOST_POINTS = 2 * (ROUND_MS / 100 + 2)
-export const ghostOf = (trail) => trail.slice(0, GHOST_POINTS)

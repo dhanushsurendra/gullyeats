@@ -1,6 +1,8 @@
 const crypto = require('crypto')
 const asyncHandler = require('../utils/asyncHandler')
 const GameScore = require('../models/GameScore')
+const Order = require('../models/Order')
+const { authorKeyFor } = require('../middlewares/confessionPoster')
 
 /*
  * GullyPlay scores and daily leaderboards. Players are known only by
@@ -151,6 +153,50 @@ exports.leaderboard = asyncHandler(async (req, res) => {
       me,
     },
   })
+})
+
+/*
+ * POST /api/games/phone  { phone }
+ * Adds a number to an order placed without one, so the player keeps one
+ * identity (name, best scores) across orders and carts. Only an order with no
+ * number can take one, so an order can't hop between identities. The order's
+ * scores move to the new identity, keeping the better one where both played.
+ */
+exports.linkPhone = asyncHandler(async (req, res) => {
+  const phone = String(req.body?.phone || '')
+    .replace(/\D/g, '')
+    .slice(-10)
+  if (!/^[6-9]\d{9}$/.test(phone)) {
+    res.status(400)
+    throw new Error('Enter a valid 10-digit mobile number.')
+  }
+  const order = await Order.findOneAndUpdate(
+    { _id: req.poster.orderId, phoneNumber: { $in: [null, ''] } },
+    { $set: { phoneNumber: phone } },
+    { new: true },
+  )
+    .select('phoneNumber')
+    .lean()
+  if (!order) {
+    res.status(409)
+    throw new Error('This order already has a phone number.')
+  }
+
+  const to = authorKeyFor(order)
+  for (const row of await GameScore.find({ authorKey: req.poster.authorKey }).lean()) {
+    const where = { game: row.game, day: row.day, authorKey: to }
+    const theirs = await GameScore.findOne(where).select('score').lean()
+    // timestamps off: updatedAt orders ties, so a moved score keeps its time.
+    if (!theirs) {
+      await GameScore.updateOne({ _id: row._id }, { $set: { authorKey: to, alias: aliasFor(to, row.game) } }, { timestamps: false })
+      continue
+    }
+    if (row.score > theirs.score) {
+      await GameScore.updateOne({ _id: theirs._id }, { $set: { score: row.score, stats: row.stats, updatedAt: row.updatedAt } }, { timestamps: false })
+    }
+    await GameScore.deleteOne({ _id: row._id })
+  }
+  res.json({ success: true, data: { aliases: Object.fromEntries(Object.keys(GAMES).map((g) => [g, aliasFor(to, g)])) } })
 })
 
 exports.GAMES = GAMES

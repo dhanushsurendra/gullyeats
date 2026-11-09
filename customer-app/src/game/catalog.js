@@ -109,7 +109,7 @@ const nebulaGame = {
       py += 20
     }
   },
-  // Ranks, missions, skins and the ghost (game/pilot.js); cosmetic only.
+  // Ranks, missions and skins (game/pilot.js); cosmetic only.
   pilot: true,
   today(day) {
     const a = nebula.ANOMALIES[nebula.anomalyFor(nebula.seedFor(day))]

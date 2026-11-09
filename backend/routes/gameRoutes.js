@@ -22,5 +22,6 @@ const scoreLimit = rateLimit({
 
 router.get('/:game/leaderboard', reader, g.leaderboard)
 router.post('/:game/scores', player, scoreLimit, g.submit)
+router.post('/phone', player, g.linkPhone)
 
 module.exports = router

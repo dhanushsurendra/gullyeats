@@ -2,7 +2,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert'
 
-import { applyRound, ghostOf, MISSION_XP, missionsFor, NEW_PILOT, rankOf, RANKS, skinFor } from './pilot.js'
+import { applyRound, MISSION_XP, missionsFor, NEW_PILOT, rankOf, RANKS, skinFor } from './pilot.js'
 import { ROUND_MS } from './nebula.js'
 
 const round = (score, stats = {}, durationMs = ROUND_MS) => ({
@@ -46,9 +46,4 @@ test('a round pays XP and each mission only once a day', () => {
 test('a locked skin falls back to Classic', () => {
   assert.strictEqual(skinFor({ ...NEW_PILOT, skin: 'void' }).id, 'classic')
   assert.strictEqual(skinFor({ ...NEW_PILOT, xp: 99999, skin: 'void' }).id, 'void')
-})
-
-test('the ghost is capped at one round', () => {
-  const trail = Array.from({ length: 5000 }, (_, i) => i)
-  assert.strictEqual(ghostOf(trail).length, 2 * (ROUND_MS / 100 + 2))
 })

@@ -131,6 +131,38 @@ test('the board is sorted, ranks are right, and only alias and score leave the s
   assert.strictEqual(open.body.me, null)
 })
 
+test('adding a number later keeps your scores and joins your other orders', async () => {
+  const anon = await player() // ordered without a number
+  await submit(anon, 700)
+  const other = await player('9123456780') // an earlier order with the number
+  await submit(other, 400)
+  const link = (who, phone) => api('POST', '/phone', { who, body: { phone } })
+
+  assert.strictEqual((await link(anon, '12345')).status, 400)
+  assert.strictEqual((await api('POST', '/phone', { body: { phone: '9123456780' } })).status, 401)
+  const ok = await link(anon, '9123456780')
+  assert.strictEqual(ok.status, 200)
+  // One player now, with the better of the two scores, seen from either order.
+  assert.strictEqual(await GameScore.countDocuments(), 1)
+  const board = await api('GET', '/nebula/leaderboard', { who: other })
+  assert.deepStrictEqual(board.body.top.map((r) => [r.score, r.me]), [[700, true]])
+  assert.strictEqual(board.body.top[0].alias, ok.body.aliases.nebula)
+  assert.strictEqual((await Order.findById(anon.orderId).lean()).phoneNumber, '9123456780')
+  // An order's number can't be swapped for another.
+  assert.strictEqual((await link(anon, '9000000009')).status, 409)
+  assert.strictEqual((await link(other, '9000000009')).status, 409)
+})
+
+test('a moved score never replaces a better one', async () => {
+  const anon = await player()
+  await submit(anon, 200)
+  const other = await player('9123456781')
+  await submit(other, 900)
+  assert.strictEqual((await api('POST', '/phone', { who: anon, body: { phone: '9123456781' } })).status, 200)
+  const board = await api('GET', '/nebula/leaderboard', { who: anon })
+  assert.deepStrictEqual(board.body.top.map((r) => r.score), [900])
+})
+
 test('ties go to whoever got there first', async () => {
   const [a, b] = [await player(), await player()]
   await submit(a, 600)

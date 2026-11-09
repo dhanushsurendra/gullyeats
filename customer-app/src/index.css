@@ -183,6 +183,14 @@
   padding-bottom: max(1rem, env(safe-area-inset-bottom));
 }
 
+/* Scrolls, without a scroll bar: for panels that show they scroll another way. */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   ::before,

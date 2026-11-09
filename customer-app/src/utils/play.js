@@ -11,6 +11,9 @@ import { NEW_PILOT } from '../game/pilot'
 export const play = (game, key, path, options = {}) =>
   api(`/games/${game}${path}`, { ...options, headers: key ? { 'X-Gully-Order': key } : undefined })
 
+// Adds a number to an order placed without one (one identity across orders and carts).
+export const linkPhone = (key, phone) => api('/games/phone', { method: 'POST', body: { phone }, headers: { 'X-Gully-Order': key } })
+
 const BEST = (game) => `${game}-best` // { day, score }
 const PENDING = (game) => `${game}-pending` // the best round not yet sent: { day, score, durationMs, stats }
 
@@ -74,17 +77,10 @@ export async function submitRound(game, key, day, round) {
   }
 }
 
-// Nebula Rush pilot (game/pilot.js) and the ghost of today's best run.
+// Nebula Rush pilot (game/pilot.js).
 const PILOT = 'nebula-pilot'
-const GHOST = 'nebula-ghost' // { day, h, pts }
 export const loadPilot = () => ({ ...NEW_PILOT, ...read(PILOT) })
 export const savePilot = (p) => write(PILOT, p)
-// Only for the same day and the same world height (the trail is in world units).
-export function loadGhost(day, h) {
-  const g = read(GHOST)
-  return g?.day === day && g.h === h ? g.pts : null
-}
-export const saveGhost = (day, h, pts) => write(GHOST, { day, h, pts })
 
 // Arcade settings, for every game.
 const PREFS = 'gullyplay-prefs'

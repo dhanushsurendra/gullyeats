@@ -14,7 +14,10 @@ export async function api(path, { method = 'GET', body, headers } = {}) {
       body: body ? JSON.stringify(body) : undefined,
     })
   } catch {
-    throw new Error('No internet connection. Check your network and try again.')
+    // No response at all: the phone is offline, or the server is down or refused us (CORS).
+    throw new Error(
+      navigator.onLine === false ? 'No internet connection. Check your network and try again.' : 'Couldn’t reach GullyEats right now. Please try again.',
+    )
   }
   const data = await response.json().catch(() => ({}))
   if (!response.ok || data.success === false) {

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useSelector } from 'react-redux'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import {
   RiArrowLeftSLine,
@@ -14,11 +15,12 @@ import {
 
 import useOrder from '../hooks/useOrder'
 import { PilotLobby, PilotResult } from '../components/PilotPanel'
+import SavePlayer from '../components/SavePlayer'
 import { audio } from '../game/audio'
 import { GAMES, istDay } from '../game/catalog'
-import { applyRound, ghostOf, skinFor } from '../game/pilot'
+import { applyRound, skinFor } from '../game/pilot'
 import { usePulseKey } from '../utils/pulse'
-import { loadGhost, loadPilot, loadPrefs, play, saveGhost, savePilot, savePrefs, saveRound, submitRound } from '../utils/play'
+import { loadPilot, loadPrefs, play, savePilot, savePrefs, saveRound, submitRound } from '../utils/play'
 
 /*
  * The GullyPlay arcade: runs any game from game/catalog.js (/play/:game),
@@ -45,7 +47,14 @@ export default function Play() {
 function Arcade({ def }) {
   const navigate = useNavigate()
   const { order, cartId, orderId } = useOrder()
-  const key = usePulseKey()
+  // Play as the order this page belongs to when the phone has its key, so the
+  // scores, the board and an added number all go to the same order.
+  const ownKey = useSelector((state) => {
+    const o = (state.cart.orders || []).find((x) => String(x._id) === String(orderId) && x.accessKey)
+    return o ? `${o._id}.${o.accessKey}` : null
+  })
+  const anyKey = usePulseKey()
+  const key = ownKey || anyKey
   const back = `/c/${cartId}/order/${orderId}`
 
   const canvasRef = useRef(null)
@@ -66,6 +75,8 @@ function Arcade({ def }) {
   const prefsRef = useRef(prefs)
   const [pilot, setPilot] = useState(loadPilot)
   const [shared, setShared] = useState('')
+  // Offer to add a number when the order has none: 'no', 'just' (saved this round: show the thanks), 'done'.
+  const [linked, setLinked] = useState('no')
 
   // Sound: wake the speakers (the tap that opened the game counts), and hush on the way out.
   useEffect(() => {
@@ -120,13 +131,13 @@ function Arcade({ def }) {
     if (def.pilot) {
       const p = loadPilot()
       game.skin = skinFor(p)
-      game.ghost = loadGhost(day, game.h)
       game.tips = !p.tipsDone
     }
     gameRef.current = game
     fit()
     setSummary(null)
     setShared('')
+    setLinked((l) => (l === 'just' ? 'done' : l))
     setPhase(round ? 'countdown' : 'lobby')
   }, [round, fit, setPhase, def])
 
@@ -166,7 +177,6 @@ function Arcade({ def }) {
         if (game.tips) news.profile.tipsDone = true
         savePilot(news.profile)
         setPilot(news.profile)
-        if (newBest) saveGhost(game.day, game.h, ghostOf(game.trail))
       }
       setSummary({ ...r, best, newBest, pilot: news, rank: null, sending: Boolean(key), error: '' })
       setPhase('over')
@@ -176,7 +186,7 @@ function Arcade({ def }) {
         const s = await submitRound(def.id, key, game.day, r)
         setSummary((x) => x && { ...x, rank: s?.rank ?? null, best: Math.max(x.best, s?.best || 0), sending: false })
       } catch (e) {
-        setSummary((x) => x && { ...x, sending: false, error: e.status ? e.message : 'Offline: your score will be sent next round.' })
+        setSummary((x) => x && { ...x, sending: false, error: e.status ? e.message : 'Couldn’t send your score. It will go with your next round.' })
       }
     },
     [key, setPhase, def],
@@ -251,6 +261,10 @@ function Arcade({ def }) {
 
   // Food's ready: pause and say so, once. Other changes only update the pill.
   const status = order?.status
+  const askPhone = Boolean(ownKey) && Boolean(order) && !order.phoneNumber && linked !== 'done'
+  const savePlayer = (compact) => (
+    <SavePlayer orderKey={key} compact={compact} saved={linked === 'just'} onSaved={() => setLinked('just')} />
+  )
   useEffect(() => {
     if (status !== 'SERVED' || alerted.current) return
     alerted.current = true
@@ -295,14 +309,21 @@ function Arcade({ def }) {
   const share = async () => {
     const url = `${window.location.origin}/c/${cartId}`
     const text = `I scored ${summary.score} in today’s ${def.title} on GullyEats. Can you beat it?`
-    try {
-      if (navigator.share) await navigator.share({ title: def.title, text, url })
-      else {
-        await navigator.clipboard.writeText(`${text} ${url}`)
-        setShared('Copied! Paste it to a friend.')
+    // Share sheet and clipboard only exist on HTTPS pages, so WhatsApp is the last resort.
+    const whatsapp = () => window.open(`https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}`, '_blank', 'noopener')
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: def.title, text, url })
+      } catch (e) {
+        if (e?.name !== 'AbortError') whatsapp()
       }
-    } catch (e) {
-      if (e?.name !== 'AbortError') setShared('Couldn’t share from this browser.')
+      return
+    }
+    try {
+      await navigator.clipboard.writeText(`${text} ${url}`)
+      setShared('Copied! Paste it to a friend.')
+    } catch {
+      whatsapp()
     }
   }
 
@@ -369,10 +390,11 @@ function Arcade({ def }) {
 
         {phase === 'lobby' && (
           <Overlay dim>
-            <div className='flex max-h-full w-full max-w-xs flex-col items-center overflow-y-auto py-4'>
+            <div className='no-scrollbar -mx-6 flex max-h-full w-[calc(100%+3rem)] flex-col items-center overflow-y-auto px-6 pt-4 [&>*]:shrink-0'>
               <p className='text-xs font-bold uppercase tracking-[0.25em] text-[#a78bfa]'>GullyPlay</p>
               <p className='mt-1 text-3xl font-bold'>{def.title}</p>
-              <p className='text-sm text-white/70'>{def.tagline}</p>
+              <p className='text-center text-sm text-white/70'>{def.tagline}</p>
+              {askPhone && savePlayer(true)}
               {def.today && (
                 <div className='mt-4 w-full rounded-2xl bg-[#c084fc]/15 px-4 py-3 text-left ring-1 ring-[#c084fc]/40'>
                   <p className='text-[11px] font-bold uppercase tracking-wider text-[#c084fc]'>Today’s anomaly</p>
@@ -382,9 +404,6 @@ function Arcade({ def }) {
               )}
               {def.pilot && <PilotLobby day={istDay()} profile={pilot} onSkin={pickSkin} />}
               <p className='mt-4 text-center text-xs text-white/60'>{def.hint}</p>
-              <GameButton onClick={() => setPhase('countdown')}>
-                <RiPlayFill size={20} /> Launch
-              </GameButton>
               <div className='mt-3 flex gap-2'>
                 <Toggle on={prefs.calm} onClick={() => setPref('calm')}>
                   Reduced motion
@@ -398,6 +417,11 @@ function Arcade({ def }) {
               <button type='button' onClick={openBoard} className='mt-3 flex items-center gap-1.5 text-sm font-semibold text-white/80'>
                 <RiTrophyLine size={16} className='text-[#fde047]' /> Today’s leaderboard
               </button>
+              <StickyActions>
+                <GameButton onClick={() => setPhase('countdown')}>
+                  <RiPlayFill size={20} /> Launch
+                </GameButton>
+              </StickyActions>
             </div>
           </Overlay>
         )}
@@ -426,7 +450,7 @@ function Arcade({ def }) {
 
         {phase === 'over' && summary && (
           <Overlay dim>
-            <div className='flex max-h-full w-full max-w-xs flex-col items-center overflow-y-auto py-4'>
+            <div className='no-scrollbar -mx-6 flex max-h-full w-[calc(100%+3rem)] flex-col items-center overflow-y-auto px-6 pt-4 [&>*]:shrink-0'>
               <p className='text-xs font-bold uppercase tracking-[0.25em] text-[#a78bfa]'>
                 {def.overTitle(summary)}
               </p>
@@ -458,6 +482,7 @@ function Arcade({ def }) {
                 </dl>
               )}
               {summary.pilot && <PilotResult news={summary.pilot} />}
+              {askPhone && savePlayer(false)}
               <p className='mt-4 h-5 text-sm text-white/80'>
                 {summary.sending
                   ? 'Saving your score…'
@@ -469,7 +494,7 @@ function Arcade({ def }) {
                         ? ''
                         : 'Place an order to join the leaderboard'}
               </p>
-              <div className='mt-4 flex w-full max-w-xs flex-col gap-2.5'>
+              <StickyActions>
                 <GameButton onClick={() => setRound((r) => r + 1)}>
                   <RiPlayFill size={20} /> Play again
                 </GameButton>
@@ -497,7 +522,7 @@ function Arcade({ def }) {
                 <button type='button' onClick={() => navigate(back)} className='mt-1 text-sm font-semibold text-white/70'>
                   Back to my order
                 </button>
-              </div>
+              </StickyActions>
             </div>
           </Overlay>
         )}
@@ -535,6 +560,11 @@ function Overlay({ children, dim = false }) {
       {children}
     </div>
   )
+}
+
+// The main buttons stay at the bottom while the rest scrolls under a fade, so it's clear there's more above.
+function StickyActions({ children }) {
+  return <div className='sticky bottom-0 -mx-6 flex w-[calc(100%+3rem)] flex-col gap-2.5 bg-linear-to-t from-[#070b1f] from-60% to-transparent px-6 pt-8 pb-4 [&>button]:max-w-none'>{children}</div>
 }
 
 function GameButton({ children, onClick }) {
@@ -587,7 +617,7 @@ function Leaderboard({ board, note, onClose }) {
         role='dialog'
         aria-modal='true'
         aria-labelledby='board-title'
-        className='animate-sheet pb-safe relative max-h-[85dvh] w-full max-w-md overflow-y-auto rounded-t-[28px] bg-[#110a2e] px-5 pt-3 text-white ring-1 ring-white/10'
+        className='animate-sheet no-scrollbar relative max-h-[85dvh] w-full max-w-md overflow-y-auto rounded-t-[28px] bg-[#110a2e] px-5 pt-3 text-white ring-1 ring-white/10'
       >
         <div className='mx-auto h-1 w-10 rounded-full bg-white/20' />
         <h2 id='board-title' className='mt-5 flex items-center gap-2 text-xl font-bold'>
@@ -613,9 +643,12 @@ function Leaderboard({ board, note, onClose }) {
             )}
           </ol>
         )}
-        <button type='button' onClick={onClose} className='my-5 h-12 w-full rounded-2xl bg-white/10 font-semibold ring-1 ring-white/15'>
-          Close
-        </button>
+        {/* Close stays at the bottom while the rows scroll under a fade. */}
+        <div className='pb-safe sticky bottom-0 -mx-5 mt-2 bg-linear-to-t from-[#110a2e] from-60% to-transparent px-5 pt-6'>
+          <button type='button' onClick={onClose} className='h-12 w-full rounded-2xl bg-white/10 font-semibold ring-1 ring-white/15'>
+            Close
+          </button>
+        </div>
       </div>
     </div>
   )
