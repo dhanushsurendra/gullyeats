@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
-import { T } from '../store/adminSlice'
+import { T, patchOwner } from '../store/adminSlice'
 import { api } from '../services/api'
 import { Phone } from 'lucide-react'
-import { Card, CardHeader, Table, State, Btn, ScrollFooter } from './ui'
+import { Card, CardHeader, Table, State, Btn, ScrollFooter, ask } from './ui'
 import { useReveal } from '../hooks/usePaged'
 import StatusBadge from './StatusBadge'
 import { inr, num, signed } from '../utils/format'
@@ -13,36 +13,45 @@ import { inr, num, signed } from '../utils/format'
 // logins (carts are resumed one by one from the Carts page).
 function VendorAccess({ owner }) {
   const dispatch = useDispatch()
-  const [busy, setBusy] = useState(false)
+  const [busy, setBusy] = useState('') // the label while saving
   const run = async () => {
     let reason
     if (!owner.disabled) {
-      reason = window.prompt(
-        `Disable ${owner.name}? They won't be able to log in, and all their carts will be suspended.
-
-Reason (shown in the action log):`,
-      )
+      reason = await ask({
+        title: `Disable ${owner.name}?`,
+        message: "They won't be able to log in, and all their carts will be suspended.",
+        input: 'Reason (shown in the action log)',
+        confirm: 'Disable',
+        danger: true,
+      })
       if (reason === null) return
     } else if (
-      !window.confirm(`Enable ${owner.name}? They can log in again. Resume their carts from the Carts page.`)
+      !(await ask({
+        title: `Enable ${owner.name}?`,
+        message: 'They can log in again. Resume their carts from the Carts page.',
+        confirm: 'Enable',
+      }))
     ) {
       return
     }
-    setBusy(true)
+    setBusy(owner.disabled ? 'Enabling…' : 'Disabling…')
     try {
       if (owner.disabled) await api.enableVendor(owner.id)
       else await api.disableVendor(owner.id, reason)
-      dispatch(T.owners())
+      dispatch(patchOwner({ id: owner.id, disabled: !owner.disabled }))
+      // Full reloads are slow (every order and cart); run them in the background
+      // to fill in the real status (Active/Review/Inactive) and suspended carts.
       dispatch(T.carts())
+      dispatch(T.owners())
     } catch (e) {
-      window.alert(e.message)
+      ask({ title: "Couldn't save", message: e.message, alert: true })
     } finally {
-      setBusy(false)
+      setBusy('')
     }
   }
   return (
-    <Btn onClick={run} disabled={busy} className={owner.disabled ? '' : 'text-red-600'}>
-      {busy ? '…' : owner.disabled ? 'Enable' : 'Disable'}
+    <Btn onClick={run} disabled={!!busy} className={`disabled:opacity-60 ${owner.disabled ? '' : 'text-red-600'}`}>
+      {busy || (owner.disabled ? 'Enable' : 'Disable')}
     </Btn>
   )
 }

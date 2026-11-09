@@ -31,148 +31,90 @@ export default function Login() {
   }
 
   return (
-    <div
-      className='grid min-h-screen bg-[#f6f6f5] text-[#1f2023]
-      dark:bg-[#121214] dark:text-[#ececee]
-      lg:grid-cols-[1.05fr_.95fr]'
-    >
+    <div className='grid min-h-screen bg-canvas text-ink dark:bg-[#0c0a14] dark:text-[#ecebf2] lg:grid-cols-[1.05fr_.95fr]'>
       {/* Login Error Toast */}
       {error && (
         <div
           role='alert'
-          className='fixed right-5 top-5 z-[100]
-          flex max-w-sm items-center gap-3
-          rounded-xl border border-[#fecaca]
-          bg-white px-4 py-3
-          text-sm text-[#dc2626]
-          shadow-[0_10px_35px_rgba(0,0,0,.12)]
-          dark:border-[#7f1d1d]
-          dark:bg-[#1b1b1e]
-          dark:text-[#f87171]'
+          className='fixed right-5 top-5 z-[100] flex max-w-sm items-center gap-3 rounded-2xl border border-red-200
+          bg-white px-4 py-3 text-sm text-red-600 shadow-float dark:border-red-900 dark:bg-[#16131f] dark:text-red-400'
         >
-          <XCircle
-            size={18}
-            className='shrink-0'
-          />
-
+          <XCircle size={18} className='shrink-0' />
           <span>{error}</span>
         </div>
       )}
 
-      {/* Left Panel */}
-      <div
-        className='relative hidden flex-col overflow-hidden
-        bg-[#171719] p-10 text-white
-        dark:bg-[#0d0d0f]
-        lg:flex'
-      >
-        <div className='text-xl font-bold'>
-          <span className='text-[#f97316]'>Gully</span>Eats
+      {/* Left Panel: night purple, the same as GullyPlay and the vendor sales card */}
+      <div className='relative hidden flex-col overflow-hidden bg-gradient-to-br from-night-deep via-night to-night-soft p-12 text-white lg:flex'>
+        <div className='pointer-events-none absolute -left-24 -top-24 h-96 w-96 rounded-full bg-brand/30 blur-3xl' />
+        <div className='pointer-events-none absolute -bottom-32 right-0 h-[28rem] w-[28rem] rounded-full bg-lilac/20 blur-3xl' />
+        {/* A faint grid, for depth */}
+        <div className='pointer-events-none absolute inset-0 opacity-[0.07] [background-image:linear-gradient(#fff_1px,transparent_1px),linear-gradient(90deg,#fff_1px,transparent_1px)] [background-size:44px_44px]' />
+
+        <div className='relative flex items-center gap-2.5'>
+          <div className='text-xl font-extrabold tracking-tight'>
+            <span className='text-brand'>Gully</span>Eats
+          </div>
         </div>
 
-        <div className='mt-auto max-w-xl pb-10'>
-          <p
-            className='mb-3 text-xs font-semibold uppercase
-            tracking-[.18em] text-[#f97316]'
-          >
-            Platform control center
+        <div className='relative mt-auto max-w-xl pb-8'>
+          <p className='mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[.18em] text-lilac ring-1 ring-white/15'>
+            <i className='pulse-dot h-1.5 w-1.5 rounded-full bg-brand' /> Platform control center
           </p>
-
-          <h1
-            className='text-5xl font-semibold leading-[1.05]
-            tracking-[-.04em]'
-          >
-            Run the entire GullyEats network from one place.
+          <h1 className='text-[52px] font-extrabold leading-[1.02] tracking-[-.035em]'>
+            Run every <span className='text-brand'>GullyEats</span> cart from one place.
           </h1>
-
-          <p className='mt-5 text-sm leading-6 text-white/55'>
-            Monitor owners, restaurants, orders, revenue, payments and
-            platform health in one focused workspace.
+          <p className='mt-5 max-w-md text-[15px] leading-7 text-white/65'>
+            Owners, carts, orders, revenue, fees and GullyPulse moderation, live, in one focused workspace.
           </p>
+          <div className='mt-8 flex flex-wrap gap-2.5'>
+            {['Live cart map', 'Fee collections', 'Business insights', 'Moderation'].map((t) => (
+              <span key={t} className='rounded-full bg-white/[0.07] px-3.5 py-1.5 text-[12px] font-semibold text-white/80 ring-1 ring-white/10'>
+                {t}
+              </span>
+            ))}
+          </div>
         </div>
 
-        <small className='text-white/40'>
-          Super Admin access
-        </small>
+        <small className='relative text-white/40'>Super Admin access</small>
       </div>
 
       {/* Right Panel */}
-      <div
-        className='flex min-h-screen items-center justify-center
-        bg-[#f6f6f5] p-5 dark:bg-[#121214]'
-      >
+      <div className='flex min-h-screen items-center justify-center p-5'>
         <form
           onSubmit={submit}
-          className='w-full max-w-97.5 rounded-2xl
-          border border-[#e7e7e4]
-          bg-white p-7
-          shadow-[0_10px_40px_rgba(20,20,20,.06)]
-          dark:border-[#2c2c31]
-          dark:bg-[#1b1b1e]
-          dark:shadow-[0_10px_40px_rgba(0,0,0,.25)]'
+          className='rise w-full max-w-[400px] rounded-3xl border border-line bg-white p-8 shadow-float
+          dark:border-[#2a2538] dark:bg-[#16131f]'
         >
-          {/* Header */}
           <div className='mb-7'>
-            <div
-              className='mb-4 grid h-10 w-10 place-items-center
-              rounded-xl bg-[#fff1e6] text-[#f97316]
-              dark:bg-[rgba(249,115,22,0.16)]'
-            >
-              <LockKeyhole size={18} />
+            <div className='mb-5 grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-night to-night-soft text-white shadow-[0_8px_20px_-6px_rgba(26,15,69,.6)]'>
+              <LockKeyhole size={20} />
             </div>
-
-            <h2
-              className='text-2xl font-semibold
-              text-[#1f2023] dark:text-[#ececee]'
-            >
-              Welcome back
-            </h2>
-
-            <p
-              className='mt-1.5 text-sm
-              text-[#6b6e76] dark:text-[#9a9da6]'
-            >
+            <h2 className='text-[26px] font-extrabold tracking-tight'>Welcome back</h2>
+            <p className='mt-1.5 text-sm text-neutral-500 dark:text-[#9b97ab]'>
               Sign in to the GullyEats Super Admin console.
             </p>
           </div>
 
-          {/* Email */}
-          <label
-            className='mb-4 block text-xs font-medium
-            text-[#1f2023] dark:text-[#ececee]'
-          >
+          <label className='mb-4 block text-xs font-semibold'>
             Email
-
             <input
               type='email'
               required
               autoFocus
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder='Enter admin email'
+              placeholder='admin@gullyeats.com'
               autoComplete='username'
-              className='mt-1.5 w-full rounded-lg
-              border border-[#e7e7e4]
-              bg-white px-3 py-2.5
-              text-[#1f2023]
-              outline-none
-              placeholder:text-[#9a9da6]
-              focus:border-[#f97316]
-              focus:ring-1 focus:ring-[#f97316]/20
-              dark:border-[#2c2c31]
-              dark:bg-[#121214]
-              dark:text-[#ececee]
-              dark:placeholder:text-[#6f727b]'
+              className='mt-1.5 w-full rounded-xl border border-line bg-white px-3.5 py-3
+              text-ink outline-none transition placeholder:text-neutral-400
+              focus:border-brand focus:ring-4 focus:ring-brand/15
+              dark:border-[#2a2538] dark:bg-[#0c0a14] dark:text-[#ecebf2] dark:placeholder:text-[#6f6a80]'
             />
           </label>
 
-          {/* Password */}
-          <label
-            className='mb-4 block text-xs font-medium
-            text-[#1f2023] dark:text-[#ececee]'
-          >
+          <label className='mb-5 block text-xs font-semibold'>
             Password
-
             <input
               type='password'
               required
@@ -180,48 +122,24 @@ export default function Login() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder='Enter password'
               autoComplete='current-password'
-              className='mt-1.5 w-full rounded-lg
-              border border-[#e7e7e4]
-              bg-white px-3 py-2.5
-              text-[#1f2023]
-              outline-none
-              placeholder:text-[#9a9da6]
-              focus:border-[#f97316]
-              focus:ring-1 focus:ring-[#f97316]/20
-              dark:border-[#2c2c31]
-              dark:bg-[#121214]
-              dark:text-[#ececee]
-              dark:placeholder:text-[#6f727b]'
+              className='mt-1.5 w-full rounded-xl border border-line bg-white px-3.5 py-3
+              text-ink outline-none transition placeholder:text-neutral-400
+              focus:border-brand focus:ring-4 focus:ring-brand/15
+              dark:border-[#2a2538] dark:bg-[#0c0a14] dark:text-[#ecebf2] dark:placeholder:text-[#6f6a80]'
             />
           </label>
 
-          {/* Submit */}
           <button
             type='submit'
             disabled={loading}
-            className='flex w-full items-center justify-center gap-2
-            rounded-lg bg-[#f97316] px-4 py-2.5 text-sm
-            font-semibold text-white transition
-            hover:brightness-95
-            disabled:cursor-not-allowed
-            disabled:opacity-60'
+            className='flex w-full items-center justify-center gap-2 rounded-xl bg-brand px-4 py-3 text-sm font-bold
+            text-white shadow-glow transition hover:bg-brand-600 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60'
           >
-            {loading && (
-              <Loader2
-                size={15}
-                className='animate-spin'
-              />
-            )}
-
-            {loading ? 'Signing in...' : 'Sign in'}
+            {loading && <Loader2 size={15} className='animate-spin' />}
+            {loading ? 'Signing in…' : 'Sign in'}
           </button>
 
-          <p
-            className='mt-5 text-center text-[11px]
-            text-[#9a9da6] dark:text-[#6f727b]'
-          >
-            Super Admin access only
-          </p>
+          <p className='mt-5 text-center text-[11px] text-neutral-400'>Super Admin access only</p>
         </form>
       </div>
     </div>

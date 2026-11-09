@@ -12,6 +12,7 @@ import {
   Spinner,
   ErrorNote,
   ScrollFooter,
+  ask,
 } from './ui'
 import { useReveal } from '../hooks/usePaged'
 import StatusBadge from './StatusBadge'
@@ -26,10 +27,11 @@ function MarkFeePaid({ cart }) {
   const [state, setState] = useState({})
   const markPaid = async () => {
     if (
-      !window.confirm(
-        `Mark ${cart.name}'s due platform fee as paid? Only do this if the ` +
-          'vendor has paid GullyEats another way. The cart will unlock.',
-      )
+      !(await ask({
+        title: `Mark ${cart.name}'s fee as paid?`,
+        message: 'Only do this if the vendor has paid GullyEats another way. The cart will unlock.',
+        confirm: 'Mark paid',
+      }))
     )
       return
     setState({ busy: true })
@@ -68,21 +70,31 @@ function SuspendCart({ cart }) {
   const run = async () => {
     let reason
     if (!suspended) {
-      reason = window.prompt(
-        `Suspend ${cart.name}? It will stop taking orders and the vendor can't reopen it.
-
-Reason (shown in the action log):`,
-      )
+      reason = await ask({
+        title: `Suspend ${cart.name}?`,
+        message: "It will stop taking orders and the vendor can't reopen it.",
+        input: 'Reason (shown in the action log)',
+        confirm: 'Suspend',
+        danger: true,
+      })
       if (reason === null) return
-    } else if (!window.confirm(`Resume ${cart.name}? The vendor will be able to open it again.`)) {
+    } else if (
+      !(await ask({
+        title: `Resume ${cart.name}?`,
+        message: 'The vendor will be able to open it again.',
+        confirm: 'Resume',
+      }))
+    ) {
       return
     }
-    setState({ busy: true })
+    setState({ busy: suspended ? 'Resuming…' : 'Suspending…' })
     try {
       if (suspended) await api.resumeCart(cart.id)
       else await api.suspendCart(cart.id, reason)
+      // Stay busy until the list shows the new status, or the button flips
+      // back for a moment and looks like the click didn't work.
+      await dispatch(T.carts())
       setState({})
-      dispatch(T.carts())
     } catch (e) {
       setState({ error: e.message })
     }
@@ -99,7 +111,7 @@ Reason (shown in the action log):`,
             : 'border-red-200 text-red-600 hover:bg-red-50'
         }`}
       >
-        {state.busy ? 'Saving…' : suspended ? 'Resume cart' : 'Suspend cart'}
+        {state.busy || (suspended ? 'Resume cart' : 'Suspend cart')}
       </button>
       {state.error && <ErrorNote message={state.error} />}
     </div>

@@ -35,6 +35,7 @@ const HEALTH = [
 
 export default function Dashboard() {
   const range = useSelector((s) => s.admin.range)
+  const firstName = useSelector((s) => s.auth.user?.name)?.split(' ')[0] || 'Admin'
   const ov = useResource('overview', rangeParams(range), 30000)
   const act = useResource('activity', null, 30000)
   const carts = useResource('carts', null, 30000)
@@ -54,6 +55,7 @@ export default function Dashboard() {
     {
       label: 'Total Revenue',
       to: '/revenue',
+      featured: true,
       icon: IndianRupee,
       value: inr(k.totalRevenue.value),
       note: 'All-time GullyEats revenue',
@@ -204,11 +206,11 @@ export default function Dashboard() {
   ]
 
   return (
-    <div className='space-y-3'>
+    <div className='space-y-4'>
       <div className='flex flex-wrap items-end justify-between gap-2'>
         <div>
-          <h2 className='text-[20px] font-semibold tracking-tight'>
-            {greet}, Admin
+          <h2 className='text-[26px] font-extrabold tracking-tight'>
+            {greet}, <span className='bg-gradient-to-r from-brand to-[#ff8a4c] bg-clip-text text-transparent'>{firstName}</span> 👋
           </h2>
           <p className='text-neutral-500'>
             Here's what's happening across GullyEats.
@@ -226,14 +228,14 @@ export default function Dashboard() {
       </div>
 
       <State loading={ov.loading} error={ov.error}>
-        <div className='grid grid-cols-2 gap-2.5 md:grid-cols-3 xl:grid-cols-5'>
+        <div className='grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5'>
           {cards?.map((c) => (
             <KpiCard key={c.label} {...c} />
           ))}
         </div>
       </State>
 
-      <div className='grid gap-3 xl:grid-cols-[1.5fr_1fr]'>
+      <div className='grid gap-4 xl:grid-cols-[1.5fr_1fr]'>
         <ActivityFeed
           items={act.data}
           loading={act.loading}
@@ -249,10 +251,10 @@ export default function Dashboard() {
               <div
                 key={l}
                 className='flex items-center justify-between border-b border-line
-                 px-4 py-3 last:border-0'
+                 px-5 py-3.5 last:border-0'
               >
-                <span className='text-neutral-500'>{l}</span>
-                <b className={`text-[16px] font-semibold ${c || ''}`}>
+                <span className='font-medium text-neutral-500'>{l}</span>
+                <b className={`text-[18px] font-extrabold tracking-tight ${c || ''}`}>
                   {num(v)}
                 </b>
               </div>
@@ -263,7 +265,7 @@ export default function Dashboard() {
 
       <CartMap carts={carts.data} loading={carts.loading} error={carts.error} />
 
-      <div className='grid gap-3 xl:grid-cols-[1.6fr_1fr]'>
+      <div className='grid gap-4 xl:grid-cols-[1.6fr_1fr]'>
         <AttentionPanel items={o?.attention} />
         <div>
           <Card>
@@ -274,9 +276,9 @@ export default function Dashboard() {
                 <div
                   key={key}
                   className='flex items-center justify-between border-b border-line
-                   px-4 py-2.5 last:border-0'
+                   px-5 py-3 last:border-0'
                 >
-                  <span>{label}</span>
+                  <span className='font-medium'>{label}</span>
                   <StatusBadge
                     status={ok ? 'ACTIVE' : 'ATTENTION'}
                     label={ok ? 'Operational' : 'Down'}

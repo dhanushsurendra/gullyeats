@@ -3,9 +3,20 @@
 @tailwind utilities;
 
 body {
-  @apply bg-[#f6f6f5] text-ink antialiased;
+  @apply bg-canvas text-ink antialiased;
   font-variant-numeric: tabular-nums;
   font-size: 13px;
+}
+/* A faint wash of brand colour behind everything (light mode). */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(900px 420px at 85% -10%, rgba(167, 139, 250, 0.10), transparent 70%),
+    radial-gradient(700px 360px at 30% -15%, rgba(254, 82, 0, 0.06), transparent 70%);
 }
 .leaflet-container {
   font-family: inherit;
@@ -18,10 +29,10 @@ body {
   filter: grayscale(1) invert(1) brightness(0.8) contrast(0.85);
 }
 .cart-map .leaflet-container {
-  background: #f1f1ef;
+  background: #f1f0f6;
 }
 .dark .cart-map .leaflet-container {
-  background: #1c1c1f;
+  background: #15121e;
 }
 .cart-cluster {
   background: none;
@@ -42,61 +53,87 @@ body {
 .pulse-dot {
   animation: pulse-dot 1.8s infinite;
 }
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+.rise {
+  animation: rise 0.35s ease-out both;
+}
 @media (prefers-reduced-motion: reduce) {
-  .pulse-dot {
+  .pulse-dot,
+  .rise {
     animation: none;
   }
 }
+/* Slim scrollbars inside cards and the sidebar. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(120, 110, 150, 0.35) transparent;
+}
 
-/* ---------- Dark mode ---------- */
+/* ---------- Dark mode: near-black with a hint of night purple ---------- */
 .dark body {
-  background: #121214;
-  color: #ececee;
+  background: #0c0a14;
+  color: #ecebf2;
 }
-.dark .bg-white,
-.dark .bg-\[\#f6f6f5\]\/90 {
-  background-color: #1b1b1e;
+.dark body::before {
+  background:
+    radial-gradient(900px 420px at 85% -10%, rgba(167, 139, 250, 0.10), transparent 70%),
+    radial-gradient(700px 360px at 30% -15%, rgba(254, 82, 0, 0.05), transparent 70%);
 }
-.dark [class*='bg-[#f6f6f5]'] {
-  background-color: rgba(18, 18, 20, 0.9);
+.dark .bg-white {
+  background-color: #16131f;
 }
-.dark .bg-neutral-50 {
-  background-color: #202024;
+.dark .bg-canvas\/80 {
+  background-color: rgba(12, 10, 20, 0.8);
+}
+.dark .bg-neutral-50,
+.dark .bg-neutral-50\/70 {
+  background-color: #1c1827;
 }
 .dark .bg-neutral-100 {
-  background-color: #26262b;
+  background-color: #241f31;
 }
 .dark .border-line,
+.dark .border-line\/70,
+.dark .border-line\/80,
 .dark .border-b,
 .dark .border-t,
 .dark .border-r {
-  border-color: #2c2c31;
+  border-color: #2a2538;
 }
 .dark .text-ink {
-  color: #ececee;
+  color: #ecebf2;
 }
 .dark .text-neutral-400,
 .dark .text-neutral-500 {
-  color: #9a9da6;
+  color: #9b97ab;
 }
 .dark .text-neutral-600 {
-  color: #b4b7bf;
+  color: #b7b3c6;
 }
-.dark .hover\:bg-neutral-50:hover {
-  background-color: #202024;
+.dark .hover\:bg-neutral-50:hover,
+.dark .hover\:bg-brand-50\/50:hover {
+  background-color: #1f1a2b;
 }
 .dark .hover\:bg-neutral-100:hover,
 .dark .hover\:bg-neutral-200:hover {
-  background-color: #2a2a30;
+  background-color: #2a2438;
 }
 .dark .bg-ink {
-  background-color: #ececee;
-  color: #121214;
+  background-color: #ecebf2;
+  color: #0c0a14;
+}
+.dark .shadow-card {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -8px rgba(0, 0, 0, 0.5);
 }
 
 /* soft status badges */
 .dark .bg-brand-50 {
-  background-color: rgba(249, 115, 22, 0.16);
+  background-color: rgba(254, 82, 0, 0.16);
 }
 .dark .bg-green-50 {
   background-color: rgba(34, 197, 94, 0.15);
@@ -119,7 +156,7 @@ body {
   color: #fbbf24;
 }
 .dark .text-brand-600 {
-  color: #fb923c;
+  color: #ff8a4c;
 }
 
 /* map tiles + inputs */
@@ -127,14 +164,19 @@ body {
   filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9);
 }
 .dark input,
-.dark select {
-  background-color: #1b1b1e;
-  color: #ececee;
-  border-color: #2c2c31;
+.dark select,
+.dark textarea {
+  background-color: #16131f;
+  color: #ecebf2;
+  border-color: #2a2538;
 }
 .dark .recharts-cartesian-grid line {
-  stroke: #2c2c31;
+  stroke: #2a2538;
 }
-.dark .hover\:text-ink:hover { color: #ececee; }
+.dark .hover\:text-ink:hover {
+  color: #ecebf2;
+}
 
-.dark input[type="date"] { color-scheme: dark; }
+.dark input[type='date'] {
+  color-scheme: dark;
+}

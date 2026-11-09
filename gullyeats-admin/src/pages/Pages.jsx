@@ -9,7 +9,7 @@ import RevenueChart from '../components/RevenueChart'
 import OrdersChart from '../components/OrdersChart'
 import StatusBadge from '../components/StatusBadge'
 import KpiCard from '../components/KpiCard'
-import { Card, CardHeader, Table, State, Seg, Btn, ScrollFooter, ExportButton } from '../components/ui'
+import { Card, CardHeader, Table, State, Seg, Btn, ScrollFooter, ExportButton, ask } from '../components/ui'
 import { downloadCsv, fetchAll, istDay, istStamp, today } from '../utils/csv'
 import usePaged from '../hooks/usePaged'
 import { IndianRupee, Wallet, Clock, ShoppingBag } from 'lucide-react'
@@ -478,7 +478,15 @@ function ResetVendorPin() {
     e.preventDefault()
     const id = vendorId.trim()
     if (!id) return
-    if (!window.confirm(`Generate a new PIN for ${id}? Their current PIN will stop working.`)) return
+    if (
+      !(await ask({
+        title: `Generate a new PIN for ${id}?`,
+        message: 'Their current PIN will stop working.',
+        confirm: 'Reset PIN',
+        danger: true,
+      }))
+    )
+      return
     setBusy(true)
     setError('')
     setResult(null)

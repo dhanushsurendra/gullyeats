@@ -53,6 +53,11 @@ const slice = createSlice({
     setSearch: (s, a) => {
       s.search = a.payload
     },
+    // Flips one owner's row right away, so the button doesn't wait for a full reload.
+    patchOwner: (s, { payload: { id, disabled } }) => {
+      const o = s.data.owners?.find((x) => x.id === id)
+      if (o) Object.assign(o, { disabled, status: disabled ? 'Disabled' : 'Active' })
+    },
   },
   extraReducers: (b) => {
     Object.entries(T).forEach(([k, t]) =>
@@ -72,5 +77,5 @@ const slice = createSlice({
     )
   },
 })
-export const { setRange, setPeriod, setSearch } = slice.actions
+export const { setRange, setPeriod, setSearch, patchOwner } = slice.actions
 export default slice.reducer

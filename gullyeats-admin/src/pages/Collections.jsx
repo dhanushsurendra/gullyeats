@@ -6,7 +6,7 @@ import { useReveal } from '../hooks/usePaged'
 import { T } from '../store/adminSlice'
 import { api } from '../services/api'
 import KpiCard from '../components/KpiCard'
-import { Card, CardHeader, Table, State, Btn, Seg, ScrollFooter, ExportButton } from '../components/ui'
+import { Card, CardHeader, Table, State, Btn, Seg, ScrollFooter, ExportButton, ask } from '../components/ui'
 import { downloadCsv, istDay, today } from '../utils/csv'
 import { inr, num, ist, matches } from '../utils/format'
 
@@ -64,10 +64,11 @@ export default function Collections() {
   // Marks the cart's oldest unpaid billing day as paid (one day per click).
   const markPaid = async (r) => {
     if (
-      !window.confirm(
-        `Mark ${r.cart}'s oldest unpaid day as paid? Only do this if the vendor ` +
-          'has paid GullyEats another way (e.g. cash).',
-      )
+      !(await ask({
+        title: `Mark ${r.cart}'s oldest unpaid day as paid?`,
+        message: 'Only do this if the vendor has paid GullyEats another way (e.g. cash).',
+        confirm: 'Mark paid',
+      }))
     )
       return
     setMarking((m) => ({ ...m, [r.cartId]: 'busy' }))

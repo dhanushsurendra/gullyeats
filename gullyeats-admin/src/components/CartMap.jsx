@@ -17,7 +17,7 @@ import StatusBadge from './StatusBadge'
 import { inr, ago, num } from '../utils/format'
 
 const STATUS = [
-  ['LIVE', 'Live', '#F97316'],
+  ['LIVE', 'Live', '#FE5200'],
   ['ATTENTION', 'Attention', '#DC2626'],
   ['PAUSED', 'Paused', '#F59E0B'],
   ['OFFLINE', 'Offline', '#A3A3A3'],
@@ -83,7 +83,7 @@ function Markers({ carts, selectedId, onSelect }) {
               center={[c.lat, c.lng]}
               radius={20}
               interactive={false}
-              pathOptions={{ stroke: false, fillColor: '#F97316', fillOpacity: 0.22 }}
+              pathOptions={{ stroke: false, fillColor: '#FE5200', fillOpacity: 0.22 }}
             />
           )}
         <CircleMarker
@@ -167,7 +167,7 @@ export default function CartMap({ carts = [], loading, error }) {
   const busiest = useMemo(
     () =>
       [...shown]
-        .filter((c) => c.current || c.ordersToday)
+        .filter((c) => c.isOpen && (c.current || c.ordersToday))
         .sort((a, b) => b.current - a.current || b.ordersToday - a.ordersToday)
         .slice(0, 6),
     [shown],
@@ -290,7 +290,7 @@ export default function CartMap({ carts = [], loading, error }) {
                     </button>
                   ))
                 ) : (
-                  <p className='py-6 text-center text-neutral-500'>No orders on the map today yet.</p>
+                  <p className='py-6 text-center text-neutral-500'>No open carts with orders today.</p>
                 )}
                 <p className='mt-4 flex items-start gap-1.5 text-[11.5px] text-neutral-500'>
                   <MapPin size={13} className='mt-px shrink-0' />

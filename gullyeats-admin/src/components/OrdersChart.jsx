@@ -3,7 +3,7 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGri
 import useResource from '../hooks/useResource'
 import { Card, CardHeader, State } from './ui'
 
-const STATES = [['pending', 'Pending', '#FBBF24'], ['preparing', 'Preparing', '#F97316'], ['served', 'Served', '#16A34A'], ['cancelled', 'Cancelled', '#DC2626']]
+const STATES = [['pending', 'Pending', '#FBBF24'], ['preparing', 'Preparing', '#FE5200'], ['served', 'Served', '#8b5cf6'], ['cancelled', 'Cancelled', '#F87171']]
 
 export default function OrdersChart() {
   const period = useSelector((s) => s.admin.period)
@@ -19,11 +19,11 @@ export default function OrdersChart() {
         <div className="h-[200px] px-2 pt-4">
           <ResponsiveContainer>
             <BarChart data={pts} margin={{ left: 0, right: 8 }}>
-              <CartesianGrid stroke="#eee" vertical={false} />
+              <CartesianGrid stroke="#efedf5" strokeDasharray="3 4" vertical={false} />
               <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#8a8d94' }} tickLine={false} axisLine={false} minTickGap={18} />
               <YAxis tick={{ fontSize: 11, fill: '#8a8d94' }} tickLine={false} axisLine={false} width={34} allowDecimals={false} />
-              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e7e7e4' }} cursor={{ fill: '#f6f6f5' }} />
-              {STATES.map(([k, n, c]) => <Bar key={k} dataKey={k} name={n} stackId="a" fill={c} />)}
+              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 12, border: 'none', boxShadow: '0 12px 32px -8px rgba(26,15,69,.25)' }} cursor={{ fill: 'rgba(139,92,246,.08)' }} />
+              {STATES.map(([k, n, c]) => <Bar key={k} dataKey={k} name={n} stackId="a" fill={c} radius={k === 'cancelled' ? [4, 4, 0, 0] : 0} />)}
             </BarChart>
           </ResponsiveContainer>
         </div>

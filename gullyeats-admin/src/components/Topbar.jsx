@@ -105,13 +105,13 @@ export default function Topbar({ onMenu }) {
   return (
     <header
       className='sticky top-0 z-20 flex flex-wrap items-center gap-3
-      border-b border-line bg-[#f6f6f5]/90 px-3 py-2.5
-      backdrop-blur sm:px-5'
+      border-b border-line/70 bg-canvas/80 px-3 py-3
+      backdrop-blur-xl sm:px-6'
     >
       {/* Mobile Menu */}
       <button
         onClick={onMenu}
-        className='rounded p-1 hover:bg-neutral-200 lg:hidden'
+        className='rounded-lg p-1.5 hover:bg-neutral-200 lg:hidden'
         aria-label='Open menu'
       >
         <Menu size={18} />
@@ -119,7 +119,7 @@ export default function Topbar({ onMenu }) {
 
       {/* Page Title */}
       <div>
-        <h1 className='text-[15px] font-semibold leading-tight'>{title}</h1>
+        <h1 className='text-[19px] font-extrabold leading-tight tracking-tight'>{title}</h1>
 
         <p className='text-[12px] text-neutral-500'>{sub}</p>
       </div>
@@ -128,9 +128,10 @@ export default function Topbar({ onMenu }) {
 
       {/* Search */}
       <label
-        className='order-last flex w-full items-center gap-1.5
-        rounded-md border border-line bg-white px-2.5 py-1.5
-        text-neutral-500 sm:order-none sm:w-56'
+        className='order-last flex w-full items-center gap-2
+        rounded-full border border-line bg-white px-3.5 py-2
+        text-neutral-500 shadow-sm transition focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15
+        sm:order-none sm:w-60'
       >
         <Search size={14} />
 
@@ -147,7 +148,7 @@ export default function Topbar({ onMenu }) {
       <button
         onClick={() => setDark((d) => !d)}
         aria-label='Toggle dark mode'
-        className='rounded p-1.5 text-neutral-500 hover:bg-neutral-200'
+        className='grid h-9 w-9 place-items-center rounded-full border border-line bg-white text-neutral-500 shadow-sm transition hover:text-ink'
       >
         {dark ? <Sun size={16} /> : <Moon size={16} />}
       </button>
@@ -160,12 +161,12 @@ export default function Topbar({ onMenu }) {
         {showDatePicker && (
           <div
             className='absolute right-0 top-full z-50 mt-2 w-[300px]
-            rounded-xl border border-[#e7e7e4]
-            bg-white p-4 shadow-lg'
+            rounded-2xl border border-line
+            bg-white p-4 shadow-float'
           >
             {/* Header */}
             <div className='mb-3 flex items-center gap-2'>
-              <CalendarDays size={16} className='text-[#f97316]' />
+              <CalendarDays size={16} className='text-brand' />
 
               <div>
                 <p className='text-sm font-semibold text-ink'>
@@ -195,11 +196,11 @@ export default function Topbar({ onMenu }) {
                     setEndDate('')
                   }
                 }}
-                className='w-full rounded-lg border border-[#e7e7e4]
-                bg-[#fafafa] px-3 py-2 text-sm
+                className='w-full rounded-lg border border-line
+                bg-neutral-50 px-3 py-2 text-sm
                 outline-none transition
-                focus:border-[#f97316]
-                focus:ring-1 focus:ring-[#f97316]'
+                focus:border-brand
+                focus:ring-2 focus:ring-brand/15'
               />
             </div>
 
@@ -214,11 +215,11 @@ export default function Topbar({ onMenu }) {
                 value={endDate}
                 min={startDate || undefined}
                 onChange={(e) => setEndDate(e.target.value)}
-                className='w-full rounded-lg border border-[#e7e7e4]
-                bg-[#fafafa] px-3 py-2 text-sm
+                className='w-full rounded-lg border border-line
+                bg-neutral-50 px-3 py-2 text-sm
                 outline-none transition
-                focus:border-[#f97316]
-                focus:ring-1 focus:ring-[#f97316]'
+                focus:border-brand
+                focus:ring-2 focus:ring-brand/15'
               />
             </div>
 
@@ -226,9 +227,9 @@ export default function Topbar({ onMenu }) {
             <div className='flex justify-end gap-2'>
               <button
                 onClick={handleCancelCustomRange}
-                className='rounded-lg border border-[#e7e7e4]
+                className='rounded-lg border border-line
                 px-3 py-1.5 text-xs font-medium
-                text-neutral-500 hover:bg-[#f6f6f5]'
+                text-neutral-500 hover:bg-neutral-50'
               >
                 Cancel
               </button>
@@ -236,7 +237,7 @@ export default function Topbar({ onMenu }) {
               <button
                 onClick={handleApplyCustomRange}
                 disabled={!startDate || !endDate}
-                className='rounded-lg bg-[#f97316]
+                className='rounded-lg bg-brand
                 px-3 py-1.5 text-xs font-medium text-white
                 disabled:cursor-not-allowed disabled:opacity-50'
               >
@@ -250,8 +251,8 @@ export default function Topbar({ onMenu }) {
       {/* Admin Avatar */}
       <div className='flex items-center gap-2'>
         <span
-          className='grid h-7 w-7 place-items-center rounded-full
-    bg-ink text-[11px] font-semibold text-white'
+          className='grid h-9 w-9 place-items-center rounded-full
+    bg-gradient-to-br from-night to-night-soft text-[12px] font-bold text-white shadow-sm'
         >
           {user?.name
             ? user.name

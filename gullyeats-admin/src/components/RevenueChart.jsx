@@ -31,7 +31,7 @@ export default function RevenueChart() {
     <Card>
       <CardHeader
         title='Revenue & Orders'
-        subtitle='Revenue (solid orange) · orders (dashed)'
+        subtitle='Revenue (orange) · orders (purple)'
         right={
           <Seg
             options={PERIODS}
@@ -49,11 +49,11 @@ export default function RevenueChart() {
             >
               <defs>
                 <linearGradient id='g' x1='0' y1='0' x2='0' y2='1'>
-                  <stop offset='0%' stopColor='#F97316' stopOpacity={0.2} />
-                  <stop offset='100%' stopColor='#F97316' stopOpacity={0} />
+                  <stop offset='0%' stopColor='#FE5200' stopOpacity={0.28} />
+                  <stop offset='100%' stopColor='#FE5200' stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid stroke='#eee' vertical={false} />
+              <CartesianGrid stroke='#efedf5' strokeDasharray='3 4' vertical={false} />
               <XAxis
                 dataKey='label'
                 tick={{ fontSize: 11, fill: '#8a8d94' }}
@@ -72,10 +72,11 @@ export default function RevenueChart() {
               <YAxis yAxisId='o' orientation='right' hide />
               <Tooltip
                 formatter={(v, n) => (n === 'Revenue' ? inr(v) : num(v))}
-                contentStyle={{
+contentStyle={{
                   fontSize: 12,
-                  borderRadius: 8,
-                  border: '1px solid #e7e7e4',
+                  borderRadius: 12,
+                  border: 'none',
+                  boxShadow: '0 12px 32px -8px rgba(26,15,69,.25)',
                 }}
               />
               <Area
@@ -83,8 +84,8 @@ export default function RevenueChart() {
                 dataKey='revenue'
                 name='Revenue'
                 type='monotone'
-                stroke='#F97316'
-                strokeWidth={2}
+                stroke='#FE5200'
+                strokeWidth={2.5}
                 fill='url(#g)'
               />
               <Line
@@ -92,9 +93,8 @@ export default function RevenueChart() {
                 dataKey='orders'
                 name='Orders'
                 type='monotone'
-                stroke='#1f2023'
-                strokeWidth={1.4}
-                strokeDasharray='4 3'
+                stroke='#8b5cf6'
+                strokeWidth={2}
                 dot={false}
               />
             </ComposedChart>
@@ -113,10 +113,10 @@ export default function RevenueChart() {
           ].map(([k, v, c]) => (
             <div
               key={k}
-              className='border-r border-line px-4 py-2.5 last:border-0'
+              className='border-r border-line px-5 py-3.5 last:border-0'
             >
-              <small className='block text-neutral-500'>{k}</small>
-              <b className={`text-[16px] font-semibold ${c || ''}`}>{v}</b>
+              <small className='block text-[11px] font-semibold uppercase tracking-wider text-neutral-500'>{k}</small>
+              <b className={`mt-0.5 block text-[20px] font-extrabold tracking-tight ${c || ''}`}>{v}</b>
             </div>
           ))}
         </div>
