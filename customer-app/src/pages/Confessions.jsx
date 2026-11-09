@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { RiAddLine, RiFireLine, RiQuillPenLine, RiSpyLine, RiTimeLine } from 'react-icons/ri'
 
-import { ConfessionCard, ConfessionSkeleton, ReportSheet, Toast } from '../components/Confession'
+import { ConfessionCard, ConfessionSkeleton, PulseLocked, ReportSheet, Toast } from '../components/Confession'
 import { Button, Page, TopBar } from '../components/ui'
 import { useLike, useNearScreen, usePaged } from '../hooks/usePulse'
 import { pulse, usePulseKey } from '../utils/pulse'
@@ -67,20 +67,22 @@ export default function Confessions() {
     setToast(r.hidden ? 'Thanks. This post is hidden while our team reviews it.' : 'Thanks for reporting. Our team will take a look.')
   }
 
+  if (!key) return <PulseLocked onBack={back} />
+
   return (
     <Page>
       <TopBar title='GullyPulse' subtitle='Anonymous confessions' onBack={back} />
 
       <main className='flex-1 space-y-4 px-4 pb-32 pt-4'>
-        <section className='animate-fade-up relative overflow-hidden rounded-card bg-gradient-to-br from-primary to-orange-400 p-5 text-white shadow-card'>
-          <RiSpyLine size={120} className='absolute -right-6 -top-4 text-white/15' aria-hidden />
-          <p className='text-xs font-semibold uppercase tracking-wider text-white/80'>Open confession</p>
+        <section className='animate-fade-up relative overflow-hidden rounded-card bg-linear-to-br from-night-deep via-night to-night-soft p-5 text-white shadow-card'>
+          <RiSpyLine size={120} className='absolute -right-6 -top-4 text-lilac/20' aria-hidden />
+          <p className='text-xs font-bold uppercase tracking-wider text-lilac'>Open confession</p>
           <h2 className='mt-1 text-xl font-bold leading-snug'>Say it. Nobody will know it was you.</h2>
-          <p className='mt-1 text-sm text-white/85'>Only people who've ordered can post. Be kind, no names.</p>
+          <p className='mt-1 text-sm text-white/75'>Only people who've ordered can post. Be kind, no names.</p>
           <button
             type='button'
             onClick={compose}
-            className='mt-4 flex h-11 items-center gap-2 rounded-full bg-surface px-5 text-sm font-semibold text-primary shadow-card transition active:scale-95'
+            className='mt-4 flex h-11 items-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-white shadow-card transition hover:bg-primary-dark active:scale-95'
           >
             <RiQuillPenLine size={18} /> Write a confession
           </button>
@@ -99,7 +101,7 @@ export default function Confessions() {
                 aria-selected={tab === value}
                 onClick={() => setTab(value)}
                 className={`flex h-9 items-center gap-1.5 rounded-full px-4 text-sm font-semibold transition active:scale-95 ${
-                  tab === value ? 'bg-ink text-white' : 'bg-surface text-grey-600 ring-1 ring-grey-200'
+                  tab === value ? 'bg-night text-white' : 'bg-surface text-grey-600 ring-1 ring-grey-200'
                 }`}
               >
                 {icon} {label}

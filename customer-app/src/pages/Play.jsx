@@ -431,11 +431,14 @@ function Arcade({ def }) {
 
         {phase === 'countdown' && (
           <Overlay>
-            <p key={count} className='animate-pop text-8xl font-bold text-[#7df9ff]'>
-              {count}
-            </p>
-            <p className='mt-2 text-lg font-bold'>{def.title}</p>
-            <p className='mt-1 text-center text-sm text-white/70'>{def.hint}</p>
+            {/* On a panel: the board shows through around it, but never through the text. */}
+            <div className='flex w-full max-w-xs flex-col items-center rounded-3xl bg-[#070b1f]/90 px-6 py-5 ring-1 ring-white/10 backdrop-blur-sm'>
+              <p key={count} className='animate-pop text-8xl font-bold text-[#7df9ff]'>
+                {count}
+              </p>
+              <p className='mt-2 text-lg font-bold'>{def.title}</p>
+              <p className='mt-1 text-center text-sm text-white/70'>{def.hint}</p>
+            </div>
           </Overlay>
         )}
 

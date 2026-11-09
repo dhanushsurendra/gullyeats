@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { RiShieldCheckLine, RiSpyLine } from 'react-icons/ri'
 
 import { BottomBar, Button, LoadingScreen, Page, StatusScreen, TopBar } from '../components/ui'
+import { PulseLocked } from '../components/Confession'
 import { pulse, usePulseKey } from '../utils/pulse'
 
 const MAX = 500
@@ -59,13 +60,15 @@ export default function ConfessionNew() {
     }
   }
 
-  if (!key || me?.eligible === false) {
+  if (!key) return <PulseLocked onBack={back} />
+
+  if (me?.eligible === false) {
     return (
       <Page className='bg-surface'>
         <TopBar title='New confession' onBack={back} />
         <StatusScreen
           icon='🧾'
-          title='Order first, then confess'
+          title='You can’t post right now'
           message={me?.message || 'Only people who’ve ordered from a GullyEats cart can post. Scan a cart’s QR code and place an order to join in.'}
         >
           <Button variant='secondary' onClick={() => navigate('/confessions', { replace: true })}>

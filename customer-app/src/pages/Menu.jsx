@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate, useParams } from 'react-router-dom'
-import { RiArrowRightLine, RiCloseLine, RiSearchLine, RiSpyLine } from 'react-icons/ri'
+import { RiArrowRightLine, RiCloseLine, RiSearchLine } from 'react-icons/ri'
 
 import ActiveOrders from '../components/ActiveOrders'
 import { MenuItem } from '../components/MenuItem'
@@ -163,17 +163,6 @@ export default function Menu() {
         title={isAddMore ? `Edit token #${order?.orderNumber ?? ''}` : cart?.cartName || 'Menu'}
         subtitle={isAddMore ? 'Add or change items' : shortAddress(cart?.address)}
         onBack={isAddMore ? backToOrder : () => navigate(`/c/${cartId}/welcome`)}
-        right={
-          !isAddMore && (
-            <button
-              type='button'
-              onClick={() => navigate('/confessions')}
-              className='flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-primary-soft px-3 text-xs font-semibold text-primary transition active:scale-95'
-            >
-              <RiSpyLine size={16} /> GullyPulse
-            </button>
-          )
-        }
       />
 
       <div className='sticky top-16 z-20 space-y-3 bg-grey-50/95 px-4 pb-3 pt-4 backdrop-blur-md'>

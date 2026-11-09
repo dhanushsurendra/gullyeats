@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { RiFlag2Line, RiSendPlane2Fill } from 'react-icons/ri'
 
-import { Avatar, ConfessionCard, ConfessionSkeleton, ReportSheet, Toast } from '../components/Confession'
+import { Avatar, ConfessionCard, ConfessionSkeleton, PulseLocked, ReportSheet, Toast } from '../components/Confession'
 import { Button, Page, Spinner, StatusScreen, TopBar } from '../components/ui'
 import { useLike, usePaged } from '../hooks/usePulse'
 import { pulse, timeAgo, usePulseKey } from '../utils/pulse'
@@ -88,6 +88,8 @@ export default function ConfessionDetail() {
     setToast('Thanks for reporting. Our team will take a look.')
   }
   const report = (kind, id) => (key ? setReporting({ kind, id }) : needOrder('report'))
+
+  if (!key) return <PulseLocked onBack={back} />
 
   if (missing) {
     return (

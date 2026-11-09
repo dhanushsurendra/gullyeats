@@ -1,10 +1,32 @@
 import { useEffect, useRef, useState } from 'react'
 import { RiChat3Line, RiFlag2Line, RiHeart3Fill, RiHeart3Line } from 'react-icons/ri'
 
-import { Button } from './ui'
+import { Button, Page, TopBar } from './ui'
 import { compact, REPORT_REASONS, timeAgo } from '../utils/pulse'
 
 /* Pieces of the GullyPulse confession pages. */
+
+// GullyPulse is for people who've ordered: a phone without an order (say, a
+// shared link) sees this instead.
+export function PulseLocked({ onBack }) {
+  return (
+    <Page className='bg-surface'>
+      <TopBar title='GullyPulse' onBack={onBack} />
+      <main className='flex flex-1 items-center px-4 pb-16'>
+        <section className='animate-fade-up w-full rounded-card bg-linear-to-br from-night-deep via-night to-night-soft p-6 text-center text-white shadow-card'>
+          <p className='text-5xl' aria-hidden>
+            🤫
+          </p>
+          <p className='mt-4 text-xs font-bold uppercase tracking-wider text-lilac'>GullyPulse</p>
+          <h1 className='mt-1 text-xl font-bold leading-snug'>Unlocks with your order</h1>
+          <p className='mt-2 text-sm leading-relaxed text-white/75'>
+            Anonymous confessions from people eating at GullyEats carts. Scan a cart’s QR code and place an order to read and post.
+          </p>
+        </section>
+      </main>
+    </Page>
+  )
+}
 
 const AVATARS = [
   ['bg-amber-100', '🦊'],

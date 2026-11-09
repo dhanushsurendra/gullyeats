@@ -33,6 +33,16 @@
   --color-veg: #15803d;
   --color-nonveg: #b91c1c;
 
+  /*
+   * Night: deep purple for fun and celebration moments (GullyPlay, GullyPulse,
+   * food ready, thank you), always with orange actions and white text. The
+   * same in both themes. Use it for those moments only; orange stays the brand.
+   */
+  --color-night-deep: #0b1230;
+  --color-night: #1a0f45;
+  --color-night-soft: #2a0f45;
+  --color-lilac: #a78bfa;
+
   --radius-card: 20px;
 
   --shadow-card: 0 1px 2px rgb(24 24 27 / 0.04), 0 4px 16px rgb(24 24 27 / 0.05);
