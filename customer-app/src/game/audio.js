@@ -183,6 +183,18 @@ const SOUNDS = {
       ? [523, 523].forEach((f, i) => tone({ freq: f / 2, type: 'square', dur: 0.12, gain: 0.06, at: i * 0.15 }))
       : tone({ freq: 660, to: 990, type: 'triangle', dur: 0.12, gain: 0.06 }),
   hold: () => [659, 988].forEach((f, i) => tone({ freq: f, dur: 0.18, gain: 0.07, at: i * 0.09 })),
+  // Synapse: each neuron has its own note, so the chain can be heard.
+  fire: ({ note }) => {
+    // Silent day: a soft tick instead of the neuron's note.
+    if (!note) return tone({ freq: 2000, type: 'square', dur: 0.02, gain: 0.015 })
+    tone({ freq: note, type: 'triangle', dur: 0.32, gain: 0.09 })
+    tone({ freq: note * 2, dur: 0.18, gain: 0.025 })
+  },
+  link: ({ note }) => tone({ freq: note, type: 'sine', dur: 0.2, gain: 0.1 }),
+  chain: ({ length = 3 }) =>
+    [0, 4, 7, 12].forEach((s, i) => tone({ freq: 523 * 2 ** ((s + Math.min(length - 3, 7)) / 12), type: 'triangle', dur: 0.14, gain: 0.06, at: i * 0.06 })),
+  shieldUp: () => [988, 1319, 1760].forEach((f, i) => tone({ freq: f, type: 'triangle', dur: 0.12, gain: 0.05, at: i * 0.06 })),
+  reverse: () => tone({ freq: 990, to: 495, type: 'square', dur: 0.35, gain: 0.05 }),
   // The arcade
   count: () => tone({ freq: 440, type: 'square', dur: 0.1, gain: 0.05 }),
   go: () => tone({ freq: 880, type: 'square', dur: 0.25, gain: 0.06 }),

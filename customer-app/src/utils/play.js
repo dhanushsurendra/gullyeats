@@ -3,7 +3,7 @@ import { istDay } from '../game/nebula'
 import { NEW_PILOT } from '../game/pilot'
 
 /*
- * GullyPlay helpers, per game ('nebula', 'reflex'): the server's score and
+ * GullyPlay helpers, per game ('nebula', 'reflex', 'synapse'): the server's score and
  * leaderboard routes, and today's best kept on the phone. Players are the same
  * people as in GullyPulse: the order key (usePulseKey) proves they ordered.
  */

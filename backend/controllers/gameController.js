@@ -51,6 +51,29 @@ const GAMES = {
       score <= s.hits * l.hitPoints + s.holds * l.holdPoints &&
       (s.hits === 0 || (s.avgMs >= l.minAvgMs && s.bestMs >= l.minBestMs && s.bestMs <= s.avgMs)),
   },
+  synapse: {
+    maxMs: 47000,
+    stats: ['links', 'chains', 'longest', 'misses', 'reverses', 'saves', 'fastMs'],
+    limits: { maxScore: 150000, maxLinks: 500, maxChains: 36, maxLength: 40, maxMisses: 3, linkPoints: 10, chainPoints: 25, reverse: 2, surge: 2, speed: 1.5, minTapMs: 80 },
+    // Chains grow by one from 3, so finishing n of them means the longest is
+    // n + 2 and at least 3 + 4 + ... + (n + 2) correct taps. A tap is worth
+    // at most 10 x the chain being played (n + 3), a chain 25 x its length
+    // plus half again for speed; reverse and the Surge each double both. A
+    // shield comes every 3 clean chains, and nobody repeats a chain faster
+    // than ~80 ms a tap.
+    fits: (score, s, l) =>
+      score <= l.maxScore &&
+      s.links <= l.maxLinks &&
+      s.chains <= l.maxChains &&
+      s.misses <= l.maxMisses &&
+      s.reverses <= s.chains &&
+      s.longest === (s.chains ? s.chains + 2 : 0) &&
+      s.longest <= l.maxLength &&
+      s.links >= (s.chains * (s.longest + 3)) / 2 &&
+      s.saves <= Math.floor(s.chains / 3) &&
+      (s.chains ? s.fastMs >= l.minTapMs : s.fastMs === 0) &&
+      score <= l.reverse * l.surge * (s.links * l.linkPoints * (s.chains + 3) + l.speed * s.chains * l.chainPoints * s.longest),
+  },
 }
 const BOARD_SIZE = 20
 

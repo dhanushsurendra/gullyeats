@@ -8,6 +8,7 @@ import {
   RiEditLine,
   RiDoubleQuotesL,
   RiFireLine,
+  RiBrainLine,
   RiFlashlightLine,
   RiHeart3Fill,
   RiHeart3Line,
@@ -110,6 +111,7 @@ function Progress({ status, preparing }) {
 const PLAY = [
   { id: 'nebula', icon: <RiSpaceShipLine size={22} className='text-[#7df9ff]' />, ring: 'ring-[#22d3ee]/40' },
   { id: 'reflex', icon: <RiFlashlightLine size={22} className='text-[#fde047]' />, ring: 'ring-[#fde047]/40' },
+  { id: 'synapse', icon: <RiBrainLine size={22} className='text-[#f472b6]' />, ring: 'ring-[#f472b6]/40' },
 ]
 
 function GameCard({ here }) {
@@ -119,8 +121,14 @@ function GameCard({ here }) {
       <span className='absolute right-10 top-4 h-1 w-1 rounded-full bg-white/70' />
       <span className='absolute left-1/2 top-6 h-0.5 w-0.5 rounded-full bg-white/50' />
       <p className='text-[11px] font-bold uppercase tracking-wider text-[#a78bfa]'>GullyPlay · daily challenge</p>
-      <h2 className='text-lg font-bold leading-tight'>Play while you wait</h2>
-      <div className='mt-3 grid grid-cols-2 gap-2.5'>
+      <div className='flex items-baseline justify-between gap-2'>
+        <h2 className='text-lg font-bold leading-tight'>Play while you wait</h2>
+        <button type='button' onClick={() => navigate('/play/how-to-play')} className='shrink-0 text-xs font-semibold text-[#7df9ff] underline underline-offset-4'>
+          How to play
+        </button>
+      </div>
+      {/* An odd last game takes the full width. */}
+      <div className='mt-3 grid grid-cols-2 gap-2.5 [&>*:last-child:nth-child(odd)]:col-span-2'>
         {PLAY.map(({ id, icon, ring }) => {
           const g = GAMES[id]
           const best = bestToday(id)

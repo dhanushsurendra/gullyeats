@@ -223,3 +223,26 @@ test('adding a number keeps a GullyPulse ban', async () => {
   assert.strictEqual(moved?.until.getTime(), until.getTime())
   await ConfessionBan.collection.deleteMany({})
 })
+
+// A believable Synapse round: chains of 3 to 9, two of them reversed.
+const synapse = (score, stats = {}) => ({
+  score,
+  durationMs: 45000,
+  day: istDay(),
+  stats: { links: 45, chains: 7, longest: 9, misses: 1, reverses: 2, saves: 1, fastMs: 310, ...stats },
+})
+
+test('Synapse has its own board and refuses chains that don’t add up', async () => {
+  const p = await player()
+  const send = (body) => api('POST', '/synapse/scores', { who: p, body })
+  assert.strictEqual((await send(synapse(4360))).status, 200)
+  assert.strictEqual((await send(synapse(4360, { longest: 12 }))).status, 400) // 7 chains end at 9
+  assert.strictEqual((await send(synapse(4360, { links: 20 }))).status, 400) // too few taps for 7 chains
+  assert.strictEqual((await send(synapse(4360, { reverses: 8 }))).status, 400)
+  assert.strictEqual((await send(synapse(4360, { misses: 4 }))).status, 400)
+  assert.strictEqual((await send(synapse(4360, { saves: 3 }))).status, 400) // one shield per 3 chains
+  assert.strictEqual((await send(synapse(4360, { fastMs: 40 }))).status, 400) // superhuman tapping
+  assert.strictEqual((await send(synapse(4360, { saves: undefined }))).status, 400) // a v1 round
+  assert.strictEqual((await send(synapse(149000))).status, 400) // more than the taps could earn
+  assert.deepStrictEqual((await api('GET', '/synapse/leaderboard')).body.top.map((r) => r.score), [4360])
+})

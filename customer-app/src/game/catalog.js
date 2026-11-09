@@ -1,5 +1,6 @@
 import * as nebula from './nebula'
 import * as reflex from './reflex'
+import * as synapse from './synapse'
 
 /*
  * The GullyPlay games, as the arcade page (pages/Play.jsx) needs them: how to
@@ -169,5 +170,53 @@ const reflexGame = {
   },
 }
 
-export const GAMES = { nebula: nebulaGame, reflex: reflexGame }
+const synapseGame = {
+  id: 'synapse',
+  title: 'Synapse',
+  tagline: 'Watch the spark. Repeat the chain.',
+  seconds: 45,
+  controls: 'tap',
+  hint: 'Only the new link fires: remember the rest · ⟲ REVERSE: tap it backwards',
+  boardNote: 'Same chain for everyone today. Resets at midnight.',
+  // No music: each neuron's note is part of remembering the chain.
+  music: false,
+  todayTitle: 'Today’s twist',
+  today(day) {
+    const t = synapse.TWISTS[synapse.twistFor(synapse.seedFor(day))]
+    return { label: t.name, text: t.text }
+  },
+  create: (day, size) => synapse.createGame(synapse.seedFor(day), size),
+  step: (game, dt) => synapse.step(game, dt),
+  tap: synapse.tap,
+  result: synapse.result,
+  draw(ctx, game) {
+    synapse.draw(ctx, game)
+    hudBase(ctx, game, synapse.ROUND_MS)
+    ctx.textAlign = 'left'
+    ctx.font = '700 13px Poppins, system-ui, sans-serif'
+    if (game.chains) {
+      ctx.fillStyle = 'rgba(255,255,255,0.7)'
+      ctx.fillText(`🧠 longest chain ${game.longest}`, 16, 66)
+    }
+    if (game.surge) {
+      ctx.fillStyle = '#f472b6'
+      ctx.fillText('SURGE x2', 16, 84)
+    }
+  },
+  grade: (r) => (r.score >= 15000 ? 'S' : r.score >= 9000 ? 'A' : r.score >= 5000 ? 'B' : 'C'),
+  breakdown: (r) => [
+    ['Links', r.points.links],
+    ['Chains', r.points.chains],
+    ['Speed bonus', r.points.speed],
+  ],
+  haptics: { wrong: 90, chain: [30, 40, 30], shieldBreak: 50, surge: [60, 40, 120] },
+  overTitle: (r) => (r.stats.misses >= synapse.MAX_MISSES ? 'Overload' : 'Time’s up'),
+  stats: (r) => [
+    ['Longest chain', r.stats.longest || '–'],
+    ['Reverse chains', r.stats.reverses],
+    ['Shield saves', r.stats.saves],
+  ],
+}
+
+export const GAMES = { nebula: nebulaGame, reflex: reflexGame, synapse: synapseGame }
 export { istDay } from './nebula'

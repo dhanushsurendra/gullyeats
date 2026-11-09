@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
-import { Navigate, useNavigate, useParams } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import {
   RiArrowLeftSLine,
   RiFlashlightFill,
@@ -397,13 +397,16 @@ function Arcade({ def }) {
               {askPhone && savePlayer(true)}
               {def.today && (
                 <div className='mt-4 w-full rounded-2xl bg-[#c084fc]/15 px-4 py-3 text-left ring-1 ring-[#c084fc]/40'>
-                  <p className='text-[11px] font-bold uppercase tracking-wider text-[#c084fc]'>Today’s anomaly</p>
+                  <p className='text-[11px] font-bold uppercase tracking-wider text-[#c084fc]'>{def.todayTitle || 'Today’s anomaly'}</p>
                   <p className='font-semibold'>{def.today(istDay()).label}</p>
                   <p className='text-xs text-white/70'>{def.today(istDay()).text}</p>
                 </div>
               )}
               {def.pilot && <PilotLobby day={istDay()} profile={pilot} onSkin={pickSkin} />}
               <p className='mt-4 text-center text-xs text-white/60'>{def.hint}</p>
+              <Link to={`/play/how-to-play#${def.id}`} className='mt-2 text-sm font-semibold text-[#7df9ff] underline underline-offset-4'>
+                How to play
+              </Link>
               <div className='mt-3 flex gap-2'>
                 <Toggle on={prefs.calm} onClick={() => setPref('calm')}>
                   Reduced motion
