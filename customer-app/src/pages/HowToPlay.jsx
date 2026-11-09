@@ -27,16 +27,19 @@ const GUIDES = [
   {
     id: 'reflex',
     title: 'Zero Reflex',
-    time: '20 seconds',
+    time: '30 seconds',
     goal: 'Follow the rule at the top and tap the right shapes as fast as you can.',
     steps: [
       'A rule shows at the top, like “Tap CYAN”, “Tap ▲” or “Tap anything but ORANGE”.',
       'Shapes pop up. Tap only the ones that match the rule.',
+      'Later the rules get harder: “Tap only CYAN ▲” means the colour and the shape must both match.',
       'The faster you tap, the more points you get.',
       'Get 5 right in a row for double points, 10 in a row for triple.',
-      'The rule changes every few seconds, so keep reading the top.',
+      'A gold ★ sometimes pops up. Tap it quickly for a bonus, whatever the rule says.',
+      'In the last 5 seconds every point counts double.',
     ],
     careful: 'A wrong tap loses points and your streak. When it says FREEZE, don’t tap anything until it ends: you get a bonus for holding still.',
+    extra: 'Each day has a twist: Tiny (smaller targets), Rush (more targets that vanish faster), Blackout (the rule hides after a second, so remember it) or Drift (targets float around).',
   },
   {
     id: 'synapse',

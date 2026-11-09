@@ -194,9 +194,9 @@ test('server ceilings match each game’s own', () => {
 // A believable Zero Reflex round.
 const reflex = (score, stats = {}) => ({
   score,
-  durationMs: 20000,
+  durationMs: 30000,
   day: istDay(),
-  stats: { hits: 20, wrong: 1, missed: 2, holds: 1, avgMs: 420, bestMs: 260, ...stats },
+  stats: { hits: 20, wrong: 1, missed: 2, holds: 1, golds: 2, avgMs: 420, bestMs: 260, ...stats },
 })
 
 test('Zero Reflex has its own board and refuses superhuman reflexes', async () => {
@@ -207,6 +207,9 @@ test('Zero Reflex has its own board and refuses superhuman reflexes', async () =
   assert.strictEqual((await send(reflex(2400, { bestMs: 500 }))).status, 400) // best slower than average
   assert.strictEqual((await send(reflex(99999))).status, 400)
   assert.strictEqual((await send({ ...reflex(2400), durationMs: 45000 })).status, 400)
+  assert.strictEqual((await send(reflex(2400, { golds: 11 }))).status, 400)
+  assert.strictEqual((await send(reflex(2400, { golds: undefined }))).status, 400) // a v1 round
+  assert.strictEqual((await send(reflex(20 * 900 + 200 + 2 * 400 + 1))).status, 400) // more than the taps could earn
   assert.strictEqual((await send({ ...reflex(2400), stats: { kills: 3 } })).status, 400) // another game's stats
   assert.deepStrictEqual((await api('GET', '/reflex/leaderboard')).body.top.map((r) => r.score), [2400])
   assert.deepStrictEqual((await api('GET', '/nebula/leaderboard')).body.top, [])

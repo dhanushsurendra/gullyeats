@@ -182,6 +182,8 @@ const SOUNDS = {
     freeze
       ? [523, 523].forEach((f, i) => tone({ freq: f / 2, type: 'square', dur: 0.12, gain: 0.06, at: i * 0.15 }))
       : tone({ freq: 660, to: 990, type: 'triangle', dur: 0.12, gain: 0.06 }),
+  gold: () => [1047, 1319, 1568, 2093].forEach((f, i) => tone({ freq: f, type: 'triangle', dur: 0.12, gain: 0.06, at: i * 0.04 })),
+  goldIn: () => tone({ freq: 1568, to: 2093, type: 'sine', dur: 0.15, gain: 0.04 }),
   hold: () => [659, 988].forEach((f, i) => tone({ freq: f, dur: 0.18, gain: 0.07, at: i * 0.09 })),
   // Synapse: each neuron has its own note, so the chain can be heard.
   fire: ({ note }) => {

@@ -139,12 +139,17 @@ const reflexGame = {
   id: 'reflex',
   title: 'Zero Reflex',
   tagline: 'Tap fast. Or don’t.',
-  seconds: 20,
+  seconds: 30,
   controls: 'tap',
-  hint: 'Follow the rule at the top · on FREEZE, don’t tap',
+  hint: 'Follow the rule at the top · on FREEZE, don’t tap · grab every ★',
   boardNote: 'Same rules for everyone today. Resets at midnight.',
   music: true,
-  intense: (game) => game.t >= 15000,
+  intense: (game) => game.surge,
+  todayTitle: 'Today’s twist',
+  today(day) {
+    const t = reflex.TWISTS[reflex.twistFor(reflex.seedFor(day))]
+    return { label: t.name, text: t.text }
+  },
   create: (day, size) => reflex.createGame(reflex.seedFor(day), size),
   step: (game, dt) => reflex.step(game, dt),
   tap: reflex.tap,
@@ -159,13 +164,27 @@ const reflexGame = {
       ctx.font = '700 13px Poppins, system-ui, sans-serif'
       ctx.fillText(x > 1 ? `🔥 ${game.streak} streak · x${x}` : `${game.streak} streak`, 16, 66)
     }
+    if (game.surge) {
+      ctx.textAlign = 'left'
+      ctx.fillStyle = '#f472b6'
+      ctx.font = '700 13px Poppins, system-ui, sans-serif'
+      ctx.fillText('SURGE x2', 16, 84)
+    }
   },
+  grade: (r) => (r.score >= 20000 ? 'S' : r.score >= 14000 ? 'A' : r.score >= 8000 ? 'B' : 'C'),
+  breakdown: (r) => [
+    ['Taps', r.points.hits],
+    ['Freezes held', r.points.holds],
+    ['Golden stars', r.points.gold],
+  ],
+  haptics: { wrong: 60, gold: [20, 30, 20] },
   overTitle: () => 'Time’s up',
   stats: (r) => {
     const tries = r.stats.hits + r.stats.wrong + r.stats.missed
     return [
       ['Accuracy', tries ? `${Math.round((100 * r.stats.hits) / tries)}%` : '–'],
       ['Avg reaction', r.stats.hits ? `${r.stats.avgMs} ms` : '–'],
+      ['Golden stars', r.stats.golds],
     ]
   },
 }

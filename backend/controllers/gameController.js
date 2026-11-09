@@ -40,15 +40,18 @@ const GAMES = {
           (s.kills * l.killPoints + s.drones * l.dronePoints + s.energy * l.energyPoints + s.near * l.nearPoints + s.bossHits * l.bossHitPoints + s.boss * l.bossPoints),
   },
   reflex: {
-    maxMs: 22000,
-    stats: ['hits', 'wrong', 'missed', 'holds', 'avgMs', 'bestMs'],
-    limits: { maxScore: 25000, maxHits: 70, maxHolds: 6, hitPoints: 450, holdPoints: 100, minAvgMs: 150, minBestMs: 100 },
-    // Nobody reacts to a target at a random spot in under ~100 ms.
+    maxMs: 32000,
+    stats: ['hits', 'wrong', 'missed', 'holds', 'golds', 'avgMs', 'bestMs'],
+    limits: { maxScore: 80000, maxHits: 120, maxHolds: 8, maxGolds: 10, hitPoints: 900, holdPoints: 200, goldPoints: 400, minAvgMs: 150, minBestMs: 100 },
+    // A hit is worth at most 150 x3, a held freeze 100, a golden star 200,
+    // all doubled in the Surge. Nobody reacts to a target at a random spot in
+    // under ~100 ms.
     fits: (score, s, l) =>
       score <= l.maxScore &&
       s.hits <= l.maxHits &&
       s.holds <= l.maxHolds &&
-      score <= s.hits * l.hitPoints + s.holds * l.holdPoints &&
+      s.golds <= l.maxGolds &&
+      score <= s.hits * l.hitPoints + s.holds * l.holdPoints + s.golds * l.goldPoints &&
       (s.hits === 0 || (s.avgMs >= l.minAvgMs && s.bestMs >= l.minBestMs && s.bestMs <= s.avgMs)),
   },
   synapse: {
