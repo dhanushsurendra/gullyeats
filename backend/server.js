@@ -106,6 +106,8 @@ async function startServer() {
       `Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`,
     )
   })
+
+  require('./utils/feeReminders').startFeeReminders()
 }
 
 startServer().catch((err) => {

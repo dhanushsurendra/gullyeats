@@ -3,7 +3,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:ordering/core/utils/order_alerts.dart';
-import 'package:ordering/core/utils/push.dart';
 import 'package:ordering/core/widgets/skeleton.dart';
 import 'package:ordering/core/error/app_exceptions.dart';
 import 'package:ordering/core/theme/app_colors.dart';
@@ -110,8 +109,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
     if (token == null || cartId == null) {
       return;
     }
-
-    unawaited(Push.register(token));
 
     if (mounted) setState(() => _loadFailed = false);
     try {

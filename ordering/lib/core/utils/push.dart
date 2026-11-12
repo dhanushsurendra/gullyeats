@@ -7,15 +7,22 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:ordering/core/constants/api_constants.dart';
 
-/// New-order pushes, for when the app is in the background or closed (the
-/// socket only reaches an open app). Android shows them itself on the
-/// "new_orders" channel (MainActivity.kt); in the foreground they are not
-/// shown, since the socket already rings. Every call swallows errors, so a
+/// Pushes from the backend (utils/push.js), for when the app is in the
+/// background or closed: new orders (the socket only reaches an open app)
+/// and platform-fee reminders, whose tap opens the payment screen (see
+/// [feeTap]). Android shows them itself on the channels MainActivity.kt
+/// creates; in the foreground they are not shown, since the socket already
+/// rings and the home screen shows the fee banner. Every call swallows errors, so a
 /// phone without Google services (or a test) just gets no pushes.
 class Push {
   Push._();
 
   static StreamSubscription<String>? _registered;
+  static bool _tapsWatched = false;
+
+  /// The cart of a tapped fee reminder, until HomeScreen opens its payment
+  /// screen (switching to that cart first). Null when there's none.
+  static final feeTap = ValueNotifier<String?>(null);
 
   /// Asks for notification permission (Android 13+), registers with Firebase
   /// and sends this phone's installation ID to the server for the logged-in
@@ -28,6 +35,13 @@ class Push {
       await _registered?.cancel();
       _registered = messaging.onRegistered.listen((id) => _send(authToken, id));
       await messaging.register();
+      if (!_tapsWatched) {
+        _tapsWatched = true;
+        FirebaseMessaging.onMessageOpenedApp.listen(_onTap);
+        // The push that started the app, when it was closed.
+        final initial = await messaging.getInitialMessage();
+        if (initial != null) _onTap(initial);
+      }
     } catch (e) {
       debugPrint('Push setup failed: $e');
     }
@@ -43,6 +57,10 @@ class Push {
     } catch (e) {
       debugPrint('Push logout failed: $e');
     }
+  }
+
+  static void _onTap(RemoteMessage message) {
+    if (message.data['type'] == 'fee') feeTap.value = message.data['cartId'];
   }
 
   static Future<void> _send(String authToken, String id) async {

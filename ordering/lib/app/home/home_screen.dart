@@ -7,7 +7,11 @@ import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_gaps.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
 import 'package:ordering/core/utils/format_price.dart';
+import 'package:ordering/core/routes/app_routes.dart';
 import 'package:ordering/core/utils/payment_lock.dart';
+import 'package:ordering/core/utils/push.dart';
+import 'package:ordering/core/utils/session.dart';
+import 'package:ordering/features/cart/providers/cart_provider.dart';
 import 'package:ordering/features/auth/providers/auth_provider.dart';
 import 'package:ordering/features/cart/presentation/sales_screen.dart';
 import 'package:ordering/features/orders/screens/handover_screen.dart';
@@ -34,6 +38,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    Push.feeTap.addListener(_checkLock);
     // The cart can become due while the app stays open all day, so the lock
     // is checked here too, not only on the welcome screen at start-up.
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkLock());
@@ -46,6 +51,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    Push.feeTap.removeListener(_checkLock);
     _lockTimer?.cancel();
     super.dispose();
   }
@@ -57,8 +63,36 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Future<void> _checkLock() async {
     if (!mounted) return;
+    final carts = context.read<CartProvider>();
+    final tapped = Push.feeTap.value;
+    if (tapped != null && tapped != carts.selectedCart?.id) {
+      // A fee reminder for another cart: switch to it the usual way (the
+      // welcome screen shows a locked cart's lock screen), then come back.
+      final cart = carts.carts.where((c) => c.id == tapped).firstOrNull;
+      if (cart == null) {
+        Push.feeTap.value = null;
+      } else {
+        await carts.selectCart(cart);
+        navigatorKey.currentState
+            ?.pushNamedAndRemoveUntil(AppRoutes.welcome, (_) => false);
+        return;
+      }
+    }
+
     final status = await checkPaymentLock(context);
-    if (mounted && status != null) setState(() => _status = status);
+    if (!mounted || status == null) return;
+    setState(() => _status = status);
+
+    if (tapped != null && tapped == carts.selectedCart?.id) {
+      Push.feeTap.value = null;
+      // A locked cart is already on the lock screen; staff can't pay.
+      if (!status.isLocked &&
+          status.canPay &&
+          status.totalPending > 0 &&
+          !context.read<AuthProvider>().isStaff) {
+        openFeePayment(context, status);
+      }
+    }
   }
 
   void _onTabTap(int index) {
@@ -152,6 +186,23 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 }
 
+/// Pays a fee that is due before the cart locks (the screen can be closed).
+void openFeePayment(BuildContext context, PaymentStatusModel status) {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => PaymentLockScreen(
+        isLocked: false,
+        cartName: status.cartName,
+        cartAddress: status.address,
+        ordersCompleted: status.totalOrders,
+        platformFee: status.totalPending,
+        amountDue: status.totalPending,
+      ),
+    ),
+  );
+}
+
 /// "Your cart locks at 2:00 AM. Pay ₹X now…" with Pay now. Shown from
 /// midnight until the lock; staff see the warning without the button.
 class _FeeDueBanner extends StatelessWidget {
@@ -190,19 +241,7 @@ class _FeeDueBanner extends StatelessWidget {
           ),
           if (canPay)
             TextButton(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => PaymentLockScreen(
-                    isLocked: false,
-                    cartName: status.cartName,
-                    cartAddress: status.address,
-                    ordersCompleted: status.totalOrders,
-                    platformFee: status.totalPending,
-                    amountDue: status.totalPending,
-                  ),
-                ),
-              ),
+              onPressed: () => openFeePayment(context, status),
               child: Text(
                 l10n.payNowCaps,
                 style: AppTextStyles.caption.copyWith(

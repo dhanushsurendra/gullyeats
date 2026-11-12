@@ -23,7 +23,13 @@ class MainActivity : FlutterActivity() {
             )
             channel.enableVibration(true)
             channel.vibrationPattern = longArrayOf(0, 400, 200, 400)
-            getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+            val manager = getSystemService(NotificationManager::class.java)
+            manager.createNotificationChannel(channel)
+            // Platform-fee reminders (backend utils/feeReminders.js): the
+            // phone's normal notification sound, not the alarm.
+            manager.createNotificationChannel(
+                NotificationChannel("fees", "Platform fee reminders", NotificationManager.IMPORTANCE_HIGH),
+            )
         }
     }
 }

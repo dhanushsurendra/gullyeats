@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:ordering/core/routes/app_routes.dart';
 import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
+import 'package:ordering/core/utils/push.dart';
 import 'package:ordering/core/utils/session.dart';
 import 'package:ordering/features/cart/presentation/switch_cart_screen.dart';
 import 'package:ordering/features/cart/providers/cart_provider.dart';
@@ -74,6 +77,9 @@ class _WelcomeScreenState extends State<WelcomeScreen>
 
       return;
     }
+
+    // Here, not on Orders, so a locked cart's owner still gets reminders.
+    unawaited(Push.register(token));
 
     try {
       PaymentStatusModel? paymentStatus = await paymentProvider.refreshStatus(
