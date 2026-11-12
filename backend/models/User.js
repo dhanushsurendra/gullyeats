@@ -46,6 +46,9 @@ const userSchema = new mongoose.Schema(
     // Set when a GullyEats admin disables a vendor: they can't log in, and
     // their carts are suspended.
     disabledAt: { type: Date, default: null },
+    // Firebase Installation IDs of the phones logged in as this user, for
+    // push notifications (see utils/push.js).
+    pushIds: { type: [String], select: false },
     otpHash: String,
     otpExpiresAt: Date,
   },

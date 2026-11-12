@@ -8,7 +8,7 @@
 PRODUCT_NAME = ordering
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.example.ordering
+PRODUCT_BUNDLE_IDENTIFIER = com.gullyeats.vendor
 
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2026 com.example. All rights reserved.

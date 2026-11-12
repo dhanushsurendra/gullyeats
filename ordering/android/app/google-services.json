@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "186504179997",
+    "project_id": "gullyeats-cff75",
+    "storage_bucket": "gullyeats-cff75.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:186504179997:android:9d315ae9a9a16097c3b1f4",
+        "android_client_info": {
+          "package_name": "com.gullyeats.vendor"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCd2pVlmBph4B03ryHlDwIk6sv3ZT8YS7k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

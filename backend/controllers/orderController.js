@@ -11,6 +11,7 @@ const Payment = require('../models/Payment')
 const paymentLock = require('../utils/cartPaymentLock')
 const { getISTMidnight } = paymentLock
 const { holdsOrderKey } = require('../utils/orderKey')
+const { notifyNewOrder } = require('../utils/push')
 
 /** Whether a bill already covers the day [order] was paid on. */
 async function isPaidDayBilled(order) {
@@ -213,6 +214,8 @@ exports.createOrder = asyncHandler(async (req, res) => {
   delete forVendor.accessKey
   req.io.to(cart._id.toString()).emit('new_order_received', forVendor)
   if (isPaid) req.io.to(`queue:${cart._id}`).emit('queue_changed')
+  // Vendor-entered orders were made on the vendor's own phone: no push.
+  if (!isVendor) notifyNewOrder(cart, order)
 
   res.status(201).json({
     success: true,

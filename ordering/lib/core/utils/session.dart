@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ordering/core/routes/app_routes.dart';
+import 'package:ordering/core/utils/push.dart';
 import 'package:ordering/features/auth/providers/auth_provider.dart';
 import 'package:ordering/features/cart/providers/cart_provider.dart';
 import 'package:ordering/features/cart/providers/staff_provider.dart';
@@ -29,6 +30,7 @@ Future<void> signOut(BuildContext context) async {
     final auth = context.read<AuthProvider>();
 
     await cart.clear();
+    await Push.unregister();
     await auth.logout();
 
     navigatorKey.currentState?.pushNamedAndRemoveUntil(

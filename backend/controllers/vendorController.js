@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken')
 const asyncHandler = require('../utils/asyncHandler')
 const { validatePhone, validateRole } = require('../utils/validators')
 const generatePin = require('../utils/generatePin')
+const push = require('../utils/push')
 const DISABLED_MESSAGE = 'This account has been disabled. Please contact GullyEats support.'
 
 // The OTP comes back in the send-otp response, so it only works while a
@@ -251,4 +252,16 @@ exports.resetPin = asyncHandler(async (req, res) => {
   await user.save()
 
   res.json({ success: true, userId: user.userId, pin })
+})
+
+// The vendor app sends its Firebase Installation ID after every login and
+// app start, so new orders reach it as push notifications.
+exports.savePushId = asyncHandler(async (req, res) => {
+  const { id } = req.body
+  if (typeof id !== 'string' || !id || id.length > 256) {
+    res.status(400)
+    throw new Error('id is required')
+  }
+  await push.savePushId(req.user._id, id)
+  res.json({ success: true })
 })

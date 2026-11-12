@@ -8,6 +8,7 @@ const {
   vendorLogin,
   changePin,
   resetPin,
+  savePushId,
 } = require('../controllers/vendorController')
 
 // PINs are 4 digits and OTPs 6, so guesses are limited per account (not per
@@ -49,5 +50,7 @@ router.post(
 
 // Issues a new PIN for the logged-in user (see resetPin).
 router.post('/reset-pin', auth, resetPin)
+
+router.post('/push-id', auth, savePushId)
 
 module.exports = router
