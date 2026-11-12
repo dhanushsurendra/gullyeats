@@ -61,12 +61,13 @@ export default function Collections() {
     .map((r) => ({ ...r, id: r.cartId }))
   const reveal = useReveal(rows, JSON.stringify([bucket, q]))
 
-  // Marks the cart's oldest unpaid billing day as paid (one day per click).
+  // Marks every unpaid day through yesterday as paid (the whole open bill).
   const markPaid = async (r) => {
     if (
       !(await ask({
-        title: `Mark ${r.cart}'s oldest unpaid day as paid?`,
-        message: 'Only do this if the vendor has paid GullyEats another way (e.g. cash).',
+        title: `Mark ${inr(r.amount)} from ${r.cart} as paid?`,
+        // r.amount is overdue fees; between midnight and the 2am lock the bill also holds yesterday.
+        message: `This settles every unpaid day through yesterday (${r.days} day${r.days === 1 ? '' : 's'}, ${inr(r.amount)} overdue; between midnight and 2am, yesterday's fees too). Only do this if the vendor has paid GullyEats another way (e.g. cash).`,
         confirm: 'Mark paid',
       }))
     )
@@ -166,7 +167,7 @@ export default function Collections() {
       <Card>
         <CardHeader
           title='Call list'
-          subtitle={`${num(rows.length)} carts · longest owed first. "Mark fee paid" settles the oldest unpaid day.`}
+          subtitle={`${num(rows.length)} carts · longest owed first. "Mark fee paid" settles every unpaid day through yesterday.`}
           right={
             <div className='flex max-w-full flex-wrap items-center gap-2'>
               <Seg
