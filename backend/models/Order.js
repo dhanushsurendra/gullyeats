@@ -98,6 +98,9 @@ const OrderSchema = new mongoose.Schema(
     // the order is theirs for confessions (order ids are guessable). Never
     // returned by queries unless asked for with +accessKey.
     accessKey: { type: String, select: false },
+    // The customer's browser push subscription, if they asked to be told
+    // when the order is ready (see utils/webPush.js).
+    pushSubscription: { type: Object, select: false },
 
     servedAt: Date,
     paidAt: Date,

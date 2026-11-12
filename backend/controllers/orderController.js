@@ -12,6 +12,7 @@ const paymentLock = require('../utils/cartPaymentLock')
 const { getISTMidnight } = paymentLock
 const { holdsOrderKey } = require('../utils/orderKey')
 const { notifyNewOrder } = require('../utils/push')
+const webPush = require('../utils/webPush')
 
 /** Whether a bill already covers the day [order] was paid on. */
 async function isPaidDayBilled(order) {
@@ -341,6 +342,7 @@ exports.serveOrder = asyncHandler(async (req, res) => {
   await order.save()
 
   emitOrder(req, order)
+  webPush.notifyCustomer(order)
 
   res.status(200).json({
     success: true,
@@ -570,6 +572,8 @@ exports.deleteOrder = asyncHandler(async (req, res) => {
   await order.save()
 
   emitOrder(req, order, 'order_cancelled')
+  // A customer who cancelled knows already.
+  if (isVendor) webPush.notifyCustomer(order)
 
   res.status(200).json({
     success: true,
@@ -684,4 +688,18 @@ exports.submitOrderFeedback = asyncHandler(async (req, res) => {
     message: 'Feedback submitted successfully',
     data: order,
   })
+})
+
+// The VAPID public key the customer app subscribes with (null: pushes off).
+exports.getPushKey = (req, res) => res.json({ success: true, data: { publicKey: webPush.publicKey() } })
+
+// The customer's phone asks to be told when this order is ready.
+exports.savePushSubscription = asyncHandler(async (req, res) => {
+  const order = await Order.findById(req.params.orderId)
+  if (!order) fail(res, 404, 'Order not found')
+  await requireOrderKey(req, res, order)
+  const subscription = webPush.cleanSubscription(req.body?.subscription)
+  if (!subscription) fail(res, 400, 'Invalid push subscription')
+  await Order.updateOne({ _id: order._id }, { $set: { pushSubscription: subscription } })
+  res.json({ success: true, data: null })
 })

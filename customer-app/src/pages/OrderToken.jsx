@@ -9,6 +9,7 @@ import {
   RiDoubleQuotesL,
   RiFireLine,
   RiBrainLine,
+  RiNotification3Line,
   RiFlashlightLine,
   RiHeart3Fill,
   RiHeart3Line,
@@ -27,6 +28,7 @@ import { rupees } from '../utils/format'
 import { pulse, timeAgo, usePulseKey } from '../utils/pulse'
 import { bestToday } from '../utils/play'
 import { GAMES } from '../game/catalog'
+import { enablePush, pushPermission } from '../utils/push'
 
 const STEPS = ['Placed', 'Paid', 'Preparing', 'Served']
 
@@ -299,6 +301,23 @@ export default function OrderToken() {
   const [cancelError, setCancelError] = useState('')
   // "Posted anonymously" after coming back from writing a confession.
   const [toast, setToast] = useState(location.state?.toast || '')
+
+  // Notifications: on by themselves once allowed (on an earlier order too);
+  // otherwise a button asks, since browsers only prompt from a tap.
+  const [notify, setNotify] = useState(() => (pushPermission() === 'default' ? 'ask' : 'off'))
+  const turnOnNotify = async () => {
+    setNotify('busy')
+    try {
+      setNotify((await enablePush(orderId)) ? 'on' : 'off')
+    } catch {
+      setNotify(pushPermission() === 'default' ? 'ask' : 'off')
+    }
+  }
+  useEffect(() => {
+    if (pushPermission() !== 'granted') return
+    enablePush(orderId).then((on) => setNotify(on ? 'on' : 'off'), () => {})
+  }, [orderId])
+
   useEffect(() => {
     if (location.state?.toast) navigate(location.pathname, { replace: true, state: null })
   }, [location, navigate])
@@ -355,7 +374,9 @@ export default function OrderToken() {
       : "Paid. You're in the queue"
   const detail = isPending
     ? 'Show your token when you pay. Cooking starts after payment.'
-    : "We'll let you know here when it's ready. Keep this page open."
+    : notify === 'on'
+      ? "We'll send you a notification when it's ready."
+      : "We'll let you know here when it's ready. Keep this page open."
 
   return (
     <Page>
@@ -378,6 +399,11 @@ export default function OrderToken() {
             <p className={`text-[15px] font-semibold ${isPending ? 'text-primary' : 'text-success'}`}>{headline}</p>
             <p className='mt-0.5 text-sm text-grey-600'>{detail}</p>
           </div>
+          {(notify === 'ask' || notify === 'busy') && (
+            <Button variant='secondary' loading={notify === 'busy'} onClick={turnOnNotify}>
+              <RiNotification3Line size={18} /> Notify me when it's ready
+            </Button>
+          )}
           {adjustment?.action === 'RETURN' && adjustment.amount > 0 && (
             <p className='rounded-2xl bg-grey-100 px-4 py-3 text-sm text-grey-700'>
               Your order got smaller. Collect <b>{rupees(adjustment.amount)}</b> back from the vendor.

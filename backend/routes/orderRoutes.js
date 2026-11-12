@@ -16,6 +16,8 @@ const {
   submitOrderFeedback,
   setPreparing,
   getQueue,
+  getPushKey,
+  savePushSubscription,
 } = require('../controllers/orderController')
 const auth = require('../middlewares/auth')
 const optionalAuth = require('../middlewares/optionalAuth')
@@ -26,6 +28,10 @@ const cartPaymentLock = require('../middlewares/cartPaymentLock')
 // unless the caller manages the order's cart.
 
 router.post('/create-order', optionalAuth, cartPaymentLock, createOrder)
+
+// Customer browser pushes (before '/:cartId', which would catch push-key).
+router.get('/push-key', getPushKey)
+router.post('/push-subscribe/:orderId', savePushSubscription)
 
 router.delete('/delete-order/:orderId', optionalAuth, deleteOrder)
 
