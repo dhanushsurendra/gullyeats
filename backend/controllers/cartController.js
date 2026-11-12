@@ -15,6 +15,8 @@ const generatePin = require('../utils/generatePin')
 const { validatePhone } = require('../utils/validators')
 const Menu = require('../models/Menu')
 const translit = require('../utils/transliterate')
+// Not awaited: new dish names are noted for review without slowing the save.
+const { trackDishes, defaultImages } = require('../utils/dishCandidates')
 const FoodName = require('../models/FoodName')
 
 // The only uploads allowed: the bucket is public, so anything else (an HTML
@@ -289,6 +291,7 @@ exports.createMenuItems = asyncHandler(async (req, res) => {
 
   await MenuItem.deleteMany({ cartId })
   const createdItems = await MenuItem.insertMany(processedItems)
+  trackDishes(cartId, processedItems.map((item) => ({ name: item.name }))) // names here are automatic, not typed
 
   res.status(201).json({
     success: true,
@@ -315,7 +318,10 @@ exports.getMenuItems = asyncHandler(async (req, res) => {
     throw new Error('cartId is required')
   }
 
-  const items = await MenuItem.find({ cartId })
+  const items = await MenuItem.find({ cartId }).lean()
+  // Items without their own photo get the dish's default one, if it has one.
+  const imageFor = await defaultImages()
+  for (const item of items) if (!item.imageUrl) item.defaultImage = imageFor(item.name)
 
   res.status(200).json({
     success: true,
@@ -464,6 +470,7 @@ exports.updateMenuItem = asyncHandler(async (req, res) => {
   if (renamed) item.names = (await translit.transliterate([item.name]))[0]
   if (names) item.names = { ...pickNames(item.names), ...names }
   await item.save()
+  if (renamed || names) trackDishes(cartId, [{ name: item.name, names }])
 
   if (previousImageUrl !== item.imageUrl) {
     await deleteMenuImage(cartId, previousImageUrl)
@@ -515,6 +522,7 @@ exports.addMenuItem = asyncHandler(async (req, res) => {
     names: { ...names, ...fields.names },
     cartId,
   })
+  trackDishes(cartId, [{ name: fields.name, names: fields.names }])
 
   res.status(201).json({
     success: true,
@@ -899,6 +907,7 @@ exports.getAllCarts = asyncHandler(async (req, res) => {
 exports.getAllStaff = asyncHandler(async (req, res) => {
   const cartId = req.params.cartId
 
+  // Staff may see their cart's staff list too (names and phones, never PINs): by design.
   const cart = await findManagedCart(req, res, cartId)
 
   const staffs = await User.find({

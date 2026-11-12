@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gullyeats/core/utils/session.dart';
 import 'package:flutter/services.dart';
 import 'package:gullyeats/core/routes/app_routes.dart';
 import 'package:gullyeats/core/routes/routes.dart';
@@ -42,6 +43,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'GullyEats Vendor Onboarding',
       debugShowCheckedModeBanner: false,
+      navigatorKey: navigatorKey,
       theme: AppTheme.current,
       home: SplashScreen(),
       initialRoute: AppRoutes.splash,

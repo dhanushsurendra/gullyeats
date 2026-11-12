@@ -11,7 +11,7 @@ export default function OrderCancelled() {
   if (!order) {
     return (
       <Page>
-        <LoadingScreen />
+        <LoadingScreen blocks={['h-40', 'h-24', 'h-13']} />
       </Page>
     )
   }

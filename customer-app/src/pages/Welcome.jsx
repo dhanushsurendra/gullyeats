@@ -48,7 +48,7 @@ export default function Welcome() {
             <Button onClick={() => setAttempt((n) => n + 1)}>Try again</Button>
           </StatusScreen>
         ) : (
-          <LoadingScreen label='Opening the cart…' />
+          <LoadingScreen label='Opening the cart…' blocks={['h-64', 'h-8 w-2/3', 'h-4 w-1/2', 'h-24', 'h-13 mt-6']} />
         )}
       </Page>
     )

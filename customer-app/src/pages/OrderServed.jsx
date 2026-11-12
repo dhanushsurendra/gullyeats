@@ -39,7 +39,7 @@ export default function OrderServed() {
   if (!order) {
     return (
       <Page>
-        <LoadingScreen />
+        <LoadingScreen blocks={['h-48', 'h-28', 'h-36', 'h-13']} />
       </Page>
     )
   }

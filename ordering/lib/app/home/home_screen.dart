@@ -58,7 +58,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _checkLock();
+    if (state == AppLifecycleState.resumed) {
+      _checkLock();
+      _refreshCart();
+    }
   }
 
   Future<void> _checkLock() async {
@@ -97,6 +100,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   void _onTabTap(int index) {
     setState(() => _currentIndex = index);
+    if (index == 2) _refreshCart(); // Profile shows the cart's open state
+  }
+
+  void _refreshCart() {
+    final auth = context.read<AuthProvider>();
+    context.read<CartProvider>().refreshSelectedCart(auth.token ?? '', auth.user?['id']?.toString() ?? '');
   }
 
   @override
@@ -219,7 +228,7 @@ class _FeeDueBanner extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
       decoration: BoxDecoration(
         color: AppColors.warning.withValues(alpha: 0.1),

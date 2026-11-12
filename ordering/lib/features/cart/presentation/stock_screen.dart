@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ordering/core/widgets/skeleton.dart';
 import 'package:ordering/core/theme/app_gaps.dart';
 import 'package:ordering/core/theme/app_padding.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
@@ -127,7 +128,7 @@ class _StockScreenState extends State<StockScreen> {
           AppGaps.h16,
           Expanded(
             child: provider.isLoading && provider.menuItems.isEmpty
-                ? const Center(child: CircularProgressIndicator())
+                ? Skeleton.rows(count: 6, height: 76)
                 : RefreshIndicator(
                     onRefresh: _load,
                     child: ListView(

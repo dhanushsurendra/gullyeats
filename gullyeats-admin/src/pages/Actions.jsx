@@ -5,7 +5,7 @@ import { api } from '../services/api'
 import { Card, CardHeader, Table, State, Select, ScrollFooter, ExportButton } from '../components/ui'
 import StatusBadge from '../components/StatusBadge'
 import { inr, num, ist } from '../utils/format'
-import { downloadCsv, fetchAll, istStamp, istDay, today } from '../utils/csv'
+import { billingDays, downloadCsv, fetchAll, istStamp, today } from '../utils/csv'
 
 const ACTIONS = {
   MARK_FEE_PAID: 'Marked fee paid',
@@ -26,13 +26,16 @@ const ACTIONS = {
   RESTORE_COMMENT: 'Restored comment',
   SUSPEND_POSTER: 'Suspended GullyPulse poster',
   UNSUSPEND_POSTER: 'Lifted GullyPulse suspension',
+  APPROVE_DISH: 'Added dish to the common list',
+  MERGE_DISH: 'Merged dish name',
+  REJECT_DISH: 'Rejected dish name',
 }
 
 // One readable line per action, from the details the server stored.
 function describe({ action, details: d }) {
   switch (action) {
     case 'MARK_FEE_PAID':
-      return `${inr(d.amount)} for ${istDay(d.billingDate)}`
+      return `${inr(d.amount)} for ${billingDays(d.fromDate, d.billingDate)}`
     case 'RESET_PIN':
       return 'New PIN issued'
     case 'SUSPEND_CART':
@@ -48,6 +51,10 @@ function describe({ action, details: d }) {
         : `${inr(d.amount)} refunded · ${d.razorpayPaymentId} → ${d.refundId}`
     case 'SUSPEND_POSTER':
       return `${d.days} days · ${d.reason}`
+    case 'APPROVE_DISH':
+      return d.image ? 'With a default photo' : 'No default photo'
+    case 'MERGE_DISH':
+      return `Now another name for ${d.into}`
     default:
       return d.reason ? [d.reason, d.from && `${d.from} → ${d.to}`].filter(Boolean).join(' · ') : ''
   }
@@ -105,7 +112,7 @@ export default function Actions() {
         title='Action log'
         subtitle='Everything admins did from this dashboard, and refunds the server made on its own'
         right={
-          <div className='flex flex-wrap items-center gap-2'>
+          <div className='flex max-w-full flex-wrap items-center gap-2'>
             <Select
               value={action}
               onChange={(e) => setParams(e.target.value ? { action: e.target.value } : {})}

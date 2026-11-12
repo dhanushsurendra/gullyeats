@@ -17,7 +17,7 @@ export default function Splash() {
       <img src={illustration} alt='' className='animate-pop w-60 object-contain drop-shadow-xl' />
       <h1 className='animate-fade-up mt-2 text-4xl font-bold tracking-tight'>GullyEats</h1>
       <p className='animate-fade-up mt-1 text-base font-medium text-white/85'>Scan. Crave. Devour.</p>
-      <span className='absolute bottom-10 h-6 w-6 animate-spin rounded-full border-2 border-white/40 border-t-white' />
+      <span aria-hidden className='skeleton-light absolute bottom-12 h-1.5 w-24' />
     </div>
   )
 }

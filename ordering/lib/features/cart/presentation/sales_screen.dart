@@ -240,15 +240,7 @@ class _SalesScreenState extends State<SalesScreen> {
                   ),
                   // Changing the dates keeps the old numbers under a veil.
                   if (provider.isLoading)
-                    Positioned.fill(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.background.withValues(alpha: 0.7),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: const Center(child: CircularProgressIndicator()),
-                      ),
-                    ),
+                    const Positioned.fill(child: ShimmerVeil(radius: 16)),
                 ],
               ),
           ],

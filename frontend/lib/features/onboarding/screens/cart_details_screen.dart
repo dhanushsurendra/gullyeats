@@ -168,10 +168,14 @@ class _CartDetailsScreenState extends State<CartDetailsScreen> {
                       controller: _nameController,
                       label: "Cart Name",
                       hint: "e.g. Ramesh's Dosa Point",
-                      validator: (value) =>
-                          (value == null || value.trim().isEmpty)
-                          ? "Please enter a cart name"
-                          : null,
+                      // Same rule as the server (2+ characters after trimming),
+                      // so a short name is fixed here without a request.
+                      validator: (value) {
+                        final name = value?.trim() ?? '';
+                        if (name.isEmpty) return "Please enter a cart name";
+                        if (name.length < 2) return "Cart name must be at least 2 characters";
+                        return null;
+                      },
                       onChanged: (_) => setState(() {}),
                     ),
                     AppGaps.h24,

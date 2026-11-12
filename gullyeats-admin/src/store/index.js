@@ -2,7 +2,8 @@ import { configureStore, combineReducers } from '@reduxjs/toolkit'
 import { persistStore, persistReducer } from 'redux-persist'
 import storage from 'redux-persist/lib/storage'
 
-import auth from './authSlice'
+import auth, { sessionExpired } from './authSlice'
+import { SESSION_EXPIRED_EVENT } from '../services/api'
 import admin from './adminSlice'
 
 const rootReducer = combineReducers({
@@ -38,5 +39,7 @@ const store = configureStore({
 })
 
 export const persistor = persistStore(store)
+
+window.addEventListener(SESSION_EXPIRED_EVENT, () => store.dispatch(sessionExpired()))
 
 export default store

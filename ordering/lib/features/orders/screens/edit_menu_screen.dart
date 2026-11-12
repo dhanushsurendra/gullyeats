@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ordering/core/widgets/skeleton.dart';
 import 'package:ordering/core/error/app_exceptions.dart';
 import 'package:ordering/core/widgets/app_snack_bar.dart';
 import 'package:ordering/features/auth/providers/auth_provider.dart';
@@ -96,7 +97,7 @@ class _EditMenuScreenState extends State<EditMenuScreen> {
           AppGaps.h16,
           Expanded(
             child: provider.isLoading && provider.menuItems.isEmpty
-                ? const Center(child: CircularProgressIndicator())
+                ? Skeleton.rows(count: 6, height: 88)
                 : RefreshIndicator(
                     onRefresh: _load,
                     child: ListView(
@@ -199,6 +200,7 @@ class _EditMenuScreenState extends State<EditMenuScreen> {
         id: item.id,
         cartId: item.cartId,
         initialImageUrl: item.imageUrl,
+        defaultImageUrl: item.defaultImage,
         initialNames: item.names,
       ),
     );

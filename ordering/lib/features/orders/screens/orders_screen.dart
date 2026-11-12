@@ -201,12 +201,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
             },
           ),
         );
-
-        final messenger = ScaffoldMessenger.of(context);
-
-        Future.delayed(const Duration(seconds: 3), () {
-          messenger.hideCurrentSnackBar();
-        });
       } catch (e) {
         final message = AppExceptionHandler.getMessage(e);
         if (mounted) {
@@ -273,12 +267,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
             },
           ),
         );
-
-        final messenger = ScaffoldMessenger.of(context);
-
-        Future.delayed(const Duration(seconds: 3), () {
-          messenger.hideCurrentSnackBar();
-        });
       } catch (e) {
         final message = AppExceptionHandler.getMessage(e);
         if (mounted) {
@@ -324,12 +312,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
             },
           ),
         );
-
-        final messenger = ScaffoldMessenger.of(context);
-
-        Future.delayed(const Duration(seconds: 3), () {
-          messenger.hideCurrentSnackBar();
-        });
       } catch (e) {
         final message = AppExceptionHandler.getMessage(e);
 
@@ -582,7 +564,9 @@ class _LiveBadgeState extends State<_LiveBadge>
 
   void _syncPulse() {
     if (widget.isLive) {
-      if (!_pulse.isAnimating) _pulse.repeat();
+      // A few beats when it goes live, then a still dot: an endless pulse
+      // redraws the screen every frame all day (battery).
+      if (!_pulse.isAnimating && _pulse.value == 0) _pulse.repeat(count: 3);
     } else {
       _pulse.reset();
     }

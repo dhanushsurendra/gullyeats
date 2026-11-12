@@ -54,20 +54,16 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
     } else if (!RegExp(r'^\d{4}$').hasMatch(_newPin.text)) {
       newPinError = context.l10n.pinMust4Digits;
       isValid = false;
+    } else if (_currentPin.text == _newPin.text) {
+      newPinError = context.l10n.pinSameAsCurrent;
+      isValid = false;
     }
 
     if (_confirmPin.text.isEmpty) {
       confirmPinError = context.l10n.confirmYourPin;
       isValid = false;
-    } 
-
-    if (_newPin.text != _confirmPin.text) {
+    } else if (_newPin.text != _confirmPin.text) {
       confirmPinError = context.l10n.pinMismatch;
-      isValid = false;
-    }
-
-    if (_currentPin.text == _newPin.text) {
-      newPinError = context.l10n.pinSameAsCurrent;
       isValid = false;
     }
 

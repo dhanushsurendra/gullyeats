@@ -1,5 +1,6 @@
 import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
+import 'package:ordering/core/widgets/skeleton.dart';
 import 'package:ordering/core/widgets/app_snack_bar.dart';
 import 'package:ordering/core/error/app_exceptions.dart';
 import 'package:ordering/core/theme/app_colors.dart';
@@ -334,19 +335,7 @@ class _OrdersOverviewScreenState extends State<OrdersOverviewScreen> {
         // Previous order data stays visible.
         // ======================================================================
         if (provider.isOverviewLoading)
-          Positioned.fill(
-            child: IgnorePointer(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppColors.white.withValues(alpha: 0.70),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Center(
-                  child: CircularProgressIndicator(color: AppColors.primary),
-                ),
-              ),
-            ),
-          ),
+          const Positioned.fill(child: ShimmerVeil()),
       ],
     );
   }

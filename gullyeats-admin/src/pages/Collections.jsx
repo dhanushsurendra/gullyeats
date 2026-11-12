@@ -168,7 +168,7 @@ export default function Collections() {
           title='Call list'
           subtitle={`${num(rows.length)} carts · longest owed first. "Mark fee paid" settles the oldest unpaid day.`}
           right={
-            <div className='flex flex-wrap items-center gap-2'>
+            <div className='flex max-w-full flex-wrap items-center gap-2'>
               <Seg
                 value={bucket}
                 onChange={setBucket}

@@ -16,6 +16,7 @@ const loginLimit = rateLimit({
 const c = require('../controllers/adminController')
 const insights = require('../controllers/insightsController')
 const moderation = require('../controllers/moderationController')
+const dishes = require('../controllers/dishController')
 const auth = require('../middlewares/auth')
 
 const adminOnly = [
@@ -49,6 +50,12 @@ router.get('/insights/leakage', adminOnly, insights.leakage)
 router.get('/insights/vendors', adminOnly, insights.vendors)
 router.get('/insights/growth', adminOnly, insights.growth)
 router.get('/insights/operations', adminOnly, insights.operations)
+// New dish names from vendors, reviewed into the common list (Dishes page).
+router.get('/dishes', adminOnly, dishes.list)
+router.get('/dishes/:id/images', adminOnly, dishes.images)
+router.post('/dishes/:id/approve', adminOnly, dishes.approve)
+router.post('/dishes/:id/merge', adminOnly, dishes.merge)
+router.post('/dishes/:id/reject', adminOnly, dishes.reject)
 router.get('/moderation/counts', adminOnly, moderation.counts)
 router.get('/moderation/queue', adminOnly, moderation.queue)
 router.get('/moderation/:kind/:id', adminOnly, moderation.item)

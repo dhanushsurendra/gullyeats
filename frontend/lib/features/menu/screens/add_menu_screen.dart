@@ -64,8 +64,12 @@ class _AddMenuScreenState extends State<AddMenuScreen> {
   void _saveAndContinue() async {
     if (_menuItems.isEmpty) return;
 
+    // Rs0 is allowed (free add-ons); a blank price is not (it parses to 0).
     bool valid = _menuItems.every(
-      (item) => item.name.trim().isNotEmpty && item.price > 0,
+      (item) =>
+          item.name.trim().isNotEmpty &&
+          item.price >= 0 &&
+          (_priceControllers[item]?.text.trim().isNotEmpty ?? false),
     );
 
     if (!valid) {

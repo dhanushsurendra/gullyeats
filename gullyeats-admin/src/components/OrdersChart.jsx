@@ -1,7 +1,7 @@
 import { useSelector } from 'react-redux'
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts'
 import useResource from '../hooks/useResource'
-import { Card, CardHeader, State } from './ui'
+import { Card, CardHeader, Skeleton, State } from './ui'
 
 const STATES = [['pending', 'Pending', '#FBBF24'], ['preparing', 'Preparing', '#FE5200'], ['served', 'Served', '#8b5cf6'], ['cancelled', 'Cancelled', '#F87171']]
 
@@ -15,7 +15,7 @@ export default function OrdersChart() {
   return (
     <Card className="h-full">
       <CardHeader title="Order Overview" subtitle="Orders by state · follows the GMV period" />
-      <State loading={loading} error={error}>
+      <State loading={loading} error={error} skeleton={<Skeleton block='h-[200px]' />}>
         <div className="h-[200px] px-2 pt-4">
           <ResponsiveContainer>
             <BarChart data={pts} margin={{ left: 0, right: 8 }}>

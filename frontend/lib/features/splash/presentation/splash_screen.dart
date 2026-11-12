@@ -6,6 +6,8 @@ import 'package:gullyeats/core/theme/app_gaps.dart';
 import 'package:gullyeats/core/theme/app_padding.dart';
 import 'package:gullyeats/core/theme/app_text_styles.dart';
 import 'package:gullyeats/core/routes/app_routes.dart';
+import 'package:gullyeats/features/auth/providers/auth_provider.dart';
+import 'package:provider/provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -22,9 +24,15 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   void _startTimer() {
-    Timer(const Duration(seconds: 2), () {
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, AppRoutes.signup); 
+    Timer(const Duration(seconds: 2), () async {
+      if (!mounted) return; // the timer can outlive the screen
+      final session = await context.read<AuthProvider>().savedSession();
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, AppRoutes.signup);
+      // Still logged in: straight to Your Carts, with sign-up underneath so
+      // back still leads to the next vendor.
+      if (session != null) {
+        Navigator.pushNamed(context, AppRoutes.carts, arguments: session);
       }
     });
   }
@@ -111,13 +119,8 @@ class _SplashScreenState extends State<SplashScreen> {
     return Flexible(
       flex: 8,
       child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxHeight: screenHeight * 0.4, 
-        ),
-        child: Image.asset(
-          "assets/images/splash.png", 
-          fit: BoxFit.contain,
-        ),
+        constraints: BoxConstraints(maxHeight: screenHeight * 0.4),
+        child: Image.asset("assets/images/splash.png", fit: BoxFit.contain),
       ),
     );
   }
@@ -126,7 +129,7 @@ class _SplashScreenState extends State<SplashScreen> {
     return Column(
       children: [
         SizedBox(
-          width: width * 0.4, 
+          width: width * 0.4,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(10),
             child: LinearProgressIndicator(

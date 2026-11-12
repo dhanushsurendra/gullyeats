@@ -16,11 +16,13 @@ const webPush = require('../utils/webPush')
 
 /** Whether a bill already covers the day [order] was paid on. */
 async function isPaidDayBilled(order) {
+  const day = getISTMidnight(order.paidAt)
   return Boolean(
     await Payment.exists({
       cartId: order.cartId,
       status: { $in: ['VERIFIED', 'PENDING'] },
-      billingDate: getISTMidnight(order.paidAt),
+      // A bill covers fromDate through billingDate; older ones only billingDate.
+      $or: [{ fromDate: { $lte: day }, billingDate: { $gte: day } }, { fromDate: null, billingDate: day }],
     }),
   )
 }

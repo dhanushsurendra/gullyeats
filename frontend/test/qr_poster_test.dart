@@ -71,6 +71,8 @@ Future<void> _share(WidgetTester tester) async {
 }
 
 void main() {
+  // The poster is drawn in the bundled Poppins; the test font is wider.
+  setUpAll(loadFonts);
   setUp(() {
     SharedPreferences.setMockInitialValues({
       'cart': jsonEncode({'_id': 'c1', 'cartName': 'Dosa Point', 'cartId': 'CRT-1'}),

@@ -240,7 +240,7 @@ class _PaymentHistoryTileState extends State<PaymentHistoryTile> {
               child: _InfoItem(
                 icon: Icons.calendar_today_outlined,
                 label: context.l10n.billingDate,
-                value: _formatDate(payment.billingDate),
+                value: _billingDays(payment),
               ),
             ),
 
@@ -380,6 +380,15 @@ class _PaymentHistoryTileState extends State<PaymentHistoryTile> {
   }
 
   /// Formats billing date in the device's local timezone.
+  /// "06 Nov 2026", or "06 Nov 2026 – 07 Nov 2026" for a payment that
+  /// settled several days at once.
+  String _billingDays(PaymentModel payment) {
+    final from = payment.fromDate;
+    final to = payment.billingDate;
+    if (from == null || to == null || !from.isBefore(to)) return _formatDate(to);
+    return '${_formatDate(from)} – ${_formatDate(to)}';
+  }
+
   String _formatDate(DateTime? date) {
     if (date == null) {
       return '--';

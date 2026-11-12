@@ -124,11 +124,16 @@ export function StatusScreen({ icon, tone = 'primary', title, message, children 
   )
 }
 
-export function LoadingScreen({ label = 'Loading…' }) {
+// A page whose content is loading: shimmering blocks in the page's rough
+// shape, never a spinner. `blocks` are size classes, top to bottom.
+const PAGE_BLOCKS = ['h-44', 'h-20', 'h-20', 'h-20']
+
+export function LoadingScreen({ label = 'Loading…', blocks = PAGE_BLOCKS }) {
   return (
-    <div className='flex flex-1 flex-col items-center justify-center gap-3 text-primary'>
-      <Spinner className='h-8 w-8 border-[3px]' />
-      <p className='text-sm text-grey-500'>{label}</p>
+    <div role='status' aria-label={label} className='flex flex-1 flex-col gap-3 px-4 py-6'>
+      {blocks.map((size, i) => (
+        <div key={i} className={`skeleton ${size}`} />
+      ))}
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Loader2, AlertCircle, Download } from 'lucide-react'
+import { AlertCircle, Download } from 'lucide-react'
 
 export const Card = ({ className = '', children }) => (
   <div
@@ -19,9 +19,17 @@ export const CardHeader = ({ title, subtitle, right }) => (
   </div>
 )
 
-export const Spinner = () => (
-  <div className='flex items-center justify-center gap-2 py-10 text-neutral-500'>
-    <Loader2 size={15} className='animate-spin' /> Loading…
+// Loading placeholder, never a spinner: shimmering lines for a list or
+// table, or one block of `block` size classes for a chart or map.
+export const Skeleton = ({ rows = 5, block }) => (
+  <div role='status' aria-label='Loading' className='space-y-3 p-5'>
+    {block ? (
+      <div className={`skeleton ${block}`} />
+    ) : (
+      Array.from({ length: rows }, (_, i) => (
+        <div key={i} className='skeleton h-4' style={{ width: `${100 - (i % 3) * 15}%` }} />
+      ))
+    )}
   </div>
 )
 
@@ -32,9 +40,10 @@ export const ErrorNote = ({ message }) => (
   </div>
 )
 
-// Wraps content with loading / error handling
-export const State = ({ loading, error, children }) =>
-  loading ? <Spinner /> : error ? <ErrorNote message={error} /> : children
+// Wraps content with loading / error handling. `skeleton` replaces the
+// default placeholder with one shaped like the content.
+export const State = ({ loading, error, children, skeleton }) =>
+  loading ? skeleton || <Skeleton /> : error ? <ErrorNote message={error} /> : children
 
 export function Table({
   columns,
@@ -115,7 +124,8 @@ export const Select = ({ children, ...p }) => (
 )
 
 export const Seg = ({ options, value, onChange }) => (
-  <div className='inline-flex rounded-full border border-line bg-white p-1'>
+  // Scrolls inside itself when the screen is narrower than the options.
+  <div className='inline-flex max-w-full overflow-x-auto rounded-full border border-line bg-white p-1'>
     {options.map(([k, label]) => (
       <button
         key={k}
@@ -134,7 +144,7 @@ export const Seg = ({ options, value, onChange }) => (
 export const ScrollFooter = ({ sentinel, hasMore, loading, error, retry, count, noun = 'items' }) =>
   hasMore ? (
     <div ref={sentinel} className='py-6 text-center text-sm text-neutral-500'>
-      {loading && count ? `Loading more ${noun}…` : ''}
+      {loading && count ? <Skeleton rows={2} /> : ''}
     </div>
   ) : error ? (
     <div className='py-6 text-center text-sm'>

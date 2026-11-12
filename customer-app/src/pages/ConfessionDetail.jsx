@@ -153,11 +153,16 @@ export default function ConfessionDetail() {
               </li>
             ))}
           </ul>
-          {comments.loading && (
-            <div className='flex justify-center py-4 text-primary'>
-              <Spinner />
-            </div>
-          )}
+          {comments.loading &&
+            [0, 1].map((i) => (
+              <div key={i} role='status' aria-label='Loading comments' className='flex gap-3 py-3'>
+                <div className='skeleton h-8 w-8 shrink-0 rounded-full' />
+                <div className='flex-1 space-y-2'>
+                  <div className='skeleton h-3 w-24' />
+                  <div className='skeleton h-3 w-4/5' />
+                </div>
+              </div>
+            ))}
           {comments.error && <p className='py-3 text-center text-sm text-danger'>{comments.error}</p>}
           {!comments.done && !comments.loading && comments.items.length > 0 && (
             <Button variant='ghost' className='mt-2' onClick={comments.more}>

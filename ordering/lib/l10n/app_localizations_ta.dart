@@ -330,12 +330,24 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String qrOrdersSummary(int count, String amount) {
-    return 'QR · $count ஆர்டர்கள் · $amount';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ஆர்டர்கள்',
+      one: '1 ஆர்டர்',
+    );
+    return 'QR · $_temp0 · $amount';
   }
 
   @override
   String manualOrdersSummary(int count, String amount) {
-    return 'நேரடி · $count ஆர்டர்கள் · $amount';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ஆர்டர்கள்',
+      one: '1 ஆர்டர்',
+    );
+    return 'நேரடி · $_temp0 · $amount';
   }
 
   @override
@@ -1231,7 +1243,13 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String ratingCount(int count) {
-    return '$count மதிப்பீடுகள்';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count மதிப்பீடுகள்',
+      one: '1 மதிப்பீடு',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1275,4 +1293,7 @@ class AppLocalizationsTa extends AppLocalizations {
   String bestWeekday(String day) {
     return 'உங்கள் சிறந்த நாள் பொதுவாக $day';
   }
+
+  @override
+  String get samplePhoto => 'மாதிரி புகைப்படம்';
 }

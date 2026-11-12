@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gullyeats/core/widgets/skeleton.dart';
 import 'package:gullyeats/core/error/app_exceptions.dart';
 import 'package:gullyeats/core/theme/app_gaps.dart';
 import 'package:gullyeats/core/theme/app_text_styles.dart';
@@ -151,7 +152,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
             AppGaps.h16,
           ],
           if (_isStaffLoading)
-            const Center(child: CircularProgressIndicator())
+            Skeleton.rows(count: 3, height: 72)
           else if (_staffList.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 24),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gullyeats/core/widgets/skeleton.dart';
 import 'package:gullyeats/core/error/app_exceptions.dart';
 import 'package:gullyeats/core/routes/app_routes.dart';
 import 'package:gullyeats/core/theme/app_colors.dart';
@@ -95,7 +96,11 @@ class _CartsScreenState extends State<CartsScreen> {
     final phoneNumber = args?['phoneNumber'];
 
     if (phoneNumber == null) {
-      AppSnackBar.show(context, message: "Vendor phone number missing", isError: true);
+      AppSnackBar.show(
+        context,
+        message: "Vendor phone number missing",
+        isError: true,
+      );
       return;
     }
 
@@ -146,46 +151,56 @@ class _CartsScreenState extends State<CartsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BaseScreen(
-      title: "Your Carts",
-      subtitle: "Tap an outlet to continue its setup.",
-      showBackButton: false,
-      expandToFullHeight: true,
-      bottomNavigationBar: AppFooter(
-        children: [
-          AppButton(
-            label: "+ ADD NEW OUTLET",
-            onPressed: () => _openCart(null),
-            isDotted: true,
-            backgroundColor: Colors.transparent,
-            borderColor: AppColors.grey300,
-            textColor: AppColors.primary,
-          ),
-          AppButton(
-            label: "SEND CREDENTIALS",
-            onPressed: () => _handleSendCredentials(context),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          AppSearchBar(
-            hintText: "Search outlet name or city...",
-            onChanged: (value) => setState(() => searchQuery = value),
-          ),
-          AppGaps.h24,
-          Expanded(
-            child: RefreshIndicator(onRefresh: _loadCarts, child: _buildList()),
-          ),
-        ],
+    // Back from here returns to sign-up for the next vendor, so it logs out
+    // (or reopening the app would land on this vendor again).
+    return PopScope(
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) context.read<AuthProvider>().logout();
+      },
+      child: BaseScreen(
+        title: "Your Carts",
+        subtitle: "Tap an outlet to continue its setup.",
+        showBackButton: false,
+        expandToFullHeight: true,
+        bottomNavigationBar: AppFooter(
+          children: [
+            AppButton(
+              label: "+ ADD NEW OUTLET",
+              onPressed: () => _openCart(null),
+              isDotted: true,
+              backgroundColor: Colors.transparent,
+              borderColor: AppColors.grey300,
+              textColor: AppColors.primary,
+            ),
+            AppButton(
+              label: "SEND CREDENTIALS",
+              onPressed: () => _handleSendCredentials(context),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            AppSearchBar(
+              hintText: "Search outlet name or city...",
+              onChanged: (value) => setState(() => searchQuery = value),
+            ),
+            AppGaps.h24,
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: _loadCarts,
+                child: _buildList(),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildList() {
-    // Only the first load shows a spinner; reloads keep the list on screen.
+    // Only the first load shows placeholders; reloads keep the list on screen.
     if (_isLoading && _allCarts.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return Skeleton.rows(count: 5, height: 84);
     }
     final carts = _filteredCarts;
     return ListView.separated(

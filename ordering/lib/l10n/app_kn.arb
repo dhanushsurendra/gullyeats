@@ -104,8 +104,8 @@
   "parcelOrders": "ಪಾರ್ಸೆಲ್ ಆರ್ಡರ್‌ಗಳು",
   "avgParcelCharge": "ಸರಾಸರಿ ಪಾರ್ಸೆಲ್ ಶುಲ್ಕ",
   "topSellers": "ಜನಪ್ರಿಯ ಐಟಂಗಳು",
-  "qrOrdersSummary": "QR · {count} ಆರ್ಡರ್ · {amount}",
-  "manualOrdersSummary": "ಮ್ಯಾನುಯಲ್ · {count} ಆರ್ಡರ್ · {amount}",
+  "qrOrdersSummary": "QR · {count, plural, =1{1 ಆರ್ಡರ್} other{{count} ಆರ್ಡರ್‌ಗಳು}} · {amount}",
+  "manualOrdersSummary": "ಮ್ಯಾನುಯಲ್ · {count, plural, =1{1 ಆರ್ಡರ್} other{{count} ಆರ್ಡರ್‌ಗಳು}} · {amount}",
   "peakHour": "ಅತಿ ಬಿಡುವಿಲ್ಲದ ಸಮಯ: {hour}",
   "soldCount": "{count} ಮಾರಾಟ",
   "totalCount": "ಒಟ್ಟು {count}",
@@ -364,7 +364,7 @@
   "customersAndService": "ಗ್ರಾಹಕರು ಮತ್ತು ಸೇವೆ",
   "customersLabel": "ಗ್ರಾಹಕರು",
   "returningCount": "{count} ಮತ್ತೆ ಬಂದರು",
-  "ratingCount": "{count} ರೇಟಿಂಗ್‌ಗಳು",
+  "ratingCount": "{count, plural, =1{1 ರೇಟಿಂಗ್} other{{count} ರೇಟಿಂಗ್‌ಗಳು}}",
   "noRatingsYet": "ಇನ್ನೂ ರೇಟಿಂಗ್ ಇಲ್ಲ",
   "avgWait": "ಪಾವತಿಯ ನಂತರ ಸರಾಸರಿ ಕಾಯುವಿಕೆ",
   "customersHint": "ಪಾವತಿಸಿ ಫೋನ್ ನಂಬರ್ ಕೊಟ್ಟ ಗ್ರಾಹಕರನ್ನು ಮಾತ್ರ ಎಣಿಸಲಾಗಿದೆ.",
@@ -376,5 +376,6 @@
   "itemsPerOrder": "ಪ್ರತಿ ಆರ್ಡರ್‌ಗೆ ಐಟಂಗಳು",
   "overallRating": "ಒಟ್ಟು ರೇಟಿಂಗ್",
   "recentFeedback": "ಇತ್ತೀಚಿನ ಅಭಿಪ್ರಾಯ",
-  "bestWeekday": "ನಿಮ್ಮ ಉತ್ತಮ ದಿನ ಸಾಮಾನ್ಯವಾಗಿ {day}"
+  "bestWeekday": "ನಿಮ್ಮ ಉತ್ತಮ ದಿನ ಸಾಮಾನ್ಯವಾಗಿ {day}",
+  "samplePhoto": "ಮಾದರಿ ಫೋಟೋ"
 }

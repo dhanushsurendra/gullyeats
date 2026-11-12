@@ -14,6 +14,7 @@ import {
   History,
   Settings,
   ShieldAlert,
+  Utensils,
   LogOut,
   X,
 } from 'lucide-react'
@@ -28,6 +29,7 @@ const NAV = [
       ['Carts', '/restaurants', Store],
       ['Orders', '/orders', ShoppingBag],
       ['Moderation', '/moderation', ShieldAlert],
+      ['Dishes', '/dishes', Utensils],
     ],
   ],
   [

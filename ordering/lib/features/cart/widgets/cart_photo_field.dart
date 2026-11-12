@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:ordering/core/widgets/skeleton.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -121,7 +122,7 @@ class _CartPhotoFieldState extends State<CartPhotoField> {
                         width: double.infinity,
                         loadingBuilder: (context, child, progress) {
                           if (progress == null) return child;
-                          return const Center(child: CircularProgressIndicator());
+                          return const Shimmer(child: Bone(radius: 0));
                         },
                         errorBuilder: (context, error, stackTrace) => _placeholder(),
                       )

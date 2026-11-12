@@ -122,7 +122,8 @@ class OrdersOverviewCardState extends State<OrdersOverviewCard> {
               ),
               AppGaps.w4,
               Text(
-                "#${shortOrderId(order.id)}",
+                // Token numbers repeat across days, so the id's tail tells orders apart.
+                "#${order.orderNumber} · ${order.id.length > 5 ? order.id.substring(order.id.length - 5) : order.id}",
                 style: AppTextStyles.caption.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -138,11 +139,6 @@ class OrdersOverviewCardState extends State<OrdersOverviewCard> {
         statusBadge(order.status),
       ],
     );
-  }
-
-  String shortOrderId(String id) {
-    if (id.length <= 6) return id;
-    return id.substring(id.length - 6);
   }
 
   // ---------------------------------------------------------------------

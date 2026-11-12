@@ -15,7 +15,12 @@ class PaymentModel {
 
   final DateTime createdAt;
   final DateTime? verifiedAt;
+  /// The last billing day this payment covers.
   final DateTime? billingDate;
+
+  /// The first billing day it covers: one payment settles every unpaid
+  /// day at once. Null on older payments, which cover [billingDate] only.
+  final DateTime? fromDate;
 
   const PaymentModel({
     required this.id,
@@ -32,6 +37,7 @@ class PaymentModel {
     this.verificationSource,
     this.verifiedAt,
     this.billingDate,
+    this.fromDate,
   });
 
   bool get isPending => status == 'PENDING';
@@ -86,6 +92,8 @@ class PaymentModel {
               json['billingDate'].toString(),
             )
           : null,
+
+      fromDate: DateTime.tryParse(json['fromDate']?.toString() ?? ''),
     );
   }
 
@@ -107,6 +115,7 @@ class PaymentModel {
       'createdAt': createdAt.toIso8601String(),
       'verifiedAt': verifiedAt?.toIso8601String(),
       'billingDate': billingDate?.toIso8601String(),
+      'fromDate': fromDate?.toIso8601String(),
     };
   }
 
@@ -139,6 +148,7 @@ class PaymentModel {
 
       verifiedAt: verifiedAt ?? this.verifiedAt,
       billingDate: billingDate ?? this.billingDate,
+      fromDate: fromDate,
     );
   }
 }

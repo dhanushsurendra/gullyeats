@@ -104,8 +104,8 @@
   "parcelOrders": "பார்சல் ஆர்டர்கள்",
   "avgParcelCharge": "சராசரி பார்சல் கட்டணம்",
   "topSellers": "பிரபலமானவை",
-  "qrOrdersSummary": "QR · {count} ஆர்டர்கள் · {amount}",
-  "manualOrdersSummary": "நேரடி · {count} ஆர்டர்கள் · {amount}",
+  "qrOrdersSummary": "QR · {count, plural, =1{1 ஆர்டர்} other{{count} ஆர்டர்கள்}} · {amount}",
+  "manualOrdersSummary": "நேரடி · {count, plural, =1{1 ஆர்டர்} other{{count} ஆர்டர்கள்}} · {amount}",
   "peakHour": "உச்ச நேரம்: {hour}",
   "soldCount": "{count} விற்பனை",
   "totalCount": "மொத்தம் {count}",
@@ -364,7 +364,7 @@
   "customersAndService": "வாடிக்கையாளர்கள் & சேவை",
   "customersLabel": "வாடிக்கையாளர்கள்",
   "returningCount": "{count} மீண்டும் வந்தனர்",
-  "ratingCount": "{count} மதிப்பீடுகள்",
+  "ratingCount": "{count, plural, =1{1 மதிப்பீடு} other{{count} மதிப்பீடுகள்}}",
   "noRatingsYet": "இன்னும் மதிப்பீடு இல்லை",
   "avgWait": "செலுத்திய பின் சராசரி காத்திருப்பு",
   "customersHint": "பணம் செலுத்தி தொலைபேசி எண் கொடுத்தவர்கள் மட்டுமே கணக்கிடப்படுகிறார்கள்.",
@@ -376,5 +376,6 @@
   "itemsPerOrder": "ஒரு ஆர்டருக்கு பொருட்கள்",
   "overallRating": "மொத்த மதிப்பீடு",
   "recentFeedback": "சமீபத்திய கருத்து",
-  "bestWeekday": "உங்கள் சிறந்த நாள் பொதுவாக {day}"
+  "bestWeekday": "உங்கள் சிறந்த நாள் பொதுவாக {day}",
+  "samplePhoto": "மாதிரி புகைப்படம்"
 }

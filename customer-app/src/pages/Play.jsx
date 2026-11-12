@@ -631,7 +631,11 @@ function Leaderboard({ board, note, onClose }) {
         </h2>
         <p className='mt-1 text-sm text-white/60'>{note}</p>
         {board === 'loading' ? (
-          <p className='py-10 text-center text-white/60'>Loading…</p>
+          <ol role='status' aria-label='Loading the board' className='mt-4 space-y-1.5'>
+            {[0, 1, 2, 3, 4].map((i) => (
+              <li key={i} className='skeleton-light h-11' />
+            ))}
+          </ol>
         ) : board.error ? (
           <p className='py-10 text-center text-white/70'>{board.error}</p>
         ) : board.top.length === 0 ? (

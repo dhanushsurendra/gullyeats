@@ -329,12 +329,24 @@ class AppLocalizationsKn extends AppLocalizations {
 
   @override
   String qrOrdersSummary(int count, String amount) {
-    return 'QR · $count ಆರ್ಡರ್ · $amount';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ಆರ್ಡರ್‌ಗಳು',
+      one: '1 ಆರ್ಡರ್',
+    );
+    return 'QR · $_temp0 · $amount';
   }
 
   @override
   String manualOrdersSummary(int count, String amount) {
-    return 'ಮ್ಯಾನುಯಲ್ · $count ಆರ್ಡರ್ · $amount';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ಆರ್ಡರ್‌ಗಳು',
+      one: '1 ಆರ್ಡರ್',
+    );
+    return 'ಮ್ಯಾನುಯಲ್ · $_temp0 · $amount';
   }
 
   @override
@@ -1218,7 +1230,13 @@ class AppLocalizationsKn extends AppLocalizations {
 
   @override
   String ratingCount(int count) {
-    return '$count ರೇಟಿಂಗ್‌ಗಳು';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ರೇಟಿಂಗ್‌ಗಳು',
+      one: '1 ರೇಟಿಂಗ್',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1262,4 +1280,7 @@ class AppLocalizationsKn extends AppLocalizations {
   String bestWeekday(String day) {
     return 'ನಿಮ್ಮ ಉತ್ತಮ ದಿನ ಸಾಮಾನ್ಯವಾಗಿ $day';
   }
+
+  @override
+  String get samplePhoto => 'ಮಾದರಿ ಫೋಟೋ';
 }

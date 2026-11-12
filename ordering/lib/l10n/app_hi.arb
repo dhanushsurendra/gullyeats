@@ -376,5 +376,6 @@
   "itemsPerOrder": "प्रति ऑर्डर आइटम",
   "overallRating": "कुल रेटिंग",
   "recentFeedback": "ताज़ा राय",
-  "bestWeekday": "आपका सबसे अच्छा दिन आमतौर पर {day} होता है"
+  "bestWeekday": "आपका सबसे अच्छा दिन आमतौर पर {day} होता है",
+  "samplePhoto": "नमूना फ़ोटो"
 }

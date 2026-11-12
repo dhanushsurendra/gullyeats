@@ -50,7 +50,9 @@ void main() {
 
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('हिन्दी'), 100, scrollable: find.byType(Scrollable).first);
+    // Searching puts the tile at the top; scrolled to, it can sit under the Save footer.
+    await tester.enterText(find.byType(TextField), 'Hindi');
+    await tester.pump();
     await tester.tap(find.text('हिन्दी'));
     await tester.pump();
     await tester.tap(find.text('SAVE LANGUAGE'));

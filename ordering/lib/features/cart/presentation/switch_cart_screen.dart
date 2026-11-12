@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ordering/core/widgets/skeleton.dart';
 import 'package:ordering/core/error/app_exceptions.dart';
 import 'package:ordering/core/routes/app_routes.dart';
 import 'package:ordering/core/theme/app_colors.dart';
@@ -121,10 +122,7 @@ class _SwitchCartScreenState extends State<SwitchCartScreen> {
           AppGaps.h16,
         ],
         if (cartProvider.isLoading && carts.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 32),
-            child: Center(child: CircularProgressIndicator()),
-          )
+          Skeleton.rows(count: 4, height: 84)
         else if (_loadFailed && carts.isEmpty)
           ListMessage.failed(message: context.l10n.couldntLoadCarts, onRetry: _loadCarts)
         else if (carts.isEmpty)

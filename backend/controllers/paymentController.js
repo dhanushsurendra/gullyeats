@@ -7,9 +7,7 @@ const { logAction } = require('../utils/adminLog')
 const {
   createBillPayment,
   getCartPaymentStatus,
-  getBillingDate,
-  getBillingFee,
-  getNextISTMidnight,
+  getOpenBill,
 } = require('../utils/cartPaymentLock')
 
 /*
@@ -571,18 +569,64 @@ exports.getPaymentStatus = asyncHandler(async (req, res) => {
   })
 })
 
+/** Reopens checkout for a pending payment, or reports it already paid. */
+async function respondWithPending(res, pending) {
+  const ensured = await ensureRazorpayOrder(pending)
+  const paid = ensured.payment.status === 'VERIFIED'
+  return res.status(200).json({
+    success: true,
+    payment: ensured.payment,
+    checkout: paid ? null : buildCheckoutPayload(ensured.payment),
+    isLocked: !paid,
+    existingPayment: true,
+  })
+}
+
+/*
+ * Whether [pending] no longer matches the open bill and has been retired
+ * (EXPIRED) so a new one can be made. It is first checked with Razorpay: one
+ * the vendor already paid is recorded as paid instead (and kept). When
+ * Razorpay can't be reached it is kept as it is, never retired blind. An
+ * online payment that still arrives for a retired one is refunded (see
+ * refundDuplicatePayment).
+ */
+async function retiredIfStale(pending, open) {
+  const same =
+    open &&
+    Number(pending.amount) === Number(open.bill.totalPlatformFee) &&
+    String([...pending.orderIds].map(String).sort()) === String(open.bill.orderIds.map(String).sort())
+  if (same) return false
+
+  let captured
+  try {
+    captured = await findCapturedPayment(pending)
+  } catch (error) {
+    console.error('Could not check Razorpay before replacing a payment:', error)
+    return false
+  }
+  if (captured) {
+    pending.status = 'VERIFIED'
+    pending.razorpayPaymentId = captured.id
+    pending.verificationSource = 'RAZORPAY_RECOVERY'
+    pending.verifiedAt = new Date()
+    await pending.save()
+    return false
+  }
+  pending.status = 'EXPIRED'
+  await pending.save()
+  return true
+}
+
 /*
  * --------------------------------------------------------------------------
  * CREATE RAZORPAY ORDER
  * --------------------------------------------------------------------------
  * Replaces the old createUpiPayment.
  *
- * Billing-period selection is handled by the shared order-driven helpers:
- * getBillingDate() determines which order date is being billed and
- * getBillingFee() calculates the fee for that exact billing date.
- *
- * The Payment.billingDate is the billing date, not the payment creation date.
- * Razorpay is then used to create/reuse the checkout order.
+ * What is billed comes from getOpenBill(): every unpaid finished day, from
+ * the oldest through yesterday, in one payment. Payment.fromDate and
+ * Payment.billingDate are the first and last days it covers, not when it
+ * was paid. Razorpay is then used to create/reuse the checkout order.
  */
 exports.createRazorpayOrder = asyncHandler(async (req, res) => {
   const { cartId } = req.params
@@ -600,9 +644,13 @@ exports.createRazorpayOrder = asyncHandler(async (req, res) => {
 
   const cart = await getCartToPay(req, res, cartId)
 
+  // Every unpaid finished day, in one bill (see getOpenBill).
+  const open = await getOpenBill(cartId)
+
   /*
-   * If another request already created a pending internal payment,
-   * reuse it.
+   * If another request already created a pending internal payment, reuse it,
+   * unless the bill has changed since (another day ended, an order was
+   * cancelled or marked unpaid): then retire it and bill the current amount.
    */
   const existingPendingPayment = await Payment.findOne({
     cartId,
@@ -610,83 +658,17 @@ exports.createRazorpayOrder = asyncHandler(async (req, res) => {
     status: 'PENDING',
   }).sort({ createdAt: -1 })
 
-  if (existingPendingPayment) {
-    const ensured = await ensureRazorpayOrder(
-      existingPendingPayment,
-    )
-
-    if (ensured.payment.status === 'VERIFIED') {
-      return res.status(200).json({
-        success: true,
-        payment: ensured.payment,
-        checkout: null,
-        isLocked: false,
-        existingPayment: true,
-      })
-    }
-
-    return res.status(200).json({
-      success: true,
-      payment: ensured.payment,
-      checkout: buildCheckoutPayload(
-        ensured.payment,
-      ),
-      isLocked: true,
-      existingPayment: true,
-    })
+  if (existingPendingPayment && !(await retiredIfStale(existingPendingPayment, open))) {
+    return respondWithPending(res, existingPendingPayment)
   }
 
-  /*
-   * ---------------------------------------------------------
-   * DETERMINE BILLING DATE
-   * ---------------------------------------------------------
-   *
-   * getBillingDate() is order-driven:
-   *
-   * - No previous payment:
-   *     first order's IST date
-   *
-   * - Previous payment:
-   *     first order after the latest VERIFIED
-   *     billing date
-   *
-   * No calendar-day scanning.
-   */
-  const billingDate = await getBillingDate(cartId)
-
-  if (!billingDate) {
+  if (!open || open.bill.totalPlatformFee <= 0) {
     res.status(400)
-    throw new Error('There are no orders to bill')
+    throw new Error(open ? 'There is no pending platform fee' : 'There are no orders to bill')
   }
 
-  /*
-   * ---------------------------------------------------------
-   * CALCULATE FEE FOR THIS EXACT BILLING DATE
-   * ---------------------------------------------------------
-   */
-  // The bill, with any credits from cancelled orders taken off.
-  const { totalPlatformFee } = await getBillingFee(cartId, billingDate)
-
-  if (totalPlatformFee <= 0) {
-    res.status(400)
-    throw new Error('There is no pending platform fee')
-  }
-
-  /*
-   * ---------------------------------------------------------
-   * 26-HOUR BILLING WINDOW
-   * ---------------------------------------------------------
-   *
-   * Example:
-   *
-   * Thursday 00:00 IST
-   *        ↓
-   * Friday 02:00 IST
-   *        ↓
-   * Payment becomes due
-   */
   // A day's bill is final, and payable, once that IST day has ended.
-  if (new Date() < getNextISTMidnight(billingDate)) {
+  if (!open.finished) {
     res.status(400)
     throw new Error("Today's platform fee can be paid after midnight")
   }
@@ -694,18 +676,12 @@ exports.createRazorpayOrder = asyncHandler(async (req, res) => {
   let payment
 
   try {
-    /*
-     * billingDate is the exact calendar day being billed.
-     *
-     * IMPORTANT:
-     * If Thursday's bill is paid on Friday,
-     * billingDate remains Thursday.
-     */
-    payment = await createBillPayment(cart, billingDate, { status: 'PENDING' })
+    // Thursday and Friday paid on Saturday: fromDate Thursday, billingDate Friday.
+    payment = await createBillPayment(cart, open.from, { status: 'PENDING', through: open.through })
   } catch (error) {
     /*
      * Concurrent requests can calculate the same
-     * billing day. The unique partial PENDING index
+     * bill. The unique partial PENDING index
      * allows only one pending payment.
      */
     if (error.code === 11000) {
@@ -716,36 +692,7 @@ exports.createRazorpayOrder = asyncHandler(async (req, res) => {
           status: 'PENDING',
         }).sort({ createdAt: -1 })
 
-      if (existingPayment) {
-        const ensured =
-          await ensureRazorpayOrder(
-            existingPayment,
-          )
-
-        if (
-          ensured.payment.status ===
-          'VERIFIED'
-        ) {
-          return res.status(200).json({
-            success: true,
-            payment: ensured.payment,
-            checkout: null,
-            isLocked: false,
-            existingPayment: true,
-          })
-        }
-
-        return res.status(200).json({
-          success: true,
-          payment: ensured.payment,
-          checkout:
-            buildCheckoutPayload(
-              ensured.payment,
-            ),
-          isLocked: true,
-          existingPayment: true,
-        })
-      }
+      if (existingPayment) return respondWithPending(res, existingPayment)
     }
 
     throw error
@@ -828,9 +775,10 @@ exports.verifyRazorpayPayment = asyncHandler(async (req, res) => {
     throw new Error('Payment not found')
   }
 
-  if (payment.status === 'VERIFIED') {
-    // Settled another way (e.g. cash, marked by an admin) before this online
-    // payment went through: refund it rather than keep both.
+  if (payment.status === 'VERIFIED' || payment.status === 'EXPIRED') {
+    // Settled another way (e.g. cash, marked by an admin), or replaced by a
+    // bigger bill, before this online payment went through: refund it rather
+    // than keep both.
     if (
       razorpay_payment_id !== payment.razorpayPaymentId &&
       payment.razorpayOrderId === razorpay_order_id &&
@@ -847,10 +795,16 @@ exports.verifyRazorpayPayment = asyncHandler(async (req, res) => {
           success: true,
           refunded: true,
           message:
-            'This bill was already paid, so your online payment will be refunded in 5–7 working days.',
+            payment.status === 'EXPIRED'
+              ? 'This bill was replaced by a newer one that includes more days, so this payment will be refunded in 5–7 working days. Please pay the new amount.'
+              : 'This bill was already paid, so your online payment will be refunded in 5–7 working days.',
           payment,
         })
       }
+    }
+    if (payment.status === 'EXPIRED') {
+      res.status(400)
+      throw new Error('This bill was replaced by a newer one. Please pay the new amount.')
     }
     return res.status(200).json({
       success: true,
@@ -978,10 +932,11 @@ exports.razorpayWebhook = asyncHandler(async (req, res) => {
       })
 
       // Already settled another way before this online payment arrived
-      // (e.g. an admin marked it paid): refund the online one.
+      // (e.g. an admin marked it paid), or replaced by a bigger bill:
+      // refund the online one.
       if (
         payment &&
-        payment.status === 'VERIFIED' &&
+        (payment.status === 'VERIFIED' || payment.status === 'EXPIRED') &&
         paymentEntity.status === 'captured' &&
         paymentEntity.id !== payment.razorpayPaymentId
       ) {

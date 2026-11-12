@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:gullyeats/core/widgets/skeleton.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_vector_tiles/flutter_map_vector_tiles.dart' as vt;
 import 'package:geolocator/geolocator.dart';
@@ -96,10 +97,13 @@ class _EnableLocationScreenState extends State<EnableLocationScreen> {
     double longitude,
   ) async {
     try {
+      // The phone's geocoder can hang with no answer (seen on a vivo I2219),
+      // which left the button spinning. Without an address the cart is saved
+      // with its coordinates as the address (CartService.updateLocation).
       final placemarks = await placemarkFromCoordinates(
         latitude,
         longitude,
-      );
+      ).timeout(const Duration(seconds: 8));
 
       return placemarks.isNotEmpty
           ? placemarks.first
@@ -261,9 +265,7 @@ class _EnableLocationScreenState extends State<EnableLocationScreen> {
             color: AppColors.primary.withValues(alpha: 0.1),
           ),
         ),
-        child: const Center(
-          child: CircularProgressIndicator(),
-        ),
+        child: const Shimmer(child: Bone(radius: 16)),
       );
     }
 

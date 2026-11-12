@@ -126,7 +126,10 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
         return;
       }
 
+      // The vendor's own number, so Razorpay doesn't ask for it every time.
+      final phone = (auth.user?['phoneNumber'] ?? '').toString();
       final options = {
+        if (phone.isNotEmpty) 'prefill': {'contact': phone},
         'key': checkout.keyId,
         'order_id': checkout.razorpayOrderId,
         'amount': (checkout.amount * 100).round(),
@@ -159,11 +162,14 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
   /// A tick that pops in, then closes itself after a moment.
   Future<void> _showPaidDialog() {
     OrderAlerts.paid();
+    Route<dynamic>? route;
     final dialog = showDialog<void>(
       context: context,
       // Closed only by the timer below, so that pop never hits this screen.
       barrierDismissible: false,
       builder: (context) => Dialog(
+        // Records the dialog's own route for the timer below.
+        key: ValueKey(route ??= ModalRoute.of(context)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -199,8 +205,11 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
         ),
       ),
     );
+    // Remove this dialog only: coming back from Razorpay can rebuild the stack
+    // at the same moment, and a plain pop would hit a route being torn down.
     Future.delayed(const Duration(milliseconds: 1800), () {
-      if (mounted) Navigator.of(context, rootNavigator: true).maybePop();
+      final r = route;
+      if (r != null && r.isActive) r.navigator?.removeRoute(r);
     });
     return dialog;
   }

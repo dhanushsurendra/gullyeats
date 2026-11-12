@@ -339,7 +339,7 @@ export default function OrderToken() {
             </Button>
           </StatusScreen>
         ) : (
-          <LoadingScreen label='Fetching your token…' />
+          <LoadingScreen label='Fetching your token…' blocks={['h-56', 'h-16', 'h-40', 'h-13']} />
         )}
       </Page>
     )

@@ -109,7 +109,8 @@ function getNextISTMidnight(billingDate) {
 }
 
 /**
- * The bill for ONE billing day: the fee of every order first paid that day,
+ * The bill for the billing days from [billingDate] up to [end] (exclusive;
+ * by default the one day): the fee of every order first paid in them,
  * adjusted for earlier bills.
  *
  * - Credit: an order an earlier bill charged, cancelled since, gives its fee
@@ -119,7 +120,7 @@ function getNextISTMidnight(billingDate) {
  *
  * Credits never take the bill below zero; any left over wait for the next.
  */
-async function getBillingFee(cartId, billingDate) {
+async function getBillingFee(cartId, billingDate, end = null) {
   if (!cartId) {
     throw new Error('cartId is required')
   }
@@ -134,7 +135,7 @@ async function getBillingFee(cartId, billingDate) {
     throw new Error('Invalid billingDate')
   }
 
-  const billingEnd = getNextISTMidnight(start)
+  const billingEnd = end ? new Date(end) : getNextISTMidnight(start)
   const cart = new mongoose.Types.ObjectId(String(cartId))
   const fee = (order) => Number(order.platformFee || 0)
 
@@ -192,13 +193,15 @@ async function getBillingFee(cartId, billingDate) {
 }
 
 /**
- * Creates the Payment for [cart]'s bill on [billingDate] with [status]
- * (PENDING to pay through Razorpay; VERIFIED for an admin's manual payment
- * or a bill credits fully cover). The bill records which orders it charged,
- * credited and recharged.
+ * Creates the Payment for [cart]'s bill from [fromDate] through [through]
+ * (both IST midnights; one day by default) with [status] (PENDING to pay
+ * through Razorpay; VERIFIED for an admin's manual payment or a bill credits
+ * fully cover). The bill records which orders it charged, credited and
+ * recharged. Payment.billingDate is the LAST day covered, so the next bill
+ * starts the day after it.
  */
-async function createBillPayment(cart, billingDate, { status, verificationSource = null }) {
-  const bill = await getBillingFee(cart._id, billingDate)
+async function createBillPayment(cart, fromDate, { status, verificationSource = null, through = fromDate }) {
+  const bill = await getBillingFee(cart._id, fromDate, getNextISTMidnight(through))
   return Payment.create({
     cartId: cart._id,
     userId: cart.userId,
@@ -209,7 +212,8 @@ async function createBillPayment(cart, billingDate, { status, verificationSource
     verificationSource,
     verifiedAt: status === 'VERIFIED' ? new Date() : null,
     paymentReference: `GUL-${crypto.randomUUID()}`,
-    billingDate,
+    fromDate,
+    billingDate: through,
     orderIds: bill.orderIds,
     creditOrderIds: bill.creditOrderIds,
     rechargeOrderIds: bill.rechargeOrderIds,
@@ -266,6 +270,25 @@ async function getBillingDate(cartId) {
 }
 
 /**
+ * The bill the vendor would pay right now: every unpaid finished day, from
+ * the oldest one through yesterday, in ONE bill. A vendor who pays late
+ * after selling past midnight owes two days; paying one and getting locked
+ * again for the next was confusing. While the oldest unpaid day is today,
+ * it's just today (shown as upcoming, not payable yet).
+ *
+ * Returns null when nothing is billable, else { from, through, finished, bill }.
+ */
+async function getOpenBill(cartId, now = new Date()) {
+  const from = await getBillingDate(cartId)
+  if (!from) return null
+  const today = getISTMidnight(now)
+  const finished = from < today
+  const through = finished ? new Date(today.getTime() - 24 * 60 * 60 * 1000) : from
+  const bill = await getBillingFee(cartId, from, getNextISTMidnight(through))
+  return { from, through, finished, bill }
+}
+
+/**
  * Determine the current payment state of a cart.
  *
  * Billing is order-driven:
@@ -297,168 +320,58 @@ async function getCartPaymentStatus(cartId) {
     }
   }
 
-  /**
-   * ---------------------------------------------------------
-   * 1. EXISTING PENDING PAYMENT
-   * ---------------------------------------------------------
-   */
-  const pendingPayment = await Payment.findOne({
-    cartId,
-    status: 'PENDING',
-  }).lean()
+  const base = { cartName: cart.cartName, address: cart.address }
 
-  // A started payment (checkout opened, maybe closed again) locks only once
-  // its bill is due, like an unstarted one.
-  if (pendingPayment) {
-    const dueAt = pendingPayment.billingDate
-      ? new Date(new Date(pendingPayment.billingDate).getTime() + BILLING_LOCK_MS)
-      : null
-    return {
-      isLocked: !dueAt || new Date() >= dueAt,
-      message: 'Payment verification is pending.',
-      payment: pendingPayment,
-      dueAt,
-      canPay: true,
-      billingDate: pendingPayment.billingDate || null,
-      totalOrders: pendingPayment.totalOrders || 0,
-      totalPending: Number(pendingPayment.amount || 0),
-      cartName: cart.cartName,
-      address: cart.address,
-    }
-  }
-
-  /**
-   * ---------------------------------------------------------
-   * 2. DETERMINE NEXT BILLING DATE
-   * ---------------------------------------------------------
-   * A finished day that credits bring to ₹0 is settled here (there is
-   * nothing to pay), then the next day is looked at.
+  /*
+   * The open bill, from the orders. A started checkout doesn't change it:
+   * if the bill has grown since, checkout replaces that payment.
+   *
+   * A finished bill that credits bring to ₹0 is settled here (there is
+   * nothing to pay), then billing moves on.
    */
-  let billingDate = await getBillingDate(cartId)
-  let bill = billingDate ? await getBillingFee(cartId, billingDate) : null
-  for (
-    let settled = 0;
-    bill && bill.totalPlatformFee <= 0 && new Date() >= getNextISTMidnight(billingDate) && settled < 30;
-    settled++
-  ) {
-    await createBillPayment(cart, billingDate, {
+  let open = await getOpenBill(cartId)
+  for (let settled = 0; open && open.finished && open.bill.totalPlatformFee <= 0 && settled < 3; settled++) {
+    await createBillPayment(cart, open.from, {
       status: 'VERIFIED',
       verificationSource: 'CREDIT',
+      through: open.through,
     }).catch((e) => {
-      // Another request settled this day first.
+      // Another request settled it first.
       if (e.code !== 11000) throw e
     })
-    billingDate = await getBillingDate(cartId)
-    bill = billingDate ? await getBillingFee(cartId, billingDate) : null
+    open = await getOpenBill(cartId)
   }
 
-  /**
-   * No unpaid orders.
-   */
-  if (!billingDate) {
+  if (!open || open.bill.totalPlatformFee <= 0) {
     return {
       isLocked: false,
-      billingDate: null,
-      totalOrders: 0,
+      billingDate: open?.from || null,
+      totalOrders: open?.bill.totalOrders || 0,
       totalPending: 0,
-      cartName: cart.cartName,
-      address: cart.address,
+      ...base,
     }
   }
 
-  /**
-   * ---------------------------------------------------------
-   * 3. CALCULATE FEE FOR THIS EXACT DAY
-   * ---------------------------------------------------------
-   */
-  const { totalOrders, totalPlatformFee } = bill
-
-  /**
-   * This should normally not happen because
-   * getBillingDate() is derived from an order.
-   *
-   * But if all orders on that day have zero fee,
-   * don't lock the cart.
-   */
-  if (totalPlatformFee <= 0) {
-    return {
-      isLocked: false,
-      billingDate,
-      totalOrders,
-      totalPending: 0,
-      cartName: cart.cartName,
-      address: cart.address,
-    }
-  }
-
-  /**
-   * ---------------------------------------------------------
-   * 4. HAS THE 26-HOUR BILLING WINDOW PASSED?
-   * ---------------------------------------------------------
+  /*
+   * The cart locks BILLING_LOCK_HOURS (26h) after the oldest unpaid day
+   * began, i.e. at 2am the night after it. The bill is payable once that
+   * day has ended, and then covers every finished day up to yesterday.
    */
   const now = new Date()
+  const dueAt = new Date(open.from.getTime() + BILLING_LOCK_MS)
+  const isLocked = now >= dueAt
 
-  const billingDue = now.getTime() - billingDate.getTime() >= BILLING_LOCK_MS
-
-  // When the cart locks, and whether the bill can be paid yet: a day's bill
-  // is final, and payable, once that IST day has ended.
-  const dueAt = new Date(billingDate.getTime() + BILLING_LOCK_MS)
-  const canPay = now >= getNextISTMidnight(billingDate)
-
-  /**
-   * Billing exists but isn't due yet.
-   */
-  if (!billingDue) {
-    return {
-      isLocked: false,
-      billingDate,
-      dueAt,
-      canPay,
-      totalOrders,
-      totalPending: totalPlatformFee,
-      cartName: cart.cartName,
-      address: cart.address,
-    }
-  }
-
-  /**
-   * ---------------------------------------------------------
-   * 5. SAFETY CHECK
-   * ---------------------------------------------------------
-   */
-  const verifiedPayment = await Payment.findOne({
-    cartId,
-    status: 'VERIFIED',
-    billingDate,
-  }).lean()
-
-  if (verifiedPayment) {
-    return {
-      isLocked: false,
-      billingDate,
-      totalOrders,
-      totalPending: 0,
-      payment: verifiedPayment,
-      cartName: cart.cartName,
-      address: cart.address,
-    }
-  }
-
-  /**
-   * ---------------------------------------------------------
-   * 6. PAYMENT REQUIRED
-   * ---------------------------------------------------------
-   */
   return {
-    isLocked: true,
-    message: 'Payment is required to continue using this cart.',
-    billingDate,
+    isLocked,
+    ...(isLocked ? { message: 'Payment is required to continue using this cart.' } : {}),
+    // The first and last days the bill covers.
+    billingDate: open.from,
+    throughDate: open.through,
     dueAt,
-    canPay: true,
-    totalOrders,
-    totalPending: totalPlatformFee,
-    cartName: cart.cartName,
-    address: cart.address,
+    canPay: open.finished,
+    totalOrders: open.bill.totalOrders,
+    totalPending: open.bill.totalPlatformFee,
+    ...base,
   }
 }
 
@@ -468,6 +381,7 @@ module.exports = {
   getCartPaymentStatus,
   getBillingDate,
   getBillingFee,
+  getOpenBill,
   getFirstBillingDate,
   getISTMidnight,
   getNextISTMidnight,

@@ -175,6 +175,20 @@
 }
 
 /* Loading placeholder with a light sweep. */
+/* skeleton on a dark or coloured fill (GullyPlay sheets, the splash). */
+@utility skeleton-light {
+  @apply relative overflow-hidden rounded-xl bg-white/10;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.25), transparent);
+    animation: shimmer 1.4s infinite;
+  }
+}
+
 @utility skeleton {
   @apply relative overflow-hidden rounded-xl bg-grey-200/70;
 

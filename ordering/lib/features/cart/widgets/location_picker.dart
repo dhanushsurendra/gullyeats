@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ordering/core/widgets/skeleton.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_vector_tiles/flutter_map_vector_tiles.dart' as vt;
 import 'package:geocoding/geocoding.dart';
@@ -189,7 +190,7 @@ class _LocationPickerFieldState extends State<LocationPickerField> {
   Widget _buildMapBody() {
     switch (_styleStatus) {
       case _StyleStatus.loading:
-        return const Center(child: CircularProgressIndicator());
+        return const Shimmer(child: Bone(radius: 0));
 
       case _StyleStatus.failed:
         // Never leave the user with a blank/dead widget — show the pin +

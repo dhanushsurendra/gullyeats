@@ -729,13 +729,13 @@ abstract class AppLocalizations {
   /// No description provided for @qrOrdersSummary.
   ///
   /// In en, this message translates to:
-  /// **'QR · {count} orders · {amount}'**
+  /// **'QR · {count, plural, =1{1 order} other{{count} orders}} · {amount}'**
   String qrOrdersSummary(int count, String amount);
 
   /// No description provided for @manualOrdersSummary.
   ///
   /// In en, this message translates to:
-  /// **'Manual · {count} orders · {amount}'**
+  /// **'Manual · {count, plural, =1{1 order} other{{count} orders}} · {amount}'**
   String manualOrdersSummary(int count, String amount);
 
   /// No description provided for @peakHour.
@@ -2289,7 +2289,7 @@ abstract class AppLocalizations {
   /// No description provided for @ratingCount.
   ///
   /// In en, this message translates to:
-  /// **'{count} ratings'**
+  /// **'{count, plural, =1{1 rating} other{{count} ratings}}'**
   String ratingCount(int count);
 
   /// No description provided for @noRatingsYet.
@@ -2363,6 +2363,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your best day is usually {day}'**
   String bestWeekday(String day);
+
+  /// Label on a dish's default photo shown when the item has no photo of its own
+  ///
+  /// In en, this message translates to:
+  /// **'Sample photo'**
+  String get samplePhoto;
 }
 
 class _AppLocalizationsDelegate

@@ -9,7 +9,7 @@ import {
   Table,
   State,
   Select,
-  Spinner,
+  Skeleton,
   ErrorNote,
   ScrollFooter,
   ask,
@@ -175,7 +175,7 @@ function CartDrawer({ cart, onClose }) {
           LAST 30 DAYS
         </p>
         {state.loading ? (
-          <Spinner />
+          <Skeleton rows={6} />
         ) : state.error ? (
           <ErrorNote message={state.error} />
         ) : (

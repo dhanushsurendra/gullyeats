@@ -317,7 +317,10 @@ test('comments are reported separately and hidden at four reports', async () => 
 // ---- Admin ------------------------------------------------------------------
 
 test('moderation APIs are admins only', async () => {
-  const vendor = jwt.sign({ _id: String(new mongoose.Types.ObjectId()), role: 'vendor' }, process.env.JWT_SECRET)
+  // A real, enabled vendor (a token for a missing account is a 401).
+  const vendorId = new mongoose.Types.ObjectId()
+  await User.collection.insertOne({ _id: vendorId, userId: 'VEN-MOD77', role: 'vendor', phoneNumber: '9000000077' })
+  const vendor = jwt.sign({ _id: String(vendorId), role: 'vendor' }, process.env.JWT_SECRET)
   const r = await fetch(`${base}/admin/moderation/queue`, { headers: { authorization: `Bearer ${vendor}` } })
   assert.strictEqual(r.status, 403)
   assert.strictEqual((await fetch(`${base}/admin/moderation/queue`)).status, 401)

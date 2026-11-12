@@ -32,11 +32,15 @@ const adminActionSchema = new mongoose.Schema(
         'RESTORE_COMMENT',
         'SUSPEND_POSTER',
         'UNSUSPEND_POSTER',
+        // New dish names reviewed into the common list (target kind dish).
+        'APPROVE_DISH',
+        'MERGE_DISH',
+        'REJECT_DISH',
       ],
     },
     // What it was done to, e.g. { kind: 'cart', id, label: "Raju's Momos" }.
     target: {
-      kind: { type: String, enum: ['cart', 'vendor', 'payment', 'confession', 'comment', 'poster'] },
+      kind: { type: String, enum: ['cart', 'vendor', 'payment', 'confession', 'comment', 'poster', 'dish'] },
       // A poster is known only by their private authorKey.
       key: String,
       id: { type: mongoose.Schema.Types.ObjectId },

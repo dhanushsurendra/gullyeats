@@ -12,8 +12,13 @@ String buildAddress(Placemark p) {
     p.country,
   ];
 
+  // Android often repeats a part (name == street, city == district), which
+  // printed "C8-810, C8-810, ..."; keep each one once.
+  final seen = <String>{};
   return parts
       .where((part) => part != null && part.trim().isNotEmpty)
+      .map((part) => part!.trim())
+      .where((part) => seen.add(part.toLowerCase()))
       .join(', ');
 }
 

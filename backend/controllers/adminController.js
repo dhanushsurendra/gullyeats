@@ -1369,6 +1369,7 @@ exports.payments = asyncHandler(async (req, res) => {
         orders: p.totalOrders,
         amount: p.amount,
         status: p.status,
+        fromDate: p.fromDate || p.billingDate,
         billingDate: p.billingDate,
         verifiedAt: p.verifiedAt,
         source: p.verificationSource,
@@ -1508,34 +1509,41 @@ exports.markFeePaid = asyncHandler(async (req, res) => {
       res.status(502)
       throw new Error("Couldn't check Razorpay for an online payment. Try again in a minute.")
     }
-    payment.status = 'VERIFIED'
-    payment.verifiedAt = new Date()
     if (captured) {
       paidOnline = true
+      payment.status = 'VERIFIED'
+      payment.verifiedAt = new Date()
       payment.razorpayPaymentId = captured.id
       payment.verificationSource = 'RAZORPAY_RECOVERY'
+      await payment.save()
     } else {
-      // An online payment that still arrives for this bill is refunded
-      // automatically (see refundDuplicatePayment).
-      payment.verificationSource = 'MANUAL'
+      // Not paid online: retire the checkout and settle the whole open bill
+      // below (it may have grown since checkout opened). An online payment
+      // that still arrives for it is refunded automatically.
+      payment.status = 'EXPIRED'
+      await payment.save()
+      payment = null
     }
-    await payment.save()
-  } else {
+  }
+  if (!payment) {
     const status = await getCartPaymentStatus(cartId)
     if (!status.billingDate || !status.canPay || !(status.totalPending > 0)) {
       return res
         .status(400)
         .json({ success: false, message: 'No platform fee is due for this cart' })
     }
+    // The whole open bill: every unpaid finished day.
     payment = await createBillPayment(cart, status.billingDate, {
       status: 'VERIFIED',
       verificationSource: 'MANUAL',
+      through: status.throughDate,
     })
   }
 
   if (!paidOnline) {
     await logAction(req, 'MARK_FEE_PAID', { kind: 'cart', id: cart._id, label: cart.cartName }, {
       amount: payment.amount,
+      fromDate: payment.fromDate,
       billingDate: payment.billingDate,
       paymentId: payment._id,
     })

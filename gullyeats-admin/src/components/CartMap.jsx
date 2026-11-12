@@ -12,7 +12,7 @@ import {
 import L from 'leaflet'
 import { ArrowLeft, MapPin } from 'lucide-react'
 
-import { Card, CardHeader, State, Btn, Select } from './ui'
+import { Card, CardHeader, State, Btn, Select, Skeleton } from './ui'
 import StatusBadge from './StatusBadge'
 import { inr, ago, num } from '../utils/format'
 
@@ -212,7 +212,7 @@ export default function CartMap({ carts = [], loading, error }) {
         }
       />
 
-      <State loading={loading} error={error}>
+      <State loading={loading} error={error} skeleton={<Skeleton block='h-[460px]' />}>
         <div className='grid lg:grid-cols-[1fr_290px]'>
           <div className='cart-map h-[460px] overflow-hidden lg:rounded-bl-[10px]'>
             <MapContainer

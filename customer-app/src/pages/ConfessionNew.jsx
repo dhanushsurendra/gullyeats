@@ -82,7 +82,7 @@ export default function ConfessionNew() {
   if (!me) {
     return (
       <Page>
-        <LoadingScreen />
+        <LoadingScreen blocks={['h-10 w-1/2', 'h-48', 'h-8', 'h-13']} />
       </Page>
     )
   }

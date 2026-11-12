@@ -192,17 +192,31 @@ test('a credited order restored later is charged again', async () => {
   assert.equal(status.totalPending, 4)
 })
 
-test('a day that credits fully cover is settled at ₹0, and billing moves on', async () => {
+test('credits come off the combined bill', async () => {
   const billed = order(4, 'PAID')
   await Order.collection.insertMany([billed, order(3), order(2)])
   await billFor(4, [billed])
   await Order.collection.updateOne({ _id: billed._id }, { $set: { status: 'CANCELLED' } })
 
   const status = await getCartPaymentStatus(cartId)
-  const settled = await Payment.findOne({ billingDate: daysAgo(3) }).lean()
-  assert.equal(settled.verificationSource, 'CREDIT')
+  assert.equal(status.billingDate.getTime(), daysAgo(3).getTime())
+  assert.equal(status.throughDate.getTime(), daysAgo(1).getTime())
+  assert.equal(status.totalPending, 2) // two orders x ₹2, minus the ₹2 credit
+})
+
+test('a bill that credits fully cover is settled at ₹0, and billing moves on', async () => {
+  const billed = order(4, 'PAID')
+  await Order.collection.insertMany([billed, order(3), order(0)])
+  await billFor(4, [billed])
+  await Order.collection.updateOne({ _id: billed._id }, { $set: { status: 'CANCELLED' } })
+
+  const status = await getCartPaymentStatus(cartId)
+  const settled = await Payment.findOne({ verificationSource: 'CREDIT' }).lean()
   assert.equal(settled.amount, 0)
-  assert.equal(status.billingDate.getTime(), daysAgo(2).getTime())
+  assert.equal(settled.fromDate.getTime(), daysAgo(3).getTime())
+  assert.equal(settled.billingDate.getTime(), daysAgo(1).getTime())
+  assert.equal(status.billingDate.getTime(), today.getTime()) // today's order, upcoming
+  assert.equal(status.isLocked, false)
   assert.equal(status.totalPending, 2)
 })
 
@@ -272,28 +286,149 @@ test('an admin gets a clear error when nothing is due', async () => {
   assert.equal(r.status, 400)
 })
 
-test('an abandoned checkout locks the cart only once its bill is due', async () => {
-  const pending = (n) => ({ ...paidDay(n), status: 'PENDING' })
-  await Payment.collection.insertOne(pending(0)) // due tomorrow at 2am
+test("an abandoned checkout doesn't change the lock: it follows the bill", async () => {
+  // Yesterday's bill (due at 2am today, so locked or not depending on the
+  // hour), then a checkout opened and closed: the status must not change.
+  await Order.collection.insertOne(order(1))
+  const before = await getCartPaymentStatus(cartId)
+  await Payment.collection.insertOne({ ...paidDay(1), status: 'PENDING' })
   let status = await getCartPaymentStatus(cartId)
-  assert.equal(status.isLocked, false)
+  assert.equal(status.isLocked, before.isLocked)
+  assert.equal(status.dueAt.getTime(), before.dueAt.getTime())
   assert.equal(status.totalPending, 2)
 
-  await Payment.collection.deleteMany({})
-  await Payment.collection.insertOne(pending(2))
+  await Order.collection.insertOne(order(2))
   status = await getCartPaymentStatus(cartId)
   assert.equal(status.isLocked, true)
+  assert.equal(status.totalPending, 4)
 })
 
-test('two status checks at once settle a credit-covered day only once', async () => {
+test('two status checks at once settle a credit-covered bill only once', async () => {
   await Payment.init() // the unique index on credit settlements
   const billed = order(4, 'PAID')
-  await Order.collection.insertMany([billed, order(3), order(2)])
+  await Order.collection.insertMany([billed, order(3)])
   await billFor(4, [billed])
   await Order.collection.updateOne({ _id: billed._id }, { $set: { status: 'CANCELLED' } })
 
   const [a, b] = await Promise.all([getCartPaymentStatus(cartId), getCartPaymentStatus(cartId)])
   assert.equal(await Payment.countDocuments({ verificationSource: 'CREDIT' }), 1)
-  assert.equal(a.billingDate.getTime(), daysAgo(2).getTime())
-  assert.equal(b.billingDate.getTime(), daysAgo(2).getTime())
+  assert.equal(a.isLocked, false)
+  assert.equal(b.totalPending, 0)
+})
+
+// ---- one combined bill for every unpaid finished day ----
+
+// Razorpay as checkout calls it; each test overrides what it needs.
+const withRazorpay = async (fake, run) => {
+  const orders = pay.razorpay.orders
+  const saved = { create: orders.create, fetchPayments: orders.fetchPayments, all: orders.all }
+  Object.assign(orders, {
+    create: async (o) => ({ id: `order_${o.receipt.slice(-6)}`, amount: o.amount }),
+    fetchPayments: async () => ({ items: [] }),
+    all: async () => ({ items: [] }),
+    ...fake,
+  })
+  try {
+    return await run()
+  } finally {
+    Object.assign(orders, saved)
+  }
+}
+const asOwner = { _id: ownerId, role: 'vendor' }
+const checkout = () => call(pay.createRazorpayOrder, { params: { cartId: String(cartId) }, user: asOwner })
+
+test('two overdue days are one bill, paid once, and the cart stays unlocked', async () => {
+  // Paid late after selling past midnight: two days ago and yesterday's
+  // 12-2am orders are both owed.
+  await Order.collection.insertMany([order(2), { ...order(1), paidAt: minutesInto(1, 30) }])
+  const status = await getCartPaymentStatus(cartId)
+  assert.equal(status.isLocked, true)
+  assert.equal(status.totalPending, 4)
+  assert.equal(status.totalOrders, 2)
+  assert.equal(status.billingDate.getTime(), daysAgo(2).getTime())
+  assert.equal(status.throughDate.getTime(), daysAgo(1).getTime())
+
+  const r = await withRazorpay({}, checkout)
+  assert.equal(r.status, 201, JSON.stringify(r.body))
+  const p = await Payment.findById(r.body.payment._id)
+  assert.equal(p.amount, 4)
+  assert.equal(p.fromDate.getTime(), daysAgo(2).getTime())
+  assert.equal(p.billingDate.getTime(), daysAgo(1).getTime())
+
+  p.status = 'VERIFIED'
+  await p.save()
+  const after = await getCartPaymentStatus(cartId)
+  assert.equal(after.isLocked, false)
+  assert.equal(after.totalPending, 0)
+})
+
+test("today's orders aren't in the bill until today ends", async () => {
+  await Order.collection.insertMany([order(2), order(0)])
+  const status = await getCartPaymentStatus(cartId)
+  assert.equal(status.totalPending, 2)
+  assert.equal(status.throughDate.getTime(), daysAgo(1).getTime())
+})
+
+test('a checkout opened before another day ended is replaced by the bigger bill', async () => {
+  const twoDaysAgo = order(2)
+  await Order.collection.insertMany([twoDaysAgo, order(1)])
+  await Payment.collection.insertOne({
+    ...paidDay(2), status: 'PENDING', amount: 2, orderIds: [twoDaysAgo._id], razorpayOrderId: 'order_old',
+  })
+  const r = await withRazorpay({}, checkout)
+  assert.equal(r.status, 201, JSON.stringify(r.body))
+  assert.equal(r.body.payment.amount, 4)
+  assert.equal((await Payment.findOne({ razorpayOrderId: 'order_old' }).lean()).status, 'EXPIRED')
+})
+
+test('a checkout that still matches the bill is reused, not replaced', async () => {
+  const o = order(2)
+  await Order.collection.insertOne(o)
+  await Payment.collection.insertOne({
+    ...paidDay(2), status: 'PENDING', amount: 2, orderIds: [o._id], razorpayOrderId: 'order_same',
+  })
+  const r = await withRazorpay({}, checkout)
+  assert.equal(r.body.existingPayment, true)
+  assert.equal(r.body.payment.razorpayOrderId, 'order_same')
+  assert.equal(await Payment.countDocuments({}), 1)
+})
+
+test('a stale checkout the vendor already paid is recorded as paid, not replaced', async () => {
+  const twoDaysAgo = order(2)
+  await Order.collection.insertMany([twoDaysAgo, order(1)])
+  await Payment.collection.insertOne({
+    ...paidDay(2), status: 'PENDING', amount: 2, orderIds: [twoDaysAgo._id], razorpayOrderId: 'order_paid',
+  })
+  const fetchPayments = async () => ({ items: [{ id: 'pay_1', status: 'captured', amount: 200, currency: 'INR' }] })
+  const r = await withRazorpay({ fetchPayments }, checkout)
+  assert.equal(r.body.isLocked, false)
+  assert.equal((await Payment.findOne({ razorpayOrderId: 'order_paid' }).lean()).status, 'VERIFIED')
+  // What's left is yesterday's ₹2.
+  const status = await getCartPaymentStatus(cartId)
+  assert.equal(status.totalPending, 2)
+  assert.equal(status.billingDate.getTime(), daysAgo(1).getTime())
+})
+
+test("a stale checkout is kept when Razorpay can't be checked", async () => {
+  const twoDaysAgo = order(2)
+  await Order.collection.insertMany([twoDaysAgo, order(1)])
+  await Payment.collection.insertOne({
+    ...paidDay(2), status: 'PENDING', amount: 2, orderIds: [twoDaysAgo._id], razorpayOrderId: 'order_kept',
+  })
+  const fetchPayments = async () => {
+    throw new Error('Razorpay down')
+  }
+  const r = await withRazorpay({ fetchPayments }, checkout)
+  assert.equal(r.body.payment.razorpayOrderId, 'order_kept')
+  assert.equal((await Payment.findOne({ razorpayOrderId: 'order_kept' }).lean()).status, 'PENDING')
+})
+
+test('an order paid on a day inside a combined bill keeps its payment time when marked unpaid', async () => {
+  const paidAt = minutesInto(2, 600)
+  const billed = { ...order(2, 'PAID'), paidAt }
+  await Order.collection.insertMany([billed, order(3)])
+  await Payment.collection.insertOne({ ...paidDay(1), fromDate: daysAgo(3), orderIds: [billed._id] })
+  const r = await call(orderController.markOrderUnpaid, { params: { orderId: String(billed._id) }, user: asOwner })
+  assert.equal(r.status, 200)
+  assert.equal((await Order.findById(billed._id)).paidAt.getTime(), paidAt.getTime())
 })

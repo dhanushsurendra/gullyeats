@@ -5,8 +5,15 @@ const ADMIN = import.meta.env.VITE_ADMIN_PATH || '/api/admin'
 
 const CARTS = import.meta.env.VITE_CART_PATH || '/api/carts'
 
-// Thrown on a 401; authSlice logs the admin out when a request fails with it.
+// Thrown on a 401. Pages call the API both through thunks and directly, so the
+// 401 also fires this event; store/index.js logs the admin out on it.
 export const SESSION_EXPIRED = 'Your session has expired. Please log in again.'
+export const SESSION_EXPIRED_EVENT = 'admin:session-expired'
+
+function expired() {
+  window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT))
+  return new Error(SESSION_EXPIRED)
+}
 
 async function request(path, params) {
   const clean = Object.entries(params || {}).filter(
@@ -30,7 +37,7 @@ async function request(path, params) {
 
   const body = await res.json().catch(() => ({}))
 
-  if (res.status === 401) throw new Error(SESSION_EXPIRED)
+  if (res.status === 401) throw expired()
   if (!res.ok || body.success === false) {
     throw new Error(body.message || `Request failed (${res.status})`)
   }
@@ -56,7 +63,7 @@ async function post(path, payload) {
 
   const body = await res.json().catch(() => ({}))
 
-  if (res.status === 401) throw new Error(SESSION_EXPIRED)
+  if (res.status === 401) throw expired()
   if (!res.ok || body.success === false) {
     throw new Error(body.message || `Request failed (${res.status})`)
   }
@@ -86,7 +93,7 @@ export const ordersRequest = async (params = {}) => {
 
   const body = await res.json().catch(() => ({}))
 
-  if (res.status === 401) throw new Error(SESSION_EXPIRED)
+  if (res.status === 401) throw expired()
   if (!res.ok || body.success === false) {
     throw new Error(
       body.message ||
@@ -187,6 +194,13 @@ export const api = {
   operations: () => request(`${ADMIN}/insights/operations`),
 
   actions: (p) => request(`${ADMIN}/actions`, p),
+
+  // New dish names from vendors, reviewed into the common list.
+  dishes: () => request(`${ADMIN}/dishes`),
+  dishImages: (id) => request(`${ADMIN}/dishes/${encodeURIComponent(id)}/images`),
+  approveDish: (id, body) => post(`${ADMIN}/dishes/${encodeURIComponent(id)}/approve`, body),
+  mergeDish: (id, into) => post(`${ADMIN}/dishes/${encodeURIComponent(id)}/merge`, { into }),
+  rejectDish: (id) => post(`${ADMIN}/dishes/${encodeURIComponent(id)}/reject`),
 
   // GullyPulse moderation. kind: confession | comment.
   moderationCounts: () => request(`${ADMIN}/moderation/counts`),

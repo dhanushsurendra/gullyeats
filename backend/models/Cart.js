@@ -12,8 +12,12 @@
           type: String,
           enum: ['Point'],
         },
+        // No default []: a cart without a location then has no location at
+        // all, which the old 2dsphere index skips (an empty one it refuses)
+        // and the apps read as "not set" (they can't read an empty one).
         coordinates: {
           type: [Number],
+          default: undefined,
         },
       },
       userId: {

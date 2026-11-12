@@ -67,6 +67,18 @@ class CartProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  /// Re-reads the selected cart from the server: an admin can close or
+  /// suspend it while the app is open. Errors keep the cached copy.
+  Future<void> refreshSelectedCart(String token, String userId) async {
+    final id = _selectedCart?.id;
+    if (id == null || token.isEmpty || userId.isEmpty) return;
+    try {
+      _carts = await _cartService.fetchUserCarts(token, userId);
+      final fresh = _carts.where((c) => c.id == id).firstOrNull;
+      if (fresh != null) await selectCart(fresh);
+    } catch (_) {}
+  }
+
   Future<void> loadSelectedCart() async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -104,12 +116,15 @@ class CartProvider with ChangeNotifier {
     }
   }
 
+  String? _salesRange; // cart + dates the current _sales are for
+
   Future<void> loadSales(
     String? token,
     String startDate,
     String endDate,
   ) async {
     _isLoading = true;
+    final range = '${_selectedCart?.id} $startDate $endDate';
 
     try {
       final cartId = _selectedCart?.id;
@@ -119,6 +134,11 @@ class CartProvider with ChangeNotifier {
         startDate,
         endDate,
       );
+      _salesRange = range;
+    } catch (_) {
+      // Never show another range's numbers under this range's label.
+      if (_salesRange != range) _sales = null;
+      rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();

@@ -20,7 +20,7 @@ export function MenuItem({ item, quantity, onAdd, onRemove, canOrder = true }) {
 
       <div className='relative flex w-28 shrink-0 flex-col items-center'>
         <img
-          src={item.imageUrl || defaultFoodImage}
+          src={item.imageUrl || item.defaultImage || defaultFoodImage}
           alt=''
           loading='lazy'
           className={`h-24 w-28 rounded-2xl bg-grey-100 object-cover ${available ? '' : 'grayscale'}`}

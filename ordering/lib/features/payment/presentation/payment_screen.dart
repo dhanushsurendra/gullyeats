@@ -1,5 +1,6 @@
 import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
+import 'package:ordering/core/widgets/skeleton.dart';
 import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_gaps.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
@@ -264,16 +265,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
     // ========================================================================
     // INITIAL LOADING
     //
-    // Only show a spinner when there are no existing transactions.
+    // Only show placeholders when there are no existing transactions.
     // ========================================================================
 
     if (history.isEmpty && paymentProvider.isHistoryLoading) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 50),
-        child: Center(
-          child: CircularProgressIndicator(color: AppColors.primary),
-        ),
-      );
+      return Skeleton.rows(count: 4, height: 76);
     }
 
     // ========================================================================
@@ -334,19 +330,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         // Existing transactions stay visible.
         // ======================================================================
         if (paymentProvider.isHistoryLoading)
-          Positioned.fill(
-            child: IgnorePointer(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppColors.white.withValues(alpha: 0.70),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Center(
-                  child: CircularProgressIndicator(color: AppColors.primary),
-                ),
-              ),
-            ),
-          ),
+          const Positioned.fill(child: ShimmerVeil()),
       ],
     );
   }

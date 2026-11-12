@@ -97,16 +97,19 @@ async function main() {
     expect(counterById.get(key)?.seq === list.length, `${key} counter ≠ ${list.length}`)
   }
 
-  // 5. Each payment bills exactly that day's billable orders at ₹2 each.
+  // 5. Each payment bills exactly the billable orders of the days it covers
+  // (fromDate through billingDate; older payments: billingDate only) at ₹2 each.
   const today = istMidnight(now)
   for (const p of payments) {
     const where = `payment ${p.paymentReference}`
     const cart = cartById.get(String(p.cartId))
     expect(cart && String(cart.userId) === String(p.userId) && cart.cartName === p.cartName, `${where} cart/owner/name mismatch`)
     expect(+p.billingDate === +istMidnight(p.billingDate) && p.billingDate < today, `${where} billingDate isn't a finished IST midnight`)
-    const expected = orders.filter((o) => String(o.cartId) === String(p.cartId) && billable(o) && +istMidnight(o.paidAt) === +p.billingDate)
+    const first = +(p.fromDate || p.billingDate)
+    const expected = orders.filter((o) => String(o.cartId) === String(p.cartId) && billable(o) &&
+      +istMidnight(o.paidAt) >= first && +istMidnight(o.paidAt) <= +p.billingDate)
     const billed = p.orderIds.map(String).sort()
-    expect(JSON.stringify(billed) === JSON.stringify(expected.map((o) => String(o._id)).sort()), `${where} orderIds ≠ that day's billable orders`)
+    expect(JSON.stringify(billed) === JSON.stringify(expected.map((o) => String(o._id)).sort()), `${where} orderIds ≠ its days' billable orders`)
     expect(p.totalOrders === expected.length && p.amount === expected.length * FEE, `${where} amount ${p.amount} ≠ ${expected.length * FEE}`)
     expect(p.orderIds.every((x) => orderById.has(String(x))), `${where} references a missing order`)
     expect(p.status === 'VERIFIED' ? p.verifiedAt >= +p.billingDate + DAY : !p.verifiedAt, `${where} verified before its day ended`)
@@ -115,23 +118,23 @@ async function main() {
     expect(list.filter((p) => p.status === 'PENDING').length <= 1, `cart ${cartId} has more than one PENDING payment`)
   }
 
-  // 6. The lock the vendor app would see, worked out independently.
+  // 6. The lock the vendor app would see, worked out independently: one bill
+  // from the oldest unpaid day through yesterday (or just today), locked 26h
+  // after that oldest day began. A started checkout doesn't change it.
   const activeCarts = [...new Set(orders.map((o) => String(o.cartId)))]
   let locked = 0
   for (const cartId of activeCarts) {
     const mine = payments.filter((p) => String(p.cartId) === cartId)
-    const pending = mine.find((p) => p.status === 'PENDING')
     const lastPaid = Math.max(-Infinity, ...mine.filter((p) => p.status === 'VERIFIED').map((p) => +p.billingDate))
     const open = orders.filter((o) => String(o.cartId) === cartId && billable(o) && +istMidnight(o.paidAt) >= lastPaid + DAY)
     const nextDay = open.length ? Math.min(...open.map((o) => +istMidnight(o.paidAt))) : null
-    const want = pending
-      ? { isLocked: true, totalPending: pending.amount }
-      : nextDay === null
-        ? { isLocked: false, totalPending: 0 }
-        : {
-            isLocked: now - nextDay >= 26 * 60 * 60 * 1000,
-            totalPending: FEE * open.filter((o) => +istMidnight(o.paidAt) === nextDay).length,
-          }
+    const through = nextDay !== null && nextDay < +today ? +today - DAY : nextDay
+    const want = nextDay === null
+      ? { isLocked: false, totalPending: 0 }
+      : {
+          isLocked: now - nextDay >= 26 * 60 * 60 * 1000,
+          totalPending: FEE * open.filter((o) => +istMidnight(o.paidAt) >= nextDay && +istMidnight(o.paidAt) <= through).length,
+        }
     const got = await getCartPaymentStatus(cartId)
     if (got.isLocked) locked++
     expect(got.isLocked === want.isLocked && got.totalPending === want.totalPending,

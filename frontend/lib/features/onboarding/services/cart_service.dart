@@ -122,7 +122,11 @@ class CartService {
           body: json.encode({
             "lat": lat,
             "lng": lng,
-            "address": buildAddress(placemark),
+            // No address when the phone's geocoder found none or timed out:
+            // the server needs one, so the coordinates stand in for it.
+            "address": buildAddress(placemark).trim().isNotEmpty
+                ? buildAddress(placemark)
+                : "${lat?.toStringAsFixed(5)}, ${lng?.toStringAsFixed(5)}",
           }),
         )
         .timeout(const Duration(seconds: 10));

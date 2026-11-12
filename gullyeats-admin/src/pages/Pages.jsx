@@ -9,8 +9,8 @@ import RevenueChart from '../components/RevenueChart'
 import OrdersChart from '../components/OrdersChart'
 import StatusBadge from '../components/StatusBadge'
 import KpiCard from '../components/KpiCard'
-import { Card, CardHeader, Table, State, Seg, Btn, ScrollFooter, ExportButton, ask } from '../components/ui'
-import { downloadCsv, fetchAll, istDay, istStamp, today } from '../utils/csv'
+import { Card, CardHeader, Table, State, Seg, Btn, ScrollFooter, ExportButton, Skeleton, ask } from '../components/ui'
+import { billingDays, downloadCsv, fetchAll, istStamp, today } from '../utils/csv'
 import usePaged from '../hooks/usePaged'
 import { IndianRupee, Wallet, Clock, ShoppingBag } from 'lucide-react'
 import { inr, num, ago, ist, matches, ORDER_LABEL } from '../utils/format'
@@ -177,7 +177,7 @@ export function Orders() {
         title='Orders'
         subtitle={`Showing ${rows.length} orders`}
         right={
-          <div className='flex flex-wrap items-center gap-2'>
+          <div className='flex max-w-full flex-wrap items-center gap-2'>
             <Seg
               value={status}
               onChange={setStatus}
@@ -200,11 +200,7 @@ export function Orders() {
         {/* Infinite scroll trigger */}
         {hasMore && (
           <div ref={loadMoreRef} className='flex justify-center py-6'>
-            {loading && (
-              <span className='text-sm text-neutral-500'>
-                Loading more orders...
-              </span>
-            )}
+            {loading && <Skeleton rows={2} />}
           </div>
         )}
 
@@ -277,7 +273,7 @@ async function exportPayments() {
   downloadCsv(`gullyeats-platform-fees-${today()}.csv`, [
     { label: 'Cart', value: (r) => r.cart },
     { label: 'Owner', value: (r) => r.owner },
-    { label: 'Billing day', value: (r) => istDay(r.billingDate) },
+    { label: 'Billing days', value: (r) => billingDays(r.fromDate, r.billingDate) },
     { label: 'Orders billed', value: (r) => r.orders },
     { label: 'Platform fee (INR)', value: (r) => r.amount },
     { label: 'Status', value: (r) => r.status },
@@ -326,8 +322,8 @@ export function Payments() {
     },
     {
       key: 'billingDate',
-      label: 'Billing day',
-      render: (r) => ist(r.billingDate).split(',')[0],
+      label: 'Billing days',
+      render: (r) => billingDays(r.fromDate, r.billingDate),
     },
     {
       key: 'verifiedAt',

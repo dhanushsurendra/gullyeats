@@ -19,6 +19,11 @@ export const istStamp = (d) =>
     : ''
 export const istDay = (d) => istStamp(d).slice(0, 10)
 
+// The days a fee payment covers: one payment can settle several unpaid days
+// (fromDate through billingDate). "2026-11-07", or "2026-11-06 – 2026-11-07".
+export const billingDays = (from, to) =>
+  from && istDay(from) !== istDay(to) ? `${istDay(from)} – ${istDay(to)}` : istDay(to)
+
 // columns: [{ label, value: (row) => any }]
 export function downloadCsv(filename, columns, rows) {
   const lines = [

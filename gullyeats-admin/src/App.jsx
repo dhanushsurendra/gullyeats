@@ -7,6 +7,7 @@ import Collections from './pages/Collections'
 import Insights from './pages/Insights'
 import Actions from './pages/Actions'
 import Moderation from './pages/Moderation'
+import Dishes from './pages/Dishes'
 import {
   Owners,
   Restaurants,
@@ -56,6 +57,7 @@ export default function App() {
         <Route path="insights" element={<Insights />} />
         <Route path="actions" element={<Actions />} />
         <Route path="moderation" element={<Moderation />} />
+        <Route path="dishes" element={<Dishes />} />
         <Route path="feedback" element={<Feedback />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>

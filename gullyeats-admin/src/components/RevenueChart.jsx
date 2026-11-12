@@ -11,7 +11,7 @@ import {
 } from 'recharts'
 import useResource from '../hooks/useResource'
 import { setPeriod } from '../store/adminSlice'
-import { Card, CardHeader, Seg, State } from './ui'
+import { Card, CardHeader, Seg, Skeleton, State } from './ui'
 import { inr, num, signed } from '../utils/format'
 
 export const PERIODS = [
@@ -40,7 +40,7 @@ export default function RevenueChart() {
           />
         }
       />
-      <State loading={loading} error={error}>
+      <State loading={loading} error={error} skeleton={<Skeleton block='h-[250px]' />}>
         <div className='h-[250px] px-2 pt-4'>
           <ResponsiveContainer>
             <ComposedChart

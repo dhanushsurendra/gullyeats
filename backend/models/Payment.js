@@ -37,6 +37,8 @@ const PaymentSchema = new mongoose.Schema(
 
     status: {
       type: String,
+      // EXPIRED: a checkout replaced by a bigger bill before it was paid;
+      // an online payment that still arrives for it is refunded.
       enum: ['PENDING', 'VERIFIED', 'REJECTED', 'EXPIRED'],
       default: 'PENDING',
       index: true,
@@ -119,6 +121,17 @@ const PaymentSchema = new mongoose.Schema(
       type: Date,
       required: true,
       index: true,
+    },
+
+    /*
+     * The FIRST billing day this payment covers (IST midnight). One payment
+     * settles every unpaid finished day at once, fromDate through
+     * billingDate. Null on payments from before combined bills: those cover
+     * billingDate only.
+     */
+    fromDate: {
+      type: Date,
+      default: null,
     },
 
     /*

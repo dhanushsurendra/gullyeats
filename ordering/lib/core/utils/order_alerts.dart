@@ -21,7 +21,7 @@ class OrderAlerts {
   /// is heard even with media volume down or the phone on silent.
   static Future<void> newOrder() async {
     await _guard(() async {
-      final player = _ringPlayer ??= AudioPlayer();
+      final player = _ringPlayer ??= _newPlayer();
       await player.setAudioContext(
         AudioContext(
           android: const AudioContextAndroid(
@@ -46,12 +46,17 @@ class OrderAlerts {
 
   static Future<void> _tap(String sound, List<int> pattern) async {
     await _guard(() async {
-      final player = _tapPlayer ??= AudioPlayer();
+      final player = _tapPlayer ??= _newPlayer();
       await player.stop();
       await player.play(AssetSource(sound));
     });
     await _guard(() => Vibration.vibrate(pattern: pattern));
   }
+
+  // No position updates: nothing reads them, and audioplayers' frame-based
+  // updater kept scheduling frames after the sound ended, so the app redrew
+  // every frame for as long as it stayed open (seen on a vivo I2219).
+  static AudioPlayer _newPlayer() => AudioPlayer()..positionUpdater = null;
 
   static Future<void> _guard(Future<void> Function() action) async {
     try {

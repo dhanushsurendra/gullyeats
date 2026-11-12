@@ -55,7 +55,8 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
       setState(() => _errorText = "Item name cannot be empty");
       return;
     }
-    if (price == null || price <= 0) {
+    // Rs0 is allowed (free add-ons).
+    if (price == null || price < 0) {
       setState(() => _errorText = "Please enter a valid price");
       return;
     }

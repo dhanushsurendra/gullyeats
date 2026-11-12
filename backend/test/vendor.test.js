@@ -40,6 +40,16 @@ test('login is limited to 10 failed attempts per account', async () => {
   })
 })
 
+test('send-otp refuses a disabled vendor before making a code', async () => {
+  let saved = false
+  stub(User, 'findOne', () => q({ role: 'vendor', disabledAt: new Date(), save: async () => { saved = true } }))
+  const r = await call(sendOtp, { body: { phoneNumber: '9876543210', role: 'vendor' } })
+  assert.strictEqual(r.status, 403)
+  assert.match(r.body.message, /disabled/)
+  assert.strictEqual(r.body.otp, undefined)
+  assert.strictEqual(saved, false)
+})
+
 test('change-pin needs a login token', async () => {
   await withServer(async (base) => {
     const r = await fetch(`${base}/change-pin`, {
@@ -113,7 +123,9 @@ test('admin data needs an admin login', async () => {
   const base = `http://127.0.0.1:${server.address().port}/api/admin`
   try {
     assert.strictEqual((await fetch(`${base}/owners`)).status, 401)
-    const vendor = jwt.sign({ _id: 'v', role: 'vendor' }, process.env.JWT_SECRET)
+    // A real, enabled vendor (a token for a missing account is a 401).
+    stub(User, 'findById', () => q({ disabledAt: null }))
+    const vendor = jwt.sign({ _id: '6a0000000000000000000001', role: 'vendor' }, process.env.JWT_SECRET)
     const r = await fetch(`${base}/owners`, { headers: { Cookie: `token=${vendor}` } })
     assert.strictEqual(r.status, 403)
   } finally {

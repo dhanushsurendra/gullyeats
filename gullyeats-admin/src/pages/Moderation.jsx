@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { Check, X, Trash2, RotateCcw, UserX, Flag } from 'lucide-react'
 import usePaged from '../hooks/usePaged'
 import { api } from '../services/api'
-import { Card, CardHeader, Table, State, Seg, ScrollFooter, Spinner, ErrorNote, Btn } from '../components/ui'
+import { Card, CardHeader, Table, State, Seg, ScrollFooter, Skeleton, ErrorNote, Btn } from '../components/ui'
 import StatusBadge from '../components/StatusBadge'
 import { ist } from '../utils/format'
 
@@ -234,7 +234,7 @@ export default function Moderation() {
           title={QUEUES[queue].label}
           subtitle='Click a row for the full text, reports, poster history and actions.'
           right={
-            <div className='flex flex-wrap items-center gap-2'>
+            <div className='flex max-w-full flex-wrap items-center gap-2'>
               <Seg options={Object.keys(QUEUES).map((k) => [k, tabLabel(k)])} value={queue} onChange={(q) => set({ q })} />
               {!QUEUES[queue].kind && (
                 <Seg
@@ -330,7 +330,7 @@ function Drawer({ row, onClose, onDone }) {
         </div>
 
         {state.loading ? (
-          <Spinner />
+          <Skeleton rows={4} />
         ) : state.error ? (
           <ErrorNote message={state.error} />
         ) : (

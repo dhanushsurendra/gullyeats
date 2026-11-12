@@ -8,6 +8,9 @@ class MenuItemModel {
   bool isInStock;
   String cartId;
   String imageUrl;
+  /// The dish's sample photo from the server, shown when there's no
+  /// [imageUrl]; never sent back.
+  String defaultImage;
   Map<String, String> names;
 
   /// The name in the app's language, else English.
@@ -28,6 +31,7 @@ class MenuItemModel {
     required this.isInStock,
     required this.cartId,
     required this.imageUrl,
+    this.defaultImage = '',
     this.names = const {},
   });
 
@@ -62,6 +66,7 @@ class MenuItemModel {
       isInStock: isInStock ?? this.isInStock,
       cartId: cartId ?? this.cartId,
       imageUrl: imageUrl ?? this.imageUrl,
+      defaultImage: defaultImage,
       names: names ?? this.names,
     );
   }
@@ -75,6 +80,7 @@ class MenuItemModel {
       isInStock: json["isInStock"] ?? false,
       cartId: json["cartId"] ?? "",
       imageUrl: json["imageUrl"] ?? "",
+      defaultImage: json["defaultImage"] ?? "",
       names: namesFromJson(json["names"]),
     );
   }

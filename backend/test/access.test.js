@@ -217,8 +217,9 @@ test("a disabled vendor's existing token stops working, and so do their staff's"
   assert.equal(await run(staffId, 'staff'), 'next')
 
   await User.collection.updateOne({ _id: ownerId }, { $set: { disabledAt: new Date() } })
-  assert.equal(await run(ownerId, 'vendor'), 403)
-  assert.equal(await run(staffId, 'staff'), 403)
-  assert.equal(await run(strangerId, 'vendor'), 403) // no such account
+  // 401 so the apps sign out of the dead session.
+  assert.equal(await run(ownerId, 'vendor'), 401)
+  assert.equal(await run(staffId, 'staff'), 401)
+  assert.equal(await run(strangerId, 'vendor'), 401) // no such account
   await User.collection.deleteOne({ _id: ownerId })
 })

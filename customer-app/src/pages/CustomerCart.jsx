@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate, useParams } from 'react-router-dom'
 import { RiAddLine, RiPhoneLine } from 'react-icons/ri'
@@ -6,8 +6,16 @@ import { RiAddLine, RiPhoneLine } from 'react-icons/ri'
 import defaultFoodImage from '../assets/default-food.png'
 import { BottomBar, Button, Card, Page, Row, StatusScreen, Stepper, TopBar, VegMark } from '../components/ui'
 import { api } from '../constants/api'
-import { addItem, clearCart, removeItem, rememberOrder, setPhoneNumber } from '../store/cartSlice'
+import { addItem, clearCart, removeItem, rememberOrder, setCartDetails, setPhoneNumber } from '../store/cartSlice'
 import { itemCount, itemsTotal, PLATFORM_FEE, rupees } from '../utils/format'
+
+// The open state saved from the menu goes stale when the vendor closes the
+// cart meanwhile, so the cart page asks again. A failed check keeps what we have.
+function refreshCart(dispatch, cartId) {
+  api(`/carts/get-cart/${cartId}`)
+    .then((data) => data?._id === cartId && dispatch(setCartDetails(data)))
+    .catch(() => {})
+}
 
 // Review the basket, optionally leave a phone number, and place the order.
 export default function CustomerCart() {
@@ -23,6 +31,8 @@ export default function CustomerCart() {
   const [phone, setPhone] = useState(savedPhone || '')
   const [placing, setPlacing] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => refreshCart(dispatch, cartId), [dispatch, cartId])
 
   const items = menuItems.filter((item) => basket[item._id] > 0)
   const subtotal = itemsTotal(items, basket)
@@ -69,6 +79,8 @@ export default function CustomerCart() {
     } catch (e) {
       setError(e.message)
       setPlacing(false)
+      // Closed or paused since the page opened: show it and disable ordering.
+      if (e.status === 403) refreshCart(dispatch, cartId)
     }
   }
 
@@ -106,7 +118,7 @@ export default function CustomerCart() {
             {items.map((item) => (
               <li key={item._id} className='flex items-center gap-3 p-4'>
                 <img
-                  src={item.imageUrl || defaultFoodImage}
+                  src={item.imageUrl || item.defaultImage || defaultFoodImage}
                   alt=''
                   className='h-12 w-12 shrink-0 rounded-xl bg-grey-100 object-cover'
                   onError={(e) => {

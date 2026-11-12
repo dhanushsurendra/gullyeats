@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:ordering/core/widgets/skeleton.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -28,6 +29,7 @@ class EditMenuDialog extends StatefulWidget {
   final bool initialIsVeg;
   final bool initialInStock;
   final String initialImageUrl;
+  final String defaultImageUrl;
   final Map<String, String> initialNames;
   final String id;
   final String cartId;
@@ -39,6 +41,7 @@ class EditMenuDialog extends StatefulWidget {
     required this.initialIsVeg,
     required this.initialInStock,
     required this.initialImageUrl,
+    this.defaultImageUrl = '',
     this.initialNames = const {},
     required this.id,
     required this.cartId,
@@ -320,7 +323,8 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
       hasError = true;
     }
 
-    if (price == null || price <= 0) {
+    // Rs0 is allowed (free add-ons).
+    if (price == null || price < 0) {
       setState(() {
         _priceError = context.l10n.enterValidPrice;
       });
@@ -565,6 +569,8 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
     bool isPhotoUploaded = _photoUploaded;
     final hasNewPhoto = _selectedPhoto != null;
     final hasExistingPhoto = _imageUrl.isNotEmpty;
+    // No photo of their own: show the dish's sample photo, labelled as such.
+    final shownUrl = hasExistingPhoto ? _imageUrl : widget.defaultImageUrl;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -591,11 +597,11 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
                     _photoChangeButton(),
                   ],
                 )
-              : hasExistingPhoto
+              : shownUrl.isNotEmpty
               ? Stack(
                   children: [
                     Image.network(
-                      _imageUrl,
+                      shownUrl,
                       width: double.infinity,
                       height: 180,
                       fit: BoxFit.cover,
@@ -604,12 +610,13 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
                           return child;
                         }
 
-                        return const Center(child: CircularProgressIndicator());
+                        return const Shimmer(child: Bone(height: 180, radius: 0));
                       },
                       errorBuilder: (context, error, stackTrace) {
                         return _emptyPhotoView();
                       },
                     ),
+                    if (!hasExistingPhoto) _samplePhotoLabel(),
 
                     _photoChangeButton(),
                   ],
@@ -655,6 +662,24 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
             ],
           ),
       ],
+    );
+  }
+
+  Widget _samplePhotoLabel() {
+    return Positioned(
+      left: 10,
+      bottom: 10,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.55),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          context.l10n.samplePhoto,
+          style: AppTextStyles.caption.copyWith(color: AppColors.white),
+        ),
+      ),
     );
   }
 

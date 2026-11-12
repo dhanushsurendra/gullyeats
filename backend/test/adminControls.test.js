@@ -17,6 +17,7 @@ const Cart = require('../models/Cart')
 const User = require('../models/User')
 const Payment = require('../models/Payment')
 const AdminAction = require('../models/AdminAction')
+const Order = require('../models/Order')
 const pay = require('../controllers/paymentController')
 const admin = require('../controllers/adminController')
 const vendor = require('../controllers/vendorController')
@@ -44,7 +45,7 @@ let refunds
 let captured
 const rz = pay.razorpay
 beforeEach(async () => {
-  for (const m of [Cart, User, Payment, AdminAction]) await m.collection.deleteMany({})
+  for (const m of [Cart, User, Payment, AdminAction, Order]) await m.collection.deleteMany({})
   await User.collection.insertMany([
     { _id: adminId, userId: 'ADM-1', role: 'admin', name: 'Asha Admin', phoneNumber: '900' },
     {
@@ -81,16 +82,26 @@ function webhook(paymentId) {
 }
 
 test('an online payment for a bill an admin already marked paid is refunded, once', async () => {
+  // Three ₹2 orders paid two days ago, with the vendor's checkout still open.
+  const twoDaysAgo = new Date(Date.now() - 2 * 864e5)
+  await Order.collection.insertMany([0, 1, 2].map((i) => ({
+    cartId, orderNumber: i + 1, status: 'SERVED', platformFee: 2, subtotal: 60, totalPrice: 62,
+    orderItems: [], createdAt: twoDaysAgo, orderDate: twoDaysAgo, paidAt: twoDaysAgo,
+  })))
   await bill()
   const marked = await call(admin.markFeePaid, { params: { cartId: String(cartId) }, user: asAdmin })
   assert.equal(marked.body.data.paidOnline, false)
+  assert.equal(marked.body.data.amount, 6)
 
   await webhook('pay_late')
   await webhook('pay_late') // Razorpay retries webhooks
   assert.deepEqual(refunds, [['pay_late', 600]])
 
-  const p = await Payment.findOne({ cartId }).lean()
-  assert.equal(p.verificationSource, 'MANUAL')
+  // The admin's payment settles the bill; the abandoned checkout is retired
+  // and carries the refund.
+  assert.equal((await Payment.findOne({ cartId, verificationSource: 'MANUAL' }).lean()).amount, 6)
+  const p = await Payment.findOne({ cartId, razorpayOrderId: 'order_abc' }).lean()
+  assert.equal(p.status, 'EXPIRED')
   assert.deepEqual(
     p.refunds.map((r) => [r.razorpayPaymentId, r.status, r.refundId]),
     [['pay_late', 'REFUNDED', 'rfnd_1']],
@@ -182,4 +193,13 @@ test('the action log lists who did what, newest first', async () => {
   )
   const only = await call(admin.actions, { query: { action: 'SUSPEND_CART' } })
   assert.equal(only.body.data.items.length, 1)
+})
+
+test('an online payment for a checkout replaced by a bigger bill is refunded', async () => {
+  await bill({ status: 'EXPIRED' })
+  await webhook('pay_old')
+  assert.deepEqual(refunds, [['pay_old', 600]])
+  const p = await Payment.findOne({ cartId }).lean()
+  assert.equal(p.status, 'EXPIRED')
+  assert.equal(p.refunds[0].status, 'REFUNDED')
 })

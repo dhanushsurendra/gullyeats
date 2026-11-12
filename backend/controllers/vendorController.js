@@ -48,6 +48,12 @@ exports.sendOtp = asyncHandler(async (req, res) => {
     throw new Error('This number belongs to a staff or admin account')
   }
 
+  // Refused here too, not only at verify, so no code is sent for nothing.
+  if (user.disabledAt) {
+    res.status(403)
+    throw new Error(DISABLED_MESSAGE)
+  }
+
   await refuseIfOnboarded(res, user)
 
   const otp = Math.floor(100000 + Math.random() * 900000).toString()

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ordering/core/widgets/skeleton.dart';
 import 'package:flutter/services.dart';
 import 'package:ordering/core/error/app_exceptions.dart';
 import 'package:ordering/core/theme/app_colors.dart';
@@ -368,12 +369,7 @@ class _AddNewOrderState extends State<AddNewOrder> {
                     // MENU
                     // ------------------------------------------------
                     provider.isMenuLoading
-                        ? const Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(30),
-                              child: CircularProgressIndicator(),
-                            ),
-                          )
+                        ? Skeleton.rows(count: 5, height: 72)
                         : filteredMenu.isEmpty
                         ? ListMessage(
                             icon: searchQuery.isEmpty

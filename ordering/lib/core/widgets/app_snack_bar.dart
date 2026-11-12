@@ -42,6 +42,8 @@ class AppSnackBar {
             ? AppColors.error
             : AppColors.success,
         duration: const Duration(seconds: 3),
+        // An action would otherwise keep it up until dismissed (Flutter 3.29+).
+        persist: false,
         behavior: SnackBarBehavior.floating,
         margin: EdgeInsets.only(bottom: marginBottom, left: 16, right: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

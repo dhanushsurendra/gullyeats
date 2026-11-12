@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
-import { loginRequest, logoutRequest, SESSION_EXPIRED } from '../services/api'
+import { loginRequest, logoutRequest } from '../services/api'
 
 export const login = createAsyncThunk(
   'auth/login',
@@ -32,7 +32,12 @@ const slice = createSlice({
     error: null,
   },
 
-  reducers: {},
+  reducers: {
+    // A request found the login cookie expired (services/api.js).
+    sessionExpired: (state) => {
+      state.user = null
+    },
+  },
 
   extraReducers: (builder) => {
     builder
@@ -62,14 +67,9 @@ const slice = createSlice({
         state.user = null
       })
 
-      // Any request that finds the login cookie expired logs the admin out.
-      .addMatcher(
-        (a) => a.type.endsWith('/rejected') && a.payload === SESSION_EXPIRED,
-        (state) => {
-          state.user = null
-        },
-      )
   },
 })
+
+export const { sessionExpired } = slice.actions
 
 export default slice.reducer

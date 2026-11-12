@@ -104,7 +104,7 @@
   "parcelOrders": "Parcel Orders",
   "avgParcelCharge": "Avg Parcel Charge",
   "topSellers": "Top Sellers",
-  "qrOrdersSummary": "QR · {count} orders · {amount}",
+  "qrOrdersSummary": "QR · {count, plural, =1{1 order} other{{count} orders}} · {amount}",
   "@qrOrdersSummary": {
     "placeholders": {
       "count": {
@@ -115,7 +115,7 @@
       }
     }
   },
-  "manualOrdersSummary": "Manual · {count} orders · {amount}",
+  "manualOrdersSummary": "Manual · {count, plural, =1{1 order} other{{count} orders}} · {amount}",
   "@manualOrdersSummary": {
     "placeholders": {
       "count": {
@@ -602,7 +602,7 @@
       }
     }
   },
-  "ratingCount": "{count} ratings",
+  "ratingCount": "{count, plural, =1{1 rating} other{{count} ratings}}",
   "@ratingCount": {
     "placeholders": {
       "count": {
@@ -635,5 +635,9 @@
         "type": "String"
       }
     }
+  },
+  "samplePhoto": "Sample photo",
+  "@samplePhoto": {
+    "description": "Label on a dish's default photo shown when the item has no photo of its own"
   }
 }

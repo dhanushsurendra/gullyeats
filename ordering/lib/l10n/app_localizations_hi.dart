@@ -1260,4 +1260,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String bestWeekday(String day) {
     return 'आपका सबसे अच्छा दिन आमतौर पर $day होता है';
   }
+
+  @override
+  String get samplePhoto => 'नमूना फ़ोटो';
 }

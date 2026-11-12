@@ -19,6 +19,14 @@ import CartMap from '../components/CartMap'
 import AttentionPanel from '../components/AttentionPanel'
 import StatusBadge from '../components/StatusBadge'
 import { Card, CardHeader, State } from '../components/ui'
+
+const KPI_SKELETON = (
+  <div role='status' aria-label='Loading' className='grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5'>
+    {[0, 1, 2, 3, 4].map((i) => (
+      <div key={i} className='skeleton h-[118px] rounded-2xl' />
+    ))}
+  </div>
+)
 import { inr, num, signed } from '../utils/format'
 
 const chg = (v, invert = false, suffix = '%') =>
@@ -227,7 +235,7 @@ export default function Dashboard() {
         )}
       </div>
 
-      <State loading={ov.loading} error={ov.error}>
+      <State loading={ov.loading} error={ov.error} skeleton={KPI_SKELETON}>
         <div className='grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5'>
           {cards?.map((c) => (
             <KpiCard key={c.label} {...c} />

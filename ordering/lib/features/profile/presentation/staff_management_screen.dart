@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ordering/core/widgets/skeleton.dart';
 
 import 'package:ordering/core/error/app_exceptions.dart';
 import 'package:ordering/core/theme/app_colors.dart';
@@ -279,10 +280,7 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
               AppGaps.h16,
             ],
             if (_isStaffLoading && _staffList.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 32),
-                child: Center(child: CircularProgressIndicator()),
-              )
+              Skeleton.rows(count: 3, height: 72)
             else if (_loadFailed && _staffList.isEmpty)
               ListMessage.failed(message: l10n.couldntLoadStaff, onRetry: _loadStaff)
             else if (_staffList.isEmpty)

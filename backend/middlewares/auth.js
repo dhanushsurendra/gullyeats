@@ -66,9 +66,11 @@ const authMiddleware = (req, res, next) => {
   }
 
   if (req.user.role === "admin") return next();
+  // 401, not 403: the session itself is over, so the apps sign out (they do
+  // on 401). Logging in again then shows the disabled message (403).
   isDisabled(req.user).then(
     (disabled) =>
-      disabled ? res.status(403).json({ success: false, message: DISABLED }) : next(),
+      disabled ? res.status(401).json({ success: false, message: DISABLED }) : next(),
     next,
   );
 };

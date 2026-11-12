@@ -77,6 +77,28 @@ void main() {
     ]);
   });
 
+  testWidgets('a one-letter cart name is refused on the phone, with no request', (tester) async {
+    _phoneSize(tester);
+    final requests = <String>[];
+    await http.runWithClient(() async {
+      final providers = TestProviders();
+      await providers.auth.loadToken();
+      await tester.pumpWidget(buildApp(providers, const CartDetailsScreen()));
+      await tester.enterText(find.byType(TextFormField), ' A ');
+      await tester.pump();
+      await tester.tap(find.text('Select City'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Bangalore').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('CONTINUE'));
+      await tester.pumpAndSettle();
+    }, () => _backend(requests));
+
+    expect(find.text('Cart name must be at least 2 characters'), findsOneWidget);
+    expect(find.text('Cart Details'), findsOneWidget);
+    expect(requests, isEmpty);
+  });
+
   testWidgets('opening an existing cart prefills it and updates on continue',
       (tester) async {
     _phoneSize(tester);
