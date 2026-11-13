@@ -3,7 +3,7 @@
 // Opens each onboarding screen directly with sample data (no login, nothing is
 // sent to the API). Switch screens from a computer by writing the screen index
 // to the app's files dir (debug builds only):
-//   adb shell "run-as com.example.gullyeats sh -c 'echo 3 > files/gallery_index'"
+//   adb shell "run-as com.gullyeats.onboard sh -c 'echo 3 > files/gallery_index'"
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';

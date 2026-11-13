@@ -41,7 +41,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     context.watch<ThemeProvider>();
     return MaterialApp(
-      title: 'GullyEats Vendor Onboarding',
+      title: 'GullyEats Onboard',
       debugShowCheckedModeBanner: false,
       navigatorKey: navigatorKey,
       theme: AppTheme.current,

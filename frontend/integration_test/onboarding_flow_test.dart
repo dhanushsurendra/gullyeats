@@ -1,7 +1,7 @@
 // FLT-ONB device test: the onboarding app on a phone against the QA test backend.
 //
 //   adb reverse tcp:5050 tcp:5050
-//   adb shell pm grant com.example.gullyeats android.permission.ACCESS_FINE_LOCATION
+//   adb shell pm grant com.gullyeats.onboard android.permission.ACCESS_FINE_LOCATION
 //   flutter test integration_test -d <device> --dart-define=API_BASE_URL=http://localhost:5050/api
 //
 // Two steps leave the app, so the test does them through the API the same way

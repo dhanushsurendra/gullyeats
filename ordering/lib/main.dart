@@ -48,7 +48,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     context.watch<ThemeProvider>();
     return MaterialApp(
-      title: 'GullyEats Vendor Ordering',
+      title: 'GullyEats Partner',
       debugShowCheckedModeBanner: false,
       navigatorKey: navigatorKey,
       locale: context.watch<LanguageProvider>().locale,
