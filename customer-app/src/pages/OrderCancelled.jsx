@@ -1,12 +1,12 @@
 import { useNavigate } from 'react-router-dom'
 
 import { Button, LoadingScreen, Page, StatusScreen } from '../components/ui'
+import RefundNote from '../components/RefundNote'
 import useOrder from '../hooks/useOrder'
-import { rupees } from '../utils/format'
 
 export default function OrderCancelled() {
   const navigate = useNavigate()
-  const { order, cartId } = useOrder({ page: '/cancelled' })
+  const { order, setOrder, cartId } = useOrder({ page: '/cancelled' })
 
   if (!order) {
     return (
@@ -16,8 +16,8 @@ export default function OrderCancelled() {
     )
   }
 
-  const adjustment = order.paymentAdjustment
-  const refund = adjustment?.action === 'RETURN' ? Number(adjustment.amount || 0) : 0
+  const paidBack = (order.refunds?.length ? order.refunds.reduce((t, r) => t + r.amount, 0) : 0) ||
+    (order.paymentAdjustment?.action === 'RETURN' ? Number(order.paymentAdjustment.amount || 0) : 0)
 
   return (
     <Page className='bg-surface'>
@@ -26,17 +26,12 @@ export default function OrderCancelled() {
         tone='danger'
         title='Order cancelled'
         message={
-          refund > 0
+          paidBack > 0
             ? `Token #${order.orderNumber} was cancelled.`
             : `Token #${order.orderNumber} was cancelled. You weren't charged anything.`
         }
       >
-        {refund > 0 && (
-          <div className='rounded-card bg-primary-soft px-5 py-4 text-center'>
-            <p className='text-sm text-grey-600'>Collect your money back from the vendor</p>
-            <p className='mt-1 text-3xl font-bold text-primary'>{rupees(refund)}</p>
-          </div>
-        )}
+        <RefundNote order={order} onChange={setOrder} large />
         <Button onClick={() => navigate(`/c/${cartId}/menu`, { replace: true })}>Order something else</Button>
       </StatusScreen>
     </Page>

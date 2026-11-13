@@ -11,6 +11,8 @@ const {
   markOrderPaid,
   markOrderUnpaid,
   undoDeleteOrder,
+  markRefunded,
+  flagRefund,
   updateOrder,
   getTruthLine,
   submitOrderFeedback,
@@ -62,5 +64,10 @@ router.put('/mark-order-paid/:orderId', auth, markOrderPaid)
 router.put('/mark-order-unpaid/:orderId', auth, markOrderUnpaid)
 
 router.put('/delete-order-undo/:orderId', auth, undoDeleteOrder)
+
+// Refunds on cancelled or smaller paid orders: the vendor hands them back, the customer can flag one.
+router.put('/mark-refunded/:orderId', auth, markRefunded)
+
+router.post('/flag-refund/:orderId', flagRefund)
 
 module.exports = router

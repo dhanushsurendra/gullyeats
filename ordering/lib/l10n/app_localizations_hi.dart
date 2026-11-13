@@ -628,6 +628,21 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String get markRefunded => 'वापस किया';
+
+  @override
+  String refundedAmount(String amount) {
+    return '₹$amount वापस किए';
+  }
+
+  @override
+  String get customerSaysNotRefunded =>
+      'ग्राहक कह रहे हैं कि पैसे वापस नहीं मिले';
+
+  @override
+  String get toRefund => 'वापस करना है';
+
+  @override
   String moreItems(int count) {
     return '+$count और';
   }

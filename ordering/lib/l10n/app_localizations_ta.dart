@@ -647,6 +647,21 @@ class AppLocalizationsTa extends AppLocalizations {
   }
 
   @override
+  String get markRefunded => 'திருப்பிக் கொடுத்தேன்';
+
+  @override
+  String refundedAmount(String amount) {
+    return '₹$amount திருப்பிக் கொடுக்கப்பட்டது';
+  }
+
+  @override
+  String get customerSaysNotRefunded =>
+      'பணம் கிடைக்கவில்லை என்று வாடிக்கையாளர் சொல்கிறார்';
+
+  @override
+  String get toRefund => 'திருப்பித் தர வேண்டியது';
+
+  @override
   String moreItems(int count) {
     return '+$count மேலும்';
   }

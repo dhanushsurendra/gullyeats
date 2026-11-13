@@ -1,14 +1,15 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { IndianRupee, Store, Clock, AlertTriangle, Phone, MessageCircle } from 'lucide-react'
 import useResource from '../hooks/useResource'
-import { useReveal } from '../hooks/usePaged'
+import usePaged, { useReveal } from '../hooks/usePaged'
 import { T } from '../store/adminSlice'
 import { api } from '../services/api'
 import KpiCard from '../components/KpiCard'
 import { Card, CardHeader, Table, State, Btn, Seg, ScrollFooter, ExportButton, ask } from '../components/ui'
 import { downloadCsv, istDay, today } from '../utils/csv'
-import { inr, num, ist, matches } from '../utils/format'
+import { inr, num, ist, ago, matches } from '../utils/format'
 
 const AGE_ICON = [Clock, Clock, AlertTriangle]
 
@@ -45,6 +46,168 @@ function Reminder({ row }) {
       </Btn>
       {sent && <span className='text-[11px] text-green-700'>Opened</span>}
     </span>
+  )
+}
+
+// GullyEats' fee per order. A change applies to orders placed from then on;
+// placed orders, bills and reports keep the fee each order was charged.
+function PlatformFee() {
+  const [saved, setSaved] = useState(null)
+  const [max, setMax] = useState(100)
+  const [value, setValue] = useState('')
+  const [note, setNote] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    api
+      .settings()
+      .then((s) => {
+        setSaved(s.platformFee)
+        setMax(s.maxPlatformFee)
+        setValue(String(s.platformFee))
+      })
+      .catch((e) => setNote(e.message))
+  }, [])
+
+  const fee = Number(value)
+  const valid = value !== '' && Number.isInteger(fee) && fee >= 0 && fee <= max
+
+  const save = async () => {
+    if (
+      !(await ask({
+        title: `Change the platform fee from ${inr(saved)} to ${inr(fee)}?`,
+        message: 'New orders on every cart pay the new fee. Orders already placed keep theirs.',
+        confirm: 'Change fee',
+      }))
+    )
+      return
+    setBusy(true)
+    try {
+      const s = await api.updateSettings({ platformFee: fee })
+      setSaved(s.platformFee)
+      setNote('Saved. New orders now pay this fee.')
+    } catch (e) {
+      setNote(e.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader
+        title='Platform fee per order'
+        subtitle='Added to every order on every cart. Orders already placed keep the fee they were charged.'
+        right={
+          <div className='flex flex-wrap items-center gap-2'>
+            <label className='flex items-center gap-1.5 text-[13px] font-semibold'>
+              ₹
+              <input
+                type='number'
+                min={0}
+                max={max}
+                step={1}
+                inputMode='numeric'
+                aria-label='Platform fee in rupees'
+                value={value}
+                disabled={saved === null}
+                onChange={(e) => {
+                  setValue(e.target.value)
+                  setNote('')
+                }}
+                className='w-20 rounded-lg border border-line bg-white px-2.5 py-1.5 text-[13px] font-normal text-ink outline-none focus:border-brand dark:bg-transparent'
+              />
+            </label>
+            <Btn primary onClick={save} disabled={busy || !valid || fee === saved}>
+              {busy ? 'Saving…' : 'Save'}
+            </Btn>
+            {(note || (value !== '' && !valid)) && (
+              <span className='text-[12px] text-neutral-500'>
+                {note || `Whole rupees from 0 to ${max}.`}
+              </span>
+            )}
+          </div>
+        }
+      />
+    </Card>
+  )
+}
+
+// Money carts owe customers back on cancelled or reduced paid orders: not yet
+// handed back, or marked handed back but flagged by the customer.
+const REFUND_TABS = [
+  ['owed', 'Not handed back'],
+  ['flagged', 'Customer says not refunded'],
+]
+const fetchRefunds = {
+  owed: (cursor) => api.refunds({ status: 'owed', limit: 30, cursor }),
+  flagged: (cursor) => api.refunds({ status: 'flagged', limit: 30, cursor }),
+}
+
+function RefundList({ status }) {
+  const q = useSelector((s) => s.admin.search)
+  const p = usePaged(fetchRefunds[status])
+  const [done, setDone] = useState({}) // orderId -> note
+  const resolve = async (r) => {
+    const reason = await ask({
+      title: `Mark order #${r.number}'s refund flag as resolved?`,
+      message: `${r.cart} marked ${inr(r.refunded)} as refunded; the customer says they didn't get it. Resolve it once you've sorted it out with the cart.`,
+      input: 'What happened (shown in the action log)',
+      confirm: 'Resolved',
+    })
+    if (reason === null) return
+    try {
+      await api.resolveRefundFlag(r.id, reason)
+      setDone((d) => ({ ...d, [r.id]: 'Resolved' }))
+    } catch (e) {
+      setDone((d) => ({ ...d, [r.id]: e.message }))
+    }
+  }
+  const cols = [
+    { key: 'cart', label: 'Cart', render: (r) => <b className='font-medium'>{r.cart}</b> },
+    { key: 'owner', label: 'Owner' },
+    { key: 'number', label: 'Order', render: (r) => `#${r.number}` },
+    { key: 'reasons', label: 'Why', render: (r) => r.reasons.map((x) => (x === 'CANCELLED' ? 'Cancelled' : 'Items removed')).join(', ') },
+    status === 'owed'
+      ? { key: 'owed', label: 'To refund', render: (r) => <b>{inr(r.owed)}</b> }
+      : { key: 'refunded', label: 'Marked refunded', render: (r) => <b>{inr(r.refunded)}</b> },
+    status === 'owed'
+      ? { key: 'owedSince', label: 'Owed for', render: (r) => <span className='text-neutral-500'>{ago(r.owedSince)}</span> }
+      : { key: 'refundedBy', label: 'Marked by', render: (r) => <span className='text-neutral-500'>{r.refundedBy} · {ago(r.refundedAt)}</span> },
+    ...(status === 'flagged'
+      ? [{
+          key: 'action',
+          label: '',
+          render: (r) => (done[r.id] ? <span className='text-[12px] text-neutral-500'>{done[r.id]}</span> : <Btn onClick={() => resolve(r)}>Resolve</Btn>),
+        }]
+      : []),
+  ]
+  return (
+    <>
+      <State loading={p.loading && !p.rows.length} error={!p.rows.length && p.error}>
+        <Table
+          columns={cols}
+          rows={p.rows.filter((r) => matches(r, q))}
+          empty={p.hasMore ? '' : status === 'owed' ? 'Every refund has been handed back. 🎉' : 'No customer has flagged a refund.'}
+        />
+      </State>
+      <ScrollFooter {...p} count={p.rows.length} noun='orders' />
+    </>
+  )
+}
+
+function Refunds() {
+  const [params, setParams] = useSearchParams()
+  const status = params.get('refunds') === 'flagged' ? 'flagged' : 'owed'
+  return (
+    <Card>
+      <CardHeader
+        title='Refunds'
+        subtitle='Paid orders that were cancelled or made smaller: the cart owes the customer the difference.'
+        right={<Seg value={status} onChange={(v) => setParams({ refunds: v })} options={REFUND_TABS} />}
+      />
+      <RefundList key={status} status={status} />
+    </Card>
   )
 }
 
@@ -145,6 +308,7 @@ export default function Collections() {
 
   return (
     <div className='space-y-3'>
+      <PlatformFee />
       <State loading={loading} error={error}>
         <div className='grid grid-cols-2 gap-2.5 xl:grid-cols-4'>
           <KpiCard
@@ -184,6 +348,7 @@ export default function Collections() {
         </State>
         <ScrollFooter {...reveal} count={rows.length} noun='carts' />
       </Card>
+      <Refunds />
     </div>
   )
 }

@@ -151,7 +151,9 @@ exports.submit = asyncHandler(async (req, res) => {
       if (e.code !== 11000) throw e // already has an equal or better score today
     }
   }
-  const row = await GameScore.findOne(where).select('score updatedAt alias').lean()
+  const row = await GameScore.findOneAndUpdate(where, { $inc: { rounds: 1 } }, { returnDocument: 'after', timestamps: false })
+    .select('score updatedAt alias')
+    .lean()
   res.json({ success: true, data: { best: row.score, rank: await rankOf(game, day, row), alias: row.alias, day } })
 })
 
@@ -229,9 +231,8 @@ exports.linkPhone = asyncHandler(async (req, res) => {
       await GameScore.updateOne({ _id: row._id }, { $set: { authorKey: to, alias: aliasFor(to, row.game) } }, { timestamps: false })
       continue
     }
-    if (row.score > theirs.score) {
-      await GameScore.updateOne({ _id: theirs._id }, { $set: { score: row.score, stats: row.stats, updatedAt: row.updatedAt } }, { timestamps: false })
-    }
+    const better = row.score > theirs.score ? { $set: { score: row.score, stats: row.stats, updatedAt: row.updatedAt } } : {}
+    await GameScore.updateOne({ _id: theirs._id }, { ...better, $inc: { rounds: row.rounds || 0 } }, { timestamps: false })
     await GameScore.deleteOne({ _id: row._id })
   }
   res.json({ success: true, data: { aliases: Object.fromEntries(Object.keys(GAMES).map((g) => [g, aliasFor(to, g)])) } })

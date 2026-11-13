@@ -1248,6 +1248,30 @@ abstract class AppLocalizations {
   /// **'Return ₹{amount} to customer'**
   String returnToCustomer(String amount);
 
+  /// No description provided for @markRefunded.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark refunded'**
+  String get markRefunded;
+
+  /// No description provided for @refundedAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'₹{amount} refunded'**
+  String refundedAmount(String amount);
+
+  /// No description provided for @customerSaysNotRefunded.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer says they didn\'t get it back'**
+  String get customerSaysNotRefunded;
+
+  /// No description provided for @toRefund.
+  ///
+  /// In en, this message translates to:
+  /// **'To refund'**
+  String get toRefund;
+
   /// No description provided for @moreItems.
   ///
   /// In en, this message translates to:

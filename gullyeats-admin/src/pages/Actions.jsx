@@ -29,6 +29,8 @@ const ACTIONS = {
   APPROVE_DISH: 'Added dish to the common list',
   MERGE_DISH: 'Merged dish name',
   REJECT_DISH: 'Rejected dish name',
+  SET_PLATFORM_FEE: 'Changed platform fee',
+  RESOLVE_REFUND_FLAG: 'Resolved refund flag',
 }
 
 // One readable line per action, from the details the server stored.
@@ -36,6 +38,8 @@ function describe({ action, details: d }) {
   switch (action) {
     case 'MARK_FEE_PAID':
       return `${inr(d.amount)} for ${billingDays(d.fromDate, d.billingDate)}`
+    case 'SET_PLATFORM_FEE':
+      return `${inr(d.from)} → ${inr(d.to)} per order`
     case 'RESET_PIN':
       return 'New PIN issued'
     case 'SUSPEND_CART':

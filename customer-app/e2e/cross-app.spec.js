@@ -1,7 +1,7 @@
 // E2E-xxx: one action in one app, checked in the others. The vendor and
 // onboarding apps are driven through the same API calls they make.
 import { test, expect } from '@playwright/test'
-import { call, customerOrder, adminLogin, onboardVendor, qaPhone, state } from './helpers.js'
+import { backdate, call, confess, customerOrder, adminLogin, istDate, onboardVendor, paidOrder, qaPhone, state } from './helpers.js'
 
 let v, admin
 test.beforeAll(async () => {
@@ -145,4 +145,72 @@ test('E2E-013 a customer rating shows in admin Feedback', async () => {
   const fb = (await call('GET', '/admin/feedback', { token: admin })).body.data.items
   const row = fb.find((f) => f.id === id)
   expect(row).toMatchObject({ rating: 4, text })
+})
+
+test('E2E-010 an unpaid fee locks the cart; admin Mark fee paid unlocks it; the customer can order again', async ({ page }) => {
+  const nv = await onboardVendor({ cartName: `QA-Lock ${Date.now() % 1e5}` })
+  await paidOrder(nv)
+  backdate(nv.cartId)
+  // Locked: vendor sees it, customers and vendor-entered orders are refused.
+  const lock = (await call('GET', `/payments/payment-status/${nv.cartId}`, { token: nv.token })).body
+  expect(lock).toMatchObject({ isLocked: true, canPay: true })
+  expect((await customerOrder(nv.cartId, [{ menuItemId: nv.menu[0]._id, quantity: 1 }])).status).toBe(403)
+  expect((await call('POST', '/orders/create-order', { token: nv.token, body: { cartId: nv.cartId, orderItems: [{ menuItemId: nv.menu[0]._id, quantity: 1 }], status: 'PAID' } })).status).toBe(403)
+
+  expect((await call('POST', `/admin/carts/${nv.cartId}/mark-fee-paid`, { token: admin })).status).toBe(200)
+  expect((await call('GET', `/payments/payment-status/${nv.cartId}`, { token: nv.token })).body.isLocked).toBe(false)
+
+  // The customer, in the browser, can order again.
+  await page.goto(`/c/${nv.cartId}/menu`)
+  await page.getByRole('button', { name: 'Add Masala Dosa', exact: true }).click()
+  await page.goto(`/c/${nv.cartId}/cart`)
+  await page.getByRole('button', { name: /Place order/ }).click()
+  await expect(page.getByText('Your token', { exact: true })).toBeVisible()
+})
+
+test('E2E-011 vendor Sales, admin Revenue and the fee payment agree', async () => {
+  const nv = await onboardVendor({ cartName: `QA-Agree ${Date.now() % 1e5}` })
+  const day = istDate(2)
+  const range = `startDate=${day}&endDate=${day}`
+  const adminFees = async () => (await call('GET', `/admin/overview?${range}`, { token: admin })).body.data.kpis.platformFeeRange
+  const before = await adminFees()
+
+  const orders = [await paidOrder(nv, 0), await paidOrder(nv, 1, 2), await paidOrder(nv, 2)]
+  const served = orders[0].body.data._id
+  await call('PUT', `/orders/serve-order/${served}`, { token: nv.token })
+  const unpaid = await customerOrder(nv.cartId, [{ menuItemId: nv.menu[0]._id, quantity: 1 }]) // never paid: no fee
+  expect(unpaid.status).toBe(201)
+  const expected = orders.reduce((t, o) => t + o.body.data.platformFee, 0)
+  backdate(nv.cartId)
+
+  const sales = (await call('GET', `/carts/sales-insights/${nv.cartId}?${range}`, { token: nv.token })).body
+  const vendorFees = (sales.data || sales).platformFeeRevenue
+  expect(vendorFees, 'vendor Sales').toBe(expected)
+  expect(await adminFees() - before, 'admin Revenue').toBe(expected)
+  const paid = (await call('POST', `/admin/carts/${nv.cartId}/mark-fee-paid`, { token: admin })).body.data
+  expect(paid.amount, 'fee payment').toBe(expected)
+})
+
+test('E2E-014 four different reporters hide a confession; an admin restores it', async () => {
+  const author = await customerOrder(v.cartId, [item()])
+  const text = `QA report ${Date.now()}: I always ask for extra sev and never pay`
+  const posted = await confess(author.key, text)
+  expect(posted.status, posted.body.message).toBe(201)
+  const feed = async () => (await call('GET', '/confessions/feed', { headers: { 'X-Gully-Order': author.key } })).body.data.items
+  const id = (await feed()).find((c) => c.text === text).id
+
+  for (let i = 0; i < 4; i++) {
+    const reporter = await customerOrder(v.cartId, [item()])
+    const r = await call('POST', `/confessions/${id}/report`, { headers: { 'X-Gully-Order': reporter.key }, body: { reason: 'spam' } })
+    expect(r.status, `report ${i + 1}`).toBeLessThan(300)
+    // The same reporter twice counts once.
+    if (i === 0) expect((await call('POST', `/confessions/${id}/report`, { headers: { 'X-Gully-Order': reporter.key }, body: { reason: 'spam' } })).status).toBe(409)
+    expect((await feed()).some((c) => c.id === id), `visible after ${i + 1}`).toBe(i < 3)
+  }
+
+  const queue = (await call('GET', '/admin/moderation/queue?status=REPORTED&kind=confession&limit=100', { token: admin })).body.data.items
+  const row = queue.find((q) => q.text === text)
+  expect(row, 'in the reported queue').toBeTruthy()
+  expect((await call('POST', `/admin/moderation/confession/${row.id}/restore`, { token: admin, body: { reason: 'QA restore' } })).status).toBe(200)
+  expect((await feed()).some((c) => c.id === id)).toBe(true)
 })

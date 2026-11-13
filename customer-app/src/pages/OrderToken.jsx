@@ -18,6 +18,7 @@ import {
   RiSpaceShipLine,
 } from 'react-icons/ri'
 
+import RefundNote from '../components/RefundNote'
 import CancelOrderModal from '../components/CancelOrderModal'
 import { Avatar, Toast } from '../components/Confession'
 import { useLike } from '../hooks/usePulse'
@@ -348,7 +349,6 @@ export default function OrderToken() {
   const total = Number(order.totalPrice || 0)
   const paid = Number(order.paidAmount || 0)
   const due = Math.max(0, total - paid)
-  const adjustment = order.paymentAdjustment
   const isPending = order.status === 'PENDING'
   // Once money has changed hands, only the vendor can cancel (and refund).
   const canCancel = isPending && paid === 0
@@ -404,11 +404,7 @@ export default function OrderToken() {
               <RiNotification3Line size={18} /> Notify me when it's ready
             </Button>
           )}
-          {adjustment?.action === 'RETURN' && adjustment.amount > 0 && (
-            <p className='rounded-2xl bg-grey-100 px-4 py-3 text-sm text-grey-700'>
-              Your order got smaller. Collect <b>{rupees(adjustment.amount)}</b> back from the vendor.
-            </p>
-          )}
+          <RefundNote order={order} onChange={setOrder} />
         </Card>
 
         <Queue queue={queue} isPending={isPending} />

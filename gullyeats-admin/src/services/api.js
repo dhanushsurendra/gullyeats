@@ -192,6 +192,8 @@ export const api = {
   vendors: () => request(`${ADMIN}/insights/vendors`),
   growth: () => request(`${ADMIN}/insights/growth`),
   operations: () => request(`${ADMIN}/insights/operations`),
+  play: (p) => request(`${ADMIN}/insights/play`, p),
+  pulse: (p) => request(`${ADMIN}/insights/pulse`, p),
 
   actions: (p) => request(`${ADMIN}/actions`, p),
 
@@ -218,6 +220,14 @@ export const api = {
   cartInsights: (cartId, p) => request(`${CARTS}/sales-insights/${cartId}`, p),
 
   markFeePaid: (cartId) => post(`${ADMIN}/carts/${cartId}/mark-fee-paid`),
+
+  // Refunds on cancelled or reduced paid orders (status: owed | flagged).
+  refunds: (p) => request(`${ADMIN}/refunds`, p),
+  resolveRefundFlag: (orderId, reason) => post(`${ADMIN}/refunds/${orderId}/resolve`, { reason }),
+
+  // GullyEats' fee per order, for orders placed from now on.
+  settings: () => request(`${ADMIN}/settings`),
+  updateSettings: (body) => post(`${ADMIN}/settings`, body),
 
   resetVendorPin: (vendorId) =>
     post(`${ADMIN}/vendors/${encodeURIComponent(vendorId.trim())}/reset-pin`),

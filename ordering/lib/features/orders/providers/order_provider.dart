@@ -69,7 +69,14 @@ class OrderProvider with ChangeNotifier {
   /// The typed parcel charge, applied only once the order has items.
   double get parcelPrice => _hasItems ? _parcelPrice : 0;
 
-  double get platformFee => _hasItems ? 2.0 : 0.0;
+  // The server's current fee, from the menu response. Shown on the order
+  // screen only; the server sets the real fee on the order.
+  double _currentFee = 0;
+
+  // An order being edited keeps the fee it was placed with.
+  double? _editFee;
+
+  double get platformFee => _hasItems ? (_editFee ?? _currentFee) : 0.0;
 
   // ---------------------------------------------------------------------------
   // SOCKET
@@ -358,6 +365,17 @@ class OrderProvider with ChangeNotifier {
     }
   }
 
+  /// Records that the refund owed on this order was handed back (owner or staff).
+  Future<void> markRefunded(String? token, String orderId) async {
+    try {
+      final updated = await _orderService.markRefunded(token, orderId);
+      final index = _orders.indexWhere((order) => order.id == orderId);
+      if (index != -1) _orders[index] = updated;
+    } finally {
+      notifyListeners();
+    }
+  }
+
   /// Marks a paid order as being cooked (or not), so its customer and the
   /// others waiting see the queue move.
   Future<void> setPreparing(String? token, String orderId, bool preparing) async {
@@ -578,7 +596,9 @@ class OrderProvider with ChangeNotifier {
 
       notifyListeners();
 
-      _menu = await _service.fetchMenu(token, cartId);
+      final result = await _service.fetchMenu(token, cartId);
+      _menu = result.items;
+      _currentFee = result.platformFee ?? _currentFee;
     } finally {
       _isMenuLoading = false;
 
@@ -626,6 +646,7 @@ class OrderProvider with ChangeNotifier {
     }
 
     _parcelPrice = order.parcelCharge;
+    _editFee = order.platformFee;
 
     notifyListeners();
   }
@@ -677,6 +698,7 @@ class OrderProvider with ChangeNotifier {
     _cart.clear();
 
     _parcelPrice = 0;
+    _editFee = null;
 
     notifyListeners();
   }
@@ -729,6 +751,8 @@ class OrderProvider with ChangeNotifier {
     // Cart / order items
     _cart.clear();
     _parcelPrice = 0;
+    _editFee = null;
+    _currentFee = 0;
 
     // Socket
     _socket?.dispose();

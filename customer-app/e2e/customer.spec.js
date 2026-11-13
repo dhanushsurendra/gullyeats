@@ -1,6 +1,6 @@
 // RCT-xxx: the customer web app, opened the way a QR scan opens it.
 import { test, expect } from '@playwright/test'
-import { call, customerOrder, state } from './helpers.js'
+import { call, customerOrder, onboardVendor, paidOrder, state } from './helpers.js'
 
 let v
 test.beforeAll(() => { v = state().vendor })
@@ -202,8 +202,135 @@ test('RCT-026 placing an order offline shows the offline message', async ({ page
   await context.setOffline(false)
 })
 
-test('RCT-027 the GullyPulse feed loads', async ({ page }) => {
+test('RCT-027 GullyPulse without an order shows the locked screen (the feed itself: RCT-076)', async ({ page }) => {
   await page.goto('/confessions')
-  await expect(page.getByRole('heading').first()).toBeVisible()
+  await expect(page.getByText('Unlocks with your order')).toBeVisible()
   await expect(page.getByText(/went wrong|Couldn/)).toHaveCount(0)
+})
+
+/** Places an order from the browser (so the page holds its key) and returns its id. */
+async function placeOrder(page, cartId, names) {
+  await page.goto(`/c/${cartId}/menu`)
+  for (const n of names) await page.getByRole('button', { name: `Add ${n}`, exact: true }).click()
+  await page.goto(`/c/${cartId}/cart`)
+  await page.getByRole('button', { name: /Place order/ }).click()
+  await expect(page.getByText('Your token', { exact: true })).toBeVisible()
+  return page.url().split('/').pop()
+}
+
+test('RCT-006 an out-of-stock item is marked and cannot be added', async ({ page }) => {
+  const stock = (isInStock) => call('PATCH', `/carts/update-stock/${v.cartId}/${v.menu[1]._id}`, { token: v.token, body: { isInStock } })
+  await stock(false)
+  try {
+    await page.goto(`/c/${v.cartId}/menu`)
+    await expect(page.getByText('Sold out for now')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Add Pani Puri', exact: true })).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Add Masala Dosa', exact: true })).toBeVisible()
+  } finally {
+    await stock(true)
+  }
+})
+
+test('RCT-015 the queue shows place in line and only other token numbers', async ({ page }) => {
+  // A fresh cart, so the queue holds only this test's orders.
+  const q = await onboardVendor({ cartName: `QA-Queue ${Date.now() % 1e5}` })
+  const first = await paidOrder(q, 0)
+  const second = await paidOrder(q, 1)
+  const id = await placeOrder(page, q.cartId, ['Chicken Roll'])
+  await expect(page.getByText('2 orders in the queue. Pay at the counter to join it.')).toBeVisible()
+
+  await call('PUT', `/orders/mark-order-paid/${id}`, { token: q.token })
+  await expect(page.getByText('2 orders ahead of you.')).toBeVisible()
+  await expect(page.getByText(`#${first.body.data.orderNumber}`, { exact: true })).toBeVisible() // next up
+  await call('PUT', `/orders/serve-order/${first.body.data._id}`, { token: q.token })
+  await expect(page.getByText('1 order ahead of you.')).toBeVisible()
+  await call('PUT', `/orders/preparing/${second.body.data._id}`, { token: q.token, body: { preparing: true } })
+  await call('PUT', `/orders/serve-order/${second.body.data._id}`, { token: q.token })
+  await expect(page.getByText("You're next.")).toBeVisible()
+
+  // The queue API carries token numbers only: no names, phones, items or ids.
+  const key = await page.evaluate((orderId) => {
+    const root = JSON.parse(localStorage.getItem('persist:gullyeats') || '{}')
+    const o = JSON.parse(root.orders || '[]').find((x) => x._id === orderId)
+    return o && `${o._id}.${o.accessKey}`
+  }, id)
+  expect(key, 'order key kept on the phone').toBeTruthy()
+  const r = await call('GET', `/orders/queue/${id}`, { headers: { 'X-Gully-Order': key } })
+  expect(r.status).toBe(200)
+  expect(Object.keys(r.body.data).sort()).toEqual(['ahead', 'isPreparing', 'nextUp', 'preparing', 'waiting'])
+  expect(JSON.stringify(r.body.data)).not.toMatch(/[a-f0-9]{24}|phone|name/i)
+})
+
+test('RCT-016 back button and a re-scan lead back to the open order', async ({ page }) => {
+  const id = await placeOrder(page, v.cartId, ['Pani Puri'])
+  await page.goBack()
+  await page.goBack()
+  await page.goto(`/c/${v.cartId}/menu`)
+  const link = page.getByRole('button', { name: /Your token #\d+/ })
+  await expect(link).toBeVisible()
+  // A re-scan opens the QR link fresh: the welcome page links to the order too.
+  await page.goto(`/c/${v.cartId}`)
+  await expect(page.getByRole('button', { name: /Your token #\d+/ })).toBeVisible()
+  await page.getByRole('button', { name: /Your token #\d+/ }).click()
+  await expect(page).toHaveURL(new RegExp(`/order/${id}$`))
+  await expect(page.getByText('Your token', { exact: true })).toBeVisible()
+})
+
+test('RCT-020 rate a served order with stars and text', async ({ page }) => {
+  const id = await placeOrder(page, v.cartId, ['Masala Dosa'])
+  await call('PUT', `/orders/mark-order-paid/${id}`, { token: v.token })
+  await call('PUT', `/orders/serve-order/${id}`, { token: v.token })
+  await expect(page).toHaveURL(/\/served$/)
+  await page.getByRole('radio', { name: '4 stars' }).click()
+  const text = `QA rating ${Date.now()}`
+  await page.getByLabel('Your feedback').fill(text)
+  await page.getByRole('button', { name: 'Send feedback' }).click()
+  await expect(page.getByText('Thanks for your feedback!')).toBeVisible()
+  const o = (await call('GET', `/orders/orders-today/${v.cartId}`, { token: v.token })).body.data
+  const saved = (Array.isArray(o) ? o : o.orders || []).find((x) => x._id === id)
+  expect(saved).toMatchObject({ rating: 4, feedback: text })
+})
+
+test('RCT-028 GullyPulse posting needs an order and refuses blocked words', async ({ page }) => {
+  // No order on this phone: the page is locked and the API refuses.
+  await page.goto('/confessions/new')
+  await expect(page.getByText('Unlocks with your order')).toBeVisible()
+  const refused = await call('POST', '/confessions', { body: { text: 'QA no order here, just trying to post this' } })
+  expect(refused.status).toBeGreaterThanOrEqual(400)
+  expect(refused.status).toBeLessThan(500)
+
+  await placeOrder(page, v.cartId, ['Pani Puri'])
+  await page.goto('/confessions/new')
+  const box = page.getByLabel('Your confession')
+  await box.fill('QA test: what the fuck is this chutney, honestly amazing')
+  await page.getByRole('button', { name: 'Post anonymously' }).click()
+  await expect(page.getByRole('alert')).toContainText('Can’t post this')
+
+  const text = `QA confession ${Date.now()}: I eat pani puri every single evening`
+  // The box moves the cursor to the end on focus, so clear it by hand before typing.
+  await box.focus()
+  await page.keyboard.press('Control+A')
+  await page.keyboard.press('Delete')
+  await box.fill(text)
+  await page.getByRole('button', { name: 'Post anonymously' }).click()
+  await expect(page).toHaveURL(/\/confessions$/)
+  await expect(page.getByText(text)).toBeVisible()
+})
+
+test('RCT-029 each game opens, plays a round and saves a score', async ({ page }) => {
+  test.setTimeout(300_000)
+  const id = await placeOrder(page, v.cartId, ['Pani Puri'])
+  for (const game of ['reflex', 'synapse', 'nebula']) {
+    await page.goto(`/c/${v.cartId}/order/${id}/play/${game}`)
+    await page.getByRole('button', { name: /Launch/ }).click()
+    // Nobody taps: the round runs out and the score (0 or more) is still saved.
+    const saved = page.waitForResponse((r) => r.url().includes(`/games/${game}/scores`) && r.request().method() === 'POST', { timeout: 90_000 })
+    expect((await saved).status(), game).toBeLessThan(300)
+    await expect(page.getByRole('button', { name: /Play again/ })).toBeVisible()
+    await expect(page.getByText(/You’re #\d+ today/)).toBeVisible()
+    await page.getByRole('button', { name: /Leaderboard/ }).first().click()
+    const board = page.getByRole('dialog', { name: /Today’s top pilots/ })
+    await expect(board.getByRole('listitem').filter({ hasText: 'You' })).toHaveCount(1)
+    await page.keyboard.press('Escape')
+  }
 })

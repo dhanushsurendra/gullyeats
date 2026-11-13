@@ -54,7 +54,12 @@ function joinQueue(socket, cartId) {
 
 function registerSocketHandlers(io) {
   io.on('connection', (socket) => {
-    socket.on('join_order', (orderId) => joinOrder(socket, orderId))
+    // Joining checks the key in the database, so the order page waits for the
+    // ack before refetching; otherwise a change in between is never heard.
+    socket.on('join_order', async (orderId, ack) => {
+      const joined = await joinOrder(socket, orderId)
+      if (typeof ack === 'function') ack(joined)
+    })
     // The vendor app waits for the ack, then refetches what it missed.
     socket.on('join_vendor', async (cartId, ack) => {
       const joined = await joinVendor(socket, cartId)

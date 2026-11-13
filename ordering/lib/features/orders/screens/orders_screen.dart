@@ -230,6 +230,15 @@ class _OrdersScreenState extends State<OrdersScreen> {
       }
     }
 
+    Future<void> markRefunded(String token, String orderId) async {
+      try {
+        await context.read<OrderProvider>().markRefunded(token, orderId);
+      } catch (e) {
+        if (!context.mounted) return;
+        AppSnackBar.show(context, message: AppExceptionHandler.getMessage(e), isError: true);
+      }
+    }
+
     Future<void> markOrderPaid(String token, String orderId) async {
       try {
         final provider = context.read<OrderProvider>();
@@ -389,6 +398,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
                           deleteOrder(authProvider.token ?? "", order.id),
                       onPreparing: (on) =>
                           setPreparing(authProvider.token ?? "", order.id, on),
+                      onMarkRefunded: () =>
+                          markRefunded(authProvider.token ?? "", order.id),
                     ),
                   ),
                 AppGaps.h12,

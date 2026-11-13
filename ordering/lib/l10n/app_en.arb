@@ -277,6 +277,17 @@
       }
     }
   },
+  "markRefunded": "Mark refunded",
+  "refundedAmount": "₹{amount} refunded",
+  "@refundedAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "customerSaysNotRefunded": "Customer says they didn't get it back",
+  "toRefund": "To refund",
   "moreItems": "+{count} more",
   "@moreItems": {
     "placeholders": {

@@ -13,5 +13,3 @@ export const itemCount = (quantities) =>
 export const itemsTotal = (menuItems, quantities) =>
   menuItems.reduce((sum, item) => sum + item.price * (quantities[item._id] || 0), 0)
 
-// Same as the server's PLATFORM_FEE (backend/controllers/orderController.js).
-export const PLATFORM_FEE = 2

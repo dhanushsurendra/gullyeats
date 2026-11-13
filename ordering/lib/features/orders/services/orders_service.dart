@@ -101,6 +101,20 @@ class OrderService {
     }
   }
 
+  /// The money owed back on this order was handed to the customer.
+  Future<OrderModel> markRefunded(String? token, String orderId) async {
+    final response = await http.put(
+      Uri.parse('${ApiConstants.orders}/mark-refunded/$orderId'),
+      headers: _headers(token),
+    ).timeout(const Duration(seconds: 10));
+
+    final data = json.decode(response.body);
+    if (response.statusCode == 200) {
+      return OrderModel.fromJson(data["data"]);
+    }
+    throw ApiException(data["message"] ?? "Couldn't mark as refunded", response.statusCode);
+  }
+
   /// Marks a paid order as being cooked, or takes that back.
   Future<OrderModel> setPreparing(String? token, String orderId, bool preparing) async {
     final response = await http.put(

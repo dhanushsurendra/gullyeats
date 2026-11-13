@@ -19,8 +19,9 @@ const ICON = {
 }
 
 export default function ActivityFeed({ items, loading, error }) {
+  // min-w-0: a long line (cart names) is cut with … instead of widening the grid cell.
   return (
-    <Card className='h-full'>
+    <Card className='h-full min-w-0'>
       <CardHeader
         title='Platform Activity'
         subtitle='Live feed · refreshes every 30s'

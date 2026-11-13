@@ -17,6 +17,7 @@ const path = require('path')
 const crypto = require('crypto')
 const mongoose = require('mongoose')
 const bcrypt = require('bcrypt')
+const { authorKeyFor } = require('../middlewares/confessionPoster')
 
 // 00999: API tests. 60000999: device tests through screens that only take a
 // valid Indian mobile number (nothing is texted: the SMS app only opens a draft).
@@ -41,11 +42,20 @@ async function setup(db) {
 async function cleanup(db) {
   const users = await db.collection('users').find({ phoneNumber: QA_PHONE }).project({ _id: 1, email: 1 }).toArray()
   const carts = await db.collection('carts').distinct('_id', { userId: { $in: users.map((u) => u._id) } })
-  const orders = await db.collection('orders').distinct('_id', { $or: [{ cartId: { $in: carts } }, { phoneNumber: QA_PHONE }] })
+  const qaOrders = await db.collection('orders')
+    .find({ $or: [{ cartId: { $in: carts } }, { phoneNumber: QA_PHONE }] })
+    .project({ _id: 1, phoneNumber: 1 })
+    .toArray()
+  const orders = qaOrders.map((o) => o._id)
+  // Game scores, likes and reports are keyed by player, not order: a QA phone's key,
+  // or a phoneless QA order's own key (never a real number that ordered at a QA cart).
+  const keys = qaOrders.filter((o) => !o.phoneNumber || QA_PHONE.test(o.phoneNumber)).map(authorKeyFor)
   const plan = {
+    gamescores: { authorKey: { $in: keys } },
+    confessionlikes: { authorKey: { $in: keys } },
+    confessionreports: { authorKey: { $in: keys } },
     confessioncomments: { orderId: { $in: orders } },
     confessions: { orderId: { $in: orders } },
-    gamescores: { orderId: { $in: orders } },
     orders: { _id: { $in: orders } },
     menuitems: { cartId: { $in: carts } },
     payments: { cartId: { $in: carts } },

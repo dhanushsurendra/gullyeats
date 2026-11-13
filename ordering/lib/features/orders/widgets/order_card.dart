@@ -28,6 +28,9 @@ class OrderCard extends StatefulWidget {
   /// the vendor can serve without it.
   final ValueChanged<bool>? onPreparing;
 
+  /// "Mark refunded": the money owed back on this order was handed over.
+  final VoidCallback? onMarkRefunded;
+
   /// Just arrived live: the card slides in and glows briefly.
   final bool isFresh;
 
@@ -38,6 +41,7 @@ class OrderCard extends StatefulWidget {
     required this.onTap,
     required this.onDelete,
     required this.onMarkPaid,
+    this.onMarkRefunded,
     this.onPreparing,
     this.isFresh = false,
   });
@@ -194,10 +198,13 @@ class _OrderCardState extends State<OrderCard> {
                   Divider(height: 1, color: AppColors.grey200),
                   AppGaps.h12,
                   _bottomRow(),
-                  if (widget.order.paymentAdjustment != null &&
-                      widget.order.paymentAdjustment!.action != 'NONE') ...[
+                  if (widget.order.paymentAdjustment?.action == 'COLLECT') ...[
                     AppGaps.h8,
                     _paymentAdjustmentBanner(widget.order.paymentAdjustment!),
+                  ],
+                  if (widget.order.refundOwed > 0 || widget.order.refunds.isNotEmpty) ...[
+                    AppGaps.h8,
+                    _refundBanner(),
                   ],
                 ],
               ),
@@ -567,6 +574,52 @@ class _OrderCardState extends State<OrderCard> {
         : DateFormat.jm(locale).format(placed.toLocal());
 
     return _iconLabel(Icons.schedule_rounded, label, color, bold: true);
+  }
+
+  /// Money owed back on a cancelled or reduced paid order: what's still to
+  /// hand back (with "Mark refunded"), what was, and a customer's complaint.
+  Widget _refundBanner() {
+    final o = widget.order;
+    final l10n = context.l10n;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (o.refundOwed > 0)
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  l10n.returnToCustomer(formatPrice(o.refundOwed)),
+                  style: AppTextStyles.caption.copyWith(color: AppColors.warning, fontWeight: FontWeight.w600),
+                ),
+              ),
+              if (widget.onMarkRefunded != null)
+                TextButton(
+                  onPressed: widget.onMarkRefunded,
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    visualDensity: VisualDensity.compact,
+                    minimumSize: const Size(48, 40),
+                  ),
+                  child: Text(l10n.markRefunded),
+                ),
+            ],
+          )
+        else if (o.refundedAmount > 0)
+          Text(
+            '✓ ${l10n.refundedAmount(formatPrice(o.refundedAmount))}',
+            style: AppTextStyles.caption.copyWith(color: AppColors.success, fontWeight: FontWeight.w600),
+          ),
+        if (o.refundFlagged)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              l10n.customerSaysNotRefunded,
+              style: AppTextStyles.caption.copyWith(color: AppColors.error, fontWeight: FontWeight.w600),
+            ),
+          ),
+      ],
+    );
   }
 
   Widget _paymentAdjustmentBanner(PaymentAdjustment adjustment) {

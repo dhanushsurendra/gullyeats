@@ -77,11 +77,26 @@ class _QrPosterScreenState extends State<QrPosterScreen> {
     }
   }
 
+  /// True once the QR image itself has downloaded. Without it the poster shows
+  /// a grey placeholder, and a shared poster would have nothing to scan.
+  Future<bool> _qrReady() async {
+    if (qrImageUrl.isEmpty) await _loadQrCode();
+    if (!mounted || qrImageUrl.isEmpty) return false;
+    var ok = true;
+    await precacheImage(NetworkImage(qrImageUrl), context, onError: (_, _) => ok = false);
+    return ok;
+  }
+
   Future<void> _shareQr() async {
     setState(() => _isBtnLoading = true);
     final cartProvider = Provider.of<CartProvider>(context, listen: false);
 
     try {
+      if (!await _qrReady()) {
+        _showError("Check your internet connection");
+        return;
+      }
+      if (!mounted) return;
       await QrService.saveAndSharePdf(
         qrKey: _qrKey,
         cartName: _cartName,

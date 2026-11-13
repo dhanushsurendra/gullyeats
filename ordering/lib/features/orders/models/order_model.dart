@@ -36,6 +36,36 @@ class PaymentAdjustment {
   }
 }
 
+/// Money owed back on a paid order that was cancelled or made smaller, and
+/// whether the cart handed it back (and whether the customer says it didn't).
+class Refund {
+  final double amount;
+  final String reason; // CANCELLED | EDITED
+  final DateTime? refundedAt;
+  final DateTime? flaggedAt;
+  final DateTime? flagResolvedAt;
+
+  const Refund({required this.amount, required this.reason, this.refundedAt, this.flaggedAt, this.flagResolvedAt});
+
+  static DateTime? _date(Object? v) => v == null ? null : DateTime.tryParse(v.toString());
+
+  factory Refund.fromJson(Map<String, dynamic> json) => Refund(
+    amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
+    reason: json['reason']?.toString() ?? 'EDITED',
+    refundedAt: _date(json['refundedAt']),
+    flaggedAt: _date(json['flaggedAt']),
+    flagResolvedAt: _date(json['flagResolvedAt']),
+  );
+
+  Map<String, dynamic> toJson() => {
+    'amount': amount,
+    'reason': reason,
+    'refundedAt': refundedAt?.toIso8601String(),
+    'flaggedAt': flaggedAt?.toIso8601String(),
+    'flagResolvedAt': flagResolvedAt?.toIso8601String(),
+  };
+}
+
 class OrderModel {
   final String id;
   final String orderNumber;
@@ -67,6 +97,9 @@ class OrderModel {
   // Optional payment adjustment after updating an order
   final PaymentAdjustment? paymentAdjustment;
 
+  /// Every refund owed on this order (cancelled, or items removed after payment).
+  final List<Refund> refunds;
+
   OrderModel({
     required this.id,
     required this.orderNumber,
@@ -87,7 +120,19 @@ class OrderModel {
     this.servedAt,
     this.preparingAt,
     this.paymentAdjustment,
+    this.refunds = const [],
   });
+
+  /// Still to hand back. Orders from before the refund log only have a RETURN adjustment.
+  double get refundOwed => refunds.isEmpty
+      ? (paymentAdjustment?.action == 'RETURN' ? paymentAdjustment!.amount : 0)
+      : refunds.where((r) => r.refundedAt == null).fold(0.0, (t, r) => t + r.amount);
+
+  /// Handed back (marked in the app).
+  double get refundedAmount => refunds.where((r) => r.refundedAt != null).fold(0.0, (t, r) => t + r.amount);
+
+  /// The customer says a refund marked as handed back never reached them.
+  bool get refundFlagged => refunds.any((r) => r.flaggedAt != null && r.flagResolvedAt == null);
 
   bool get isQrOrder => orderType == "QR";
 
@@ -155,6 +200,11 @@ class OrderModel {
               json["paymentAdjustment"] as Map<String, dynamic>,
             )
           : null,
+
+      refunds: (json["refunds"] as List?)
+              ?.map((r) => Refund.fromJson(r as Map<String, dynamic>))
+              .toList() ??
+          const [],
     );
   }
 
@@ -198,6 +248,8 @@ class OrderModel {
 
       if (paymentAdjustment != null)
         "paymentAdjustment": paymentAdjustment!.toJson(),
+
+      "refunds": refunds.map((r) => r.toJson()).toList(),
     };
   }
 
@@ -221,6 +273,7 @@ class OrderModel {
     DateTime? servedAt,
     DateTime? preparingAt,
     PaymentAdjustment? paymentAdjustment,
+    List<Refund>? refunds,
   }) {
     return OrderModel(
       id: id ?? this.id,
@@ -242,6 +295,7 @@ class OrderModel {
       servedAt: servedAt ?? this.servedAt,
       preparingAt: preparingAt ?? this.preparingAt,
       paymentAdjustment: paymentAdjustment ?? this.paymentAdjustment,
+      refunds: refunds ?? this.refunds,
     );
   }
 }

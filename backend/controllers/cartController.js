@@ -18,6 +18,7 @@ const translit = require('../utils/transliterate')
 // Not awaited: new dish names are noted for review without slowing the save.
 const { trackDishes, defaultImages } = require('../utils/dishCandidates')
 const FoodName = require('../models/FoodName')
+const { getPlatformFee } = require('../utils/platformFee')
 
 // The only uploads allowed: the bucket is public, so anything else (an HTML
 // page, say) would be served from our address.
@@ -327,6 +328,8 @@ exports.getMenuItems = asyncHandler(async (req, res) => {
     success: true,
     count: items.length,
     data: items,
+    // The fee a new order pays now, for the apps' totals (the server sets the real one).
+    platformFee: await getPlatformFee(),
   })
 })
 
@@ -862,6 +865,7 @@ exports.getCart = asyncHandler(async (req, res) => {
     success: true,
     data: {
       ...publicCart,
+      platformFee: await getPlatformFee(),
       rating: stars
         ? { average: Math.round(stars.average * 10) / 10, count: stars.count }
         : { average: null, count: 0 },

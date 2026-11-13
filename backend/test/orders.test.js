@@ -7,6 +7,7 @@ const User = require('../models/User')
 const Order = require('../models/Order')
 const MenuItem = require('../models/Menu')
 const Counter = require('../models/Counter')
+const Setting = require('../models/Setting')
 const paymentLock = require('../utils/cartPaymentLock')
 const c = require('../controllers/orderController')
 
@@ -20,7 +21,7 @@ const tea = { _id: id(), name: 'Tea', price: 10, isInStock: true }
 const gone = { _id: id(), name: 'Vada', price: 15, isInStock: false }
 const owner = { _id: ownerId, role: 'vendor' }
 
-function setup({ isOpen = true, order, isLocked = false } = {}) {
+function setup({ isOpen = true, order, isLocked = false, fee = 2 } = {}) {
   const cart = { _id: cartId, userId: ownerId, isOpen, isActive: true }
   stub(paymentLock, 'getCartPaymentStatus', async () => ({ isLocked }))
   stub(Cart, 'findById', () => q(cart))
@@ -29,6 +30,7 @@ function setup({ isOpen = true, order, isLocked = false } = {}) {
     q([dosa, tea, gone].filter((m) => filter._id.$in.includes(m._id))),
   )
   stub(Counter, 'findByIdAndUpdate', async () => ({ seq: 7 }))
+  stub(Setting, 'findById', () => q({ platformFee: fee }))
   stub(Order, 'create', async (doc) => ({ _id: id(), ...doc }))
   if (order) {
     order.save = async () => {}
@@ -119,6 +121,7 @@ function paidOrder() {
     platformFee: 2,
     totalPrice: 32,
     paidAt: new Date(),
+    refunds: [], // the schema default
   }
 }
 
@@ -352,4 +355,22 @@ test('an order edited back to what was paid is PAID again, not stuck owing', asy
   assert.strictEqual(order.status, 'PAID')
   assert.strictEqual(order.paymentAdjustment, null)
   assert.strictEqual(order.paidAmount, 32)
+})
+
+test('new orders pay the current fee; an edit keeps the fee the order was placed with', async () => {
+  setup({ fee: 5 })
+  let r = await call(c.createOrder, { body: { cartId, orderItems: [line(tea, 1)] } })
+  assert.strictEqual(r.body.data.platformFee, 5)
+  assert.strictEqual(r.body.data.totalPrice, 15)
+
+  const order = paidOrder() // placed at 2
+  setup({ order, fee: 5 })
+  r = await call(c.updateOrder, {
+    headers: cust(order),
+    params: { orderId: order._id },
+    body: { orderItems: [line(dosa, 1), line(tea, 1)] },
+  })
+  assert.strictEqual(r.status, 200)
+  assert.strictEqual(order.platformFee, 2)
+  assert.strictEqual(order.totalPrice, 42)
 })

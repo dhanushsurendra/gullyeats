@@ -6,7 +6,7 @@ require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') }
 const SEED_TAG = 'seed-2k'
 
 const DAY = 24 * 60 * 60 * 1000
-const FEE = 2 // backend/controllers/orderController.js PLATFORM_FEE
+const FEE = 2 // fee the fake orders were "charged"; the live fee is in Setting (utils/platformFee.js)
 
 // The IST calendar date ("2026-11-06") of a moment.
 const istDate = (d) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(d)

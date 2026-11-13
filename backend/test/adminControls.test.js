@@ -18,6 +18,7 @@ const User = require('../models/User')
 const Payment = require('../models/Payment')
 const AdminAction = require('../models/AdminAction')
 const Order = require('../models/Order')
+const Setting = require('../models/Setting')
 const pay = require('../controllers/paymentController')
 const admin = require('../controllers/adminController')
 const vendor = require('../controllers/vendorController')
@@ -45,7 +46,7 @@ let refunds
 let captured
 const rz = pay.razorpay
 beforeEach(async () => {
-  for (const m of [Cart, User, Payment, AdminAction, Order]) await m.collection.deleteMany({})
+  for (const m of [Cart, User, Payment, AdminAction, Order, Setting]) await m.collection.deleteMany({})
   await User.collection.insertMany([
     { _id: adminId, userId: 'ADM-1', role: 'admin', name: 'Asha Admin', phoneNumber: '900' },
     {
@@ -202,4 +203,21 @@ test('an online payment for a checkout replaced by a bigger bill is refunded', a
   const p = await Payment.findOne({ cartId }).lean()
   assert.equal(p.status, 'EXPIRED')
   assert.equal(p.refunds[0].status, 'REFUNDED')
+})
+
+test('an admin changes the platform fee: logged, validated, defaults to 2', async () => {
+  let r = await call(admin.getSettings, { user: asAdmin })
+  assert.equal(r.body.data.platformFee, 2)
+
+  for (const platformFee of [-1, 2.5, '3', 101, undefined]) {
+    r = await call(admin.updateSettings, { body: { platformFee }, user: asAdmin })
+    assert.equal(r.status, 400, String(platformFee))
+  }
+
+  r = await call(admin.updateSettings, { body: { platformFee: 4 }, user: asAdmin })
+  assert.equal(r.status, 200)
+  assert.equal((await call(admin.getSettings, { user: asAdmin })).body.data.platformFee, 4)
+  await call(admin.updateSettings, { body: { platformFee: 4 }, user: asAdmin }) // unchanged: not logged again
+  const log = await AdminAction.find({ action: 'SET_PLATFORM_FEE' }).lean()
+  assert.deepEqual(log.map((l) => l.details), [{ from: 2, to: 4 }])
 })

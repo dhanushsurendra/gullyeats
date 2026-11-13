@@ -639,6 +639,21 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get markRefunded => 'Mark refunded';
+
+  @override
+  String refundedAmount(String amount) {
+    return '₹$amount refunded';
+  }
+
+  @override
+  String get customerSaysNotRefunded =>
+      'Customer says they didn\'t get it back';
+
+  @override
+  String get toRefund => 'To refund';
+
+  @override
   String moreItems(int count) {
     return '+$count more';
   }

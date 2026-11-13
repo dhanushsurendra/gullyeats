@@ -85,6 +85,9 @@ class HandoverScreen extends StatelessWidget {
                 _row(l10n.toCollect, t.toCollect, t.unpaidOrders, l10n),
                 Divider(height: 24, color: AppColors.grey200),
                 _row(l10n.refunded, t.refunded, t.refundedOrders, l10n),
+                Divider(height: 24, color: AppColors.grey200),
+                // Still in the drawer but owed back: "Mark refunded" on the order once handed over.
+                _row(l10n.toRefund, t.toRefund, t.toRefundOrders, l10n),
               ],
             ),
           ),
@@ -131,9 +134,13 @@ class Handover {
   final double toCollect;
   final int unpaidOrders;
 
-  /// Handed back on cancelled paid orders.
+  /// Handed back (marked refunded) on cancelled or reduced paid orders.
   final double refunded;
   final int refundedOrders;
+
+  /// Owed back on cancelled or reduced paid orders, not yet marked refunded.
+  final double toRefund;
+  final int toRefundOrders;
 
   const Handover({
     this.collected = 0,
@@ -142,11 +149,13 @@ class Handover {
     this.unpaidOrders = 0,
     this.refunded = 0,
     this.refundedOrders = 0,
+    this.toRefund = 0,
+    this.toRefundOrders = 0,
   });
 
   factory Handover.of(List<OrderModel> orders, DateTime now) {
-    var collected = 0.0, toCollect = 0.0, refunded = 0.0;
-    var collectedOrders = 0, unpaidOrders = 0, refundedOrders = 0;
+    var collected = 0.0, toCollect = 0.0, refunded = 0.0, toRefund = 0.0;
+    var collectedOrders = 0, unpaidOrders = 0, refundedOrders = 0, toRefundOrders = 0;
 
     for (final o in orders) {
       // The list can still hold yesterday's orders if the app stayed open
@@ -154,14 +163,15 @@ class Handover {
       final at = (o.createdAt ?? o.orderDate)?.toLocal();
       if (at == null || !DateUtils.isSameDay(at, now)) continue;
 
-      if (o.status == "CANCELLED") {
-        final adj = o.paymentAdjustment;
-        if (adj != null && adj.action == "RETURN" && adj.amount > 0) {
-          refunded += adj.amount;
-          refundedOrders++;
-        }
-        continue;
+      if (o.refundedAmount > 0) {
+        refunded += o.refundedAmount;
+        refundedOrders++;
       }
+      if (o.refundOwed > 0) {
+        toRefund += o.refundOwed;
+        toRefundOrders++;
+      }
+      if (o.status == "CANCELLED") continue;
       // Served orders from before the server stored paidAmount read as 0.
       final paid = o.paidAmount > 0
           ? o.paidAmount
@@ -183,6 +193,8 @@ class Handover {
       unpaidOrders: unpaidOrders,
       refunded: refunded,
       refundedOrders: refundedOrders,
+      toRefund: toRefund,
+      toRefundOrders: toRefundOrders,
     );
   }
 }

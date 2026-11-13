@@ -24,6 +24,8 @@ export const T = Object.fromEntries(
     'vendors',
     'growth',
     'operations',
+    'play',
+    'pulse',
   ].map((k) => [k, make(k, api[k])]),
 )
 

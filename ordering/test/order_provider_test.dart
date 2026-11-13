@@ -15,12 +15,15 @@ Map<String, dynamic> item(String id, String name, num price) => {
   'cartId': 'cart1',
 };
 
-Future<OrderProvider> providerWithMenu() async {
+/// A provider with the menu loaded; [fee] is the platform fee the server
+/// sends with it (null: an older server that sends none).
+Future<OrderProvider> providerWithMenu({num? fee = 2}) async {
   final provider = OrderProvider();
   final client = MockClient(
     (request) async => http.Response(
       jsonEncode({
         'data': [item('dosa', 'Dosa', 40), item('tea', 'Tea', 10)],
+        'platformFee': ?fee,
       }),
       200,
     ),
@@ -54,6 +57,35 @@ void main() {
       10,
       reason: 'items not in the order keep the menu price',
     );
+  });
+
+  test('the platform fee comes from the server; an edited order keeps its own', () async {
+    final provider = await providerWithMenu(fee: 5);
+    provider.clearOrder();
+    provider.addItem(provider.menu.first);
+    expect(provider.platformFee, 5);
+    expect(provider.total, 40 + 5);
+
+    provider.startEditing(OrderModel.fromJson({
+      '_id': 'o1',
+      'status': 'PENDING',
+      'totalPrice': 42,
+      'platformFee': 2,
+      'orderItems': [
+        {'menuItemId': 'dosa', 'name': 'Dosa', 'price': 40, 'quantity': 1},
+      ],
+    }));
+    expect(provider.platformFee, 2, reason: 'placed at the old fee');
+    provider.clearOrder();
+    provider.addItem(provider.menu.first);
+    expect(provider.platformFee, 5, reason: 'a new order pays the current fee again');
+  });
+
+  test('an older server that sends no fee shows none', () async {
+    final provider = await providerWithMenu(fee: null);
+    provider.clearOrder();
+    provider.addItem(provider.menu.first);
+    expect(provider.platformFee, 0);
   });
 
   test('parcel charge typed before adding items applies once items exist', () async {

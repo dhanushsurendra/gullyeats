@@ -643,6 +643,21 @@ class AppLocalizationsKn extends AppLocalizations {
   }
 
   @override
+  String get markRefunded => 'ಹಿಂತಿರುಗಿಸಿದೆ';
+
+  @override
+  String refundedAmount(String amount) {
+    return '₹$amount ಹಿಂತಿರುಗಿಸಲಾಗಿದೆ';
+  }
+
+  @override
+  String get customerSaysNotRefunded =>
+      'ಹಣ ಸಿಕ್ಕಿಲ್ಲ ಎಂದು ಗ್ರಾಹಕರು ಹೇಳುತ್ತಿದ್ದಾರೆ';
+
+  @override
+  String get toRefund => 'ಹಿಂತಿರುಗಿಸಬೇಕಾದದ್ದು';
+
+  @override
   String moreItems(int count) {
     return '+$count ಇನ್ನಷ್ಟು';
   }

@@ -54,9 +54,7 @@ class MenuProvider extends ChangeNotifier {
   Future<void> fetchMenuItems(String? token, String cartId) async {
     try {
       _isLoading = true;
-      final items = await _menuService.fetchMenu(token, cartId);
-
-      _menuItems = items;
+      _menuItems = (await _menuService.fetchMenu(token, cartId)).items;
     } finally {
       _isLoading = false;
       notifyListeners();

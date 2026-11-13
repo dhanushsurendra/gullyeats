@@ -25,7 +25,13 @@ export default function useOrder({ page } = {}) {
   const { cartId, orderNumber: orderId } = useParams()
   const navigate = useNavigate()
   const dispatch = useDispatch()
-  const [order, setOrder] = useState(null)
+  const [order, setLatest] = useState(null)
+  // Fetches and live events can arrive out of order (an older answer last):
+  // keep whichever copy of the order is newest.
+  const setOrder = useCallback(
+    (next) => setLatest((prev) => (prev?.updatedAt && next?.updatedAt && new Date(next.updatedAt) < new Date(prev.updatedAt) ? prev : next)),
+    [],
+  )
   const [error, setError] = useState('')
   const [queue, setQueue] = useState(null)
 
@@ -41,13 +47,16 @@ export default function useOrder({ page } = {}) {
     } catch (e) {
       setError(e.message)
     }
-  }, [orderId])
+  }, [orderId, setOrder])
 
   useEffect(() => {
     api(`/orders/order/${orderId}`).then(setOrder, (e) => setError(e.message))
     const socket = io(SOCKET_URL, { transports: ['websocket'] })
     socket.on('connect', () => {
-      socket.emit('join_order', orderKey(orderId) || orderId)
+      // Refetch once the server has put us in the order's room (the ack), so a
+      // change made while joining isn't lost. The first load() covers a server
+      // too old to send the ack.
+      socket.emit('join_order', orderKey(orderId) || orderId, () => load())
       socket.emit('join_queue', cartId)
       load()
     })
@@ -68,7 +77,7 @@ export default function useOrder({ page } = {}) {
       socket.disconnect()
       document.removeEventListener('visibilitychange', onVisible)
     }
-  }, [orderId, cartId, load, loadQueue])
+  }, [orderId, cartId, load, loadQueue, setOrder])
 
   // This order's own changes (paid, preparing) move its place too.
   const status = order?.status

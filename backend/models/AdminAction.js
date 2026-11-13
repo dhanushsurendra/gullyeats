@@ -36,11 +36,15 @@ const adminActionSchema = new mongoose.Schema(
         'APPROVE_DISH',
         'MERGE_DISH',
         'REJECT_DISH',
+        // Platform fee per order changed (no target; details { from, to }).
+        'SET_PLATFORM_FEE',
+        // A customer's "not refunded" flag dealt with (target kind order).
+        'RESOLVE_REFUND_FLAG',
       ],
     },
     // What it was done to, e.g. { kind: 'cart', id, label: "Raju's Momos" }.
     target: {
-      kind: { type: String, enum: ['cart', 'vendor', 'payment', 'confession', 'comment', 'poster', 'dish'] },
+      kind: { type: String, enum: ['cart', 'vendor', 'payment', 'confession', 'comment', 'poster', 'dish', 'order'] },
       // A poster is known only by their private authorKey.
       key: String,
       id: { type: mongoose.Schema.Types.ObjectId },

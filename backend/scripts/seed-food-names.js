@@ -9,10 +9,10 @@ const names = require('../data/food_names.json')
 async function main() {
   await mongoose.connect(process.env.MONGO_URI)
   const reviewed = new Set(await FoodName.distinct('_id', { reviewed: true }))
+  // $set, not a replace: a dish's photo and aliases aren't in the file and must survive.
   const ops = names
-    .map((n) => ({ ...n, _id: n.name.toLowerCase() }))
-    .filter((n) => !reviewed.has(n._id))
-    .map((n) => ({ replaceOne: { filter: { _id: n._id }, replacement: n, upsert: true } }))
+    .filter((n) => !reviewed.has(n.name.toLowerCase()))
+    .map((n) => ({ updateOne: { filter: { _id: n.name.toLowerCase() }, update: { $set: n }, upsert: true } }))
   const r = await FoodName.bulkWrite(ops)
   console.log(`inserted ${r.upsertedCount}, updated ${r.modifiedCount}, kept ${reviewed.size} reviewed`)
   await mongoose.disconnect()

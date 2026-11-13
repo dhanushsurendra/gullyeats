@@ -1,4 +1,5 @@
 import fs from 'node:fs'
+import { execFileSync } from 'node:child_process'
 import path from 'node:path'
 import { API } from './urls.js'
 
@@ -7,7 +8,18 @@ const STATE = path.join(dir, 'state.local')
 const SECRETS = path.join(dir, 'qa-secrets.local')
 
 /** Calls the test backend. Returns { status, body } and never throws on 4xx/5xx. */
-export async function call(method, route, { token, body, headers = {}, raw } = {}) {
+export async function call(method, route, opts = {}) {
+  try {
+    return await send(method, route, opts)
+  } catch (e) {
+    // shortcut: retries once when the server dropped an idle keep-alive socket (after slow steps like backdate);
+    // the request never reached it, so a retry can't double a write.
+    if (e.cause?.code !== 'ECONNRESET') throw e
+    return send(method, route, opts)
+  }
+}
+
+async function send(method, route, { token, body, headers = {}, raw } = {}) {
   const res = await fetch(`${API}${route}`, {
     method,
     headers: {
@@ -72,3 +84,56 @@ export async function adminLogin() {
 export const secrets = () => JSON.parse(fs.readFileSync(SECRETS, 'utf8'))
 export const saveState = (s) => fs.writeFileSync(STATE, JSON.stringify(s, null, 2))
 export const state = () => JSON.parse(fs.readFileSync(STATE, 'utf8'))
+
+/** A QR order the vendor has marked paid. */
+export async function paidOrder(v, i = 0, quantity = 1) {
+  const o = await customerOrder(v.cartId, [{ menuItemId: v.menu[i]._id, quantity }])
+  if (o.status !== 201) throw new Error(`create-order ${o.status} ${o.body.message}`)
+  const p = await call('PUT', `/orders/mark-order-paid/${o.body.data._id}`, { token: v.token })
+  if (p.status !== 200) throw new Error(`mark-order-paid ${p.status} ${p.body.message}`)
+  return o
+}
+
+/** Moves a QA cart's orders back by `days` (backend/scripts/qa.js backdate), so they are billable. */
+export function backdate(cartId, days = 2) {
+  execFileSync('node', ['scripts/qa.js', 'backdate', cartId, String(days)], { cwd: '../backend', stdio: 'pipe' })
+}
+
+/** The IST calendar date `daysAgo` days back, as YYYY-MM-DD. */
+export const istDate = (daysAgo = 0) =>
+  new Date(Date.now() + 5.5 * 3600e3 - daysAgo * 864e5).toISOString().slice(0, 10)
+
+/** Posts a GullyPulse confession as the customer holding `key`. */
+export const confess = (key, text) => call('POST', '/confessions', { headers: { 'X-Gully-Order': key }, body: { text } })
+
+// ---- browser helpers (customer app) ----
+
+/** Adds items to the basket from the menu page. */
+export async function addItems(page, cartId, names) {
+  await page.goto(`/c/${cartId}/menu`)
+  for (const n of names) await page.getByRole('button', { name: `Add ${n}`, exact: true }).click()
+}
+
+/** Places an order from the browser (so the page holds its key); returns the order id. */
+export async function placeOrder(page, cartId, names, { phone } = {}) {
+  await addItems(page, cartId, names)
+  await page.goto(`/c/${cartId}/cart`)
+  if (phone) await page.locator('#phone').fill(phone)
+  await page.getByRole('button', { name: /Place order/ }).click()
+  await page.getByText('Your token', { exact: true }).waitFor()
+  return page.url().split('/').pop()
+}
+
+/** "<orderId>.<accessKey>" for an order this browser placed. */
+export const browserKey = (page, orderId) =>
+  page.evaluate((id) => {
+    const root = JSON.parse(localStorage.getItem('persist:gullyeats') || '{}')
+    const o = JSON.parse(root.orders || '[]').find((x) => x._id === id)
+    return o?.accessKey ? `${o._id}.${o.accessKey}` : null
+  }, orderId)
+
+/** The vendor-side order as the vendor app sees it today. */
+export async function vendorOrder(v, id) {
+  const d = (await call('GET', `/orders/orders-today/${v.cartId}`, { token: v.token })).body.data
+  return (Array.isArray(d) ? d : d.orders || []).find((o) => o._id === id)
+}

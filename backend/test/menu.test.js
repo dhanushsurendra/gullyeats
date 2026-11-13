@@ -116,6 +116,7 @@ test('renaming an item rewrites its names; the vendor spelling wins', async () =
 test("a cart's details include its average star rating and how many rated it", async () => {
   const Order = require('../models/Order')
   const doc = { _id: 'cart1', cartName: 'Chaat' }
+  stub(require('../models/Setting'), 'findById', () => q({ platformFee: 3 }))
   stub(Cart, 'findById', () => q({ ...doc, toObject: () => doc }))
   let match
   stub(Order, 'aggregate', async (pipeline) => {
@@ -125,6 +126,7 @@ test("a cart's details include its average star rating and how many rated it", a
   let r = await call(c.getCart, { params: { cartId: 'cart1' } })
   assert.deepStrictEqual(r.body.data.rating, { average: 4.3, count: 3 })
   assert.strictEqual(r.body.data.cartName, 'Chaat')
+  assert.strictEqual(r.body.data.platformFee, 3)
   assert.deepStrictEqual(match.rating, { $gte: 1 })
 
   stub(Order, 'aggregate', async () => [])

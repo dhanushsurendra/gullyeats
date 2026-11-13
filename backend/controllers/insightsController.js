@@ -445,3 +445,213 @@ exports.operations = asyncHandler(async (req, res) => {
     },
   })
 })
+
+// ------------------------------------------------------------------
+// GullyPlay and GullyPulse engagement. Players and posters are anonymous
+// (authorKey): only counts leave here, never phones, order ids or keys.
+const GameScore = require('../models/GameScore')
+const Confession = require('../models/Confession')
+const ConfessionComment = require('../models/ConfessionComment')
+const ConfessionLike = require('../models/ConfessionLike')
+const ConfessionReport = require('../models/ConfessionReport')
+const AdminAction = require('../models/AdminAction')
+const { authorKeyFor } = require('../middlewares/confessionPoster')
+const { GAMES } = require('./gameController')
+
+const GAME_NAMES = { nebula: 'Nebula Rush', reflex: 'Zero Reflex', synapse: 'Synapse' }
+const TOP_CARTS = 10
+
+// ?days=7 or 30 (the default; game scores are kept 30 days). IST days, oldest first.
+function range(req) {
+  const n = Number(req.query.days) === 7 ? 7 : 30
+  const since = new Date(+today() - (n - 1) * DAY)
+  const days = Array.from({ length: n }, (_, i) => new Date(+since + i * DAY))
+  return { n, since, days, keys: days.map(ymd) }
+}
+
+// Every QR customer in the range, by the key GullyPlay and GullyPulse use: key -> { phone, carts }.
+// shortcut: hashes each QR order in the range on every request; store the key on Order if this gets slow.
+async function customers(since) {
+  const orders = await Order.find({ orderType: 'QR', createdAt: { $gte: since } }).select('phoneNumber cartId').lean()
+  const map = new Map()
+  for (const o of orders) {
+    const k = authorKeyFor(o)
+    const c = map.get(k) || { phone: /\d/.test(o.phoneNumber || ''), carts: new Set() }
+    c.carts.add(String(o.cartId))
+    map.set(k, c)
+  }
+  return map
+}
+
+const quantile = (sorted, q) => (sorted.length ? sorted[Math.min(sorted.length - 1, Math.floor(q * sorted.length))] : 0)
+const total = (rows, f) => rows.reduce((t, r) => t + f(r), 0)
+
+// The carts whose customers did it most (`active` = the keys that did).
+async function topCarts(cust, active) {
+  const per = new Map()
+  for (const [k, c] of cust) {
+    for (const id of c.carts) {
+      const r = per.get(id) || { customers: 0, active: 0 }
+      r.customers += 1
+      if (active.has(k)) r.active += 1
+      per.set(id, r)
+    }
+  }
+  const top = [...per.entries()]
+    .filter(([, r]) => r.active)
+    .sort((a, b) => b[1].active - a[1].active)
+    .slice(0, TOP_CARTS)
+  const info = await cartsInfo(top.map(([id]) => id))
+  return top.map(([id, r]) => {
+    const { cartId, cart, city } = withInfo(info, id)
+    return { cartId, cart, city, customers: r.customers, active: r.active, rate: share(r.active, r.customers) }
+  })
+}
+
+exports.play = asyncHandler(async (req, res) => {
+  const w = range(req)
+  const [rows, cust] = await Promise.all([
+    GameScore.find({ day: { $in: w.keys } }).select('game day authorKey score rounds').lean(),
+    customers(w.since),
+  ])
+  const rounds = (r) => r.rounds || 1 // rows from before rounds were counted had at least one
+  const players = new Set(rows.map((r) => r.authorKey))
+  const daysPlayed = new Map()
+  for (const r of rows) daysPlayed.set(r.authorKey, (daysPlayed.get(r.authorKey) || new Set()).add(r.day))
+
+  const ids = Object.keys(GAMES)
+  const daily = w.keys.map((day, i) => {
+    const point = { label: dayLabel(w.days[i]), ...Object.fromEntries(ids.map((g) => [g, 0])) }
+    for (const r of rows) if (r.day === day && r.game in point) point[r.game] += 1
+    return point
+  })
+  const perGame = ids.map((g) => {
+    const mine = rows.filter((r) => r.game === g)
+    const scores = mine.map((r) => r.score).sort((a, b) => a - b)
+    const who = new Set(mine.map((r) => r.authorKey)).size
+    const n = total(mine, rounds)
+    return {
+      game: g,
+      name: GAME_NAMES[g] || g,
+      players: who,
+      rounds: n,
+      perPlayer: who ? round(n / who, 1) : 0,
+      median: quantile(scores, 0.5),
+      p90: quantile(scores, 0.9),
+      top: scores.at(-1) || 0,
+    }
+  })
+  const known = [...players].filter((k) => cust.has(k))
+  res.json({
+    success: true,
+    data: {
+      days: w.n,
+      summary: {
+        players: players.size,
+        rounds: total(rows, rounds),
+        customers: cust.size,
+        playedShare: share(known.length, cust.size),
+        withPhone: known.filter((k) => cust.get(k).phone).length,
+        returning: [...daysPlayed.values()].filter((d) => d.size >= 2).length,
+        multiCart: known.filter((k) => cust.get(k).carts.size >= 2).length,
+      },
+      daily,
+      perGame,
+      carts: await topCarts(cust, players),
+    },
+  })
+})
+
+const MOD_DECISIONS = ['APPROVE_CONFESSION', 'REJECT_CONFESSION', 'APPROVE_COMMENT', 'REJECT_COMMENT']
+
+exports.pulse = asyncHandler(async (req, res) => {
+  const w = range(req)
+  const since = { createdAt: { $gte: w.since } }
+  const pick = 'authorKey status likeCount commentCount reportCount moderation.verdict createdAt text'
+  const [posts, comments, likes, reports, decisions, cust] = await Promise.all([
+    Confession.find(since).select(pick).lean(),
+    ConfessionComment.find(since).select(pick).lean(),
+    ConfessionLike.find(since).select('createdAt').lean(),
+    ConfessionReport.countDocuments(since),
+    AdminAction.find({ ...since, action: { $in: MOD_DECISIONS } }).select('target.id createdAt').lean(),
+    customers(w.since),
+  ])
+  const items = [...posts, ...comments]
+  const perAuthor = new Map()
+  for (const x of items) perAuthor.set(x.authorKey, (perAuthor.get(x.authorKey) || 0) + 1)
+  const posters = new Set(perAuthor.keys())
+
+  const byDay = (list) => {
+    const m = new Map()
+    for (const x of list) m.set(ymd(x.createdAt), (m.get(ymd(x.createdAt)) || 0) + 1)
+    return m
+  }
+  const [pd, cd, ld] = [byDay(posts), byDay(comments), byDay(likes)]
+  const daily = w.keys.map((day, i) => ({
+    label: dayLabel(w.days[i]),
+    posts: pd.get(day) || 0,
+    comments: cd.get(day) || 0,
+    likes: ld.get(day) || 0,
+  }))
+
+  // Minutes from posting to an admin's approve or reject (held or reported items).
+  const ids = decisions.map((a) => a.target?.id).filter(Boolean)
+  const born = new Map(
+    [
+      ...(await Confession.find({ _id: { $in: ids } }).select('createdAt').lean()),
+      ...(await ConfessionComment.find({ _id: { $in: ids } }).select('createdAt').lean()),
+    ].map((x) => [String(x._id), x.createdAt]),
+  )
+  const waits = decisions
+    .filter((a) => born.has(String(a.target?.id)))
+    .map((a) => (a.createdAt - born.get(String(a.target.id))) / 6e4)
+    .filter((h) => h >= 0)
+
+  const published = posts.filter((p) => p.status === 'PUBLISHED')
+  const count = (f) => items.filter(f).length
+  const blocked = count((x) => x.moderation?.verdict === 'BLOCK')
+  const held = count((x) => x.moderation?.verdict === 'REVIEW')
+  const reported = count((x) => x.reportCount > 0)
+  res.json({
+    success: true,
+    data: {
+      days: w.n,
+      summary: {
+        posts: posts.length,
+        comments: comments.length,
+        likes: likes.length,
+        posters: posters.size,
+        customers: cust.size,
+        postedShare: share([...posters].filter((k) => cust.has(k)).length, cust.size),
+        repeatPosters: [...perAuthor.values()].filter((n) => n >= 2).length,
+      },
+      daily,
+      engagement: {
+        published: published.length,
+        likesPerPost: published.length ? round(sum(published, 'likeCount') / published.length, 1) : 0,
+        commentsPerPost: published.length ? round(sum(published, 'commentCount') / published.length, 1) : 0,
+        top: published
+          .sort((a, b) => b.likeCount + b.commentCount - (a.likeCount + a.commentCount))
+          .slice(0, 5)
+          .map((p) => ({
+            id: String(p._id),
+            text: p.text.length > 120 ? `${p.text.slice(0, 117)}…` : p.text,
+            likes: p.likeCount,
+            comments: p.commentCount,
+          })),
+      },
+      health: {
+        items: items.length,
+        blocked,
+        held,
+        reported,
+        reports,
+        removed: count((x) => x.status === 'REMOVED' || x.status === 'REJECTED'),
+        decisions: decisions.length,
+        avgMinsToDecide: waits.length ? Math.round(total(waits, (m) => m) / waits.length) : null,
+        rates: { blocked: share(blocked, items.length), held: share(held, items.length), reported: share(reported, items.length) },
+      },
+      carts: await topCarts(cust, posters),
+    },
+  })
+})

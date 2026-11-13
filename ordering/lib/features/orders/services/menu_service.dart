@@ -29,7 +29,11 @@ class MenuService {
     return (data['data'] as List).map((n) => FoodNameModel.fromJson(n)).toList();
   }
 
-  Future<List<MenuItemModel>> fetchMenu(String? token, String? cartId) async {
+  /// The cart's menu, and the fee a new order pays now (null from an older server).
+  Future<({List<MenuItemModel> items, double? platformFee})> fetchMenu(
+    String? token,
+    String? cartId,
+  ) async {
     final response = await http.get(
       Uri.parse('${ApiConstants.carts}/get-menu-items/$cartId'),
       headers: _headers(token),
@@ -37,9 +41,12 @@ class MenuService {
 
     final data = json.decode(response.body);
     if (response.statusCode == 200) {
-      return (data['data'] as List)
-          .map((item) => MenuItemModel.fromJson(item))
-          .toList();
+      return (
+        items: (data['data'] as List)
+            .map((item) => MenuItemModel.fromJson(item))
+            .toList(),
+        platformFee: (data['platformFee'] as num?)?.toDouble(),
+      );
     } else {
       throw ApiException(
         data["message"] ?? "Failed to load menu",

@@ -151,6 +151,14 @@ CASES["FLT-ONB"] = [
     c("QR", "Share", "SHARE QR opens the share sheet; then BACK TO OUTLETS", "Share > back", "BACK TO OUTLETS > Your Carts", pri="P3"),
     c("Session", "Expired login", "An expired login on Your Carts", "Expired token > refresh", "Signed out to sign-up, or a clear message", pri="P3"),
     c("Device", "Large text", "Flows at 1.3x system text on a real phone", "font_scale 1.3 > run flows", "No clipped or broken screens", pri="P3"),
+    # 2026-11-13: connection lost at each step that talks to the server
+    c('Network', 'Login', 'PIN login with the server unreachable: message, stays on login, then works', 'NET-OFF > LOG IN > NET-ON > LOG IN', "'Check your internet connection'; Your Carts after", pri='P1', auto='Automated (device: frontend/integration_test/onboarding_network_test.dart)'),
+    c('Network', 'Your Carts', 'Your Carts refreshed offline: "Couldn\'t load outlets." and Retry', 'NET-OFF > pull to refresh > NET-ON > Retry', 'Message, then the list', pri='P1', auto='Automated (device: frontend/integration_test/onboarding_network_test.dart)'),
+    c('Network', 'Menu', 'Saving the menu offline: message, nothing saved; then saved exactly once', 'Menu Review > NET-OFF > CONTINUE > NET-ON > again', 'Server menu empty, then one item', pri='P1', auto='Automated (device: frontend/integration_test/onboarding_network_test.dart)'),
+    c('Network', 'Staff', 'Adding a helper offline: message, no staff; then added', 'NET-OFF > SEND DETAILS > NET-ON > again', 'No staff on the server, then the helper', pri='P1', auto='Automated (device: frontend/integration_test/onboarding_network_test.dart)'),
+    c('Network', 'QR poster', 'QR poster with the server unreachable: SHARE QR refuses (no placeholder poster)', 'NET-OFF > open poster > SHARE QR', 'Message; no share sheet (BUG-017)', pri='P1', auto='Automated (device: frontend/integration_test/onboarding_network_test.dart)'),
+    c('Network', 'QR poster', 'QR image unreachable (no internet, server up): SHARE QR refuses', 'RADIO-OFF > SHARE QR', 'Message; no share sheet (BUG-017)', pri='P1', auto='Automated (device: frontend/integration_test/onboarding_network_test.dart)'),
+    c('Network', 'QR poster', 'All back: QR saved on the server and the share sheet opens', 'RADIO-ON > SHARE QR', 'Share sheet opens', pri='P1', auto='Automated (device: frontend/integration_test/onboarding_network_test.dart)'),
 ]
 
 # ---------------------------------------------------------------- FLT-VEN
@@ -317,6 +325,10 @@ CASES["FLT-VEN"] = [
     c("Device", "Offline", "Actions with no internet", "Airplane mode > mark paid / serve", "'Check your internet'; nothing half-saved", pri="P1", sev="Major"),
     c("Device", "Battery", "App stays idle when nothing happens (after BUG-007)", "Profile mode, leave on Orders", "No frames scheduled while idle", pri="P2", sev="Minor"),
     c("Device", "Statuses", "Status logic uses server codes in every language", "Hindi/Kannada/Tamil > paid/serve/cancel", "Same behaviour as English", pri="P1", sev="Major"),
+    # 2026-11-13: connection lost at each step that talks to the server
+    c('Network', 'QR poster', 'Profile > VIEW QR with the server unreachable: SHARE QR refuses', 'NET-OFF > VIEW QR > SHARE QR', "'Check your internet connection'; no share sheet (BUG-017)", pri='P1', auto='Automated (device: ordering/integration_test/vendor_qr_network_test.dart)'),
+    c('Network', 'QR poster', 'QR image unreachable (no internet, server up): SHARE QR refuses', 'RADIO-OFF > SHARE QR', 'Message; no share sheet (BUG-017)', pri='P1', auto='Automated (device: ordering/integration_test/vendor_qr_network_test.dart)'),
+    c('Network', 'QR poster', 'All back: the share sheet opens', 'RADIO-ON > SHARE QR', 'Share sheet opens', pri='P1', auto='Automated (device: ordering/integration_test/vendor_qr_network_test.dart)'),
 ]
 
 # ---------------------------------------------------------------- RCT
@@ -381,6 +393,95 @@ CASES["RCT"] = [
     c("GullyPlay", "Rules", "Game engines are deterministic per IST day", "node --test src/game/*.test.js",
       "All pass", pri="P2", status="Passed", auto="Automated (customer-app/src/game/*.test.js)",
       actual=f"35/35 passed on {RUN}"),
+    # 2026-11-13: every remaining customer-app feature, network and edge cases
+    c('Ordering', 'the QR link shows the splash, then the c', 'the QR link shows the splash, then the cart welcome page', "See customer-flows.spec.js", 'the QR link shows the splash, then the cart welcome page', pri='P2', auto=PW),  # RCT-031
+    c('Ordering', '"/" returns to the last scanned cart; wi', '"/" returns to the last scanned cart; with none, a scan prompt with no dead ends', "See customer-flows.spec.js", '"/" returns to the last scanned cart; with none, a scan prompt with no dead ends', pri='P2', auto=PW),  # RCT-032
+    c('Ordering', 'a closed cart can be browsed but not ord', 'a closed cart can be browsed but not ordered from', "See customer-flows.spec.js", 'a closed cart can be browsed but not ordered from', pri='P2', auto=PW),  # RCT-033
+    c('Ordering', 'the welcome page shows the cart rating f', 'the welcome page shows the cart rating from customers', "See customer-flows.spec.js", 'the welcome page shows the cart rating from customers', pri='P2', auto=PW),  # RCT-034
+    c('Ordering', 'Terms & Privacy links open the terms pag', 'Terms & Privacy links open the terms page', "See customer-flows.spec.js", 'Terms & Privacy links open the terms page', pri='P2', auto=PW),  # RCT-035
+    c('Ordering', 'menu search', 'menu search: matches, clear, and no match', "See customer-flows.spec.js", 'menu search: matches, clear, and no match', pri='P2', auto=PW),  # RCT-036
+    c('Ordering', 'menu filters', 'menu filters: veg, non-veg, all', "See customer-flows.spec.js", 'menu filters: veg, non-veg, all', pri='P2', auto=PW),  # RCT-037
+    c('Ordering', 'a cart with no dishes says the menu is e', 'a cart with no dishes says the menu is empty', "See customer-flows.spec.js", 'a cart with no dishes says the menu is empty', pri='P2', auto=PW),  # RCT-038
+    c('Ordering', 'sold-out dishes move to the bottom of th', 'sold-out dishes move to the bottom of the menu', "See customer-flows.spec.js", 'sold-out dishes move to the bottom of the menu', pri='P2', auto=PW),  # RCT-039
+    c('Ordering', 'cart page', 'cart page: steppers, remove to zero, Add more items, Clear, bill with the server fee', "See customer-flows.spec.js", 'cart page: steppers, remove to zero, Add more items, Clear, bill with the server fee', pri='P2', auto=PW),  # RCT-040
+    c('Ordering', 'phone number', 'phone number: digits only, kept for the next order, and saved on the order', "See customer-flows.spec.js", 'phone number: digits only, kept for the next order, and saved on the order', pri='P2', auto=PW),  # RCT-041
+    c('Ordering', 'adding items to a paid order asks for th', 'adding items to a paid order asks for the difference, then goes back to paid', "See customer-flows.spec.js", 'adding items to a paid order asks for the difference, then goes back to paid', pri='P1', auto=PW),  # RCT-042
+    c('Ordering', 'the order editor', 'the order editor: no changes, empty order, and back without reopening', "See customer-flows.spec.js", 'the order editor: no changes, empty order, and back without reopening', pri='P2', auto=PW),  # RCT-043
+    c('Ordering', 'a customer cannot take paid items off; t', 'a customer cannot take paid items off; the server refuses too', "See customer-flows.spec.js", 'a customer cannot take paid items off; the server refuses too', pri='P1', auto=PW),  # RCT-044
+    c('Ordering', 'the vendor shrinks a paid order and adds', 'the vendor shrinks a paid order and adds a parcel charge: the token shows the change', "See customer-flows.spec.js", 'the vendor shrinks a paid order and adds a parcel charge: the token shows the change', pri='P1', auto=PW),  # RCT-045
+    c('Ordering', 'vendor cancellations', 'vendor cancellations: a paid order shows the refund, an unpaid one says nothing was charged', "See customer-flows.spec.js", 'vendor cancellations: a paid order shows the refund, an unpaid one says nothing was charged', pri='P1', auto=PW),  # RCT-046
+    c('Ordering', 'the cancel sheet', 'the cancel sheet: keep my order, Escape, and an order paid meanwhile', "See customer-flows.spec.js", 'the cancel sheet: keep my order, Escape, and an order paid meanwhile', pri='P2', auto=PW),  # RCT-047
+    c('Ordering', 'served page', 'served page: stars, quick picks and text are sent together; Skip and thank-you buttons', "See customer-flows.spec.js", 'served page: stars, quick picks and text are sent together; Skip and thank-you buttons', pri='P2', auto=PW),  # RCT-048
+    c('Ordering', 'when the vendor un-serves an order, the', 'when the vendor un-serves an order, the customer goes back to the token page', "See customer-flows.spec.js", 'when the vendor un-serves an order, the customer goes back to the token page', pri='P2', auto=PW),  # RCT-049
+    c('Ordering', 'vendor edits to an unpaid order show liv', 'vendor edits to an unpaid order show live on the token page', "See customer-flows.spec.js", 'vendor edits to an unpaid order show live on the token page', pri='P2', auto=PW),  # RCT-050
+    c('Ordering', 'the token page shows a line to read whil', 'the token page shows a line to read while waiting', "See customer-flows.spec.js", 'the token page shows a line to read while waiting', pri='P2', auto=PW),  # RCT-051
+    c('Notifications', 'Notify me', 'Notify me: asks permission, saves the subscription, and the server pushes on serve', "See push.spec.js", 'Notify me: asks permission, saves the subscription, and the server pushes on serve', pri='P2', auto=PW),  # RCT-052
+    c('Ordering', 'the server prices orders itself', 'the server prices orders itself: a tampered price is ignored', "See customer-flows.spec.js", 'the server prices orders itself: a tampered price is ignored', pri='P1', auto=PW),  # RCT-053
+    c('Ordering', 'a dish removed after it went in the bask', 'a dish removed after it went in the basket is refused clearly', "See customer-flows.spec.js", 'a dish removed after it went in the basket is refused clearly', pri='P2', auto=PW),  # RCT-054
+    c('Ordering', 'a price changed after the basket was fil', 'a price changed after the basket was filled: the order uses the new price', "See customer-flows.spec.js", 'a price changed after the basket was filled: the order uses the new price', pri='P1', auto=PW),  # RCT-055
+    c('Ordering', 'the order API refuses bad quantities and', 'the order API refuses bad quantities and unknown items', "See customer-flows.spec.js", 'the order API refuses bad quantities and unknown items', pri='P1', auto=PW),  # RCT-056
+    c('Ordering', 'an order open in two tabs updates in bot', 'an order open in two tabs updates in both', "See customer-flows.spec.js", 'an order open in two tabs updates in both', pri='P2', auto=PW),  # RCT-057
+    c('Ordering', 'reloading the token, served and cancelle', 'reloading the token, served and cancelled pages keeps the right page', "See customer-flows.spec.js", 'reloading the token, served and cancelled pages keeps the right page', pri='P2', auto=PW),  # RCT-058
+    c('Ordering', 'the open-order card shows each status an', 'the open-order card shows each status and disappears once served', "See customer-flows.spec.js", 'the open-order card shows each status and disappears once served', pri='P2', auto=PW),  # RCT-059
+    c('Ordering', 'an order key from another phone cannot e', 'an order key from another phone cannot edit, cancel or rate the order', "See customer-flows.spec.js", 'an order key from another phone cannot edit, cancel or rate the order', pri='P1', auto=PW),  # RCT-060
+    c('Network', 'welcome page', 'welcome page: offline it keeps the cart it has; a first visit that fails offers Try again', "See network.spec.js", 'welcome page: offline it keeps the cart it has; a first visit that fails offers Try again', pri='P2', auto=PW),  # RCT-061
+    c('Network', 'menu with the server down', 'menu with the server down: message and retry', "See network.spec.js", 'menu with the server down: message and retry', pri='P2', auto=PW),  # RCT-062
+    c('Network', 'the browser goes offline on the cart pag', 'the browser goes offline on the cart page: the offline message, then the order goes through', "See network.spec.js", 'the browser goes offline on the cart page: the offline message, then the order goes through', pri='P1', auto=PW),  # RCT-063
+    c('Network', 'a server error while placing shows its m', 'a server error while placing shows its message and nothing is ordered', "See network.spec.js", 'a server error while placing shows its message and nothing is ordered', pri='P1', auto=PW),  # RCT-064
+    c('Network', 'updates missed while offline arrive when', 'updates missed while offline arrive when the connection comes back', "See network.spec.js", 'updates missed while offline arrive when the connection comes back', pri='P1', auto=PW),  # RCT-065
+    c('Network', 'updates missed while the live connection', 'updates missed while the live connection was down arrive when the tab is shown again', "See network.spec.js", 'updates missed while the live connection was down arrive when the tab is shown again', pri='P2', auto=PW),  # RCT-066
+    c('Network', 'the token page offline on open', 'the token page offline on open: message, Try again, Back to menu', "See network.spec.js", 'the token page offline on open: message, Try again, Back to menu', pri='P2', auto=PW),  # RCT-067
+    c('Network', 'saving order changes offline fails clear', 'saving order changes offline fails clearly and keeps the edit', "See network.spec.js", 'saving order changes offline fails clearly and keeps the edit', pri='P2', auto=PW),  # RCT-068
+    c('Network', 'cancelling offline shows the error in th', 'cancelling offline shows the error in the sheet; the order stays', "See network.spec.js", 'cancelling offline shows the error in the sheet; the order stays', pri='P2', auto=PW),  # RCT-069
+    c('Network', 'sending feedback offline fails clearly,', 'sending feedback offline fails clearly, then sends', "See network.spec.js", 'sending feedback offline fails clearly, then sends', pri='P2', auto=PW),  # RCT-070
+    c('Network', 'a slow network shows loading placeholder', 'a slow network shows loading placeholders, never a blank page', "See network.spec.js", 'a slow network shows loading placeholders, never a blank page', pri='P2', auto=PW),  # RCT-071
+    c('Network', 'a lost connection while placing an order', 'a lost connection while placing an order never creates two orders', "See network.spec.js", 'a lost connection while placing an order never creates two orders', pri='P1', auto=PW),  # RCT-072
+    c('Notifications', 'a vendor cancel pushes; a customer cance', 'a vendor cancel pushes; a customer cancel does not', "See push.spec.js", 'a vendor cancel pushes; a customer cancel does not', pri='P2', auto=PW),  # RCT-073
+    c('Notifications', 'saying no to notifications leaves the pa', 'saying no to notifications leaves the page working and asks nothing more', "See push.spec.js", 'saying no to notifications leaves the page working and asks nothing more', pri='P2', auto=PW),  # RCT-074
+    c('Notifications', 'the push-subscribe API refuses other peo', "the push-subscribe API refuses other people\\'s orders and bad subscriptions", "See push.spec.js", "the push-subscribe API refuses other people\\'s orders and bad subscriptions", pri='P2', auto=PW),  # RCT-075
+    c('GullyPulse', 'the feed', 'the feed: locked without an order, open with one, newest posts, all caught up', "See pulse.spec.js", 'the feed: locked without an order, open with one, newest posts, all caught up', pri='P2', auto=PW),  # RCT-076
+    c('GullyPulse', 'the feed loads more as you scroll, witho', 'the feed loads more as you scroll, without repeats', "See pulse.spec.js", 'the feed loads more as you scroll, without repeats', pri='P2', auto=PW),  # RCT-077
+    c('GullyPulse', 'like and unlike', 'like and unlike: the count moves, stays after reload, and others see it', "See pulse.spec.js", 'like and unlike: the count moves, stays after reload, and others see it', pri='P2', auto=PW),  # RCT-078
+    c('GullyPulse', 'double-tap likes once and never unlikes', 'double-tap likes once and never unlikes', "See pulse.spec.js", 'double-tap likes once and never unlikes', pri='P2', auto=PW),  # RCT-079
+    c('GullyPulse', 'comments', 'comments: post one, it shows with You, the count goes up, and others see it', "See pulse.spec.js", 'comments: post one, it shows with You, the count goes up, and others see it', pri='P2', auto=PW),  # RCT-080
+    c('GullyPulse', 'a blocked comment is refused with a mess', 'a blocked comment is refused with a message; a borderline one waits for review', "See pulse.spec.js", 'a blocked comment is refused with a message; a borderline one waits for review', pri='P2', auto=PW),  # RCT-081
+    c('GullyPulse', 'reporting a post', 'reporting a post: needs a reason, Cancel and Escape close, one report per person', "See pulse.spec.js", 'reporting a post: needs a reason, Cancel and Escape close, one report per person', pri='P2', auto=PW),  # RCT-082
+    c('GullyPulse', 'the fourth report hides a post from the', "the fourth report hides a post from the reporter\\'s feed straight away", "See pulse.spec.js", "the fourth report hides a post from the reporter\\'s feed straight away", pri='P2', auto=PW),  # RCT-083
+    c('GullyPulse', 'reporting comments', 'reporting comments: thanks, and the fourth report hides it and lowers the count', "See pulse.spec.js", 'reporting comments: thanks, and the fourth report hides it and lowers the count', pri='P2', auto=PW),  # RCT-084
+    c('GullyPulse', 'posting', 'posting: counter, minimum length, posted toast, and a duplicate is refused', "See pulse.spec.js", 'posting: counter, minimum length, posted toast, and a duplicate is refused', pri='P2', auto=PW),  # RCT-085
+    c('GullyPulse', 'a borderline post goes to review, shows', 'a borderline post goes to review, shows "In review" in My posts, and goes live once approved', "See pulse.spec.js", 'a borderline post goes to review, shows "In review" in My posts, and goes live once approved', pri='P2', auto=PW),  # RCT-086
+    c('GullyPulse', 'a post an admin removes shows "Not shown', 'a post an admin removes shows "Not shown" in My posts and "Not found" by its link', "See pulse.spec.js", 'a post an admin removes shows "Not shown" in My posts and "Not found" by its link', pri='P2', auto=PW),  # RCT-087
+    c('GullyPulse', 'the composer from the token page', 'the composer from the token page: prompts prefill, the bare prompt cannot be posted, posting returns to the token', "See pulse.spec.js", 'the composer from the token page: prompts prefill, the bare prompt cannot be posted, posting returns to the token', pri='P2', auto=PW),  # RCT-088
+    c('GullyPulse', 'the token page GullyPulse card', 'the token page GullyPulse card: like there, open a post, See all', "See pulse.spec.js", 'the token page GullyPulse card: like there, open a post, See all', pri='P2', auto=PW),  # RCT-089
+    c('GullyPulse', 'posting limit', 'posting limit: three posts an hour, then a clear message', "See pulse.spec.js", 'posting limit: three posts an hour, then a clear message', pri='P2', auto=PW),  # RCT-090
+    c('GullyPulse', 'a suspended poster sees "Posting is paus', 'a suspended poster sees "Posting is paused" and can still read', "See pulse.spec.js", 'a suspended poster sees "Posting is paused" and can still read', pri='P2', auto=PW),  # RCT-091
+    c('GullyPulse', 'only a cancelled order on the phone', 'only a cancelled order on the phone: GullyPulse stays locked', "See pulse.spec.js", 'only a cancelled order on the phone: GullyPulse stays locked', pri='P2', auto=PW),  # RCT-092
+    c('GullyPulse', 'more than one page of comments', 'more than one page of comments: Show more comments', "See pulse.spec.js", 'more than one page of comments: Show more comments', pri='P2', auto=PW),  # RCT-093
+    c('GullyPulse', 'a like that fails offline is put back wi', 'a like that fails offline is put back with a message', "See pulse.spec.js", 'a like that fails offline is put back with a message', pri='P2', auto=PW),  # RCT-094
+    c('GullyPulse', 'the feed with the server failing', 'the feed with the server failing: error and Try again; a comment offline keeps the text', "See pulse.spec.js", 'the feed with the server failing: error and Try again; a comment offline keeps the text', pri='P2', auto=PW),  # RCT-095
+    c('GullyPlay', 'lobby', "lobby: each game shows its title and today\\'s twist; settings switch and stay switched", "See play.spec.js", "lobby: each game shows its title and today\\'s twist; settings switch and stay switched", pri='P2', auto=PW),  # RCT-096
+    c('GullyPlay', 'How to play', 'How to play: from the token page and from a game, every game explained', "See play.spec.js", 'How to play: from the token page and from a game, every game explained', pri='P2', auto=PW),  # RCT-097
+    c('GullyPlay', 'sound on/off is remembered', 'sound on/off is remembered', "See play.spec.js", 'sound on/off is remembered', pri='P2', auto=PW),  # RCT-098
+    c('GullyPlay', 'leaving the game pauses it; Resume and B', 'leaving the game pauses it; Resume and Back to my order', "See play.spec.js", 'leaving the game pauses it; Resume and Back to my order', pri='P2', auto=PW),  # RCT-099
+    c('GullyPlay', 'food ready mid-game', 'food ready mid-game: the game pauses with an alert; finish the round or view the order', "See play.spec.js", 'food ready mid-game: the game pauses with an alert; finish the round or view the order', pri='P2', auto=PW),  # RCT-100
+    c('GullyPlay', 'a finished round', 'a finished round: score saved with rank, best today on the token page, Play again', "See play.spec.js", 'a finished round: score saved with rank, best today on the token page, Play again', pri='P2', auto=PW),  # RCT-101
+    c('GullyPlay', 'the leaderboard shows my row as You, by', 'the leaderboard shows my row as You, by alias only', "See play.spec.js", 'the leaderboard shows my row as You, by alias only', pri='P2', auto=PW),  # RCT-102
+    c('GullyPlay', 'Share copies the score and the cart link', 'Share copies the score and the cart link', "See play.spec.js", 'Share copies the score and the cart link', pri='P2', auto=PW),  # RCT-103
+    c('GullyPlay', "a score that can\\'t be sent offline says", "a score that can\\'t be sent offline says so and is kept for the next round", "See play.spec.js", "a score that can\\'t be sent offline says so and is kept for the next round", pri='P2', auto=PW),  # RCT-104
+    c('GullyPlay', "playing on an order this phone didn\\'t p", "playing on an order this phone didn\\'t place: no leaderboard entry", "See play.spec.js", "playing on an order this phone didn\\'t place: no leaderboard entry", pri='P2', auto=PW),  # RCT-105
+    c('GullyPlay', 'adding a phone number from the game', 'adding a phone number from the game: checked, saved on the order, and used at the next checkout', "See play.spec.js", 'adding a phone number from the game: checked, saved on the order, and used at the next checkout', pri='P2', auto=PW),  # RCT-106
+    c('GullyPlay', 'Nebula Rush pilot', "Nebula Rush pilot: locked ships can\\'t be picked, a picked ship stays, missions listed", "See play.spec.js", "Nebula Rush pilot: locked ships can\\'t be picked, a picked ship stays, missions listed", pri='P2', auto=PW),  # RCT-107
+    c('GullyPlay', 'every game plays a full round to a resul', 'every game plays a full round to a result', "See play.spec.js", 'every game plays a full round to a result', pri='P2', auto=PW),  # RCT-108
+    c('GullyPlay', 'the scores API refuses impossible scores', 'the scores API refuses impossible scores and other days', "See play.spec.js", 'the scores API refuses impossible scores and other days', pri='P2', auto=PW),  # RCT-109
+    c('Network', 'Live updates', 'a change made while the token page is still joining its live updates is not lost', "Delay join_order 2 s, vendor marks paid in the gap", "Page shows Paid (BUG-018)", pri='P1', auto=PW),  # RCT-110
+    c('Network', 'Live updates', 'an old answer arriving late never replaces newer order details', "First order fetch answers 3 s late; vendor edits meanwhile", "Page keeps the new total (BUG-019)", pri='P1', auto=PW),  # RCT-111
+    c('Refunds', 'Cancel', 'a vendor cancels a paid order: owed, then marked refunded by staff', "Pay, cancel from the vendor side, staff marks refunded", "Token page shows Collect, then refunded ✓ live", pri='P1', auto=PW),  # RCT-112
+    c('Refunds', 'Edit', 'the vendor takes items off a paid order: owed, then refunded by the owner', "Pay, remove an item, owner marks refunded", "Token page shows owed, then refunded", pri='P1', auto=PW),  # RCT-113
+    c('Refunds', 'Edit', 'two cuts on the same order are both kept; one Mark refunded settles both', "Two edits that return money", "Both logged; one mark clears both", pri='P1', auto=PW),  # RCT-114
+    c('Refunds', 'Flag', "\"Didn't get it?\" flags the refund once; another phone cannot flag it", "Tap Didn't get it, tap again, try without the order key", "Flag saved once (409 on repeat); others refused", pri='P1', auto=PW),  # RCT-115
+    c('Refunds', 'Flag', 'nothing to flag before a refund is marked', "Flag an order with no marked refund", "400, nothing saved", pri='P2', auto=PW),  # RCT-116
+    c('Refunds', 'Undo cancel', 'undoing a cancel: an unrefunded refund disappears; a refunded one must be paid again', "Undo cancel before and after Mark refunded", "Refund dropped / order back to PENDING", pri='P1', auto=PW),  # RCT-117
+    c('Refunds', 'Access', "only the cart's owner and staff can mark refunds", "Other vendor, other staff, no login", "Refused", pri='P1', auto=PW),  # RCT-118
 ]
 
 # ---------------------------------------------------------------- ADM
@@ -452,7 +553,37 @@ CASES["ADM"] = [
     c("Dishes", "Merge", "Merge a name into an existing dish", "Type Pani Puri > Merge > confirm",
       "Becomes an alias; not tracked again", pri="P3", api="POST /admin/dishes/:id/merge", auto=PW),
     c("Dishes", "Reject", "Reject a vendor-specific name", "Reject > confirm", "Gone from the list", pri="P3",
-      api="POST /admin/dishes/:id/reject", auto=PW),
+      api="POST /admin/dishes/:id/reject", auto=PW),    c("Collections", "Platform fee", "A new platform fee applies to new orders only", "Collections > fee 5 > Save > confirm",
+      "New orders pay it; an older order keeps its fee after an edit; 101 and 2.5 refused; SET_PLATFORM_FEE logged",
+      pri="P1", sev="Critical", api="GET/POST /admin/settings", auto=PW),
+    # 2026-11-13: the rest of the admin dashboard, and network failures
+    c('Admin', 'date range', 'date range: Today, 7 Days, 30 Days, This Month and a custom range all match the API', "See admin-more.spec.js", 'date range: Today, 7 Days, 30 Days, This Month and a custom range all match the API', pri='P1', auto=PW),  # ADM-037
+    c('Admin', 'dark mode switches and is remembered', 'dark mode switches and is remembered', "See admin-more.spec.js", 'dark mode switches and is remembered', pri='P2', auto=PW),  # ADM-038
+    c('Admin', 'every sidebar link opens its page; on a', 'every sidebar link opens its page; on a phone the menu opens and closes', "See admin-more.spec.js", 'every sidebar link opens its page; on a phone the menu opens and closes', pri='P2', auto=PW),  # ADM-039
+    c('Admin', 'Attention Required lists overdue fees an', 'Attention Required lists overdue fees and Review opens Collections', "See admin-more.spec.js", 'Attention Required lists overdue fees and Review opens Collections', pri='P2', auto=PW),  # ADM-040
+    c('Admin', 'the activity feed shows a new order with', 'the activity feed shows a new order with its number, amount and cart', "See admin-more.spec.js", 'the activity feed shows a new order with its number, amount and cart', pri='P2', auto=PW),  # ADM-041
+    c('Admin', 'charts', 'charts: each revenue period loads its series; the order overview renders', "See admin-more.spec.js", 'charts: each revenue period loads its series; the order overview renders', pri='P2', auto=PW),  # ADM-042
+    c('Admin', 'the cart map', 'the cart map: status toggles and the city filter change what is shown', "See admin-more.spec.js", 'the cart map: status toggles and the city filter change what is shown', pri='P2', auto=PW),  # ADM-043
+    c('Admin', 'Carts filters (status, location, owner,', "Carts filters (status, location, owner, sort) and an owner\\'s View link", "See admin-more.spec.js", "Carts filters (status, location, owner, sort) and an owner\\'s View link", pri='P2', auto=PW),  # ADM-044
+    c('Admin', "the cart drawer\\'s last-30-days numbers", "the cart drawer\\'s last-30-days numbers match the vendor\\'s sales report", "See admin-more.spec.js", "the cart drawer\\'s last-30-days numbers match the vendor\\'s sales report", pri='P1', auto=PW),  # ADM-045
+    c('Admin', 'Business insights', 'Business insights: every tab loads and its numbers match the API', "See admin-more.spec.js", 'Business insights: every tab loads and its numbers match the API', pri='P2', auto=PW),  # ADM-046
+    c('Admin', 'Collections', 'Collections: age buckets filter, SMS reminder is logged, CSV export', "See admin-more.spec.js", 'Collections: age buckets filter, SMS reminder is logged, CSV export', pri='P1', auto=PW),  # ADM-047
+    c('Admin', 'Payments', 'Payments: CSV export with every column, and scrolling loads more without repeats', "See admin-more.spec.js", 'Payments: CSV export with every column, and scrolling loads more without repeats', pri='P2', auto=PW),  # ADM-048
+    c('Admin', 'Action log', 'Action log: filter by action and CSV export', "See admin-more.spec.js", 'Action log: filter by action and CSV export', pri='P2', auto=PW),  # ADM-049
+    c('Admin', 'moderation queues', 'moderation queues: approve and reject from word-filter review; approve an auto-blocked post', "See admin-more.spec.js", 'moderation queues: approve and reject from word-filter review; approve an auto-blocked post', pri='P2', auto=PW),  # ADM-050
+    c('Admin', 'a reason is required for every moderatio', 'a reason is required for every moderation decision', "See admin-more.spec.js", 'a reason is required for every moderation decision', pri='P2', auto=PW),  # ADM-051
+    c('Admin', 'Feedback', 'Feedback: total count, newest first, and more on scroll', "See admin-more.spec.js", 'Feedback: total count, newest first, and more on scroll', pri='P2', auto=PW),  # ADM-052
+    c('Admin', 'five wrong passwords lock that email for', 'five wrong passwords lock that email for 15 minutes', "See admin-more.spec.js", 'five wrong passwords lock that email for 15 minutes', pri='P1', auto=PW),  # ADM-053
+    c('Admin', 'the search box filters every list page', 'the search box filters every list page', "See admin-more.spec.js", 'the search box filters every list page', pri='P2', auto=PW),  # ADM-054
+    c('Network', 'sign-in with the API down says so, and w', 'sign-in with the API down says so, and works when it is back', "See network.spec.js", 'sign-in with the API down says so, and works when it is back', pri='P2', auto=PW),  # ADM-055
+    c('Network', 'pages with the API failing show an error', 'pages with the API failing show an error, not a blank or crashed page', "See network.spec.js", 'pages with the API failing show an error, not a blank or crashed page', pri='P2', auto=PW),  # ADM-056
+    c('Network', 'the dashboard offline, then back', 'the dashboard offline, then back: it loads again without signing in again', "See network.spec.js", 'the dashboard offline, then back: it loads again without signing in again', pri='P2', auto=PW),  # ADM-057
+    c('Admin', 'Refunds', 'Collections > Refunds lists refunds not handed back; they leave once marked', "See refunds.spec.js", "Listed, then gone after Mark refunded", pri='P1', auto=PW),  # ADM-058
+    c('Admin', 'Refunds', 'a customer flag shows under "Customer says not refunded" with who marked it; Resolve logs it', "See refunds.spec.js", "Flag listed with marker; Resolve removes it and logs RESOLVE_REFUND_FLAG", pri='P1', auto=PW),  # ADM-059
+    c('Admin', 'Refunds', 'the dashboard raises flagged refunds and opens the list from Attention Required', "See refunds.spec.js", "Attention item links to the flagged list", pri='P2', auto=PW),  # ADM-060
+    c('Admin', 'GullyPlay insights', 'Business > GullyPlay counts a new player and every round, without showing who', "See engagement.spec.js", "Players +1, rounds +3; no order id in the response", pri='P2', auto=PW),  # ADM-061
+    c('Admin', 'GullyPulse insights', 'Business > GullyPulse counts a new post and its poster', "See engagement.spec.js", "Posts +1, posters +1, today's point +1", pri='P2', auto=PW),  # ADM-062
+    c('Admin', 'Insights range', 'the 7/30-day switch is kept in the address and changes the range; no sideways scroll on a phone', "See engagement.spec.js", "days=7 in the URL survives reload; 390px wide fits", pri='P3', auto=PW),  # ADM-063
 ]
 
 # ---------------------------------------------------------------- API
@@ -713,6 +844,27 @@ BUGS = [
      "(Flutter assertion 'scope != null'; it could also close the wrong screen).",
      "Emulator run of vendor_fees_test.dart", "The timer removes only the dialog's own route, if it is still active.",
      "ordering payment_lock_screen.dart (_showPaidDialog)"),
+    ("BUG-017", "FLT-ONB", "Major", "P1",
+     "QR poster (onboarding app, and Profile > VIEW QR in the vendor app): when the QR didn't load (server or "
+     "internet down), the poster showed a grey placeholder and SHARE QR still shared and printed it, a poster "
+     "with nothing for customers to scan.",
+     "Code review while writing the network device tests", "SHARE QR first makes sure the QR image has downloaded "
+     "(loading it again if needed); otherwise it says 'Check your internet connection' and shares nothing.",
+     "frontend qr_poster_screen.dart, ordering qr_screen.dart (_qrReady)"),
+    ("BUG-018", "RCT", "Major", "P1",
+     "Token page could miss a vendor change for good: on connecting it asked to join the order's live room "
+     "(the server checks the order key in the database first) and refetched at once without waiting. A change "
+     "made between that refetch and the join went to a room the page wasn't in yet, so the customer kept seeing "
+     "'Pay at the counter' after paying, until they switched tabs.",
+     "Full Playwright run (RCT-042/050 failed only under load); reproduced every time by RCT-110",
+     "The server acknowledges join_order once joined (like join_vendor) and the page refetches on the ack.",
+     "backend utils/socketRooms.js, customer-app hooks/useOrder.js"),
+    ("BUG-019", "RCT", "Major", "P1",
+     "Token page could show stale order details: the opening fetch and the reconnect fetch race, and on a slow "
+     "network the older answer can land last and overwrite newer details (status, items, total).",
+     "Full Playwright run (RCT-050 failed only in sequence); reproduced every time by RCT-111",
+     "The page keeps whichever copy of the order has the newest updatedAt.",
+     "customer-app hooks/useOrder.js (setOrder)"),
     ("OBS-5", "FLT-VEN", "Minor", "P3", "Plurals: Sales says '1 ratings' and 'QR · 1 orders' (the ARB strings "
      "have no plural form).", "vendor_sales_test.dart", "Use ICU plurals in ratingCount / qrOrdersSummary / "
      "manualOrdersSummary (all four languages).", "ordering lib/l10n/app_*.arb"),
@@ -759,6 +911,9 @@ FIXED = {
     "NEEDS-DECISION-3": "Decided 2026-11-12: Rs0 is allowed everywhere (free add-ons); a blank price is still refused. Done: both edit dialogs, onboarding add_menu_screen; device tests updated",
     "OBS-4": "Fixed: checkout sends prefill.contact = the vendor's phone. Retest on the emulator: checkout opens on Payment Options (no contact page). A number Razorpay finds invalid is ignored",
     "BUG-016": "Fixed. Retest on the emulator: vendor_fees_test.dart passed fully automated (fail + pay)",
+    "BUG-017": "Fixed 2026-11-13. Retested on the emulator the same day: FLT-ONB-062..064 and FLT-VEN-125..127 pass",
+    "BUG-018": "Fixed 2026-11-13. RCT-110 failed on the old code and passes now; deploy backend and customer app together (the page still works with an old backend)",
+    "BUG-019": "Fixed 2026-11-13. RCT-111 failed on the old code and passes now",
     "OBS-5": "Fixed: ICU plurals for ratingCount / qrOrdersSummary / manualOrdersSummary in en, kn, ta (hi has one form)",
     "BUG-015": "Fixed. Retest on the emulator: no frames scheduled while idle after an order alert (vendor_edge_test.dart)",
     "BUG-014": "Fixed. Retest on the emulator: offline range change showed 'Couldn't load sales.', Retry loaded it (vendor_misc_test.dart)",
@@ -826,12 +981,41 @@ DEVICE = {
     ("FLT-ONB", 56): "Passed on the I2219 after the OBS-2 fix: cold start with an invalid saved login -> Your Carts got a 401 -> signed out to sign-up, saved login cleared. unauthorized_test.dart",
     ("FLT-ONB", 37): "Passed on the I2219: Pani Puri 30 -> 35 on review; server has 35",
     ("FLT-ONB", 38): "Passed on the I2219: card removed at once (no confirmation asked); server keeps only the other",
+    # 2026-11-13, emulator (Pixel 3a API 34): onboarding_network_test.dart and vendor_qr_network_test.dart
+    ("FLT-ONB", 58): "Passed on the emulator 2026-11-13 (onboarding_network_test.dart)",
+    ("FLT-ONB", 59): "Passed on the emulator 2026-11-13 (onboarding_network_test.dart)",
+    ("FLT-ONB", 60): "Passed on the emulator 2026-11-13 (onboarding_network_test.dart)",
+    ("FLT-ONB", 61): "Passed on the emulator 2026-11-13 (onboarding_network_test.dart)",
+    ("FLT-ONB", 62): "Passed on the emulator 2026-11-13 (onboarding_network_test.dart)",
+    ("FLT-ONB", 63): "Passed on the emulator 2026-11-13 (onboarding_network_test.dart)",
+    ("FLT-ONB", 64): "Passed on the emulator 2026-11-13 (onboarding_network_test.dart)",
+    ("FLT-VEN", 125): "Passed on the emulator 2026-11-13 (vendor_qr_network_test.dart)",
+    ("FLT-VEN", 126): "Passed on the emulator 2026-11-13 (vendor_qr_network_test.dart)",
+    ("FLT-VEN", 127): "Passed on the emulator 2026-11-13 (vendor_qr_network_test.dart)",
 }
 
 for key, idx in PASS.items():
     for i, spec in idx.items():
         CASES[key][i - 1].update(status="Passed", auto=f"Automated ({PWR}/{spec}.spec.js)",
                                  actual=f"Passed on {RUN}")
+# Written and run 2026-11-12 (headed Chromium, same setup); the rest of the plan.
+PASS_1112 = {
+    "RCT": {6: "customer", 15: "customer", 16: "customer", 20: "customer", 28: "customer", 29: "customer"},
+    "ADM": {10: "admin", 12: "admin", 13: "admin", 14: "admin", 15: "admin", 17: "admin", 18: "admin", 19: "admin",
+            21: "admin", 22: "admin", 23: "admin", 25: "admin", 26: "admin", 27: "admin", 28: "admin", 36: "admin"},
+    "E2E": {10: "cross-app", 11: "cross-app", 14: "cross-app"},
+}
+# 2026-11-13: every remaining web feature (customer-flows, network, push, pulse, play, admin-more), all passed
+# after the BUG-018/019 and ADM-030 fixes (headed runs, then the rest headless after the PC ran low on memory).
+for key, lo, hi, spec in (("RCT", 31, 118, None), ("ADM", 37, 63, None)):
+    for i in range(lo, hi + 1):
+        PASS_1112.setdefault(key, {})[i] = spec
+for key, idx in PASS_1112.items():
+    for i, spec in idx.items():
+        case = CASES[key][i - 1]
+        case.update(status="Passed", actual="Passed on 2026-11-12" if spec else "Passed on 2026-11-13")
+        if spec:
+            case["auto"] = f"Automated ({PWR}/{spec}.spec.js)"
 for (key, i), (status, note) in NOTES.items():
     case = CASES[key][i - 1]
     case.update(status=status, actual=note)

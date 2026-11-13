@@ -64,6 +64,21 @@ class _QrPosterScreenState extends State<QrPosterScreen> {
     }
   }
 
+  /// True once the QR image itself has downloaded. Without it the poster shows
+  /// a grey placeholder, and a shared poster would have nothing to scan.
+  Future<bool> _qrReady() async {
+    var url = context.read<ProfileProvider>().qrImageUrl ?? '';
+    if (url.isEmpty) {
+      await _loadQrDetails();
+      if (!mounted) return false;
+      url = context.read<ProfileProvider>().qrImageUrl ?? '';
+    }
+    if (url.isEmpty) return false;
+    var ok = true;
+    await precacheImage(NetworkImage(url), context, onError: (_, _) => ok = false);
+    return ok;
+  }
+
   Future<void> _shareQr() async {
     setState(() => _isBtnLoading = true);
     final profileProvider = Provider.of<ProfileProvider>(
@@ -72,6 +87,14 @@ class _QrPosterScreenState extends State<QrPosterScreen> {
     );
 
     try {
+      if (!await _qrReady()) {
+        if (mounted) {
+          AppSnackBar.show(context, message: context.l10n.checkInternet, marginBottom: 0, isError: true);
+          setState(() {}); // shows the QR if it has loaded meanwhile
+        }
+        return;
+      }
+      if (!mounted) return;
       await QrService.saveAndSharePdf(
         qrKey: _qrKey,
         cartName: profileProvider.cartName ?? "Cart",

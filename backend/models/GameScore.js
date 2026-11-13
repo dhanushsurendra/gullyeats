@@ -10,6 +10,7 @@ const gameScoreSchema = new mongoose.Schema(
     alias: { type: String, required: true },
     score: { type: Number, required: true },
     stats: { type: Object }, // the round that set the best; keys depend on the game
+    rounds: Number, // accepted rounds that day (admin Insights); unset on rows from before it was counted
   },
   { timestamps: true },
 )

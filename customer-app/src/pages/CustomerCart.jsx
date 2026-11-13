@@ -7,7 +7,7 @@ import defaultFoodImage from '../assets/default-food.png'
 import { BottomBar, Button, Card, Page, Row, StatusScreen, Stepper, TopBar, VegMark } from '../components/ui'
 import { api } from '../constants/api'
 import { addItem, clearCart, removeItem, rememberOrder, setCartDetails, setPhoneNumber } from '../store/cartSlice'
-import { itemCount, itemsTotal, PLATFORM_FEE, rupees } from '../utils/format'
+import { itemCount, itemsTotal, rupees } from '../utils/format'
 
 // The open state saved from the menu goes stale when the vendor closes the
 // cart meanwhile, so the cart page asks again. A failed check keeps what we have.
@@ -38,6 +38,8 @@ export default function CustomerCart() {
   const subtotal = itemsTotal(items, basket)
   const count = itemCount(Object.fromEntries(items.map((i) => [i._id, basket[i._id]])))
   const isOpen = cart?._id === cartId && cart.isOpen && cart.isActive !== false
+  // The server's current fee, sent with the cart (it sets the real one on the order).
+  const fee = Number(cart?._id === cartId && cart.platformFee) || 0
   const phoneInvalid = phone.length > 0 && !/^[6-9]\d{9}$/.test(phone)
 
   const toMenu = () => navigate(`/c/${cartId}/menu`)
@@ -67,8 +69,8 @@ export default function CustomerCart() {
           orderType: 'QR',
           subtotal,
           parcelCharge: 0,
-          platformFee: PLATFORM_FEE,
-          totalPrice: subtotal + PLATFORM_FEE,
+          platformFee: fee,
+          totalPrice: subtotal + fee,
           phoneNumber: phone || null,
         },
       })
@@ -157,9 +159,9 @@ export default function CustomerCart() {
         <Card className='animate-fade-up space-y-3 [animation-delay:60ms]'>
           <h2 className='text-[15px] font-semibold'>Bill details</h2>
           <Row label='Item total' value={rupees(subtotal)} />
-          <Row label='Platform fee' value={rupees(PLATFORM_FEE)} />
+          <Row label='Platform fee' value={rupees(fee)} />
           <div className='border-t border-dashed border-grey-200' />
-          <Row label='To pay at the counter' value={rupees(subtotal + PLATFORM_FEE)} strong />
+          <Row label='To pay at the counter' value={rupees(subtotal + fee)} strong />
           <p className='text-xs text-grey-400'>Need it packed to take away? Tell the vendor when you pay.</p>
         </Card>
 
@@ -209,7 +211,7 @@ export default function CustomerCart() {
           </p>
         )}
         <Button onClick={placeOrder} loading={placing} disabled={!isOpen}>
-          {placing ? 'Placing order…' : `Place order · ${rupees(subtotal + PLATFORM_FEE)}`}
+          {placing ? 'Placing order…' : `Place order · ${rupees(subtotal + fee)}`}
         </Button>
         <p className='mt-2 text-center text-xs text-grey-400'>
           {count} {count === 1 ? 'item' : 'items'} · You'll get a token. Pay at the counter.

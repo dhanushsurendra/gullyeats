@@ -10,9 +10,12 @@ const { getCartPaymentStatus, createBillPayment } = require('../utils/cartPaymen
 const { overdueByCart } = require('../utils/overdueFees')
 const { logAction } = require('../utils/adminLog')
 const AdminAction = require('../models/AdminAction')
+const { getPlatformFee, setPlatformFee, MAX_FEE } = require('../utils/platformFee')
 
 const TZ = 'Asia/Kolkata'
 const DAY = 864e5
+// A refund handed back within this time never shows as an Attention item.
+const REFUND_GRACE_MS = 2 * 3600e3
 const LARGE_ORDER = 1000
 
 const bcrypt = require('bcrypt')
@@ -934,6 +937,10 @@ exports.overview = asyncHandler(async (req, res) => {
   // ATTENTION
   // ========================================================
   const failedRefunds = await Payment.countDocuments({ 'refunds.status': 'FAILED' })
+  const [refundsOwed, refundsFlagged] = await Promise.all([
+    Order.countDocuments({ refunds: { $elemMatch: { refundedAt: null, owedAt: { $lt: new Date(Date.now() - REFUND_GRACE_MS) } } } }),
+    Order.countDocuments({ refunds: { $elemMatch: { flaggedAt: { $ne: null }, flagResolvedAt: null } } }),
+  ])
   const attention = [] // --------------------------------------------------------
   // Pending payments
   // --------------------------------------------------------
@@ -945,6 +952,26 @@ exports.overview = asyncHandler(async (req, res) => {
       title: 'Refund failed',
       text: `${failedRefunds} duplicate online payment${failedRefunds > 1 ? 's' : ''} couldn't be refunded automatically. Refund in the Razorpay dashboard.`,
       to: '/actions?action=AUTO_REFUND',
+    })
+  }
+  if (refundsFlagged) {
+    attention.push({
+      id: 'refund-flag',
+      kind: 'failed',
+      severity: 'High',
+      title: 'Customers say they were not refunded',
+      text: `${refundsFlagged} order${refundsFlagged > 1 ? 's' : ''} where the cart marked a refund but the customer says they didn't get it`,
+      to: '/collections?refunds=flagged',
+    })
+  }
+  if (refundsOwed) {
+    attention.push({
+      id: 'refund-owed',
+      kind: 'payment',
+      severity: 'Medium',
+      title: 'Refunds not handed back',
+      text: `${refundsOwed} cancelled or reduced paid order${refundsOwed > 1 ? 's' : ''} still owe the customer money`,
+      to: '/collections?refunds=owed',
     })
   }
   if (unpaid.count) {
@@ -1699,6 +1726,95 @@ exports.actions = asyncHandler(async (req, res) => {
       pagination: { hasMore, nextCursor: nextCursor(rows, hasMore) },
     },
   })
+})
+
+// Refunds on paid orders that were cancelled or made smaller: ?status=owed
+// (not yet handed back) or flagged (the customer says they didn't get it).
+exports.refunds = asyncHandler(async (req, res) => {
+  const limit = Math.min(Number(req.query.limit) || 30, 200)
+  const match = req.query.status === 'flagged'
+    ? { flaggedAt: { $ne: null }, flagResolvedAt: null }
+    : { refundedAt: null }
+  const rows = await Order.find({ $and: [{ refunds: { $elemMatch: match } }, afterCursor(res, req.query.cursor)] })
+    .sort({ createdAt: -1, _id: -1 })
+    .limit(limit + 1)
+    .select('orderNumber cartId status refunds createdAt')
+    .lean()
+  const hasMore = rows.length > limit
+  if (hasMore) rows.pop()
+  const info = await cartInfo(rows.map((o) => o.cartId))
+  const people = await User.find({ _id: { $in: rows.flatMap((o) => o.refunds.map((r) => r.refundedBy?._id).filter(Boolean)) } })
+    .select('name phoneNumber')
+    .lean()
+  const who = new Map(people.map((u) => [String(u._id), u.name || u.phoneNumber || 'Unknown']))
+  res.json({
+    success: true,
+    data: {
+      items: rows.map((o) => {
+        const c = info.get(String(o.cartId)) || {}
+        const owed = o.refunds.filter((r) => !r.refundedAt)
+        const last = o.refunds.at(-1)
+        return {
+          id: String(o._id),
+          number: o.orderNumber,
+          cartId: String(o.cartId),
+          cart: c.name || '—',
+          owner: c.owner || '—',
+          status: o.status,
+          owed: owed.reduce((t, r) => t + r.amount, 0),
+          owedSince: owed[0]?.owedAt || null,
+          refunded: o.refunds.filter((r) => r.refundedAt).reduce((t, r) => t + r.amount, 0),
+          refundedAt: last?.refundedAt || null,
+          refundedBy: last?.refundedBy ? `${who.get(String(last.refundedBy._id)) || 'Unknown'} (${last.refundedBy.role})` : null,
+          flaggedAt: o.refunds.findLast((r) => r.flaggedAt && !r.flagResolvedAt)?.flaggedAt || null,
+          reasons: [...new Set(o.refunds.map((r) => r.reason))],
+        }
+      }),
+      pagination: { hasMore, nextCursor: nextCursor(rows, hasMore) },
+    },
+  })
+})
+
+// The admin dealt with a customer's "not refunded" flag (e.g. called the vendor).
+exports.resolveRefundFlag = asyncHandler(async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.orderId)) {
+    res.status(400)
+    throw new Error('Invalid order id')
+  }
+  const order = await Order.findById(req.params.orderId)
+  const open = order?.refunds.filter((r) => r.flaggedAt && !r.flagResolvedAt) || []
+  if (!open.length) {
+    res.status(404)
+    throw new Error('No open flag on this order')
+  }
+  const now = new Date()
+  for (const r of open) r.flagResolvedAt = now
+  await order.save()
+  const cart = await Cart.findById(order.cartId).select('cartName').lean()
+  await logAction(req, 'RESOLVE_REFUND_FLAG', { kind: 'order', id: order._id, label: `#${order.orderNumber} · ${cart?.cartName || '—'}` }, {
+    reason: String(req.body?.reason || '').trim().slice(0, 300) || null,
+  })
+  res.json({ success: true, data: { id: String(order._id) } })
+})
+
+exports.getSettings = asyncHandler(async (req, res) => {
+  res.json({ success: true, data: { platformFee: await getPlatformFee(), maxPlatformFee: MAX_FEE } })
+})
+
+// Applies to orders placed from now on; placed orders keep the fee they were charged.
+exports.updateSettings = asyncHandler(async (req, res) => {
+  const fee = req.body?.platformFee
+  // Whole rupees only, so totals and bills never pick up float rounding.
+  if (!Number.isInteger(fee) || fee < 0 || fee > MAX_FEE) {
+    res.status(400)
+    throw new Error(`Platform fee must be a whole number of rupees from 0 to ${MAX_FEE}`)
+  }
+  const from = await getPlatformFee()
+  if (fee !== from) {
+    await setPlatformFee(fee)
+    await logAction(req, 'SET_PLATFORM_FEE', undefined, { from, to: fee })
+  }
+  res.json({ success: true, data: { platformFee: fee, maxPlatformFee: MAX_FEE } })
 })
 
 // Shared with moderationController.

@@ -112,12 +112,22 @@ async function uploadDishImage(res, name, imageId) {
   if (!r.ok || !type.startsWith('image/')) fail(res, 502, 'Could not download the image')
   const raw = Buffer.from(await r.arrayBuffer())
   if (raw.length > 3 * 1024 * 1024) fail(res, 502, 'Image too large')
+  try {
+    return await saveDishPhoto(raw, name)
+  } catch (e) {
+    if (e.unreadable) fail(res, 502, 'Could not read the image')
+    throw e
+  }
+}
+
+/** Stores a downloaded photo as a dish's default in S3 and returns its key. */
+async function saveDishPhoto(raw, name) {
   // Same size as every default photo: 480x400 (the menu thumbnail's shape), ~30 KB.
   let body
   try {
     body = await sharp(raw).resize(480, 400, { fit: 'cover' }).jpeg({ quality: 72, progressive: true }).toBuffer()
   } catch {
-    fail(res, 502, 'Could not read the image')
+    throw Object.assign(new Error('Could not read the image'), { unreadable: true })
   }
   const key = `dish-images/${slug(name)}.jpg`
   await s3Client.send(new PutObjectCommand({
@@ -186,3 +196,4 @@ exports.reject = asyncHandler(async (req, res) => {
 })
 
 exports.MIN_CARTS = MIN_CARTS
+exports.saveDishPhoto = saveDishPhoto

@@ -153,8 +153,8 @@ export default function Topbar({ onMenu }) {
         {dark ? <Sun size={16} /> : <Moon size={16} />}
       </button>
 
-      {/* Date Range */}
-      <div className='relative'>
+      {/* Date Range. min-w-0: on a phone the tabs scroll inside their pill instead of widening the page. */}
+      <div className='relative min-w-0 max-w-full'>
         <Seg options={RANGES} value={range.key} onChange={handleRangeChange} />
 
         {/* Custom Date Picker */}

@@ -13,7 +13,15 @@ import {
   Package,
   Timer,
   Repeat,
+  Gamepad2,
+  Users,
+  Phone as PhoneIcon,
+  MessageCircle,
+  Heart,
+  ShieldAlert,
+  Clock,
 } from 'lucide-react'
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts'
 import useResource from '../hooks/useResource'
 import { useReveal } from '../hooks/usePaged'
 import KpiCard from '../components/KpiCard'
@@ -25,12 +33,14 @@ const TABS = [
   ['vendors', 'Vendors'],
   ['leakage', 'Fee leakage'],
   ['operations', 'Customers & Ops'],
+  ['play', 'GullyPlay'],
+  ['pulse', 'GullyPulse'],
 ]
 
 export default function Insights() {
   const [params, setParams] = useSearchParams()
   const tab = TABS.some(([k]) => k === params.get('tab')) ? params.get('tab') : 'growth'
-  const View = { growth: Growth, vendors: Vendors, leakage: Leakage, operations: Operations }[tab]
+  const View = { growth: Growth, vendors: Vendors, leakage: Leakage, operations: Operations, play: Play, pulse: Pulse }[tab]
   return (
     <div className='space-y-3'>
       <Seg options={TABS} value={tab} onChange={(t) => setParams({ tab: t })} />
@@ -283,5 +293,175 @@ function Operations() {
         </Card>
       </div>
     </State>
+  )
+}
+
+// ------------------------------------------------------------------
+// GullyPlay / GullyPulse: players are anonymous, so counts only.
+const RANGES = [
+  ['7', 'Last 7 days'],
+  ['30', 'Last 30 days'],
+]
+function useDays() {
+  const [params, setParams] = useSearchParams()
+  const days = params.get('days') === '7' ? '7' : '30'
+  const setDays = (d) => setParams((p) => ({ ...Object.fromEntries(p), days: d }))
+  return [days, setDays]
+}
+
+// Counts per IST day, one line per series ([key, label], colours in fixed order).
+function Trend({ title, subtitle, points = [], series }) {
+  const colour = (i) => `var(--viz-${i + 1})`
+  return (
+    <Card>
+      <CardHeader title={title} subtitle={subtitle} />
+      <div className='h-[220px] px-2 pt-4'>
+        <ResponsiveContainer>
+          <LineChart data={points} margin={{ left: 0, right: 12 }}>
+            <CartesianGrid stroke='#efedf5' strokeDasharray='3 4' vertical={false} />
+            <XAxis dataKey='label' tick={{ fontSize: 11, fill: '#8a8d94' }} tickLine={false} axisLine={false} minTickGap={18} />
+            <YAxis tick={{ fontSize: 11, fill: '#8a8d94' }} tickLine={false} axisLine={false} width={34} allowDecimals={false} />
+            <Tooltip
+              contentStyle={{ fontSize: 12, borderRadius: 12, border: 'none', boxShadow: '0 12px 32px -8px rgba(26,15,69,.25)' }}
+              itemStyle={{ color: '#3f3f46' }}
+            />
+            {series.map(([k, label], i) => (
+              <Line key={k} dataKey={k} name={label} stroke={colour(i)} strokeWidth={2} dot={false} activeDot={{ r: 4 }} isAnimationActive={false} />
+            ))}
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+      <div className='flex flex-wrap gap-x-5 gap-y-1.5 border-t border-line px-4 py-3 text-[12px]'>
+        {series.map(([k, label], i) => (
+          <span key={k} className='flex items-center gap-1.5 text-neutral-500'>
+            <i className='h-0.5 w-3 rounded' style={{ background: colour(i) }} />
+            {label} <b className='text-ink'>{num(points.reduce((t, p) => t + (p[k] || 0), 0))}</b>
+          </span>
+        ))}
+      </div>
+    </Card>
+  )
+}
+
+const cartCols = (verb) => [
+  { key: 'cart', label: 'Cart', render: (c) => <b className='font-medium'>{c.cart}</b> },
+  { key: 'city', label: 'City' },
+  { key: 'customers', label: 'QR customers' },
+  { key: 'active', label: verb },
+  { key: 'rate', label: 'Share', render: (c) => <b>{c.rate}%</b> },
+]
+
+function Play() {
+  const [days, setDays] = useDays()
+  const { data: d, loading, error } = useResource('play', { days }, 60000)
+  const s = d?.summary
+  const games = d?.perGame || []
+  const gameCols = [
+    { key: 'name', label: 'Game', render: (g) => <b className='font-medium'>{g.name}</b> },
+    { key: 'players', label: 'Players', render: (g) => num(g.players) },
+    { key: 'rounds', label: 'Rounds', render: (g) => num(g.rounds) },
+    { key: 'perPlayer', label: 'Rounds / player' },
+    { key: 'median', label: 'Median best', render: (g) => num(g.median) },
+    { key: 'p90', label: 'Top 10% from', render: (g) => num(g.p90) },
+    { key: 'top', label: 'Highest', render: (g) => num(g.top) },
+  ]
+  return (
+    <>
+      <Seg options={RANGES} value={days} onChange={setDays} />
+      <State loading={loading} error={error}>
+        <Kpis>
+          <KpiCard icon={Gamepad2} label='Players' value={num(s?.players)} note={`${num(s?.rounds)} rounds played`} />
+          <KpiCard icon={QrCode} label='QR customers who played' value={`${s?.playedShare ?? 0}%`} note={`of ${num(s?.customers)} customers`} />
+          <KpiCard icon={Repeat} label='Came back' value={num(s?.returning)} note='played on 2+ days' />
+          <KpiCard icon={PhoneIcon} label='With a phone number' value={num(s?.withPhone)} note='one identity across orders' />
+          <KpiCard icon={Store} label='Played from 2+ carts' value={num(s?.multiCart)} note='ordered at more than one cart' />
+        </Kpis>
+        <div className='mt-3'>
+          <Trend
+            title='Players per day'
+            subtitle='Each player counts once per game per day (IST)'
+            points={d?.daily}
+            series={games.map((g) => [g.game, g.name])}
+          />
+        </div>
+        <Card className='mt-3'>
+          <CardHeader title='Games' subtitle='From each player’s best score of the day' />
+          <Table columns={gameCols} rows={games.map((g) => ({ ...g, id: g.game }))} />
+        </Card>
+        <Card className='mt-3'>
+          <CardHeader title='Carts whose customers play most' subtitle='QR customers in this period who played any game' />
+          <Table columns={cartCols('Played')} rows={withId(d?.carts)} empty='Nobody has played yet.' />
+        </Card>
+        <p className='mt-2 px-1 text-[12px] text-neutral-500'>
+          Players are anonymous. Rounds are counted from 13 Nov 2026; earlier days count one round per player per game.
+        </p>
+      </State>
+    </>
+  )
+}
+
+function Pulse() {
+  const [days, setDays] = useDays()
+  const { data: d, loading, error } = useResource('pulse', { days }, 60000)
+  const s = d?.summary
+  const e = d?.engagement
+  const h = d?.health
+  const topCols = [
+    { key: 'text', label: 'Post', className: '!whitespace-normal', render: (p) => <span className='line-clamp-2'>{p.text}</span> },
+    { key: 'likes', label: 'Likes', render: (p) => num(p.likes) },
+    { key: 'comments', label: 'Comments', render: (p) => num(p.comments) },
+  ]
+  return (
+    <>
+      <Seg options={RANGES} value={days} onChange={setDays} />
+      <State loading={loading} error={error}>
+        <Kpis>
+          <KpiCard icon={MessageCircle} label='Posts' value={num(s?.posts)} note={`${num(s?.comments)} comments`} />
+          <KpiCard icon={Heart} label='Likes' value={num(s?.likes)} note={`${e?.likesPerPost ?? 0} per published post`} />
+          <KpiCard icon={Users} label='Posters' value={num(s?.posters)} note={`${num(s?.repeatPosters)} posted 2+ times`} />
+          <KpiCard icon={QrCode} label='QR customers who posted' value={`${s?.postedShare ?? 0}%`} note={`of ${num(s?.customers)} customers`} />
+          <KpiCard
+            icon={Clock}
+            label='Time to moderate'
+            value={h?.avgMinsToDecide == null ? '—' : h.avgMinsToDecide < 90 ? `${h.avgMinsToDecide} min` : `${(h.avgMinsToDecide / 60).toFixed(1)} h`}
+            note={`${num(h?.decisions)} approve/reject decisions`}
+          />
+        </Kpis>
+        <div className='mt-3'>
+          <Trend
+            title='Activity per day'
+            subtitle='New posts, comments and likes (IST)'
+            points={d?.daily}
+            series={[
+              ['posts', 'Posts'],
+              ['comments', 'Comments'],
+              ['likes', 'Likes'],
+            ]}
+          />
+        </div>
+        <div className='mt-3 grid gap-3'>
+          <Card>
+            <CardHeader
+              title='Most engaging posts'
+              subtitle={`Published in this period · ${e?.commentsPerPost ?? 0} comments per post on average`}
+            />
+            <Table columns={topCols} rows={e?.top} empty='No published posts yet.' />
+          </Card>
+          <Card>
+            <CardHeader title='Moderation health' subtitle={`Posts and comments in this period (${num(h?.items)})`} />
+            <div className='grid grid-cols-2 gap-2.5 p-4 lg:grid-cols-4'>
+              <KpiCard icon={ShieldAlert} label='Blocked by the filter' value={`${h?.rates.blocked ?? 0}%`} note={`${num(h?.blocked)} items`} />
+              <KpiCard icon={AlertTriangle} label='Held for review' value={`${h?.rates.held ?? 0}%`} note={`${num(h?.held)} items`} />
+              <KpiCard icon={AlertTriangle} label='Reported' value={`${h?.rates.reported ?? 0}%`} note={`${num(h?.reports)} reports in all`} />
+              <KpiCard icon={ShieldAlert} label='Rejected or removed' value={num(h?.removed)} note='by an admin' />
+            </div>
+          </Card>
+        </div>
+        <Card className='mt-3'>
+          <CardHeader title='Carts whose customers post most' subtitle='QR customers in this period who posted or commented' />
+          <Table columns={cartCols('Posted')} rows={withId(d?.carts)} empty='Nobody has posted yet.' />
+        </Card>
+      </State>
+    </>
   )
 }

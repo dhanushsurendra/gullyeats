@@ -2,6 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Chart series colours (validated for colour-blind separation on each surface). */
+:root {
+  --viz-1: #2a78d6;
+  --viz-2: #eb6834;
+  --viz-3: #1baf7a;
+}
+.dark {
+  --viz-1: #3987e5;
+  --viz-2: #d95926;
+  --viz-3: #199e70;
+}
+
 body {
   @apply bg-canvas text-ink antialiased;
   font-variant-numeric: tabular-nums;

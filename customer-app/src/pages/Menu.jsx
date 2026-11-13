@@ -9,7 +9,7 @@ import MenuItemShimmer from '../components/MenuItemShimmer'
 import { Button, Page, StatusScreen, TopBar } from '../components/ui'
 import { api } from '../constants/api'
 import { addItem, removeItem, setCartDetails, setMenuItems } from '../store/cartSlice'
-import { itemCount, itemsTotal, PLATFORM_FEE, rupees, shortAddress } from '../utils/format'
+import { itemCount, itemsTotal, rupees, shortAddress } from '../utils/format'
 
 const FILTERS = [
   { id: 'all', label: 'All' },
@@ -132,9 +132,9 @@ export default function Menu() {
         body: {
           orderItems,
           subtotal: total,
-          platformFee: PLATFORM_FEE,
+          platformFee: order.platformFee,
           parcelCharge,
-          totalPrice: total + PLATFORM_FEE + parcelCharge,
+          totalPrice: total + Number(order.platformFee || 0) + parcelCharge,
         },
       })
       backToOrder()
@@ -256,7 +256,7 @@ export default function Menu() {
             <span className='text-grey-500'>
               {count} {count === 1 ? 'item' : 'items'}
             </span>
-            <span className='font-semibold'>New total {rupees(total + PLATFORM_FEE + Number(order?.parcelCharge || 0))}</span>
+            <span className='font-semibold'>New total {rupees(total + Number(order?.platformFee || 0) + Number(order?.parcelCharge || 0))}</span>
           </div>
           <Button onClick={save} loading={saving} disabled={!order || !changed}>
             {changed ? 'Save changes' : 'No changes yet'}

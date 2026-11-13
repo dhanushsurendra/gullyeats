@@ -33,6 +33,25 @@ const PaymentAdjustmentSchema = new mongoose.Schema(
   { _id: false },
 )
 
+// Money the vendor owes back on a paid order (cancelled, or made smaller),
+// and whether it was handed back. One entry per hand-back, so later edits
+// never overwrite an earlier one.
+const RefundSchema = new mongoose.Schema(
+  {
+    amount: { type: Number, required: true, min: 0 },
+    reason: { type: String, enum: ['CANCELLED', 'EDITED'], required: true },
+    owedAt: { type: Date, required: true },
+    // Set by the owner or staff with "Mark refunded" in the vendor app.
+    refundedAt: { type: Date, default: null },
+    refundedBy: { type: { _id: mongoose.Schema.Types.ObjectId, role: String }, default: null },
+    // The customer said "I didn't get my money back".
+    flaggedAt: { type: Date, default: null },
+    // An admin dealt with the flag (e.g. called the vendor).
+    flagResolvedAt: { type: Date, default: null },
+  },
+  { _id: false },
+)
+
 const OrderSchema = new mongoose.Schema(
   {
     orderNumber: {
@@ -88,6 +107,8 @@ const OrderSchema = new mongoose.Schema(
       type: PaymentAdjustmentSchema,
       default: null,
     },
+
+    refunds: { type: [RefundSchema], default: [] },
 
     phoneNumber: {
       type: String,

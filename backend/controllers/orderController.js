@@ -13,6 +13,7 @@ const { getISTMidnight } = paymentLock
 const { holdsOrderKey } = require('../utils/orderKey')
 const { notifyNewOrder } = require('../utils/push')
 const webPush = require('../utils/webPush')
+const { getPlatformFee } = require('../utils/platformFee')
 
 /** Whether a bill already covers the day [order] was paid on. */
 async function isPaidDayBilled(order) {
@@ -27,8 +28,6 @@ async function isPaidDayBilled(order) {
   )
 }
 
-// GullyEats' fee per order, charged on top of the items.
-const PLATFORM_FEE = 2
 const MAX_QUANTITY = 100
 
 function fail(res, status, message) {
@@ -112,7 +111,8 @@ async function buildOrderItems(res, cartId, orderItems, previousItems = []) {
   })
 }
 
-function orderTotals(orderItems, parcelCharge) {
+// platformFee: GullyEats' fee per order, charged on top of the items.
+function orderTotals(orderItems, parcelCharge, platformFee) {
   const subtotal = orderItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0,
@@ -120,8 +120,8 @@ function orderTotals(orderItems, parcelCharge) {
   return {
     subtotal,
     parcelCharge,
-    platformFee: PLATFORM_FEE,
-    totalPrice: subtotal + parcelCharge + PLATFORM_FEE,
+    platformFee,
+    totalPrice: subtotal + parcelCharge + platformFee,
   }
 }
 
@@ -190,7 +190,7 @@ exports.createOrder = asyncHandler(async (req, res) => {
       parcelCharge === undefined ? 0 : parseParcelCharge(res, parcelCharge)
   }
 
-  const totals = orderTotals(items, parcel)
+  const totals = orderTotals(items, parcel, await getPlatformFee())
   const phone = phoneNumber
     ? String(phoneNumber).replace(/\D/g, '').slice(-15)
     : ''
@@ -466,7 +466,8 @@ exports.updateOrder = asyncHandler(async (req, res) => {
       ? parseParcelCharge(res, parcelCharge)
       : order.parcelCharge || 0
 
-  const totals = orderTotals(items, parcel)
+  // An edit keeps the fee the order was placed with, even if it has changed since.
+  const totals = orderTotals(items, parcel, order.platformFee ?? (await getPlatformFee()))
   const paidAmount = amountPaid(order)
   const difference = totals.totalPrice - paidAmount
 
@@ -489,6 +490,9 @@ exports.updateOrder = asyncHandler(async (req, res) => {
 
   Object.assign(order, totals, { orderItems: items, paymentAdjustment })
   order.paidAmount = paidAmount
+  if (paymentAdjustment?.action === 'RETURN') {
+    order.refunds.push({ amount: paymentAdjustment.amount, reason: 'EDITED', owedAt: new Date() })
+  }
 
   if (paidAmount > 0 && difference > 0) {
     // The extra must be collected before the order continues.
@@ -521,7 +525,18 @@ exports.undoDeleteOrder = asyncHandler(async (req, res) => {
 
   // Back to PAID only if the customer paid the whole total. paidAt alone
   // isn't proof: it is kept when an order on a billed day is marked unpaid.
-  const paid = order.paidAmount ?? (order.paidAt ? order.totalPrice : 0)
+  let paid = order.paidAmount ?? (order.paidAt ? order.totalPrice : 0)
+  // The cancellation's refund: never handed back, it just goes away; already
+  // handed back, the customer has to pay that again.
+  const last = order.refunds.at(-1)
+  if (last?.reason === 'CANCELLED') {
+    if (last.refundedAt) {
+      paid = Math.max(0, paid - last.amount)
+      order.paidAmount = paid
+    } else {
+      order.refunds.pop()
+    }
+  }
   order.status = paid >= order.totalPrice ? 'PAID' : 'PENDING'
   order.paymentAdjustment = null
   await order.save()
@@ -571,6 +586,7 @@ exports.deleteOrder = asyncHandler(async (req, res) => {
 
   order.status = 'CANCELLED'
   order.paymentAdjustment = paymentAdjustment
+  if (paymentAdjustment) order.refunds.push({ amount: paid, reason: 'CANCELLED', owedAt: new Date() })
   await order.save()
 
   emitOrder(req, order, 'order_cancelled')
@@ -583,6 +599,50 @@ exports.deleteOrder = asyncHandler(async (req, res) => {
     data: order,
     paymentAdjustment,
   })
+})
+
+// Orders from before the refund log: their one RETURN adjustment becomes an entry.
+function refundLog(order) {
+  const a = order.paymentAdjustment
+  if (!order.refunds.length && a?.action === 'RETURN' && a.amount > 0) {
+    order.refunds.push({ amount: a.amount, reason: order.status === 'CANCELLED' ? 'CANCELLED' : 'EDITED', owedAt: order.updatedAt || new Date() })
+  }
+  return order.refunds
+}
+
+/*
+ * The vendor app's "Mark refunded": the owner or staff handed the money back.
+ * Marks every refund still owed on the order, and records who did it.
+ */
+exports.markRefunded = asyncHandler(async (req, res) => {
+  const order = await findManagedOrder(req, res, req.params.orderId)
+  const owed = refundLog(order).filter((r) => !r.refundedAt)
+  if (!owed.length) fail(res, 400, 'Nothing to refund on this order')
+  const now = new Date()
+  for (const r of owed) {
+    r.refundedAt = now
+    r.refundedBy = { _id: req.user._id, role: req.user.role }
+  }
+  await order.save()
+  emitOrder(req, order)
+  res.status(200).json({ success: true, data: order })
+})
+
+/*
+ * The customer's "Didn't get it?": flags the latest refund the vendor marked
+ * as handed back. Admins see flagged refunds on the Collections page.
+ */
+exports.flagRefund = asyncHandler(async (req, res) => {
+  const order = await Order.findById(req.params.orderId)
+  if (!order) fail(res, 404, 'Order not found')
+  await requireOrderKey(req, res, order)
+  const last = refundLog(order).findLast((r) => r.refundedAt)
+  if (!last) fail(res, 400, 'There is no refund to flag on this order')
+  if (last.flaggedAt) fail(res, 409, 'You already told us about this refund.')
+  last.flaggedAt = new Date()
+  await order.save()
+  emitOrder(req, order)
+  res.status(200).json({ success: true, data: order })
 })
 
 /*

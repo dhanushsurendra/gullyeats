@@ -79,6 +79,8 @@ test('a better round raises the day’s best, a worse one does not', async () =>
   const again = await player('+91 98765 43210')
   assert.strictEqual((await submit(again, 500)).body.best, 900)
   assert.strictEqual(await GameScore.countDocuments(), 1)
+  // Every accepted round is counted, best or not (admin Insights).
+  assert.strictEqual((await GameScore.findOne()).rounds, 4)
 })
 
 test('a Mothership kill counts', async () => {

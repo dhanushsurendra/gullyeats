@@ -1,6 +1,6 @@
 // ADM-xxx: the admin dashboard in a browser, signed in as the QA admin.
 import { test, expect } from '@playwright/test'
-import { call, onboardVendor, secrets, state } from './helpers.js'
+import { adminLogin, backdate, call, confess, customerOrder, onboardVendor, paidOrder, secrets, state } from './helpers.js'
 import { ADMIN } from './urls.js'
 
 test.use({ baseURL: ADMIN, viewport: { width: 1280, height: 800 }, isMobile: false, hasTouch: false })
@@ -116,8 +116,15 @@ test('ADM-030 the dashboard has no sideways scroll on a phone', async ({ page })
   for (const path of ['/', '/restaurants', '/orders', '/actions', '/collections', '/moderation']) {
     await page.goto(path)
     await page.waitForLoadState('networkidle', { timeout: 60_000 })
+    // The elements that stick out (not inside something that clips them), for the failure message.
+    const wide = await page.evaluate(() => {
+      const w = document.documentElement.clientWidth
+      const clipped = (e) => { for (let p = e.parentElement; p; p = p.parentElement) if (getComputedStyle(p).overflowX !== 'visible') return true; return false }
+      return [...document.querySelectorAll('body *')].filter((e) => e.getBoundingClientRect().right > w + 0.5 && !clipped(e))
+        .slice(0, 5).map((e) => `${e.tagName}.${String(e.className).slice(0, 80)} "${(e.textContent || '').trim().slice(0, 40)}"`)
+    })
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
-    expect(overflow, path).toBeLessThanOrEqual(0)
+    expect(overflow, `${path}: ${wide.join(' | ')}`).toBeLessThanOrEqual(0)
   }
 })
 
@@ -164,4 +171,333 @@ test('ADM-031..035 new dish names: 3 carts put them up for review; approve, merg
   // All three are gone from the list after a reload.
   await page.reload()
   await expect(page.getByRole('heading', { name: /^QA / })).toHaveCount(0)
+})
+
+let admin
+const adminToken = async () => (admin ||= await adminLogin())
+const overview = async () => (await call('GET', '/admin/overview', { token: await adminToken() })).body.data.kpis
+const actionsLog = async (action) =>
+  (await call('GET', `/admin/actions?limit=50${action ? `&action=${action}` : ''}`, { token: await adminToken() })).body.data.items
+const search = (page, text) => page.getByPlaceholder('Filter tables…').fill(text)
+const ownerRow = (page) => page.getByRole('row').filter({ has: page.getByRole('button', { name: 'View' }) })
+
+test('ADM-010 dashboard numbers match the API, and a paid order moves them by its amount', async ({ page }) => {
+  test.setTimeout(120_000)
+  const before = await overview()
+  const o = await paidOrder(v, 2)
+  const after = await overview()
+  expect(after.totalOrders).toBe(before.totalOrders + 1)
+  expect(after.ordersToday.value).toBe(before.ordersToday.value + 1)
+  // GMV = the sum of totalPrice over PAID + SERVED orders.
+  expect(after.orderGmvRange).toBe(before.orderGmvRange + o.body.data.totalPrice)
+  expect(after.platformFeeRange).toBe(before.platformFeeRange + o.body.data.platformFee)
+
+  await signIn(page)
+  // The KPI card holding both the label and the API's value.
+  const card = (label, value) =>
+    page.locator('div').filter({ has: page.getByText(label, { exact: true }) }).filter({ hasText: value.toLocaleString('en-IN') })
+  await expect(card('Total Orders', after.totalOrders).first()).toBeVisible()
+  await expect(card('Orders Today', after.ordersToday.value).first()).toBeVisible()
+})
+
+test('ADM-012 Owners: the list loads and search finds a vendor by ID and phone', async ({ page }) => {
+  test.setTimeout(120_000)
+  await signIn(page)
+  await page.goto('/owners')
+  await expect(ownerRow(page).first()).toBeVisible({ timeout: 60_000 })
+  for (const q of [v.vendorId, v.phoneNumber]) {
+    await search(page, q)
+    await expect(ownerRow(page), q).toHaveCount(1)
+  }
+  await search(page, 'QA-no-such-owner-xyz')
+  await expect(page.getByText('No owners match.')).toBeVisible()
+})
+
+test('ADM-013 disable a vendor, then enable; both are logged', async ({ page }) => {
+  test.setTimeout(120_000)
+  const nv = await onboardVendor({ cartName: `QA-Owner ${Date.now() % 1e5}` })
+  await signIn(page)
+  await page.goto('/owners')
+  await search(page, nv.vendorId)
+  const row = ownerRow(page)
+  await row.getByRole('button', { name: 'Disable' }).click()
+  await page.getByRole('dialog').getByRole('textbox').fill('QA test')
+  await page.getByRole('dialog').getByRole('button', { name: 'Disable', exact: true }).click()
+  await expect(row.getByRole('button', { name: 'Enable' })).toBeVisible()
+  expect((await call('POST', '/vendors/login', { body: { vendorIdentifier: nv.vendorId, pin: nv.pin } })).status).toBe(403)
+
+  await row.getByRole('button', { name: 'Enable' }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Enable', exact: true }).click()
+  await expect(row.getByRole('button', { name: 'Disable' })).toBeVisible()
+  expect((await call('POST', '/vendors/login', { body: { vendorIdentifier: nv.vendorId, pin: nv.pin } })).status).toBe(200)
+
+  const log = await actionsLog()
+  for (const action of ['DISABLE_VENDOR', 'ENABLE_VENDOR']) {
+    const a = log.find((x) => x.action === action && x.target.includes(nv.vendorId))
+    expect(a, action).toBeTruthy()
+    expect(a.by).toBe('QA Admin')
+  }
+})
+
+test('ADM-014 reset a vendor PIN from Settings: new PIN shown once, old one stops working', async ({ page }) => {
+  const nv = await onboardVendor({ cartName: `QA-Pin ${Date.now() % 1e5}`, open: false })
+  await signIn(page)
+  await page.goto('/settings')
+  await page.getByPlaceholder('VEN-XXXXXX').fill(nv.vendorId)
+  await page.getByRole('button', { name: 'Generate new PIN' }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Reset PIN' }).click()
+  await expect(page.getByText('Shown once. Share it with the vendor now.')).toBeVisible()
+  const pin = (await page.locator('span.font-mono').textContent()).trim()
+  expect(pin).toMatch(/^\d{4,6}$/)
+  expect((await call('POST', '/vendors/login', { body: { vendorIdentifier: nv.vendorId, pin: nv.pin } })).status).toBe(401)
+  expect((await call('POST', '/vendors/login', { body: { vendorIdentifier: nv.vendorId, pin } })).status).toBe(200)
+  await page.reload()
+  await expect(page.locator('span.font-mono')).toHaveCount(0)
+})
+
+test('ADM-015 Restaurants shows LIVE, OFFLINE, PAUSED and ATTENTION as the README maps them', async ({ page }) => {
+  test.setTimeout(180_000)
+  const tag = Date.now() % 1e5
+  const live = await onboardVendor({ cartName: `QA-Live ${tag}` })
+  const offline = await onboardVendor({ cartName: `QA-Offline ${tag}`, open: false })
+  const paused = await onboardVendor({ cartName: `QA-Paused ${tag}`, open: false })
+  const p = await call('PUT', `/carts/update-cart/${paused.cartId}`, { token: paused.token, body: { isActive: false } })
+  expect(p.status, p.body.message).toBeLessThan(300)
+  // ATTENTION: an unpaid bill with a checkout started (a PENDING payment).
+  const due = await onboardVendor({ cartName: `QA-Attention ${tag}` })
+  await paidOrder(due)
+  backdate(due.cartId)
+  const checkout = await call('POST', `/payments/create-razorpay-order/${due.cartId}`, { token: due.token })
+  expect(checkout.status, checkout.body.message).toBeLessThan(300)
+
+  const carts = (await call('GET', '/admin/carts', { token: await adminToken() })).body.data
+  const status = (c) => carts.find((x) => x.id === c.cartId)?.status
+  expect([status(live), status(offline), status(paused), status(due)]).toEqual(['LIVE', 'OFFLINE', 'PAUSED', 'ATTENTION'])
+
+  await signIn(page)
+  await page.goto('/restaurants')
+  await search(page, String(tag))
+  for (const [c, s] of [[live, 'LIVE'], [offline, 'OFFLINE'], [paused, 'PAUSED'], [due, 'ATTENTION']]) {
+    await expect(page.getByRole('row').filter({ hasText: c.cartName }), c.cartName).toContainText(s)
+  }
+})
+
+test('ADM-017 resuming a cart is refused while its vendor is disabled', async ({ page }) => {
+  const nv = await onboardVendor({ cartName: `QA-Resume ${Date.now() % 1e5}` })
+  await call('POST', `/admin/owners/${nv.userId}/disable`, { token: await adminToken() })
+  try {
+    await signIn(page)
+    await page.goto('/restaurants')
+    await search(page, nv.cartName)
+    await page.getByText(nv.cartName).first().click()
+    await page.getByRole('button', { name: 'Resume cart' }).click()
+    await page.getByRole('dialog').getByRole('button', { name: 'Resume', exact: true }).click()
+    await expect(page.getByText(/Enable the vendor first\./)).toBeVisible()
+    const carts = (await call('GET', '/admin/carts', { token: await adminToken() })).body.data
+    expect(carts.find((c) => c.id === nv.cartId).status).toBe('SUSPENDED')
+  } finally {
+    await call('POST', `/admin/owners/${nv.userId}/enable`, { token: await adminToken() })
+  }
+})
+
+test('ADM-018 the map gets each cart as [lat, lng] and draws pins', async ({ page }) => {
+  test.setTimeout(120_000)
+  const carts = (await call('GET', '/admin/carts', { token: await adminToken() })).body.data
+  const mine = carts.find((c) => c.id === v.cartId)
+  // onboardVendor puts the cart in Bengaluru; swapped it would be in the sea off Somalia.
+  expect([mine.lat, mine.lng]).toEqual([12.9716, 77.5946])
+  const outside = carts.filter((c) => c.lat != null && !(c.lat > 6 && c.lat < 37 && c.lng > 68 && c.lng < 98))
+  expect(outside.map((c) => `${c.name} ${c.lat},${c.lng}`)).toEqual([])
+
+  await signIn(page)
+  await expect(page.locator('.leaflet-container')).toBeVisible({ timeout: 60_000 })
+  await expect(page.locator('.leaflet-marker-icon, path.leaflet-interactive').first()).toBeVisible({ timeout: 30_000 })
+})
+
+test('ADM-019 Orders: status filter and cursor paging without duplicates', async ({ page }) => {
+  test.setTimeout(120_000)
+  const ids = new Set()
+  let cursor = ''
+  for (let i = 0; i < 3; i++) {
+    const q = `/admin/orders?status=SERVED&limit=20${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`
+    const r = (await call('GET', q, { token: await adminToken() })).body
+    for (const o of r.data) {
+      expect(o.status).toBe('SERVED')
+      expect(ids.has(o.id), `duplicate ${o.id}`).toBe(false)
+      ids.add(o.id)
+    }
+    if (!r.pagination.hasMore) break
+    cursor = r.pagination.nextCursor
+  }
+  expect(ids.size).toBeGreaterThan(0)
+
+  await signIn(page)
+  await page.goto('/orders')
+  const shown = page.getByText(/^Showing \d+ orders$/)
+  await page.getByRole('button', { name: 'Served', exact: true }).click()
+  await expect(page.getByRole('row').nth(1)).toBeVisible({ timeout: 30_000 })
+  const statusCol = () => page.getByRole('row').evaluateAll((rows) => rows.slice(1).map((r) => r.children[5]?.textContent))
+  await expect.poll(async () => [...new Set(await statusCol())]).toEqual(['SERVED'])
+  const first = await shown.textContent()
+  await page.mouse.wheel(0, 50000)
+  await expect(shown).not.toHaveText(first, { timeout: 30_000 })
+  expect([...new Set(await statusCol())]).toEqual(['SERVED'])
+  const keys = await page.getByRole('row').evaluateAll((rows) => rows.slice(1).map((r) => r.textContent))
+  expect(new Set(keys).size).toBe(keys.length)
+})
+
+test('ADM-021/022 Payments lists fee payments; Mark fee paid settles the bill and unlocks the cart', async ({ page }) => {
+  test.setTimeout(120_000)
+  const nv = await onboardVendor({ cartName: `QA-MarkPaid ${Date.now() % 1e5}` })
+  await paidOrder(nv)
+  await paidOrder(nv, 1)
+  backdate(nv.cartId)
+  const lock = (await call('GET', `/payments/payment-status/${nv.cartId}`, { token: nv.token })).body
+  expect(lock.isLocked).toBe(true)
+  expect(lock.totalPending).toBeGreaterThan(0)
+  expect((await customerOrder(nv.cartId, [{ menuItemId: nv.menu[0]._id, quantity: 1 }])).status).toBe(403)
+
+  await signIn(page)
+  await page.goto('/restaurants')
+  await search(page, nv.cartName)
+  await page.getByText(nv.cartName).first().click()
+  await page.getByRole('button', { name: 'Mark fee paid' }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Mark paid' }).click()
+  await expect(page.getByText(`Marked ₹${lock.totalPending} as paid.`)).toBeVisible()
+  expect((await call('GET', `/payments/payment-status/${nv.cartId}`, { token: nv.token })).body.isLocked).toBe(false)
+  expect((await customerOrder(nv.cartId, [{ menuItemId: nv.menu[0]._id, quantity: 1 }])).status).toBe(201)
+
+  await page.goto('/payments')
+  await search(page, nv.cartName)
+  const row = page.getByRole('row').filter({ hasText: nv.cartName })
+  await expect(row).toContainText('VERIFIED')
+  await expect(row).toContainText('MANUAL')
+  await expect(row).toContainText(`₹${lock.totalPending}`)
+})
+
+test('ADM-023 Collections lists an overdue cart and logs a reminder', async ({ page, context }) => {
+  test.setTimeout(120_000)
+  const nv = await onboardVendor({ cartName: `QA-Overdue ${Date.now() % 1e5}` })
+  await paidOrder(nv)
+  backdate(nv.cartId, 3)
+  // The reminder opens WhatsApp in a new tab; keep it inside the test.
+  await context.route(/wa\.me|whatsapp/, (r) => r.fulfill({ body: 'whatsapp' }))
+  await signIn(page)
+  await page.goto('/collections')
+  await search(page, nv.cartName)
+  const row = page.getByRole('row').filter({ hasText: nv.cartName })
+  await expect(row).toBeVisible({ timeout: 60_000 })
+  const popup = page.waitForEvent('popup')
+  await row.getByRole('button', { name: /WhatsApp/ }).click()
+  await (await popup).close()
+  await expect(row.getByText('Opened')).toBeVisible()
+  await expect.poll(async () => (await actionsLog('SEND_REMINDER')).some((a) => a.target === nv.cartName)).toBe(true)
+})
+
+test('ADM-025/026 Moderation: counts match the queue; remove, restore and suspend the poster', async ({ page }) => {
+  test.setTimeout(180_000)
+  const token = await adminToken()
+  const counts = (await call('GET', '/admin/moderation/counts', { token })).body.data
+  const reported = (await call('GET', '/admin/moderation/queue?status=REPORTED&kind=confession&limit=100', { token })).body.data.items
+  expect(counts.reported).toBe(reported.length)
+
+  const o = await customerOrder(v.cartId, [{ menuItemId: v.menu[0]._id, quantity: 1 }])
+  const text = `QA moderation ${Date.now()}: the chai here fixes every bad day`
+  const posted = await confess(o.key, text)
+  expect(posted.status, posted.body.message).toBe(201)
+  const feed = async () => (await call('GET', '/confessions/feed', { headers: { 'X-Gully-Order': o.key } })).body.data.items
+  expect((await feed()).some((c) => c.text === text), 'post is in the feed').toBe(true)
+  // Moderation acts on the database id, which only admins see.
+  const published = (await call('GET', '/admin/moderation/queue?status=PUBLISHED&kind=confession&limit=100', { token })).body.data.items
+  const id = published.find((c) => c.text === text)?.id
+  expect(id, 'admin finds the post').toBeTruthy()
+  const inFeed = async () => (await feed()).some((c) => c.text === text)
+
+  await signIn(page)
+  await page.goto('/moderation')
+  await expect(page.getByRole('button', { name: counts.reported ? `Reported posts (${counts.reported})` : 'Reported posts', exact: true })).toBeVisible()
+
+  // Remove (as a published post has no queue of its own), then act on it from the dashboard.
+  expect((await call('POST', `/admin/moderation/confession/${id}/remove`, { token, body: { reason: 'QA remove' } })).status).toBe(200)
+  expect(await inFeed()).toBe(false)
+  await page.getByRole('button', { name: 'Removed', exact: true }).click()
+  await page.getByRole('row').filter({ hasText: text.slice(0, 30) }).first().click()
+  const panel = page.getByLabel('Moderation item')
+  const reason = panel.getByPlaceholder('Reason (required, saved in the log)')
+
+  await reason.fill('QA suspend')
+  await panel.getByRole('combobox').selectOption('1')
+  await panel.getByRole('button', { name: 'Suspend', exact: true }).click()
+  await expect(panel.getByRole('button', { name: 'Lift suspension' })).toBeVisible()
+  expect((await confess(o.key, 'QA while suspended this should not be allowed at all')).status).toBe(403)
+  await reason.fill('QA lift')
+  await panel.getByRole('button', { name: 'Lift suspension' }).click()
+  await expect(panel.getByRole('button', { name: 'Lift suspension' })).toHaveCount(0)
+
+  await reason.fill('QA restore')
+  await panel.getByRole('button', { name: /Restore/ }).click()
+  await expect.poll(inFeed).toBe(true)
+  const log = await actionsLog()
+  for (const a of ['REMOVE_CONFESSION', 'RESTORE_CONFESSION', 'SUSPEND_POSTER', 'UNSUSPEND_POSTER']) {
+    expect(log.some((x) => x.action === a), a).toBe(true)
+  }
+})
+
+test('ADM-027 the Actions page shows each admin action with who and when', async ({ page }) => {
+  const nv = await onboardVendor({ cartName: `QA-Log ${Date.now() % 1e5}`, open: false })
+  await call('POST', `/admin/vendors/${nv.vendorId}/reset-pin`, { token: await adminToken() })
+  await signIn(page)
+  await page.goto('/actions')
+  const row = page.getByRole('row').filter({ hasText: nv.vendorId }).first()
+  await expect(row).toContainText('Reset PIN')
+  await expect(row).toContainText('QA Admin')
+  await expect(row).toContainText(/\d{1,2}:\d{2}/)
+  await page.getByLabel('Action').selectOption('RESET_PIN')
+  await expect(row).toBeVisible()
+  await expect(page.getByRole('row').filter({ hasText: 'Disabled vendor' })).toHaveCount(0)
+})
+
+test('ADM-028 Feedback lists ratings and text from served orders', async ({ page }) => {
+  const o = await paidOrder(v)
+  const id = o.body.data._id
+  await call('PUT', `/orders/serve-order/${id}`, { token: v.token })
+  const text = `QA admin feedback ${Date.now()}`
+  const r = await call('PUT', `/orders/submit-feedback/${id}`, { headers: { 'X-Gully-Order': o.key }, body: { rating: 3, feedback: text } })
+  expect(r.status).toBe(200)
+  await signIn(page)
+  await page.goto('/feedback')
+  const item = page.locator('div.border-b').filter({ hasText: text })
+  await expect(item).toBeVisible()
+  await expect(item.getByLabel('3 of 5 stars')).toBeVisible()
+  await expect(item).toContainText(`Order #${o.body.data.orderNumber}`)
+})
+
+test('ADM-036 a new platform fee applies to new orders only', async ({ page }) => {
+  const token = await adminToken()
+  const original = (await call('GET', '/admin/settings', { token })).body.data.platformFee
+  const old = await customerOrder(v.cartId, [{ menuItemId: v.menu[1]._id, quantity: 1 }])
+  const next = original === 5 ? 6 : 5
+  try {
+    await signIn(page)
+    await page.goto('/collections')
+    await page.getByLabel('Platform fee in rupees').fill(String(next))
+    await page.getByRole('button', { name: 'Save', exact: true }).click()
+    await page.getByRole('dialog').getByRole('button', { name: 'Change fee' }).click()
+    await expect(page.getByText('Saved. New orders now pay this fee.')).toBeVisible()
+
+    const fresh = await customerOrder(v.cartId, [{ menuItemId: v.menu[1]._id, quantity: 1 }])
+    expect(fresh.body.data.platformFee).toBe(next)
+    expect(fresh.body.data.totalPrice).toBe(30 + next)
+    // The order placed before keeps its fee, even after an edit.
+    const edited = await call('PUT', `/orders/update-order/${old.body.data._id}`, {
+      headers: { 'X-Gully-Order': old.key }, body: { orderItems: [{ menuItemId: v.menu[1]._id, quantity: 2 }] },
+    })
+    expect(edited.body.data.platformFee).toBe(original)
+    expect(edited.body.data.totalPrice).toBe(60 + original)
+    expect((await call('POST', '/admin/settings', { token, body: { platformFee: 101 } })).status).toBe(400)
+    expect((await call('POST', '/admin/settings', { token, body: { platformFee: 2.5 } })).status).toBe(400)
+    expect((await actionsLog('SET_PLATFORM_FEE'))[0].details).toMatchObject({ from: original, to: next })
+  } finally {
+    await call('POST', '/admin/settings', { token, body: { platformFee: original } })
+  }
 })

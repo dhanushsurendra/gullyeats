@@ -197,7 +197,7 @@ final fakeBackend = MockClient((request) async {
   if (request.method != 'GET') return _json({'message': 'Not available in tests'}, 400);
   if (has('/carts/get-all-carts/')) return _json({'carts': [cartJson, _secondCart]});
   if (has('/carts/sales-insights/')) return _json({'data': salesJson});
-  if (has('/carts/get-menu-items/')) return _json({'data': menuJson});
+  if (has('/carts/get-menu-items/')) return _json({'data': menuJson, 'platformFee': 2});
   if (has('/carts/food-names')) {
     return _json({
       'data': [
