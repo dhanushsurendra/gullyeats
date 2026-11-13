@@ -33,13 +33,12 @@ const chg = (v, invert = false, suffix = '%') =>
   v == null
     ? {}
     : { change: signed(v, suffix), tone: v >= 0 !== invert ? 'up' : 'down' }
-const HEALTH = [
-  ['api', 'API'],
-  ['database', 'Database'],
-  ['payments', 'Payments'],
-  ['orderProcessing', 'Order Processing'],
-  ['websocket', 'WebSocket'],
-]
+// Platform Health row states (backend utils/platformHealth.js) as badges.
+const HEALTH_BADGE = {
+  ok: ['ACTIVE', 'OK'],
+  warn: ['PENDING', 'Check'],
+  bad: ['ATTENTION', 'Down'],
+}
 
 export default function Dashboard() {
   const range = useSelector((s) => s.admin.range)
@@ -50,7 +49,9 @@ export default function Dashboard() {
   const o = ov.data,
     k = o?.kpis
   const sp = (f) => (o?.spark || []).map((p) => ({ v: f(p) }))
-  const allOk = o && Object.values(o.health).every(Boolean)
+  // An old backend sends health as an object of booleans: show no rows then.
+  const health = Array.isArray(o?.health) ? o.health : []
+  const allOk = o && health.every((h) => h.state === 'ok')
   const hour = new Date().getHours()
   const greet =
     hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -164,6 +165,19 @@ export default function Dashboard() {
       note: `overdue fees · ${num(k.pendingPayments.carts)} carts`,
     },
 
+    // Every paid/served order whose fee the vendor hasn't paid yet, due or not.
+    k.pendingPayments.all && {
+      label: 'Unpaid Fees',
+      to: '/collections',
+      icon: IndianRupee,
+      value: inr(k.pendingPayments.all.amount),
+      change: `${num(k.pendingPayments.all.count)} orders`,
+      tone: 'neutral',
+      note: `${inr(k.pendingPayments.amount)} overdue · ${inr(
+        k.pendingPayments.all.amount - k.pendingPayments.amount,
+      )} not yet due`,
+    },
+
     {
       label: 'Rejected Payments',
       to: '/payments',
@@ -204,7 +218,7 @@ export default function Dashboard() {
       ...chg(k.cancelRate.change, true, ' pp'),
       note: 'vs previous period',
     },
-  ]
+  ].filter(Boolean)
   const live = o && [
     ['Live Restaurants', o.live.liveCarts, 'text-brand'],
     ['Orders Preparing', o.live.preparing],
@@ -278,19 +292,19 @@ export default function Dashboard() {
         <div>
           <Card>
             <CardHeader title='Platform Health' />
-            {HEALTH.map(([key, label]) => {
-              const ok = o?.health[key]
+            {health.map(({ key, label, state, detail }) => {
+              const [status, word] = HEALTH_BADGE[state] || HEALTH_BADGE.warn
               return (
                 <div
                   key={key}
-                  className='flex items-center justify-between border-b border-line
+                  className='flex items-center justify-between gap-3 border-b border-line
                    px-5 py-3 last:border-0'
                 >
-                  <span className='font-medium'>{label}</span>
-                  <StatusBadge
-                    status={ok ? 'ACTIVE' : 'ATTENTION'}
-                    label={ok ? 'Operational' : 'Down'}
-                  />
+                  <div className='min-w-0'>
+                    <div className='font-medium'>{label}</div>
+                    <div className='text-[12px] text-neutral-500'>{detail}</div>
+                  </div>
+                  <StatusBadge status={status} label={word} />
                 </div>
               )
             })}

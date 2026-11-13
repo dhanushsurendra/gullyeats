@@ -11,6 +11,7 @@ const { overdueByCart } = require('../utils/overdueFees')
 const { logAction } = require('../utils/adminLog')
 const AdminAction = require('../models/AdminAction')
 const { getPlatformFee, setPlatformFee, MAX_FEE } = require('../utils/platformFee')
+const { platformHealth } = require('../utils/platformHealth')
 
 const TZ = 'Asia/Kolkata'
 const DAY = 864e5
@@ -750,12 +751,15 @@ async function buildSeries(period) {
 
 // Totals of the overdue platform fees vendors owe us (see utils/overdueFees).
 async function unpaidFees() {
-  const rows = await overdueByCart()
-  return {
+  const total = (rows) => ({
     amount: rows.reduce((t, r) => t + r.amount, 0),
     count: rows.reduce((t, r) => t + r.orders, 0),
     carts: rows.length,
-  }
+  })
+  const now = new Date()
+  const [overdue, all] = await Promise.all([overdueByCart(now), overdueByCart(now, { all: true })])
+  // `all` adds fees not due yet: today's orders, and yesterday's before the 2am lock.
+  return { ...total(overdue), all: total(all) }
 }
 
 // ============================================================
@@ -1026,7 +1030,7 @@ exports.overview = asyncHandler(async (req, res) => {
   } // ========================================================
   // DATABASE HEALTH
   // ========================================================
-  const db = mongoose.connection.readyState === 1 // ========================================================
+  const health = await platformHealth(req.io) // ========================================================
   // RESPONSE
   // ========================================================
   res.json({
@@ -1158,15 +1162,7 @@ exports.overview = asyncHandler(async (req, res) => {
       // ====================================================
       // HEALTH
       // ====================================================
-      health: {
-        api: true,
-        database: db,
-        payments: !!(
-          process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET
-        ),
-        orderProcessing: db,
-        websocket: !!req.io,
-      },
+      health,
     },
   })
 })

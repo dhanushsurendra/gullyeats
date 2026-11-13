@@ -18,11 +18,12 @@ const overdueBefore = (now = new Date()) =>
  * passed; minus credits (billed orders cancelled since, not yet credited).
  * Rows: { _id: cartId, amount, orders, oldest } (oldest = earliest unpaid order's billing time).
  */
-async function overdueByCart(now = new Date()) {
+// With { all: true }, fees not due yet (today's, or yesterday's before the lock) count too.
+async function overdueByCart(now = new Date(), { all = false } = {}) {
   // shortcut: loads every billed order id; move to a $lookup on an indexed Payment.orderIds once there are ~100k+ billed orders.
   const billed = await Payment.distinct('orderIds', { status: 'VERIFIED' })
   const [owed, credits] = await Promise.all([
-    owedByCart(billed, now),
+    owedByCart(billed, all ? now : overdueBefore(now)),
     Order.aggregate([
       { $match: { status: 'CANCELLED', feeCredited: { $ne: true }, _id: { $in: billed } } },
       { $group: { _id: '$cartId', amount: { $sum: '$platformFee' } } },
@@ -35,7 +36,7 @@ async function overdueByCart(now = new Date()) {
     .sort((a, b) => b.amount - a.amount || String(a._id).localeCompare(String(b._id)))
 }
 
-function owedByCart(billed, now) {
+function owedByCart(billed, before) {
   return Order.aggregate([
     {
       $match: {
@@ -47,7 +48,7 @@ function owedByCart(billed, now) {
       },
     },
     { $addFields: { billedAt: { $ifNull: ['$paidAt', '$orderDate', '$createdAt'] } } },
-    { $match: { billedAt: { $lt: overdueBefore(now) } } },
+    { $match: { billedAt: { $lt: before } } },
     {
       $group: {
         _id: '$cartId',

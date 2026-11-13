@@ -121,7 +121,10 @@ test('admin GMV, fees and average order count only paid and served orders', asyn
   assert.equal(find(r.body, 'orderGmvRange'), 164)
   assert.equal(find(find(r.body, 'aov'), 'value'), 82)
   // Overdue fees: today's orders aren't due until the day ends.
-  assert.deepEqual(r.body.data.kpis.pendingPayments, { amount: 0, count: 0, carts: 0 })
+  // They still count as unpaid ("all"), just not overdue.
+  assert.deepEqual(r.body.data.kpis.pendingPayments, {
+    amount: 0, count: 0, carts: 0, all: { amount: 4, count: 2, carts: 1 },
+  })
 
   // A SERVED order paid two days ago is overdue, unless a verified payment covers it.
   const Payment = require('../models/Payment')
@@ -136,7 +139,10 @@ test('admin GMV, fees and average order count only paid and served orders', asyn
     verifiedAt: now, createdAt: now, billingDate: old,
   })
   const r2 = await call(admin.overview, { query: { range: '30d' }, user: { role: 'admin' } })
-  assert.deepEqual(r2.body.data.kpis.pendingPayments, { amount: 2, count: 1, carts: 1 })
+  // Unpaid in all: that overdue ₹2 plus today's ₹4.
+  assert.deepEqual(r2.body.data.kpis.pendingPayments, {
+    amount: 2, count: 1, carts: 1, all: { amount: 6, count: 3, carts: 1 },
+  })
   assert.equal(r2.body.data.kpis.collectionRate, 50)
 
   // The chart's AOV also divides by paid orders only, and weeks are whole.

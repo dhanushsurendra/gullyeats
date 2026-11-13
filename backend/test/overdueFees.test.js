@@ -37,3 +37,14 @@ test('overdue counts orders paid then edited back to PENDING, minus credits', as
   assert.strictEqual(row.orders, 2)
   assert.strictEqual(row.amount, 2) // 2 orders x ₹2, minus the ₹2 credit
 })
+
+test("tonight's served orders aren't overdue yet, but count with { all: true }", async () => {
+  const cartId = new mongoose.Types.ObjectId()
+  const now = new Date()
+  await Order.collection.insertOne({
+    _id: new mongoose.Types.ObjectId(), orderNumber: 1, cartId, status: 'SERVED', platformFee: 3, paidAt: now, createdAt: now,
+  })
+  const mine = (rows) => rows.find((r) => String(r._id) === String(cartId))
+  assert.strictEqual(mine(await overdueByCart(new Date(+now + 1000))), undefined)
+  assert.strictEqual(mine(await overdueByCart(new Date(+now + 1000), { all: true })).amount, 3)
+})

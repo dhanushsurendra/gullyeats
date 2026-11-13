@@ -63,10 +63,14 @@ async function sendFeeReminders(now = new Date()) {
 }
 
 // shortcut: an in-process timer, so a sleeping host (Render free tier) skips reminders while asleep; use a cron job pinging an endpoint if that matters.
+let lastRun = null // shown on the admin Platform Health
 function startFeeReminders() {
-  const run = () => sendFeeReminders().catch((e) => console.error('Fee reminders failed:', e.message))
+  const run = () =>
+    sendFeeReminders()
+      .then(() => (lastRun = new Date()))
+      .catch((e) => console.error('Fee reminders failed:', e.message))
   setInterval(run, 10 * 60 * 1000).unref()
   run()
 }
 
-module.exports = { sendFeeReminders, startFeeReminders }
+module.exports = { sendFeeReminders, startFeeReminders, lastRun: () => lastRun }
