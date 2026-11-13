@@ -51,7 +51,7 @@ Flutter work uses the official `dart-flutter` Claude Code plugin (`claude plugin
 Every client points at the deployed backend by default, so check these before testing locally:
 - `frontend/lib/core/constants/api_constants.dart` and `ordering/lib/core/constants/api_constants.dart` (`baseUrl`)
 - `customer-app/src/constants/api.js` (`API_BASE_URL`, overridable with `VITE_API_BASE_URL`; the Socket.IO URL comes from stripping `/api` off it)
-- `gullyeats-admin/.env` (`VITE_API_URL`, `VITE_ADMIN_PATH`, `VITE_CART_PATH`; see `.env.example`)
+- `gullyeats-admin/.env` (`VITE_API_URL`, `VITE_ADMIN_PATH`, `VITE_CART_PATH`; see `.env.example`). `VITE_API_URL` is used only by `npm run dev`: a production build calls its own site, and `gullyeats-admin/vercel.json` passes `/api/*` on to the Render backend, so the admin login cookie is first-party (browsers that block third-party cookies otherwise bounce the admin back to login)
 
 ## Backend architecture
 

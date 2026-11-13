@@ -452,7 +452,7 @@ export function SettingsPage() {
         <dt className='text-neutral-500'>Role</dt>
         <dd>{user?.role}</dd>
         <dt className='text-neutral-500'>API</dt>
-        <dd>{API_BASE}</dd>
+        <dd>{API_BASE || `${window.location.origin}/api (passed on to the backend)`}</dd>
         <dt className='text-neutral-500'>Auth</dt>
         <dd>Login cookie (httpOnly, 7 days)</dd>
       </dl>

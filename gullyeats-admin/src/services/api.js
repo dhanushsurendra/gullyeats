@@ -1,5 +1,8 @@
 // Vite only exposes variables starting with VITE_ (see .env.example).
-const BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+// A production build calls its own site: vercel.json passes /api/* on to the
+// backend, so the login cookie is first-party and browsers that block
+// third-party cookies don't log the admin straight back out.
+const BASE = import.meta.env.DEV ? import.meta.env.VITE_API_URL || 'http://localhost:5000' : ''
 
 const ADMIN = import.meta.env.VITE_ADMIN_PATH || '/api/admin'
 
