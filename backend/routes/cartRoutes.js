@@ -12,6 +12,7 @@ const {
   getAllStaff,
   deleteStaff,
   getMenuItems,
+  getPhotoCredits,
   addMenuItem,
   updateMenuItem,
   deleteMenuItem,
@@ -72,6 +73,8 @@ router.get('/sales-insights/:cartId', auth, getSalesDashboard)
 router.get('/get-menu-items/:cartId', getMenuItems)
 
 router.get('/food-names', auth, getFoodNames)
+
+router.get('/photo-credits', getPhotoCredits)
 
 router.put('/update-menu-item/:cartId', auth, updateMenuItem)
 

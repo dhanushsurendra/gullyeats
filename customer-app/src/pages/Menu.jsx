@@ -247,6 +247,9 @@ export default function Menu() {
             />
           )}
         </div>
+        <button type='button' onClick={() => navigate('/photo-credits')} className='mx-auto mt-6 block text-xs text-grey-500 underline underline-offset-2'>
+          Photo credits
+        </button>
       </main>
 
       {isAddMore ? (

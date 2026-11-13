@@ -123,9 +123,15 @@ async function uploadDishImage(res, name, imageId) {
 /** Stores a downloaded photo as a dish's default in S3 and returns its key. */
 async function saveDishPhoto(raw, name) {
   // Same size as every default photo: 480x400 (the menu thumbnail's shape), ~30 KB.
+  // The crop follows the most striking part (the food), not the middle: a dish
+  // off to one side of a wide photo would otherwise be cut out of the frame.
   let body
   try {
-    body = await sharp(raw).resize(480, 400, { fit: 'cover' }).jpeg({ quality: 72, progressive: true }).toBuffer()
+    body = await sharp(raw)
+      .rotate() // honour the camera's orientation tag before cropping
+      .resize(480, 400, { fit: 'cover', position: sharp.strategy.attention })
+      .jpeg({ quality: 72, progressive: true })
+      .toBuffer()
   } catch {
     throw Object.assign(new Error('Could not read the image'), { unreadable: true })
   }

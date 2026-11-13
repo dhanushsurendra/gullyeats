@@ -14,6 +14,7 @@ import ConfessionNew from '../pages/ConfessionNew'
 import ConfessionDetail from '../pages/ConfessionDetail'
 import Play from '../pages/Play'
 import HowToPlay from '../pages/HowToPlay'
+import PhotoCredits from '../pages/PhotoCredits'
 
 // `:orderNumber` holds the order's _id, not its token number.
 export default function AppRoutes() {
@@ -34,6 +35,7 @@ export default function AppRoutes() {
         <Route path='/c/:cartId/order/:orderNumber/thank-you' element={<ThankYou />} />
         <Route path='/c/:cartId/order/:orderNumber/play/:game' element={<Play />} />
         <Route path='/play/how-to-play' element={<HowToPlay />} />
+        <Route path='/photo-credits' element={<PhotoCredits />} />
         {/* GullyPulse: one feed for every cart, so no post is tied to a cart. */}
         <Route path='/confessions' element={<Confessions />} />
         <Route path='/confessions/new' element={<ConfessionNew />} />

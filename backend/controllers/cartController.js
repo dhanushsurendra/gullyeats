@@ -311,6 +311,16 @@ exports.getFoodNames = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, data: names })
 })
 
+// GET /carts/photo-credits: who took the default dish photos (CC BY/BY-SA need the credit shown).
+// shortcut: read once at startup; photos added by fill-dish-images.js show after a restart or deploy.
+const photoCredits = Object.entries(require('../data/dish_image_credits.json'))
+  .map(([dish, c]) => ({ dish, creator: c.creator || null, source: c.source, license: c.license, page: c.page }))
+  .sort((a, b) => a.dish.localeCompare(b.dish))
+exports.getPhotoCredits = (req, res) => {
+  res.set('Cache-Control', 'public, max-age=86400')
+  res.json({ success: true, data: photoCredits })
+}
+
 exports.getMenuItems = asyncHandler(async (req, res) => {
   const cartId = req.params.cartId
 
