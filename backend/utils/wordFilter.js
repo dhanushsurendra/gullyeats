@@ -291,4 +291,4 @@ function check(text) {
   return { verdict, matches, reason }
 }
 
-module.exports = { check, _internal: { base, phon, skeleton, distance, tokenize } }
+module.exports = { check }

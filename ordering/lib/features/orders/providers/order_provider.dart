@@ -557,36 +557,6 @@ class OrderProvider with ChangeNotifier {
   }
 
   // ---------------------------------------------------------------------------
-  // DELETE/UNDO STATE CLEANUP
-  // ---------------------------------------------------------------------------
-
-  void clearLastRemovedOrder() {
-    _lastRemovedIndex = null;
-  }
-
-  // ---------------------------------------------------------------------------
-  // SEARCH
-  // ---------------------------------------------------------------------------
-
-  List<OrderModel> searchOrders(String query) {
-    if (query.isEmpty) {
-      return orders;
-    }
-
-    final q = query.toLowerCase();
-
-    return orders.where((order) {
-      final items = order.orderItems
-          .map((item) => '${item.name} ${item.displayName}'.toLowerCase())
-          .join(" ");
-
-      final orderNumber = order.orderNumber.toLowerCase();
-
-      return items.contains(q) || orderNumber.contains(q);
-    }).toList();
-  }
-
-  // ---------------------------------------------------------------------------
   // MENU
   // ---------------------------------------------------------------------------
 

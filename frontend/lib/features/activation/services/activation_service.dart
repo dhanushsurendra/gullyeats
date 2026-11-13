@@ -25,24 +25,4 @@ class CartActivatedService {
       );
     }
   }
-
-  Future<String> generateCartId(String? token, String cartId) async {
-    final response = await http.post(
-      Uri.parse("${ApiConstants.carts}/generate-cart-id/$cartId"),
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
-      },
-    );
-
-    final data = response.body.isNotEmpty ? jsonDecode(response.body) : {};
-    if (response.statusCode == 200) {
-      return data['generatedCartId'];
-    } else {
-      throw ApiException(
-        data['message'] ?? "Failed to generate cart ID",
-        response.statusCode,
-      );
-    }
-  }
 }

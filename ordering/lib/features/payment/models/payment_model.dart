@@ -42,8 +42,6 @@ class PaymentModel {
 
   bool get isPending => status == 'PENDING';
   bool get isVerified => status == 'VERIFIED';
-  bool get isRejected => status == 'REJECTED';
-  bool get isExpired => status == 'EXPIRED';
 
   factory PaymentModel.fromJson(Map<String, dynamic> json) {
     return PaymentModel(

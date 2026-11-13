@@ -106,14 +106,6 @@ Future<void> _typeOtp(WidgetTester tester, String code) async {
   }
 }
 
-/// Back to the sign-up screen from the OTP screen.
-Future<void> _backToSignUp(WidgetTester tester) async {
-  for (var i = 0; i < 3 && find.text('SEND OTP').hitTestable().evaluate().isEmpty; i++) {
-    await tester.binding.handlePopRoute();
-    await _idle(tester);
-  }
-}
-
 Future<void> _signUpWith(WidgetTester tester, String phone) async {
   await _waitFor(tester, find.text('SEND OTP'));
   await _idle(tester);

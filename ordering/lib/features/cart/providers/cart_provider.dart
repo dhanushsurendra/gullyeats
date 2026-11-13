@@ -22,12 +22,6 @@ class CartProvider with ChangeNotifier {
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
-  String? _cartGeneratedId;
-  String? get cartGeneratedId => _cartGeneratedId;
-
-  String? _cartName;
-  String? get cartName => _cartName;
-
   CartModel? _selectedCart;
   CartModel? get selectedCart => _selectedCart;
 
@@ -166,30 +160,6 @@ class CartProvider with ChangeNotifier {
     }
   }
 
-  CartModel? findById(String id) {
-    try {
-      return _carts.firstWhere((cart) => cart.id == id);
-    } catch (_) {
-      return null;
-    }
-  }
-
-  Future<void> loadCartDetails() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    final cartString = prefs.getString("cart");
-    if (cartString == null) return;
-
-    try {
-      final cartJson = json.decode(cartString) as Map<String, dynamic>;
-      _cartGeneratedId = cartJson["cartId"] as String?;
-      _cartName = cartJson["cartName"] as String?;
-    } catch (e) {
-      _cartGeneratedId = null;
-    }
-    notifyListeners();
-  }
-
   void _replaceCartInList(CartModel updatedCart) {
     final index = _carts.indexWhere((cart) => cart.id == updatedCart.id);
 
@@ -214,8 +184,6 @@ class CartProvider with ChangeNotifier {
     _cartId = null;
     _sales = null;
     _isLoading = false;
-    _cartGeneratedId = null;
-    _cartName = null;
     _selectedCart = null;
 
     // Clear persisted cart state

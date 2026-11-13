@@ -201,7 +201,6 @@ export function createGame(seed, { width = WORLD_WIDTH, height = 640 } = {}) {
   }
 }
 
-export const gravityOf = (game) => DIRS[game.g]
 export const surgeOn = (game) => game.t >= SURGE_AT
 
 const emit = (game, type, data) => game.events.push({ type, ...data })

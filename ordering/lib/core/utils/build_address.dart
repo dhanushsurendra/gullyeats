@@ -16,8 +16,3 @@ String buildAddress(Placemark p) {
       .where((part) => part != null && part.trim().isNotEmpty)
       .join(', ');
 }
-
-/// Joins the non-empty [parts] with [separator], skipping nulls, so a
-/// partial (or failed) geocoding result never prints "null".
-String joinAddressParts(List<String?> parts, {String separator = ', '}) =>
-    parts.where((part) => part != null && part.trim().isNotEmpty).join(separator);
