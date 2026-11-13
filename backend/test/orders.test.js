@@ -64,6 +64,55 @@ test('customer order uses server prices and is always PENDING QR', async () => {
   assert.strictEqual(o.orderItems[0].price, 40)
 })
 
+test('a phone number must be a 10-digit mobile number; +91 is dropped', async () => {
+  setup()
+  for (const bad of ['98765', '98765432101', '1234567890']) {
+    const r = await call(c.createOrder, { body: { cartId, orderItems: [line(dosa, 1)], phoneNumber: bad } })
+    assert.strictEqual(r.status, 400, bad)
+  }
+  const r = await call(c.createOrder, {
+    body: { cartId, orderItems: [line(dosa, 1)], phoneNumber: '+91 98765 43210' },
+  })
+  assert.strictEqual(r.status, 201)
+  assert.strictEqual(r.body.data.phoneNumber, '9876543210')
+})
+
+test("today's orders keep unfinished ones from the last 12 hours across midnight", async () => {
+  const at = (iso) => new Date(iso)
+  const orders = [
+    { status: 'PENDING', createdAt: at('2026-11-13T23:59:00+05:30') }, // last night, unpaid: shown
+    { status: 'PAID', createdAt: at('2026-11-13T22:00:00+05:30') }, // last night, unserved: shown
+    { status: 'SERVED', createdAt: at('2026-11-13T23:30:00+05:30') }, // last night, done: hidden
+    { status: 'PENDING', createdAt: at('2026-11-13T11:00:00+05:30') }, // over 12h old: hidden
+    { status: 'SERVED', createdAt: at('2026-11-14T00:00:30+05:30') }, // today: shown
+  ]
+  // A tiny matcher for the query's shape: { cartId, $or: [{createdAt}, {status, createdAt}] }.
+  const inRange = (d, r) => (!r.$gte || d >= r.$gte) && (!r.$lte || d <= r.$lte)
+  const matches = (o, f) => (!f.status || f.status.$in.includes(o.status)) && inRange(o.createdAt, f.createdAt)
+  let shown
+  stub(Cart, 'findById', () => q({ _id: cartId, userId: ownerId }))
+  stub(Order, 'find', (filter) => {
+    shown = orders.filter((o) => filter.$or.some((f) => matches(o, f)))
+    return { sort: async () => shown }
+  })
+  const RealDate = Date
+  global.Date = class extends RealDate {
+    constructor(...a) {
+      super(...(a.length ? a : ['2026-11-14T00:01:00+05:30']))
+    }
+  }
+  try {
+    const r = await call(c.getOrdersForToday, { params: { cartId }, user: owner })
+    assert.strictEqual(r.status, 200)
+  } finally {
+    global.Date = RealDate
+  }
+  assert.deepStrictEqual(
+    shown.map((o) => o.status),
+    ['PENDING', 'PAID', 'SERVED'],
+  )
+})
+
 test('customers cannot order from a closed cart', async () => {
   setup({ isOpen: false })
   const r = await call(c.createOrder, { body: { cartId, orderItems: [line(dosa, 1)] } })

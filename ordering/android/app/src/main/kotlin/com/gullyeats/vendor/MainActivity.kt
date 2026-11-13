@@ -32,4 +32,11 @@ class MainActivity : FlutterActivity() {
             )
         }
     }
+
+    // Opening the app shows every order and the fee banner, so its pushes in
+    // the tray are spent: clear them all, not just the one that was tapped.
+    override fun onResume() {
+        super.onResume()
+        getSystemService(NotificationManager::class.java).cancelAll()
+    }
 }

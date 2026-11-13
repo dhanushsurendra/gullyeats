@@ -3,6 +3,7 @@ import { useDispatch } from 'react-redux'
 import { RiArrowRightSLine, RiCheckboxCircleFill, RiPhoneLine } from 'react-icons/ri'
 
 import { setPhoneNumber } from '../store/cartSlice'
+import { nextPhone, phoneError } from '../utils/phone'
 import { linkPhone } from '../utils/play'
 
 /*
@@ -17,11 +18,12 @@ export default function SavePlayer({ orderKey, compact = false, saved = false, o
   const [phone, setPhone] = useState('')
   const [state, setState] = useState(saved ? 'saved' : 'idle') // idle | saving | saved
   const [error, setError] = useState('')
-  const invalid = phone.length > 0 && !/^[6-9]\d{9}$/.test(phone)
+  const problem = phoneError(phone)
+  const invalid = Boolean(problem)
 
   const save = async (e) => {
     e.preventDefault()
-    if (!/^[6-9]\d{9}$/.test(phone)) return setError('Enter a valid 10-digit mobile number.')
+    if (!phone || invalid) return setError(problem || 'Enter a valid 10-digit mobile number.')
     setState('saving')
     setError('')
     try {
@@ -85,8 +87,11 @@ export default function SavePlayer({ orderKey, compact = false, saved = false, o
             inputMode='numeric'
             autoComplete='tel-national'
             value={phone}
+            aria-invalid={invalid}
             onChange={(e) => {
-              setPhone(e.target.value.replace(/\D/g, '').slice(-10))
+              const next = nextPhone(e.target.value)
+              if (next === null) return // no 11th digit
+              setPhone(next)
               setError('')
             }}
             placeholder='98765 43210'
@@ -95,15 +100,15 @@ export default function SavePlayer({ orderKey, compact = false, saved = false, o
         </div>
         <button
           type='submit'
-          disabled={state === 'saving' || phone.length !== 10}
+          disabled={state === 'saving' || phone.length !== 10 || invalid}
           className='h-11 shrink-0 rounded-xl bg-[#7df9ff] px-4 text-sm font-bold text-[#1c0b33] transition active:scale-95 disabled:opacity-40'
         >
           {state === 'saving' ? 'Saving…' : 'Save'}
         </button>
       </div>
-      {error && (
+      {(error || problem) && (
         <p role='alert' className='mt-2 text-xs text-[#ff6b6b]'>
-          {error}
+          {error || problem}
         </p>
       )}
     </form>

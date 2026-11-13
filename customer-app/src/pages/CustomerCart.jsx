@@ -8,6 +8,7 @@ import { BottomBar, Button, Card, Page, Row, StatusScreen, Stepper, TopBar, VegM
 import { api } from '../constants/api'
 import { addItem, clearCart, removeItem, rememberOrder, setCartDetails, setPhoneNumber } from '../store/cartSlice'
 import { itemCount, itemsTotal, rupees } from '../utils/format'
+import { nextPhone, phoneError } from '../utils/phone'
 
 // The open state saved from the menu goes stale when the vendor closes the
 // cart meanwhile, so the cart page asks again. A failed check keeps what we have.
@@ -40,7 +41,8 @@ export default function CustomerCart() {
   const isOpen = cart?._id === cartId && cart.isOpen && cart.isActive !== false
   // The server's current fee, sent with the cart (it sets the real one on the order).
   const fee = Number(cart?._id === cartId && cart.platformFee) || 0
-  const phoneInvalid = phone.length > 0 && !/^[6-9]\d{9}$/.test(phone)
+  const phoneProblem = phoneError(phone)
+  const phoneInvalid = Boolean(phoneProblem)
 
   const toMenu = () => navigate(`/c/${cartId}/menu`)
 
@@ -188,14 +190,23 @@ export default function CustomerCart() {
               inputMode='numeric'
               autoComplete='tel-national'
               value={phone}
+              aria-invalid={phoneInvalid}
+              aria-describedby='phone-error'
               onChange={(e) => {
-                setPhone(e.target.value.replace(/\D/g, '').slice(-10))
+                const next = nextPhone(e.target.value)
+                if (next === null) return // no 11th digit
+                setPhone(next)
                 setError('')
               }}
               placeholder='98765 43210'
               className='w-full bg-transparent text-[15px] tracking-wide outline-none placeholder:text-grey-400'
             />
           </div>
+          {phoneProblem && (
+            <p id='phone-error' className='mt-2 text-xs text-danger'>
+              {phoneProblem}
+            </p>
+          )}
         </Card>
       </main>
 

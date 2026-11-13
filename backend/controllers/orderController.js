@@ -159,6 +159,14 @@ exports.createOrder = asyncHandler(async (req, res) => {
     fail(res, 400, 'cartId is required')
   }
 
+  // An Indian mobile number, same rule as the customer app; a +91 or 0 prefix is dropped.
+  const phone = phoneNumber
+    ? String(phoneNumber).replace(/\D/g, '').replace(/^(91|0)(?=\d{10}$)/, '')
+    : ''
+  if (phone && !/^[6-9]\d{9}$/.test(phone)) {
+    fail(res, 400, 'Enter a valid 10-digit mobile number.')
+  }
+
   const cart = await Cart.findById(cartId)
   if (!cart) fail(res, 404, 'Cart not found')
 
@@ -191,9 +199,6 @@ exports.createOrder = asyncHandler(async (req, res) => {
   }
 
   const totals = orderTotals(items, parcel, await getPlatformFee())
-  const phone = phoneNumber
-    ? String(phoneNumber).replace(/\D/g, '').slice(-15)
-    : ''
   const isPaid = orderStatus === 'PAID'
 
   const { orderNumber } = await getNextOrderNumber(cart._id)
@@ -244,12 +249,17 @@ exports.getOrdersForToday = asyncHandler(async (req, res) => {
 
   const endOfDayIST = new Date(`${istDate}T23:59:59.999+05:30`)
 
+  // Today's orders, plus unfinished ones from the last 12h, so an order
+  // placed at 11:59pm and still unpaid or unserved doesn't vanish at midnight.
   const orders = await Order.find({
     cartId,
-    createdAt: {
-      $gte: startOfDayIST,
-      $lte: endOfDayIST,
-    },
+    $or: [
+      { createdAt: { $gte: startOfDayIST, $lte: endOfDayIST } },
+      {
+        status: { $in: ['PENDING', 'PAID'] },
+        createdAt: { $gte: new Date(now - QUEUE_HOURS * 3600e3) },
+      },
+    ],
   }).sort({ createdAt: -1 })
 
   res.status(200).json({
