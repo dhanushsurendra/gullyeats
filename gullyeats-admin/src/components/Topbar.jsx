@@ -1,153 +1,58 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { useDispatch, useSelector } from 'react-redux'
-import { Menu, Search, Bell, Moon, Sun, CalendarDays } from 'lucide-react'
-import { setRange, setSearch } from '../store/adminSlice'
-import { Seg } from './ui'
+import { useSelector } from 'react-redux'
+import { Menu, Bell, Moon, Sun } from 'lucide-react'
 
+// Each page's own filters (dates, search) sit on the page, next to what they change.
 const TITLES = {
-  '/': ['Dashboard', 'Platform overview and real-time activity'],
-  '/owners': ['Owners', 'Business owners on GullyEats'],
-  '/restaurants': ['Restaurants / Carts', 'Every cart across the platform'],
-  '/orders': ['Orders', 'Latest orders across the platform'],
-  '/analytics': ['Analytics', 'Order and revenue trends'],
-  '/revenue': ['Revenue', 'GMV and platform fee revenue'],
-  '/payments': ['Payments', 'Platform fee payments from owners'],
-  '/collections': ['Collections', 'Overdue platform fees, longest owed first'],
-  '/actions': ['Action log', 'Who did what, and when'],
-  '/moderation': ['Moderation', 'GullyPulse confessions and comments'],
-  '/insights': ['Business Insights', 'Growth, vendors, fee leakage and operations'],
+  '/': ['Dashboard', 'Today across GullyEats, live'],
   '/notifications': ['Notifications', 'Everything that needs your attention, as it happens'],
+  '/collections': ['Collections', 'Overdue platform fees and refunds owed'],
+  '/moderation': ['Moderation', 'GullyPulse confessions and comments'],
+  '/dishes': ['Dishes', 'New dish names from vendors, to review'],
+  '/restaurants': ['Carts', 'Every cart across the platform'],
+  '/owners': ['Owners', 'Business owners on GullyEats'],
+  '/orders': ['Orders', 'Every order across the platform'],
+  '/payments': ['Payments', 'Platform fee payments from owners'],
+  '/revenue': ['Revenue', 'Fees, GMV and orders over time'],
+  '/insights': ['Business', 'Growth, vendors, fee leakage and operations'],
+  '/actions': ['Action log', 'Who did what, and when'],
   '/feedback': ['Feedback', 'What customers are saying'],
   '/settings': ['Settings', 'Account and connection'],
 }
 
-const RANGES = [
-  ['today', 'Today'],
-  ['7d', '7 Days'],
-  ['30d', '30 Days'],
-  ['month', 'This Month'],
-  ['custom', 'Custom'],
-]
-
 export default function Topbar({ onMenu }) {
-  const dispatch = useDispatch()
   const nav = useNavigate()
   const { pathname } = useLocation()
-
-  const { range, search } = useSelector((s) => s.admin)
   const user = useSelector((s) => s.auth.user)
-
   const unread = useSelector((s) => s.notify.unread)
-
   const [title, sub] = TITLES[pathname] || TITLES['/']
 
-  const [dark, setDark] = useState(
-    () => localStorage.getItem('ge_theme') === 'dark',
-  )
-
-  const [showDatePicker, setShowDatePicker] = useState(false)
-
-  const [startDate, setStartDate] = useState(range.startDate || '')
-  const [endDate, setEndDate] = useState(range.endDate || '')
-
+  const [dark, setDark] = useState(() => localStorage.getItem('ge_theme') === 'dark')
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark)
     localStorage.setItem('ge_theme', dark ? 'dark' : 'light')
   }, [dark])
 
-  // Keep local picker values synced with Redux
-  useEffect(() => {
-    setStartDate(range.startDate || '')
-    setEndDate(range.endDate || '')
-  }, [range.startDate, range.endDate])
-
-  const handleRangeChange = (key) => {
-    if (key === 'custom') {
-      setStartDate(range.startDate || '')
-      setEndDate(range.endDate || '')
-      setShowDatePicker(true)
-      return
-    }
-
-    setShowDatePicker(false)
-
-    dispatch(
-      setRange({
-        key,
-        startDate: '',
-        endDate: '',
-      }),
-    )
-  }
-
-  const handleApplyCustomRange = () => {
-    if (!startDate || !endDate) return
-
-    dispatch(
-      setRange({
-        key: 'custom',
-        startDate,
-        endDate,
-      }),
-    )
-
-    setShowDatePicker(false)
-  }
-
-  const handleCancelCustomRange = () => {
-    setStartDate(range.startDate || '')
-    setEndDate(range.endDate || '')
-    setShowDatePicker(false)
-  }
+  const round = 'relative grid h-9 w-9 place-items-center rounded-full border border-line bg-white text-neutral-500 shadow-sm transition hover:text-ink'
 
   return (
-    <header
-      className='sticky top-0 z-20 flex flex-wrap items-center gap-3
-      border-b border-line/70 bg-canvas/80 px-3 py-3
-      backdrop-blur-xl sm:px-6'
-    >
-      {/* Mobile Menu */}
-      <button
-        onClick={onMenu}
-        className='rounded-lg p-1.5 hover:bg-neutral-200 lg:hidden'
-        aria-label='Open menu'
-      >
+    <header className='sticky top-0 z-20 flex items-center gap-3 border-b border-line/70 bg-canvas/80 px-3 py-3 backdrop-blur-xl sm:px-6'>
+      <button onClick={onMenu} className='rounded-lg p-1.5 hover:bg-neutral-200 lg:hidden' aria-label='Open menu'>
         <Menu size={18} />
       </button>
 
-      {/* Page Title */}
-      <div>
-        <h1 className='text-[19px] font-extrabold leading-tight tracking-tight'>{title}</h1>
-
-        <p className='text-[12px] text-neutral-500'>{sub}</p>
+      <div className='min-w-0'>
+        <h1 className='truncate text-[19px] font-extrabold leading-tight tracking-tight'>{title}</h1>
+        <p className='truncate text-[12px] text-neutral-500'>{sub}</p>
       </div>
 
       <div className='flex-1' />
 
-      {/* Search */}
-      <label
-        className='order-last flex w-full items-center gap-2
-        rounded-full border border-line bg-white px-3.5 py-2
-        text-neutral-500 shadow-sm transition focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15
-        sm:order-none sm:w-60'
-      >
-        <Search size={14} />
-
-        <input
-          value={search}
-          onChange={(e) => dispatch(setSearch(e.target.value))}
-          placeholder='Filter tables…'
-          aria-label='Search'
-          className='w-full bg-transparent text-ink outline-none'
-        />
-      </label>
-
-      {/* Notifications */}
       <button
         onClick={() => nav('/notifications')}
         aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'}
-        className='relative grid h-9 w-9 place-items-center rounded-full border border-line bg-white text-neutral-500 shadow-sm transition hover:text-ink'
+        className={round}
       >
         <Bell size={16} />
         {unread > 0 && (
@@ -157,126 +62,20 @@ export default function Topbar({ onMenu }) {
         )}
       </button>
 
-      {/* Dark Mode */}
-      <button
-        onClick={() => setDark((d) => !d)}
-        aria-label='Toggle dark mode'
-        className='grid h-9 w-9 place-items-center rounded-full border border-line bg-white text-neutral-500 shadow-sm transition hover:text-ink'
-      >
+      <button onClick={() => setDark((d) => !d)} aria-label='Toggle dark mode' className={round}>
         {dark ? <Sun size={16} /> : <Moon size={16} />}
       </button>
 
-      {/* Date Range. min-w-0: on a phone the tabs scroll inside their pill instead of widening the page. */}
-      <div className='relative min-w-0 max-w-full'>
-        <Seg options={RANGES} value={range.key} onChange={handleRangeChange} />
-
-        {/* Custom Date Picker */}
-        {showDatePicker && (
-          <div
-            className='absolute right-0 top-full z-50 mt-2 w-[300px]
-            rounded-2xl border border-line
-            bg-white p-4 shadow-float'
-          >
-            {/* Header */}
-            <div className='mb-3 flex items-center gap-2'>
-              <CalendarDays size={16} className='text-brand' />
-
-              <div>
-                <p className='text-sm font-semibold text-ink'>
-                  Custom Date Range
-                </p>
-
-                <p className='text-[11px] text-neutral-500'>
-                  Select start and end dates
-                </p>
-              </div>
-            </div>
-
-            {/* Start Date */}
-            <div className='mb-3'>
-              <label className='mb-1 block text-xs font-medium text-neutral-500'>
-                Start Date
-              </label>
-
-              <input
-                type='date'
-                value={startDate}
-                onChange={(e) => {
-                  setStartDate(e.target.value)
-
-                  // Clear end date if it becomes invalid
-                  if (endDate && e.target.value && endDate < e.target.value) {
-                    setEndDate('')
-                  }
-                }}
-                className='w-full rounded-lg border border-line
-                bg-neutral-50 px-3 py-2 text-sm
-                outline-none transition
-                focus:border-brand
-                focus:ring-2 focus:ring-brand/15'
-              />
-            </div>
-
-            {/* End Date */}
-            <div className='mb-4'>
-              <label className='mb-1 block text-xs font-medium text-neutral-500'>
-                End Date
-              </label>
-
-              <input
-                type='date'
-                value={endDate}
-                min={startDate || undefined}
-                onChange={(e) => setEndDate(e.target.value)}
-                className='w-full rounded-lg border border-line
-                bg-neutral-50 px-3 py-2 text-sm
-                outline-none transition
-                focus:border-brand
-                focus:ring-2 focus:ring-brand/15'
-              />
-            </div>
-
-            {/* Actions */}
-            <div className='flex justify-end gap-2'>
-              <button
-                onClick={handleCancelCustomRange}
-                className='rounded-lg border border-line
-                px-3 py-1.5 text-xs font-medium
-                text-neutral-500 hover:bg-neutral-50'
-              >
-                Cancel
-              </button>
-
-              <button
-                onClick={handleApplyCustomRange}
-                disabled={!startDate || !endDate}
-                className='rounded-lg bg-brand
-                px-3 py-1.5 text-xs font-medium text-white
-                disabled:cursor-not-allowed disabled:opacity-50'
-              >
-                Apply
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Admin Avatar */}
-      <div className='flex items-center gap-2'>
-        <span
-          className='grid h-9 w-9 place-items-center rounded-full
-    bg-gradient-to-br from-night to-night-soft text-[12px] font-bold text-white shadow-sm'
-        >
-          {user?.name
-            ? user.name
-                .split(' ')
-                .map((n) => n[0])
-                .join('')
-                .slice(0, 2)
-                .toUpperCase()
-            : 'SA'}
-        </span>
-      </div>
+      <span className='grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-night to-night-soft text-[12px] font-bold text-white shadow-sm'>
+        {user?.name
+          ? user.name
+              .split(' ')
+              .map((n) => n[0])
+              .join('')
+              .slice(0, 2)
+              .toUpperCase()
+          : 'SA'}
+      </span>
     </header>
   )
 }

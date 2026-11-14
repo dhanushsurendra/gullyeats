@@ -26,35 +26,20 @@ export const T = Object.fromEntries(
     'operations',
     'play',
     'pulse',
+    'todo',
   ].map((k) => [k, make(k, api[k])]),
 )
-
-// Maps the date-range selector to backend query params
-export const rangeParams = (r) =>
-  r.key === 'custom' && r.startDate && r.endDate
-    ? { startDate: r.startDate, endDate: r.endDate }
-    : { range: r.key === 'custom' ? 'today' : r.key }
 
 const slice = createSlice({
   name: 'admin',
   initialState: {
-    range: { key: 'today', startDate: '', endDate: '' },
-    period: '30d',
-    search: '',
     data: {},
+    // The argument each resource was last fetched with (see useResource).
+    argOf: {},
     loading: {},
     error: {},
   },
   reducers: {
-    setRange: (s, a) => {
-      s.range = { ...s.range, ...a.payload }
-    },
-    setPeriod: (s, a) => {
-      s.period = a.payload
-    },
-    setSearch: (s, a) => {
-      s.search = a.payload
-    },
     // Flips one owner's row right away, so the button doesn't wait for a full reload.
     patchOwner: (s, { payload: { id, disabled } }) => {
       const o = s.data.owners?.find((x) => x.id === id)
@@ -71,6 +56,7 @@ const slice = createSlice({
         .addCase(t.fulfilled, (s, a) => {
           s.loading[k] = false
           s.data[k] = a.payload
+          s.argOf[k] = JSON.stringify(a.meta.arg ?? null)
         })
         .addCase(t.rejected, (s, a) => {
           s.loading[k] = false
@@ -79,5 +65,5 @@ const slice = createSlice({
     )
   },
 })
-export const { setRange, setPeriod, setSearch, patchOwner } = slice.actions
+export const { patchOwner } = slice.actions
 export default slice.reducer

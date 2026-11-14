@@ -17,33 +17,52 @@ export function useInView(cb, active) {
 }
 
 // Server paging: fetchPage(cursor) resolves to { items, pagination: { hasMore, nextCursor }, ... }.
-// fetchPage must be stable (defined outside the component).
-export default function usePaged(fetchPage) {
+// The list starts over whenever resetKey changes (a filter or search); a page
+// still loading for the old filters is dropped.
+export default function usePaged(fetchPage, resetKey = '') {
   const [rows, setRows] = useState([])
   const [first, setFirst] = useState(null)
   const [page, setPage] = useState({ hasMore: true, nextCursor: null })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const busy = useRef(false)
+  const gen = useRef(0)
+  const fetchRef = useRef(fetchPage)
+  fetchRef.current = fetchPage
+
+  useEffect(() => {
+    gen.current += 1
+    busy.current = false
+    setRows([])
+    setFirst(null)
+    setError(null)
+    setLoading(false)
+    setPage({ hasMore: true, nextCursor: null })
+  }, [resetKey])
 
   const loadMore = useCallback(async () => {
     if (busy.current || !page.hasMore) return
+    const g = gen.current
     busy.current = true
     setLoading(true)
     setError(null)
     try {
-      const d = await fetchPage(page.nextCursor)
+      const d = await fetchRef.current(page.nextCursor)
+      if (g !== gen.current) return
       setRows((prev) => [...prev, ...d.items])
       setFirst((f) => f || d)
       setPage(d.pagination)
     } catch (e) {
+      if (g !== gen.current) return
       setError(e.message)
       setPage((p) => ({ ...p, hasMore: false })) // stop retrying on every scroll
     } finally {
-      busy.current = false
-      setLoading(false)
+      if (g === gen.current) {
+        busy.current = false
+        setLoading(false)
+      }
     }
-  }, [page, fetchPage])
+  }, [page])
 
   return {
     rows,

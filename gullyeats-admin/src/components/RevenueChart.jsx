@@ -1,4 +1,3 @@
-import { useDispatch, useSelector } from 'react-redux'
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -9,36 +8,19 @@ import {
   Tooltip,
   CartesianGrid,
 } from 'recharts'
-import useResource from '../hooks/useResource'
-import { setPeriod } from '../store/adminSlice'
-import { Card, CardHeader, Seg, Skeleton, State } from './ui'
+import { Card, CardHeader, Skeleton, State } from './ui'
 import { inr, num, signed } from '../utils/format'
 
-export const PERIODS = [
-  ['7d', '7 Days'],
-  ['30d', '30 Days'],
-  ['3m', '3 Months'],
-  ['12m', '12 Months'],
-]
-
-export default function RevenueChart() {
-  const dispatch = useDispatch()
-  const period = useSelector((s) => s.admin.period)
-  const { data, loading, error } = useResource('series', { period }, 60000)
+// `series` is useResource('series', range params): the Revenue page's dates.
+export default function RevenueChart({ series, label }) {
+  const { data, loading, error } = series
   const t = data?.totals
 
   return (
     <Card>
       <CardHeader
-        title='Revenue & Orders'
-        subtitle='Revenue (orange) · orders (purple)'
-        right={
-          <Seg
-            options={PERIODS}
-            value={period}
-            onChange={(p) => dispatch(setPeriod(p))}
-          />
-        }
+        title={`Fees collected & orders · ${label}`}
+        subtitle='Fees collected (orange) · orders placed (purple)'
       />
       <State loading={loading} error={error} skeleton={<Skeleton block='h-[250px]' />}>
         <div className='h-[250px] px-2 pt-4'>
@@ -71,7 +53,7 @@ export default function RevenueChart() {
               />
               <YAxis yAxisId='o' orientation='right' hide />
               <Tooltip
-                formatter={(v, n) => (n === 'Revenue' ? inr(v) : num(v))}
+                formatter={(v, n) => (n === 'Fees collected' ? inr(v) : num(v))}
 contentStyle={{
                   fontSize: 12,
                   borderRadius: 12,
@@ -82,7 +64,7 @@ contentStyle={{
               <Area
                 yAxisId='g'
                 dataKey='revenue'
-                name='Revenue'
+                name='Fees collected'
                 type='monotone'
                 stroke='#FE5200'
                 strokeWidth={2.5}
@@ -102,11 +84,11 @@ contentStyle={{
         </div>
         <div className='grid grid-cols-2 border-t border-line sm:grid-cols-4'>
           {[
-            ['Revenue', inr(t?.revenue), 'text-brand'],
+            ['Fees collected', inr(t?.revenue), 'text-brand'],
             ['Orders', num(t?.totalOrders)],
             ['AOV', inr(t?.aov)],
             [
-              'Growth',
+              'vs period before',
               t?.revenueGrowth == null ? '—' : signed(t.revenueGrowth),
               t?.revenueGrowth < 0 ? 'text-red-600' : 'text-green-600',
             ],

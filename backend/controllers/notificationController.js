@@ -4,6 +4,12 @@ const asyncHandler = require('../utils/asyncHandler')
 const Notification = require('../models/Notification')
 const { toClient } = require('../utils/adminNotify')
 const { adminSocketSecret } = require('../utils/socketRooms')
+const Order = require('../models/Order')
+const Confession = require('../models/Confession')
+const ConfessionComment = require('../models/ConfessionComment')
+const DishCandidate = require('../models/DishCandidate')
+const { overdueByCart } = require('../utils/overdueFees')
+const { MIN_CARTS } = require('../utils/dishCandidates')
 
 // GET /admin/notifications?before=<iso>: newest 50, and how many are unread.
 exports.list = asyncHandler(async (req, res) => {
@@ -37,3 +43,17 @@ exports.socketToken = (req, res) =>
     success: true,
     data: { token: jwt.sign({ _id: req.user._id, role: 'admin' }, adminSocketSecret(), { expiresIn: '1m' }) },
   })
+
+// GET /admin/todo: what's waiting in each to-do page, for the sidebar badges.
+// Collections: carts with overdue fees + refunds customers flagged.
+exports.todo = asyncHandler(async (req, res) => {
+  const waiting = { status: { $in: ['PENDING_REVIEW', 'REPORTED'] } }
+  const [overdue, flagged, posts, comments, dishes] = await Promise.all([
+    overdueByCart(),
+    Order.countDocuments({ refunds: { $elemMatch: { flaggedAt: { $ne: null }, flagResolvedAt: null } } }),
+    Confession.countDocuments(waiting),
+    ConfessionComment.countDocuments(waiting),
+    DishCandidate.countDocuments({ status: 'PENDING', [`carts.${MIN_CARTS - 1}`]: { $exists: true } }),
+  ])
+  res.json({ success: true, data: { collections: overdue.length + flagged, moderation: posts + comments, dishes } })
+})

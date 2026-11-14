@@ -236,6 +236,8 @@ export const api = {
   notifications: (p) => request(`${ADMIN}/notifications`, p),
   readNotifications: (body) => post(`${ADMIN}/notifications/read`, body),
   socketToken: () => request(`${ADMIN}/notifications/socket-token`),
+  // What's waiting in each to-do page (sidebar badges).
+  todo: () => request(`${ADMIN}/todo`),
 
   resetVendorPin: (vendorId) =>
     post(`${ADMIN}/vendors/${encodeURIComponent(vendorId.trim())}/reset-pin`),

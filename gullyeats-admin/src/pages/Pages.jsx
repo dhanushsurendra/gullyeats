@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
+import DateRange from '../components/DateRange'
+import useUrlState, { useRange } from '../hooks/useUrlState'
+import useSearchBox from '../hooks/useSearchBox'
 import { logout } from '../store/authSlice'
 import useResource from '../hooks/useResource'
-import { rangeParams } from '../store/adminSlice'
 import OwnerTable from '../components/OwnerTable'
 import RestaurantTable from '../components/RestaurantTable'
 import RevenueChart from '../components/RevenueChart'
@@ -12,17 +14,17 @@ import KpiCard from '../components/KpiCard'
 import { Card, CardHeader, Table, State, Seg, Btn, ScrollFooter, ExportButton, Skeleton, ask } from '../components/ui'
 import { billingDays, downloadCsv, fetchAll, istStamp, today } from '../utils/csv'
 import usePaged from '../hooks/usePaged'
-import { IndianRupee, Wallet, Clock, ShoppingBag } from 'lucide-react'
-import { inr, num, ago, ist, matches, ORDER_LABEL } from '../utils/format'
+import { IndianRupee, Wallet, Clock, ShoppingBag, TrendingUp, PieChart, Ban, CheckCircle2 } from 'lucide-react'
+import { inr, num, ago, ist, matches, signed, ORDER_LABEL } from '../utils/format'
 import { API_BASE, api } from '../services/api'
-import { useRef, useCallback, useEffect } from 'react'
 
 export function Owners() {
-  const q = useSelector((s) => s.admin.search)
+  const [q, searchBox] = useSearchBox('Search owners')
   const { data, loading, error } = useResource('owners')
   return (
     <OwnerTable
       title='All Owners'
+      search={searchBox}
       owners={(data || []).filter((o) => matches(o, q))}
       loading={loading}
       error={error}
@@ -35,126 +37,30 @@ export function Restaurants() {
   return <RestaurantTable carts={data} loading={loading} error={error} />
 }
 
+const ORDER_STATUSES = [
+  ['', 'All'],
+  ['PENDING', 'Pending'],
+  ['PAID', 'Preparing'],
+  ['SERVED', 'Served'],
+  ['CANCELLED', 'Cancelled'],
+]
+
+const orderPage = (filters) => (cursor) =>
+  api.orders({ limit: 50, ...filters, cursor }).then((d) => ({ items: d.data, pagination: d.pagination }))
+
 export function Orders() {
-  const q = useSelector((s) => s.admin.search)
-
-  const [status, setStatus] = useState('')
-  const [rows, setRows] = useState([])
-  const [cursor, setCursor] = useState(null)
-  const [hasMore, setHasMore] = useState(true)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-
-  const observerRef = useRef(null)
-
-  const loadOrders = useCallback(
-    async (reset = false) => {
-      if (loading) return
-      if (!reset && !hasMore) return
-
-      setLoading(true)
-      setError(null)
-
-      try {
-        const result = await api.orders({
-          limit: 50,
-          status,
-          ...(reset ? {} : cursor ? { cursor } : {}),
-        })
-
-        setRows((prev) => (reset ? result.data : [...prev, ...result.data]))
-
-        setCursor(result.pagination.nextCursor || null)
-
-        setHasMore(result.pagination.hasMore === true)
-      } catch (e) {
-        setError(e.message)
-      } finally {
-        setLoading(false)
-      }
-    },
-    [status, cursor, hasMore, loading],
-  )
-
-  // Initial load + reload when status changes
-  useEffect(() => {
-    setRows([])
-    setCursor(null)
-    setHasMore(true)
-
-    // Don't use the current cursor when resetting
-    const load = async () => {
-      setLoading(true)
-      setError(null)
-
-      try {
-        const result = await api.orders({
-          status,
-        })
-
-        setRows(result.data)
-        setCursor(result.pagination.nextCursor || null)
-        setHasMore(result.pagination.hasMore === true)
-      } catch (e) {
-        setError(e.message)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    load()
-  }, [status])
-
-  // Infinite scroll observer
-  const loadMoreRef = useCallback(
-    (node) => {
-      if (loading) return
-
-      if (observerRef.current) {
-        observerRef.current.disconnect()
-      }
-
-      observerRef.current = new IntersectionObserver(
-        (entries) => {
-          if (entries[0].isIntersecting && hasMore && !loading) {
-            loadOrders(false)
-          }
-        },
-        {
-          rootMargin: '300px',
-        },
-      )
-
-      if (node) {
-        observerRef.current.observe(node)
-      }
-    },
-    [loading, hasMore, loadOrders],
-  )
+  const [status, setStatus] = useUrlState('status')
+  const range = useRange('all')
+  const [q, searchBox] = useSearchBox('Order #, cart or owner')
+  const filters = { status, q, ...range.params }
+  const p = usePaged(orderPage(filters), JSON.stringify(filters))
 
   const cols = [
-    {
-      key: 'number',
-      label: 'Order',
-      render: (r) => <b>#{r.number}</b>,
-    },
-    {
-      key: 'cart',
-      label: 'Restaurant',
-    },
-    {
-      key: 'owner',
-      label: 'Owner',
-    },
-    {
-      key: 'items',
-      label: 'Items',
-    },
-    {
-      key: 'amount',
-      label: 'Amount',
-      render: (r) => inr(r.amount),
-    },
+    { key: 'number', label: 'Order', render: (r) => <b>#{r.number}</b> },
+    { key: 'cart', label: 'Restaurant' },
+    { key: 'owner', label: 'Owner' },
+    { key: 'items', label: 'Items' },
+    { key: 'amount', label: 'Amount', render: (r) => inr(r.amount) },
     {
       key: 'status',
       label: 'Status',
@@ -163,113 +69,155 @@ export function Orders() {
     {
       key: 'createdAt',
       label: 'Placed',
-      render: (r) => (
-        <span className='text-neutral-500'>{ist(r.createdAt)}</span>
-      ),
+      render: (r) => <span className='text-neutral-500'>{ist(r.createdAt)}</span>,
     },
   ]
 
-  const filteredRows = rows.filter((r) => matches(r, q))
-
-  return (
-    <Card>
-      <CardHeader
-        title='Orders'
-        subtitle={`Showing ${rows.length} orders`}
-        right={
-          <div className='flex max-w-full flex-wrap items-center gap-2'>
-            <Seg
-              value={status}
-              onChange={setStatus}
-              options={[
-                ['', 'All'],
-                ['PENDING', 'Pending'],
-                ['PAID', 'Preparing'],
-                ['SERVED', 'Served'],
-                ['CANCELLED', 'Cancelled'],
-              ]}
-            />
-            <ExportButton run={() => exportOrders(status)} />
-          </div>
-        }
-      />
-
-      <State loading={loading && rows.length === 0} error={error}>
-        <Table columns={cols} rows={filteredRows} empty='No orders found.' />
-
-        {/* Infinite scroll trigger */}
-        {hasMore && (
-          <div ref={loadMoreRef} className='flex justify-center py-6'>
-            {loading && <Skeleton rows={2} />}
-          </div>
-        )}
-
-        {!hasMore && rows.length > 0 && (
-          <div className='py-6 text-center text-sm text-neutral-500'>
-            You've reached the end.
-          </div>
-        )}
-      </State>
-    </Card>
-  )
-}
-
-export function Analytics() {
-  return (
-    <div className='grid gap-3 xl:grid-cols-[1.6fr_1fr]'>
-      <RevenueChart />
-      <OrdersChart />
-    </div>
-  )
-}
-
-export function Revenue() {
-  const range = useSelector((s) => s.admin.range)
-  const ov = useResource('overview', rangeParams(range), 60000)
-  const pay = useResource('payments')
-  const k = ov.data?.kpis,
-    s = pay.data?.summary
   return (
     <div className='space-y-3'>
-      <State loading={ov.loading} error={ov.error}>
-        <div className='grid grid-cols-2 gap-2.5 xl:grid-cols-4'>
-          <KpiCard
-            icon={IndianRupee}
-            label='GMV (selected range)'
-            value={inr(k?.orderGmvRange)}
-            note={`${num(k?.ordersRange?.value)} orders`}
-          />
-          <KpiCard
-            icon={Wallet}
-            label='Platform fee earned'
-            value={inr(k?.platformFeeRange)}
-            note='on paid orders in range'
-          />
-          <KpiCard
-            icon={ShoppingBag}
-            label='Fees collected'
-            value={inr(s?.VERIFIED?.amount)}
-            note={`${s?.VERIFIED?.count || 0} verified payments`}
-          />
-          <KpiCard
-            icon={Clock}
-            label='Fees overdue'
-            value={inr(k?.pendingPayments?.amount)}
-            note={`${num(k?.pendingPayments?.count)} orders · ${num(k?.pendingPayments?.carts)} carts`}
-          />
-        </div>
-      </State>
-      <RevenueChart />
+      <div className='flex flex-wrap items-center justify-between gap-2'>
+        {searchBox}
+        <DateRange range={range} all />
+      </div>
+      <Card>
+        <CardHeader
+          title={`Orders · ${range.label}`}
+          subtitle={`Newest first · showing ${num(p.rows.length)}${q ? ` matching “${q}”` : ''}`}
+          right={
+            <div className='flex max-w-full flex-wrap items-center gap-2'>
+              <Seg value={status} onChange={setStatus} options={ORDER_STATUSES} />
+              <ExportButton run={() => exportOrders(filters)} />
+            </div>
+          }
+        />
+        <State loading={p.loading && !p.rows.length} error={!p.rows.length && p.error}>
+          <Table columns={cols} rows={p.rows} empty={p.hasMore ? '' : 'No orders found.'} />
+        </State>
+        <ScrollFooter {...p} count={p.rows.length} noun='orders' />
+      </Card>
     </div>
   )
 }
 
-const fetchPayments = (cursor) => api.payments({ limit: 30, cursor })
+const change = (v, invert = false, suffix = '%') =>
+  v == null ? {} : { change: signed(v, suffix), tone: v >= 0 !== invert ? 'up' : 'down' }
+
+// Fees, GMV and orders for the page's dates, then the all-time picture.
+export function Revenue() {
+  const range = useRange('30d')
+  const ov = useResource('overview', range.params, 60000)
+  const series = useResource('series', range.params, 60000)
+  const k = ov.data?.kpis
+  const vs = range.key === 'today' ? 'vs yesterday' : 'vs the period before'
+  const sp = (f) => (series.data?.points || []).map((pt) => ({ v: f(pt) }))
+  const cards = <Skeleton block='h-[118px]' />
+
+  return (
+    <div className='space-y-4'>
+      <div className='flex flex-wrap items-center justify-between gap-2'>
+        <h2 className='text-[15px] font-bold tracking-tight'>
+          Showing <span className='text-brand'>{range.label}</span>
+        </h2>
+        <DateRange range={range} />
+      </div>
+      <State loading={ov.loading} error={ov.error} skeleton={cards}>
+        {k && (
+          <div className='grid grid-cols-2 gap-3 xl:grid-cols-4'>
+            <KpiCard
+              featured
+              icon={IndianRupee}
+              label={`Fees collected · ${range.label}`}
+              value={inr(k.revenueRange.value)}
+              {...change(k.revenueRange.change)}
+              note={vs}
+              series={sp((pt) => pt.revenue)}
+            />
+            <KpiCard
+              icon={Wallet}
+              label='Fees earned'
+              value={inr(k.platformFeeRange)}
+              note='on paid orders placed, paid or not'
+            />
+            <KpiCard
+              icon={TrendingUp}
+              label='GMV'
+              value={inr(k.orderGmvRange)}
+              note="paid orders, carts' sales"
+              series={sp((pt) => pt.gmv)}
+            />
+            <KpiCard
+              icon={ShoppingBag}
+              label='Orders'
+              to={`/orders?${new URLSearchParams(range.key === 'custom' ? { from: range.from, to: range.to } : { range: range.key })}`}
+              value={num(k.ordersRange.value)}
+              {...change(k.ordersRange.change)}
+              note={vs}
+              series={sp((pt) => pt.orders)}
+            />
+            <KpiCard
+              icon={CheckCircle2}
+              label='Paid orders'
+              value={num(series.data?.totals.paidOrders)}
+              note='paid or served; fees and GMV count these'
+            />
+            <KpiCard icon={PieChart} label='Average order' value={inr(k.aov.value)} {...change(k.aov.change)} note={vs} />
+            <KpiCard
+              icon={Ban}
+              label='Cancelled'
+              value={`${k.cancelRate.value}%`}
+              {...change(k.cancelRate.change, true, ' pp')}
+              note={`of orders, ${vs}`}
+            />
+          </div>
+        )}
+      </State>
+      <div className='grid gap-4 xl:grid-cols-[1.6fr_1fr]'>
+        <RevenueChart series={series} label={range.label} />
+        <OrdersChart series={series} label={range.label} />
+      </div>
+      <h2 className='pt-2 text-[15px] font-bold tracking-tight'>All time and this month</h2>
+      <State loading={ov.loading} error={ov.error} skeleton={cards}>
+        {k && (
+          <div className='grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5'>
+            <KpiCard
+              icon={IndianRupee}
+              label='Fees collected, all time'
+              value={inr(k.totalRevenue.value)}
+              note={`${num(k.totalRevenue.totalPayments)} payments`}
+            />
+            <KpiCard
+              icon={IndianRupee}
+              label='Fees collected this month'
+              value={inr(k.revenueMonth.value)}
+              {...change(k.revenueMonth.change)}
+              note='vs same days last month'
+            />
+            <KpiCard icon={ShoppingBag} label='Orders, all time' value={num(k.totalOrders)} />
+            <KpiCard
+              icon={CheckCircle2}
+              label='Collection rate'
+              to='/collections'
+              value={`${k.collectionRate}%`}
+              note='of fees due so far, paid'
+            />
+            <KpiCard
+              icon={Clock}
+              label='Fees overdue now'
+              to='/collections'
+              value={inr(k.pendingPayments.amount)}
+              note={`${num(k.pendingPayments.count)} orders · ${num(k.pendingPayments.carts)} carts`}
+            />
+          </div>
+        )}
+      </State>
+    </div>
+  )
+}
 
 const capped = (truncated, n) => (truncated ? `First ${num(n)} rows only.` : '')
 
-async function exportPayments() {
-  const { rows, truncated } = await fetchAll((cursor) => api.payments({ limit: 200, cursor }))
+async function exportPayments(q) {
+  const { rows, truncated } = await fetchAll((cursor) => api.payments({ limit: 200, q, cursor }))
   downloadCsv(`gullyeats-platform-fees-${today()}.csv`, [
     { label: 'Cart', value: (r) => r.cart },
     { label: 'Owner', value: (r) => r.owner },
@@ -285,11 +233,11 @@ async function exportPayments() {
   return capped(truncated, rows.length)
 }
 
-async function exportOrders(status) {
+async function exportOrders(filters) {
   const { rows, truncated } = await fetchAll((cursor) =>
-    api.orders({ limit: 500, status, cursor }).then((d) => ({ items: d.data, pagination: d.pagination })),
+    api.orders({ limit: 500, ...filters, cursor }).then((d) => ({ items: d.data, pagination: d.pagination })),
   )
-  downloadCsv(`gullyeats-orders${status ? `-${status.toLowerCase()}` : ''}-${today()}.csv`, [
+  downloadCsv(`gullyeats-orders${filters.status ? `-${filters.status.toLowerCase()}` : ''}-${today()}.csv`, [
     { label: 'Order no.', value: (r) => r.number },
     { label: 'Cart', value: (r) => r.cart },
     { label: 'Owner', value: (r) => r.owner },
@@ -303,8 +251,8 @@ async function exportOrders(status) {
 }
 
 export function Payments() {
-  const q = useSelector((s) => s.admin.search)
-  const p = usePaged(fetchPayments)
+  const [q, searchBox] = useSearchBox('Search cart or owner')
+  const p = usePaged((cursor) => api.payments({ limit: 30, q, cursor }), q)
   const s = p.first?.summary || {}
   const cols = [
     {
@@ -328,11 +276,7 @@ export function Payments() {
     {
       key: 'verifiedAt',
       label: 'Verified',
-      render: (r) => (
-        <span className='text-neutral-500'>
-          {r.verifiedAt ? ist(r.verifiedAt) : '—'}
-        </span>
-      ),
+      render: (r) => <span className='text-neutral-500'>{r.verifiedAt ? ist(r.verifiedAt) : '—'}</span>,
     },
     {
       key: 'source',
@@ -357,31 +301,26 @@ export function Payments() {
     <div className='space-y-3'>
       <div className='grid grid-cols-2 gap-2.5 xl:grid-cols-4'>
         {[
-          ['VERIFIED', 'Verified'],
+          ['VERIFIED', 'Verified, all time'],
           ['PENDING', 'Pending'],
-          ['REJECTED', 'Rejected'],
+          ['REJECTED', 'Rejected, all time'],
         ].map(([k, l]) => (
-          <KpiCard
-            key={k}
-            icon={Wallet}
-            label={l}
-            value={inr(s[k]?.amount)}
-            note={`${s[k]?.count || 0} payments`}
-          />
+          <KpiCard key={k} icon={Wallet} label={l} value={inr(s[k]?.amount)} note={`${s[k]?.count || 0} payments`} />
         ))}
       </div>
       <Card>
         <CardHeader
           title='Platform fee payments'
-          subtitle={`Newest first · showing ${num(p.rows.length)}`}
-          right={<ExportButton run={exportPayments} />}
+          subtitle={`Newest first · showing ${num(p.rows.length)}${q ? ` matching “${q}”` : ''}`}
+          right={
+            <div className='flex flex-wrap items-center gap-2'>
+              {searchBox}
+              <ExportButton run={() => exportPayments(q)} />
+            </div>
+          }
         />
         <State loading={p.loading && !p.rows.length} error={!p.rows.length && p.error}>
-          <Table
-            columns={cols}
-            rows={p.rows.filter((r) => matches(r, q))}
-            empty={p.hasMore ? '' : 'No payments yet.'}
-          />
+          <Table columns={cols} rows={p.rows} empty={p.hasMore ? '' : 'No payments found.'} />
         </State>
         <ScrollFooter {...p} count={p.rows.length} noun='payments' />
       </Card>
@@ -389,17 +328,16 @@ export function Payments() {
   )
 }
 
-const fetchFeedback = (cursor) => api.feedback({ limit: 30, cursor })
-
 export function Feedback() {
-  const q = useSelector((s) => s.admin.search)
-  const p = usePaged(fetchFeedback)
-  const items = p.rows.filter((r) => matches(r, q))
+  const [q, searchBox] = useSearchBox('Words, cart, owner or order #')
+  const p = usePaged((cursor) => api.feedback({ limit: 30, q, cursor }), q)
+  const items = p.rows
   return (
     <Card>
       <CardHeader
         title='Customer Feedback'
-        subtitle={`${num(p.first?.total)} total · showing ${num(p.rows.length)}`}
+        subtitle={`${num(p.first?.total)} ${q ? `matching “${q}”` : 'total'} · showing ${num(p.rows.length)}`}
+        right={searchBox}
       />
       <State loading={p.loading && !p.rows.length} error={!p.rows.length && p.error}>
         {items.length ? (

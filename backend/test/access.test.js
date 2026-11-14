@@ -146,9 +146,10 @@ test('admin GMV, fees and average order count only paid and served orders', asyn
   assert.equal(r2.body.data.kpis.collectionRate, 50)
 
   // The chart's AOV also divides by paid orders only, and weeks are whole.
-  const s = await call(admin.series, { query: { period: '3m' } })
+  const day = (n) => new Date(Date.now() + 5.5 * 3600e3 - n * 864e5).toISOString().slice(0, 10)
+  const s = await call(admin.series, { query: { startDate: day(89), endDate: day(0) } })
   assert.equal(s.body.data.totals.aov, 82)
-  assert.equal(s.body.data.points.length, 13)
+  assert.ok([13, 14].includes(s.body.data.points.length), 'about 13 weekly points for 90 days')
 
   // Orders page: first page reports whether there are more.
   const p1 = await call(admin.orders, { query: { limit: '3' } })

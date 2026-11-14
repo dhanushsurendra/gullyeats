@@ -53,6 +53,7 @@ Domains: `gullyeats.in` = customer app, `admin.gullyeats.in` = admin (both Verce
 Every client points at the deployed backend by default, so check these before testing locally:
 - `frontend/lib/core/constants/api_constants.dart` and `ordering/lib/core/constants/api_constants.dart` (`baseUrl`)
 - `customer-app/src/constants/api.js` (`API_BASE_URL`, overridable with `VITE_API_BASE_URL`; the Socket.IO URL comes from stripping `/api` off it)
+- Admin dashboard filters live in each page's URL, never in the top bar or Redux: `hooks/useUrlState.js` (`useUrlState`, and `useRange` for the one date control, `components/DateRange.jsx`: Today / 7 days / 30 days / This month / Custom, plus "All time" on lists) and `hooks/useSearchBox.jsx` (`?q=`, searched on the server for paged lists). The backend reads the same `range`/`startDate`/`endDate` through `utils/dateRange.js`. The Dashboard is always today; Revenue (which absorbed Analytics) and the Business GullyPlay/GullyPulse tabs follow their date control. Sidebar badges come from `GET /api/admin/todo`.
 - `gullyeats-admin/.env` (`VITE_API_URL`, `VITE_ADMIN_PATH`, `VITE_CART_PATH`; see `.env.example`). `VITE_API_URL` is used only by `npm run dev`: a production build calls its own site, and `gullyeats-admin/vercel.json` passes `/api/*` on to the Render backend, so the admin login cookie is first-party (browsers that block third-party cookies otherwise bounce the admin back to login)
 
 ## Backend architecture

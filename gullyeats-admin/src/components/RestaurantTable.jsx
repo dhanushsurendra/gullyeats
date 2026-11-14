@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import { useDispatch, useSelector } from 'react-redux'
+import { useDispatch } from 'react-redux'
 import { T } from '../store/adminSlice'
 import { X } from 'lucide-react'
 import {
@@ -15,6 +15,8 @@ import {
   ask,
 } from './ui'
 import { useReveal } from '../hooks/usePaged'
+import useUrlState from '../hooks/useUrlState'
+import useSearchBox from '../hooks/useSearchBox'
 import StatusBadge from './StatusBadge'
 import { api } from '../services/api'
 import { inr, num, ago, istDate, matches } from '../utils/format'
@@ -216,16 +218,13 @@ function CartDrawer({ cart, onClose }) {
 export default function RestaurantTable({ carts = [], limit, loading, error }) {
   const nav = useNavigate()
   const [params] = useSearchParams()
-  const q = useSelector((s) => s.admin.search)
-  const [f, setF] = useState({
-    status: '',
-    city: '',
-    owner: '',
-    sort: '',
-  })
+  // Every filter is in the URL (?status=LIVE&city=…&q=…).
+  const [q, searchBox] = useSearchBox('Search carts or owners')
+  const url = { status: useUrlState('status'), city: useUrlState('city'), owner: useUrlState('owner'), sort: useUrlState('sort') }
+  const f = Object.fromEntries(Object.entries(url).map(([k, [v]]) => [k, v]))
   const ownerId = params.get('ownerId')
   const [open, setOpen] = useState(null)
-  const set = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.value }))
+  const set = (k) => (e) => url[k][1](e.target.value)
   useEffect(() => {
     const id = params.get('cart')
     if (id) setOpen(carts.find((c) => c.id === id) || null)
@@ -242,9 +241,10 @@ export default function RestaurantTable({ carts = [], limit, loading, error }) {
         (!ownerId || c.ownerId === ownerId) &&
         matches(c, q),
     )
-    if (f.sort) r = [...r].sort((a, b) => b[f.sort] - a[f.sort])
+    if (f.sort === 'newest') r = [...r].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    else if (f.sort) r = [...r].sort((a, b) => b[f.sort] - a[f.sort])
     return limit ? r.slice(0, limit) : r
-  }, [carts, f, q, limit, ownerId])
+  }, [carts, f.status, f.city, f.owner, f.sort, q, limit, ownerId])
   // All carts stay loaded (the map and filters need them); the table grows 30 rows per scroll.
   const reveal = useReveal(rows, JSON.stringify([f, q, ownerId]))
 
@@ -279,6 +279,7 @@ export default function RestaurantTable({ carts = [], limit, loading, error }) {
         subtitle={`${num(rows.length)} carts${ownerId ? ' · one owner' : ''}`}
         right={
           <div className='flex flex-wrap gap-1.5'>
+            {searchBox}
             {ownerId && (
               <button
                 onClick={() => nav('/restaurants')}
@@ -313,6 +314,7 @@ export default function RestaurantTable({ carts = [], limit, loading, error }) {
               <option value=''>Sort: default</option>
               <option value='ordersToday'>Orders today</option>
               <option value='gmvToday'>Revenue today</option>
+              <option value='newest'>Newest first</option>
             </Select>
             {limit && (
               <button

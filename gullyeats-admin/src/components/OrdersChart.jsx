@@ -1,20 +1,17 @@
-import { useSelector } from 'react-redux'
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts'
-import useResource from '../hooks/useResource'
 import { Card, CardHeader, Skeleton, State } from './ui'
 
 const STATES = [['pending', 'Pending', '#FBBF24'], ['preparing', 'Preparing', '#FE5200'], ['served', 'Served', '#8b5cf6'], ['cancelled', 'Cancelled', '#F87171']]
 
-export default function OrdersChart() {
-  const period = useSelector((s) => s.admin.period)
-  const { data, loading, error } = useResource('series', { period }, 60000)
+export default function OrdersChart({ series, label }) {
+  const { data, loading, error } = series
   const pts = data?.points || []
   const total = pts.reduce((s, p) => s + p.pending + p.preparing + p.served + p.cancelled, 0)
   const share = (k) => (total ? ((pts.reduce((s, p) => s + p[k], 0) / total) * 100).toFixed(1) : '0.0')
 
   return (
     <Card className="h-full">
-      <CardHeader title="Order Overview" subtitle="Orders by state · follows the GMV period" />
+      <CardHeader title={`Orders by state · ${label}`} subtitle="Where each order placed in the period is now" />
       <State loading={loading} error={error} skeleton={<Skeleton block='h-[200px]' />}>
         <div className="h-[200px] px-2 pt-4">
           <ResponsiveContainer>

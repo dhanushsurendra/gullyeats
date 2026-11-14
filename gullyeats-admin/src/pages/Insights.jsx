@@ -25,6 +25,8 @@ import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianG
 import useResource from '../hooks/useResource'
 import { useReveal } from '../hooks/usePaged'
 import KpiCard from '../components/KpiCard'
+import DateRange from '../components/DateRange'
+import { useRange } from '../hooks/useUrlState'
 import { Card, CardHeader, Table, State, Seg, ScrollFooter } from '../components/ui'
 import { inr, num, signed, ago } from '../utils/format'
 
@@ -36,6 +38,13 @@ const TABS = [
   ['play', 'GullyPlay'],
   ['pulse', 'GullyPulse'],
 ]
+// The period each tab covers; GullyPlay and GullyPulse have the date control.
+const PERIOD = {
+  growth: 'This month so far, and the last 30 days',
+  vendors: 'Activity in the last 7 and 14 days; onboarding over the last 12 weeks',
+  leakage: 'Orders in the last 30 days',
+  operations: 'Last 30 days (repeat customers: last 90 days)',
+}
 
 export default function Insights() {
   const [params, setParams] = useSearchParams()
@@ -44,6 +53,7 @@ export default function Insights() {
   return (
     <div className='space-y-3'>
       <Seg options={TABS} value={tab} onChange={(t) => setParams({ tab: t })} />
+      {PERIOD[tab] && <p className='px-1 text-[12px] font-medium text-neutral-500'>{PERIOD[tab]}</p>}
       <View />
     </div>
   )
@@ -297,16 +307,17 @@ function Operations() {
 }
 
 // ------------------------------------------------------------------
-// GullyPlay / GullyPulse: players are anonymous, so counts only.
-const RANGES = [
-  ['7', 'Last 7 days'],
-  ['30', 'Last 30 days'],
-]
-function useDays() {
-  const [params, setParams] = useSearchParams()
-  const days = params.get('days') === '7' ? '7' : '30'
-  const setDays = (d) => setParams((p) => ({ ...Object.fromEntries(p), days: d }))
-  return [days, setDays]
+// GullyPlay / GullyPulse: players are anonymous, so counts only. Game scores
+// are kept 30 days, so older dates show nothing for GullyPlay.
+function RangeBar({ range }) {
+  return (
+    <div className='flex flex-wrap items-center justify-between gap-2'>
+      <p className='px-1 text-[13px] font-semibold'>
+        Showing <span className='text-brand'>{range.label}</span>
+      </p>
+      <DateRange range={range} />
+    </div>
+  )
 }
 
 // Counts per IST day, one line per series ([key, label], colours in fixed order).
@@ -352,8 +363,8 @@ const cartCols = (verb) => [
 ]
 
 function Play() {
-  const [days, setDays] = useDays()
-  const { data: d, loading, error } = useResource('play', { days }, 60000)
+  const range = useRange('30d')
+  const { data: d, loading, error } = useResource('play', range.params, 60000)
   const s = d?.summary
   const games = d?.perGame || []
   const gameCols = [
@@ -367,7 +378,7 @@ function Play() {
   ]
   return (
     <>
-      <Seg options={RANGES} value={days} onChange={setDays} />
+      <RangeBar range={range} />
       <State loading={loading} error={error}>
         <Kpis>
           <KpiCard icon={Gamepad2} label='Players' value={num(s?.players)} note={`${num(s?.rounds)} rounds played`} />
@@ -401,8 +412,8 @@ function Play() {
 }
 
 function Pulse() {
-  const [days, setDays] = useDays()
-  const { data: d, loading, error } = useResource('pulse', { days }, 60000)
+  const range = useRange('30d')
+  const { data: d, loading, error } = useResource('pulse', range.params, 60000)
   const s = d?.summary
   const e = d?.engagement
   const h = d?.health
@@ -413,7 +424,7 @@ function Pulse() {
   ]
   return (
     <>
-      <Seg options={RANGES} value={days} onChange={setDays} />
+      <RangeBar range={range} />
       <State loading={loading} error={error}>
         <Kpis>
           <KpiCard icon={MessageCircle} label='Posts' value={num(s?.posts)} note={`${num(s?.comments)} comments`} />

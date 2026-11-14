@@ -62,6 +62,7 @@ export default function OwnerTable({
   loading,
   error,
   title = 'Top Performing Owners',
+  search, // a search box for the header
 }) {
   const nav = useNavigate()
   const all = limit ? owners.slice(0, limit) : owners
@@ -138,14 +139,15 @@ export default function OwnerTable({
       <CardHeader
         title={title}
         right={
-          limit ? (
+          search ||
+          (limit ? (
             <button
               onClick={() => nav('/owners')}
               className='text-[12px] font-medium text-brand hover:underline'
             >
               View all owners
             </button>
-          ) : null
+          ) : null)
         }
       />
       <State loading={loading} error={error}>

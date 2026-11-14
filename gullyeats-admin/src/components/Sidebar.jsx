@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import {
@@ -6,7 +7,6 @@ import {
   Users,
   Store,
   ShoppingBag,
-  BarChart3,
   IndianRupee,
   CreditCard,
   MessageSquare,
@@ -20,29 +20,39 @@ import {
   X,
 } from 'lucide-react'
 import { logout } from '../store/authSlice'
+import useResource from '../hooks/useResource'
+import { T } from '../store/adminSlice'
 
+// Grouped by job: what's happening, what's waiting for you, running the
+// platform, understanding it. `badge` names a count from /admin/todo.
 const NAV = [
   [
-    'Overview',
+    'Today',
     [
       ['Dashboard', '/', LayoutDashboard],
-      ['Notifications', '/notifications', Bell],
+      ['Notifications', '/notifications', Bell, 'unread'],
     ],
   ],
   [
-    'Management',
+    'To do',
     [
-      ['Owners', '/owners', Users],
+      ['Collections', '/collections', Wallet, 'collections'],
+      ['Moderation', '/moderation', ShieldAlert, 'moderation'],
+      ['Dishes', '/dishes', Utensils, 'dishes'],
+    ],
+  ],
+  [
+    'Run the platform',
+    [
       ['Carts', '/restaurants', Store],
+      ['Owners', '/owners', Users],
       ['Orders', '/orders', ShoppingBag],
-      ['Moderation', '/moderation', ShieldAlert],
-      ['Dishes', '/dishes', Utensils],
+      ['Payments', '/payments', CreditCard],
     ],
   ],
   [
-    'Insights',
+    'Understand',
     [
-      ['Analytics', '/analytics', BarChart3],
       ['Revenue', '/revenue', IndianRupee],
       ['Business', '/insights', Lightbulb],
     ],
@@ -50,8 +60,6 @@ const NAV = [
   [
     'System',
     [
-      ['Payments', '/payments', CreditCard],
-      ['Collections', '/collections', Wallet],
       ['Action log', '/actions', History],
       ['Feedback', '/feedback', MessageSquare],
       ['Settings', '/settings', Settings],
@@ -64,6 +72,15 @@ export default function Sidebar({ open, onClose }) {
   const nav = useNavigate()
   const user = useSelector((s) => s.auth.user)
   const unread = useSelector((s) => s.notify.unread)
+  const latest = useSelector((s) => s.notify.items[0]?.id)
+  // Waiting counts: every minute, and right after a notification arrives.
+  const todo = useResource('todo', null, 60000).data
+  const seen = useRef(latest)
+  useEffect(() => {
+    if (seen.current && latest !== seen.current) dispatch(T.todo())
+    seen.current = latest
+  }, [latest, dispatch])
+  const counts = { unread, ...todo }
 
   const handleLogout = async () => {
     try {
@@ -110,7 +127,7 @@ export default function Sidebar({ open, onClose }) {
               <div className='px-2.5 pb-1.5 pt-4 text-[10px] font-bold uppercase tracking-[0.16em] text-lilac/70'>
                 {group}
               </div>
-              {items.map(([label, to, Icon]) => (
+              {items.map(([label, to, Icon, badge]) => (
                 <NavLink
                   key={to}
                   to={to}
@@ -122,9 +139,9 @@ export default function Sidebar({ open, onClose }) {
                 >
                   <Icon size={16} strokeWidth={2.2} />
                   {label}
-                  {to === '/notifications' && unread > 0 && (
+                  {counts[badge] > 0 && (
                     <span className='ml-auto rounded-full bg-red-500 px-1.5 py-px text-[10.5px] font-bold text-white'>
-                      {unread > 99 ? '99+' : unread}
+                      {counts[badge] > 99 ? '99+' : counts[badge]}
                     </span>
                   )}
                 </NavLink>

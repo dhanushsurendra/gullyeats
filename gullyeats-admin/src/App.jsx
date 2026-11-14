@@ -13,7 +13,6 @@ import {
   Owners,
   Restaurants,
   Orders,
-  Analytics,
   Revenue,
   Payments,
   Feedback,
@@ -51,7 +50,8 @@ export default function App() {
         <Route path="owners" element={<Owners />} />
         <Route path="restaurants" element={<Restaurants />} />
         <Route path="orders" element={<Orders />} />
-        <Route path="analytics" element={<Analytics />} />
+        {/* Analytics merged into Revenue; old links still work. */}
+        <Route path="analytics" element={<Navigate to="/revenue" replace />} />
         <Route path="revenue" element={<Revenue />} />
         <Route path="payments" element={<Payments />} />
         <Route path="collections" element={<Collections />} />

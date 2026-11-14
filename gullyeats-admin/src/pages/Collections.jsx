@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
-import { useDispatch, useSelector } from 'react-redux'
+import { useDispatch } from 'react-redux'
 import { IndianRupee, Store, Clock, AlertTriangle, Phone, MessageCircle } from 'lucide-react'
 import useResource from '../hooks/useResource'
 import usePaged, { useReveal } from '../hooks/usePaged'
+import useUrlState from '../hooks/useUrlState'
+import useSearchBox from '../hooks/useSearchBox'
 import { T } from '../store/adminSlice'
 import { api } from '../services/api'
 import KpiCard from '../components/KpiCard'
@@ -139,14 +140,8 @@ const REFUND_TABS = [
   ['owed', 'Not handed back'],
   ['flagged', 'Customer says not refunded'],
 ]
-const fetchRefunds = {
-  owed: (cursor) => api.refunds({ status: 'owed', limit: 30, cursor }),
-  flagged: (cursor) => api.refunds({ status: 'flagged', limit: 30, cursor }),
-}
-
-function RefundList({ status }) {
-  const q = useSelector((s) => s.admin.search)
-  const p = usePaged(fetchRefunds[status])
+function RefundList({ status, q }) {
+  const p = usePaged((cursor) => api.refunds({ status, q, limit: 30, cursor }), q)
   const [done, setDone] = useState({}) // orderId -> note
   const resolve = async (r) => {
     const reason = await ask({
@@ -187,8 +182,8 @@ function RefundList({ status }) {
       <State loading={p.loading && !p.rows.length} error={!p.rows.length && p.error}>
         <Table
           columns={cols}
-          rows={p.rows.filter((r) => matches(r, q))}
-          empty={p.hasMore ? '' : status === 'owed' ? 'Every refund has been handed back. 🎉' : 'No customer has flagged a refund.'}
+          rows={p.rows}
+          empty={p.hasMore ? '' : q ? 'No refunds match.' : status === 'owed' ? 'Every refund has been handed back. 🎉' : 'No customer has flagged a refund.'}
         />
       </State>
       <ScrollFooter {...p} count={p.rows.length} noun='orders' />
@@ -196,26 +191,27 @@ function RefundList({ status }) {
   )
 }
 
-function Refunds() {
-  const [params, setParams] = useSearchParams()
-  const status = params.get('refunds') === 'flagged' ? 'flagged' : 'owed'
+function Refunds({ q }) {
+  const [tab, setTab] = useUrlState('refunds', 'owed')
+  const status = tab === 'flagged' ? 'flagged' : 'owed'
   return (
     <Card>
       <CardHeader
         title='Refunds'
         subtitle='Paid orders that were cancelled or made smaller: the cart owes the customer the difference.'
-        right={<Seg value={status} onChange={(v) => setParams({ refunds: v })} options={REFUND_TABS} />}
+        right={<Seg value={status} onChange={setTab} options={REFUND_TABS} />}
       />
-      <RefundList key={status} status={status} />
+      <RefundList key={status} status={status} q={q} />
     </Card>
   )
 }
 
 export default function Collections() {
   const dispatch = useDispatch()
-  const q = useSelector((s) => s.admin.search)
+  // One search for the call list and the refunds below it.
+  const [q, searchBox] = useSearchBox('Search cart, owner or order #')
   const { data, loading, error } = useResource('collections', null, 60000)
-  const [bucket, setBucket] = useState('')
+  const [bucket, setBucket] = useUrlState('age')
   const [marking, setMarking] = useState({}) // cartId -> 'busy' | message
 
   const rows = (data?.items || [])
@@ -334,6 +330,7 @@ export default function Collections() {
           subtitle={`${num(rows.length)} carts · longest owed first. "Mark fee paid" settles every unpaid day through yesterday.`}
           right={
             <div className='flex max-w-full flex-wrap items-center gap-2'>
+              {searchBox}
               <Seg
                 value={bucket}
                 onChange={setBucket}
@@ -348,7 +345,7 @@ export default function Collections() {
         </State>
         <ScrollFooter {...reveal} count={rows.length} noun='carts' />
       </Card>
-      <Refunds />
+      <Refunds q={q} />
     </div>
   )
 }

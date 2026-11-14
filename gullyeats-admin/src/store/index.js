@@ -9,8 +9,8 @@ import notify from './notifySlice'
 
 const rootReducer = combineReducers({
   auth,
-  // Only the view choices; fetched data is refetched on load.
-  admin: persistReducer({ key: 'admin', storage, whitelist: ['range', 'period'] }, admin),
+  // Fetched data, refetched on load; filters live in the page's URL.
+  admin,
   notify,
 })
 

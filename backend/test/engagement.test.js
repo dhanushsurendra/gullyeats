@@ -76,7 +76,7 @@ after(async () => {
 })
 
 test('play: players, rounds, reach among QR customers, per game and per cart', async () => {
-  const { body } = await call(insights.play, { query: { days: '7' } })
+  const { body } = await call(insights.play, { query: { range: '7d' } })
   const d = body.data
   assert.strictEqual(d.days, 7)
   assert.deepStrictEqual(d.summary, {

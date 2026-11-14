@@ -23,16 +23,7 @@ const bcrypt = require('bcrypt')
 const generatePin = require('../utils/generatePin')
 const jwt = require('jsonwebtoken')
 
-const ymd = (d) => new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(d)
-const istDay = (s) => new Date(`${s}T00:00:00+05:30`)
-const todayStart = () => istDay(ymd(new Date()))
-const monthStart = (back = 0) => {
-  const [y, m] = ymd(new Date()).split('-').map(Number)
-  const d = new Date(Date.UTC(y, m - 1 - back, 1))
-  return istDay(
-    `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-01`,
-  )
-}
+const { ymd, istDay, todayStart, monthStart, rangeFor, hasRange } = require('../utils/dateRange')
 const pct = (a, b) => (b ? +(((a - b) / b) * 100).toFixed(1) : null)
 const is = (s) => ({ $eq: ['$status', s] })
 const notCancelled = { $ne: ['$status', 'CANCELLED'] }
@@ -43,19 +34,6 @@ const cnt = (cond) => ({ $sum: { $cond: [cond, 1, 0] } })
 const sumIf = (cond, field) => ({ $sum: { $cond: [cond, field, 0] } })
 const hasLoc = (c) =>
   Array.isArray(c.location?.coordinates) && c.location.coordinates.length === 2
-
-function rangeFor({ range, startDate, endDate }) {
-  const today = todayStart()
-  const tomorrow = new Date(+today + DAY)
-  if (startDate && endDate)
-    return { start: istDay(startDate), end: new Date(+istDay(endDate) + DAY) }
-  if (range === '7d')
-    return { start: new Date(+today - 6 * DAY), end: tomorrow }
-  if (range === '30d')
-    return { start: new Date(+today - 29 * DAY), end: tomorrow }
-  if (range === 'month') return { start: monthStart(), end: tomorrow }
-  return { start: today, end: tomorrow }
-}
 
 async function stats(start, end) {
   const [r] = await Order.aggregate([
@@ -172,7 +150,8 @@ exports.logout = asyncHandler(async (req, res) => {
 })
 
 exports.series = asyncHandler(async (req, res) => {
-  res.json({ success: true, data: await buildSeries(req.query.period) })
+  const { start, end } = rangeFor(req.query)
+  res.json({ success: true, data: await buildSeries(start, end) })
 })
 
 // ============================================================
@@ -312,32 +291,18 @@ async function paymentStats(start, end) {
 // Payment.amount = GullyEats revenue.
 // ============================================================
 
-async function buildSeries(period) {
-  const [unit, n] = {
-    '7d': ['day', 7],
-    '30d': ['day', 30],
-    '3m': ['week', 13],
-    '12m': ['month', 12],
-  }[period] || ['day', 30]
-
-  const today = todayStart()
-  const tomorrow = new Date(+today + DAY)
-
-  // Weeks start on Monday (IST), so every bucket is a whole week.
-  const mondayOffset = (new Date(`${ymd(today)}T00:00:00Z`).getUTCDay() + 6) % 7
-  const thisMonday = new Date(+today - mondayOffset * DAY)
-
-  const start =
-    unit === 'month'
-      ? monthStart(11)
-      : unit === 'week'
-        ? new Date(+thisMonday - (n - 1) * 7 * DAY)
-        : new Date(+today - (n - 1) * DAY)
+// Points for the range [start, end): by hour for one day, by day up to two
+// months, by week up to a year, else by month (IST).
+async function buildSeries(start, end) {
+  const span = (end - start) / DAY
+  const unit = span <= 1 ? 'hour' : span <= 62 ? 'day' : span <= 366 ? 'week' : 'month'
+  const tomorrow = end
+  const istHour = (t) => new Date(+t + 5.5 * 3600e3).toISOString().slice(0, 13)
 
   // Bucket key: the IST day, the IST Monday of its week, or the month.
   const bucket = (date) => ({
     $dateToString: {
-      format: unit === 'month' ? '%Y-%m' : '%Y-%m-%d',
+      format: { hour: '%Y-%m-%dT%H', month: '%Y-%m' }[unit] || '%Y-%m-%d',
       date:
         unit === 'week'
           ? { $dateTrunc: { date, unit: 'week', startOfWeek: 'monday', timezone: TZ } }
@@ -543,17 +508,28 @@ async function buildSeries(period) {
   // ==========================================================
 
   // Every bucket gets a point, even with no orders or payments.
-  const keys = Array.from({ length: n }, (_, i) =>
-    unit === 'month'
-      ? ymd(monthStart(n - 1 - i)).slice(0, 7)
-      : ymd(new Date(+start + i * (unit === 'week' ? 7 : 1) * DAY)),
-  )
+  const keys = []
+  if (unit === 'hour') {
+    for (let t = +start; t < +end; t += 3600e3) keys.push(istHour(t))
+  } else if (unit === 'day') {
+    for (let t = +start; t < +end; t += DAY) keys.push(ymd(new Date(t)))
+  } else if (unit === 'week') {
+    // Weeks start on Monday (IST), so every bucket is a whole week.
+    const offset = (new Date(`${ymd(start)}T00:00:00Z`).getUTCDay() + 6) % 7
+    for (let t = +start - offset * DAY; t < +end; t += 7 * DAY) keys.push(ymd(new Date(t)))
+  } else {
+    let [y, m] = ymd(start).split('-').map(Number)
+    for (; istDay(`${y}-${String(m).padStart(2, '0')}-01`) < end; m === 12 ? ((m = 1), y++) : m++) {
+      keys.push(`${y}-${String(m).padStart(2, '0')}`)
+    }
+  }
 
   // ==========================================================
   // 4. LABEL
   // ==========================================================
 
   const label = (key) => {
+    if (unit === 'hour') return `${key.slice(11)}:00`
     // A week is labelled by its Monday.
     if (unit === 'day' || unit === 'week') {
       return new Date(`${key}T00:00:00+05:30`).toLocaleDateString('en-IN', {
@@ -913,7 +889,7 @@ exports.overview = asyncHandler(async (req, res) => {
     Order.countDocuments(), // ======================================================
     // SERIES
     // ======================================================
-    buildSeries('7d'),
+    buildSeries(new Date(+today - 6 * DAY), tomorrow),
     unpaidFees(),
   ])
   const totalRevenue = allTimePayments[0]?.revenue || 0
@@ -1030,7 +1006,15 @@ exports.overview = asyncHandler(async (req, res) => {
   } // ========================================================
   // DATABASE HEALTH
   // ========================================================
-  const health = await platformHealth(req.io) // ========================================================
+  const health = await platformHealth(req.io)
+  // For the admin's own view: carts that earned GullyEats a fee today, and
+  // carts onboarded this week.
+  const [activeToday, newThisWeek] = await Promise.all([
+    Order.distinct('cartId', { createdAt: { $gte: today, $lt: tomorrow }, status: { $in: ['PAID', 'SERVED'] } }),
+    Cart.countDocuments({ createdAt: { $gte: week } }),
+  ])
+  const monthDays = new Date(Date.UTC(...ymd(today).split('-').slice(0, 2).map(Number), 0)).getUTCDate()
+  const monthElapsed = Math.max(1 / 24, (Date.now() - ms) / DAY) // ========================================================
   // RESPONSE
   // ========================================================
   res.json({
@@ -1040,6 +1024,14 @@ exports.overview = asyncHandler(async (req, res) => {
       // KPIs
       // ====================================================
       kpis: {
+        // Platform fees on today's paid orders, and this month's so far with
+        // where the month is heading at this pace.
+        feesEarnedToday: { value: td.fee, paidOrders: td.valid },
+        feesEarnedMonth: { value: month.fee, projected: Math.round((month.fee / monthElapsed) * monthDays) },
+        activeCartsToday: activeToday.length,
+        newCartsWeek: newThisWeek,
+        inactiveCarts: inactive,
+
         // ==================================================
         // GULLYEATS BUSINESS / REVENUE
         // ==================================================
@@ -1300,6 +1292,30 @@ exports.carts = asyncHandler(async (req, res) => {
 })
 
 // Newest-first paging: a "createdAt|_id" cursor from the previous page's last row.
+// Table search (?q=): carts whose name, or whose owner's name, contains it.
+const escapeRe = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+const searchText = (req) => String(req.query.q || '').trim().slice(0, 60)
+async function cartsMatching(text) {
+  const re = new RegExp(escapeRe(text), 'i')
+  const owners = await User.find({ role: 'vendor', name: re }).select('_id').lean()
+  const carts = await Cart.find({ $or: [{ cartName: re }, { userId: { $in: owners.map((o) => o._id) } }] })
+    .select('_id')
+    .lean()
+  return carts.map((c) => c._id)
+}
+// Order number, cart or owner; feedback also searches its text.
+async function orderSearch(text, { feedback = false } = {}) {
+  if (!text) return {}
+  const n = /^#?\d+$/.test(text) ? Number(text.replace('#', '')) : null
+  return {
+    $or: [
+      { cartId: { $in: await cartsMatching(text) } },
+      ...(n != null ? [{ orderNumber: n }] : []),
+      ...(feedback ? [{ feedback: new RegExp(escapeRe(text), 'i') }] : []),
+    ],
+  }
+}
+
 function afterCursor(res, cursor) {
   if (!cursor) return {}
   const [createdAt, id] = String(cursor).split('|')
@@ -1319,9 +1335,15 @@ exports.orders = asyncHandler(async (req, res) => {
   const limit = Math.min(Number(req.query.limit) || 50, 500)
   const { status, cursor } = req.query
 
+  // $and: the cursor and the search are both $or.
+  const { start, end } = rangeFor(req.query)
   const filter = {
-    ...(status ? { status: String(status) } : {}),
-    ...afterCursor(res, cursor),
+    $and: [
+      status ? { status: String(status) } : {},
+      hasRange(req.query) ? { createdAt: { $gte: start, $lt: end } } : {},
+      await orderSearch(searchText(req)),
+      afterCursor(res, cursor),
+    ],
   }
 
   // One extra row tells whether there's another page.
@@ -1358,10 +1380,15 @@ exports.orders = asyncHandler(async (req, res) => {
   })
 })
 
+async function paymentSearch(text) {
+  if (!text) return {}
+  return { $or: [{ cartName: new RegExp(escapeRe(text), 'i') }, { cartId: { $in: await cartsMatching(text) } }] }
+}
+
 exports.payments = asyncHandler(async (req, res) => {
   const limit = Math.min(Number(req.query.limit) || 30, 200)
   const [rows, sums] = await Promise.all([
-    Payment.find(afterCursor(res, req.query.cursor))
+    Payment.find({ $and: [await paymentSearch(searchText(req)), afterCursor(res, req.query.cursor)] })
       .sort({ createdAt: -1, _id: -1 })
       .limit(limit + 1)
       .lean(),
@@ -1408,10 +1435,11 @@ exports.feedback = asyncHandler(async (req, res) => {
   const hasFb = {
     $or: [{ feedback: { $exists: true, $nin: ['', null] } }, { rating: { $gte: 1 } }],
   }
+  const search = await orderSearch(searchText(req), { feedback: true })
   const [total, rows] = await Promise.all([
-    Order.countDocuments(hasFb),
+    Order.countDocuments({ $and: [hasFb, search] }),
     // $and: the cursor is an $or too, so spreading would drop one.
-    Order.find({ $and: [hasFb, afterCursor(res, req.query.cursor)] })
+    Order.find({ $and: [hasFb, search, afterCursor(res, req.query.cursor)] })
       .sort({ createdAt: -1, _id: -1 })
       .limit(limit + 1)
       .select('feedback rating orderNumber cartId createdAt')
@@ -1731,7 +1759,9 @@ exports.refunds = asyncHandler(async (req, res) => {
   const match = req.query.status === 'flagged'
     ? { flaggedAt: { $ne: null }, flagResolvedAt: null }
     : { refundedAt: null }
-  const rows = await Order.find({ $and: [{ refunds: { $elemMatch: match } }, afterCursor(res, req.query.cursor)] })
+  const rows = await Order.find({
+    $and: [{ refunds: { $elemMatch: match } }, await orderSearch(searchText(req)), afterCursor(res, req.query.cursor)],
+  })
     .sort({ createdAt: -1, _id: -1 })
     .limit(limit + 1)
     .select('orderNumber cartId status refunds createdAt')

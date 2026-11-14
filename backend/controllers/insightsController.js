@@ -7,6 +7,7 @@ const Cart = require('../models/Cart')
 const Order = require('../models/Order')
 const Payment = require('../models/Payment')
 const { getISTMidnight } = require('../utils/cartPaymentLock')
+const { rangeFor } = require('../utils/dateRange')
 const { overdueByCart } = require('../utils/overdueFees')
 
 const TZ = 'Asia/Kolkata'
@@ -464,18 +465,20 @@ const { GAMES } = require('./gameController')
 const GAME_NAMES = { nebula: 'Nebula Rush', reflex: 'Zero Reflex', synapse: 'Synapse' }
 const TOP_CARTS = 10
 
-// ?days=7 or 30 (the default; game scores are kept 30 days). IST days, oldest first.
+// The dashboard's date filter (utils/dateRange; 30 days by default, and game
+// scores are kept 30 days), as IST days, oldest first, up to today.
 function range(req) {
-  const n = Number(req.query.days) === 7 ? 7 : 30
-  const since = new Date(+today() - (n - 1) * DAY)
-  const days = Array.from({ length: n }, (_, i) => new Date(+since + i * DAY))
-  return { n, since, days, keys: days.map(ymd) }
+  const { start, end } = rangeFor({ range: '30d', ...req.query })
+  const until = new Date(Math.min(+end, +today() + DAY))
+  const n = Math.max(1, Math.round((until - start) / DAY))
+  const days = Array.from({ length: n }, (_, i) => new Date(+start + i * DAY))
+  return { n, since: start, until, days, keys: days.map(ymd) }
 }
 
 // Every QR customer in the range, by the key GullyPlay and GullyPulse use: key -> { phone, carts }.
 // shortcut: hashes each QR order in the range on every request; store the key on Order if this gets slow.
-async function customers(since) {
-  const orders = await Order.find({ orderType: 'QR', createdAt: { $gte: since } }).select('phoneNumber cartId').lean()
+async function customers(since, until) {
+  const orders = await Order.find({ orderType: 'QR', createdAt: { $gte: since, $lt: until } }).select('phoneNumber cartId').lean()
   const map = new Map()
   for (const o of orders) {
     const k = authorKeyFor(o)
@@ -515,7 +518,7 @@ exports.play = asyncHandler(async (req, res) => {
   const w = range(req)
   const [rows, cust] = await Promise.all([
     GameScore.find({ day: { $in: w.keys } }).select('game day authorKey score rounds').lean(),
-    customers(w.since),
+    customers(w.since, w.until),
   ])
   const rounds = (r) => r.rounds || 1 // rows from before rounds were counted had at least one
   const players = new Set(rows.map((r) => r.authorKey))
@@ -569,7 +572,7 @@ const MOD_DECISIONS = ['APPROVE_CONFESSION', 'REJECT_CONFESSION', 'APPROVE_COMME
 
 exports.pulse = asyncHandler(async (req, res) => {
   const w = range(req)
-  const since = { createdAt: { $gte: w.since } }
+  const since = { createdAt: { $gte: w.since, $lt: w.until } }
   const pick = 'authorKey status likeCount commentCount reportCount moderation.verdict createdAt text'
   const [posts, comments, likes, reports, decisions, cust] = await Promise.all([
     Confession.find(since).select(pick).lean(),
@@ -577,7 +580,7 @@ exports.pulse = asyncHandler(async (req, res) => {
     ConfessionLike.find(since).select('createdAt').lean(),
     ConfessionReport.countDocuments(since),
     AdminAction.find({ ...since, action: { $in: MOD_DECISIONS } }).select('target.id createdAt').lean(),
-    customers(w.since),
+    customers(w.since, w.until),
   ])
   const items = [...posts, ...comments]
   const perAuthor = new Map()
