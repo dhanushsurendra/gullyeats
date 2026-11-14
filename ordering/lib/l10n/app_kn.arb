@@ -381,5 +381,22 @@
   "overallRating": "ಒಟ್ಟು ರೇಟಿಂಗ್",
   "recentFeedback": "ಇತ್ತೀಚಿನ ಅಭಿಪ್ರಾಯ",
   "bestWeekday": "ನಿಮ್ಮ ಉತ್ತಮ ದಿನ ಸಾಮಾನ್ಯವಾಗಿ {day}",
-  "samplePhoto": "ಮಾದರಿ ಫೋಟೋ"
+  "samplePhoto": "ಮಾದರಿ ಫೋಟೋ",
+  "areaAlertReport": "ಹತ್ತಿರದ ಗಾಡಿಗಳಿಗೆ ಎಚ್ಚರಿಕೆ ನೀಡಿ",
+  "areaAlertSheetTitle": "ನಿಮ್ಮ ಗಾಡಿಯ ಹತ್ತಿರ ಏನಾಗುತ್ತಿದೆ?",
+  "areaAlertSheetNote": "1 ಕಿ.ಮೀ ಒಳಗಿನ ಪ್ರತಿ GullyEats ಗಾಡಿಗೆ ಸೂಚನೆ ಹೋಗುತ್ತದೆ. ನಿಮ್ಮ ಗಾಡಿಯ ಹೆಸರು ತೋರಿಸುವುದಿಲ್ಲ.",
+  "areaReasonEviction": "ಒತ್ತುವರಿ ತೆರವು ಕಾರ್ಯಾಚರಣೆ",
+  "areaReasonRoadBlocked": "ರಸ್ತೆ ಬಂದ್",
+  "areaReasonRain": "ಭಾರೀ ಮಳೆ",
+  "areaReasonCrowd": "ದೊಡ್ಡ ಜನಸಂದಣಿ ಅಥವಾ ಕಾರ್ಯಕ್ರಮ",
+  "areaAlertSend": "ಎಚ್ಚರಿಕೆ ಕಳುಹಿಸಿ",
+  "areaAlertSent": "ಹತ್ತಿರದ ಗಾಡಿಗಳಿಗೆ ಎಚ್ಚರಿಕೆ ಕಳುಹಿಸಲಾಗಿದೆ",
+  "areaAlertCooldown": "ನೀವು ಕಳೆದ 30 ನಿಮಿಷದಲ್ಲಿ ಈಗಾಗಲೇ ಎಚ್ಚರಿಕೆ ಕಳುಹಿಸಿದ್ದೀರಿ",
+  "areaAlertNearby": "ಸುಮಾರು {distance} ಮೀ ದೂರದಲ್ಲಿ {reason} ವರದಿಯಾಗಿದೆ",
+  "areaAlertMine": "ನೀವು ವರದಿ ಮಾಡಿದ್ದು: {reason}",
+  "areaAlertSeeItToo": "ನಾನೂ ನೋಡಿದೆ",
+  "areaAlertMore": "+{count} ಇನ್ನಷ್ಟು",
+  "areaAlertsTitle": "ನಿಮ್ಮ ಗಾಡಿಯ ಹತ್ತಿರದ ಎಚ್ಚರಿಕೆಗಳು",
+  "areaAlertHide": "ಮರೆಮಾಡಿ",
+  "areaAlertVendors": "{count} ವ್ಯಾಪಾರಿಗಳು"
 }

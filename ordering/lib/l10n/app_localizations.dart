@@ -2393,6 +2393,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sample photo'**
   String get samplePhoto;
+
+  /// No description provided for @areaAlertReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Alert nearby carts'**
+  String get areaAlertReport;
+
+  /// No description provided for @areaAlertSheetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s happening near your cart?'**
+  String get areaAlertSheetTitle;
+
+  /// No description provided for @areaAlertSheetNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Every GullyEats cart within 1 km gets a notification. Your cart\'s name is not shown.'**
+  String get areaAlertSheetNote;
+
+  /// No description provided for @areaReasonEviction.
+  ///
+  /// In en, this message translates to:
+  /// **'Eviction drive'**
+  String get areaReasonEviction;
+
+  /// No description provided for @areaReasonRoadBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Road blocked'**
+  String get areaReasonRoadBlocked;
+
+  /// No description provided for @areaReasonRain.
+  ///
+  /// In en, this message translates to:
+  /// **'Heavy rain'**
+  String get areaReasonRain;
+
+  /// No description provided for @areaReasonCrowd.
+  ///
+  /// In en, this message translates to:
+  /// **'Big crowd or event'**
+  String get areaReasonCrowd;
+
+  /// No description provided for @areaAlertSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send alert'**
+  String get areaAlertSend;
+
+  /// No description provided for @areaAlertSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Alert sent to nearby carts'**
+  String get areaAlertSent;
+
+  /// No description provided for @areaAlertCooldown.
+  ///
+  /// In en, this message translates to:
+  /// **'You already sent an alert in the last 30 minutes'**
+  String get areaAlertCooldown;
+
+  /// No description provided for @areaAlertNearby.
+  ///
+  /// In en, this message translates to:
+  /// **'{reason} reported about {distance} m away'**
+  String areaAlertNearby(String reason, int distance);
+
+  /// No description provided for @areaAlertMine.
+  ///
+  /// In en, this message translates to:
+  /// **'You reported: {reason}'**
+  String areaAlertMine(String reason);
+
+  /// No description provided for @areaAlertSeeItToo.
+  ///
+  /// In en, this message translates to:
+  /// **'I SEE IT TOO'**
+  String get areaAlertSeeItToo;
+
+  /// No description provided for @areaAlertMore.
+  ///
+  /// In en, this message translates to:
+  /// **'+{count} more'**
+  String areaAlertMore(int count);
+
+  /// No description provided for @areaAlertsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Alerts near your cart'**
+  String get areaAlertsTitle;
+
+  /// No description provided for @areaAlertHide.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide'**
+  String get areaAlertHide;
+
+  /// How many vendors reported or confirmed an area alert (always 2 or more)
+  ///
+  /// In en, this message translates to:
+  /// **'{count} vendors'**
+  String areaAlertVendors(int count);
 }
 
 class _AppLocalizationsDelegate

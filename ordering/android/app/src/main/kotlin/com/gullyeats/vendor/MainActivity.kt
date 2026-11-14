@@ -30,6 +30,10 @@ class MainActivity : FlutterActivity() {
             manager.createNotificationChannel(
                 NotificationChannel("fees", "Platform fee reminders", NotificationManager.IMPORTANCE_HIGH),
             )
+            // Area alerts from nearby carts (backend areaAlertController.js).
+            manager.createNotificationChannel(
+                NotificationChannel("area_alerts", "Area alerts", NotificationManager.IMPORTANCE_HIGH),
+            )
         }
     }
 

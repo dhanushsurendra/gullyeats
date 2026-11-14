@@ -12,11 +12,14 @@ import 'package:provider/provider.dart';
 class CartSelector extends StatelessWidget {
   const CartSelector({super.key});
 
+  /// Whether the switcher shows: not for a vendor with a single cart.
+  static bool shows(CartProvider p) => p.selectedCart != null && p.carts.length != 1;
+
   @override
   Widget build(BuildContext context) {
     final cartProvider = context.watch<CartProvider>();
     final cart = cartProvider.selectedCart;
-    if (cart == null || cartProvider.carts.length == 1) {
+    if (cart == null || !shows(cartProvider)) {
       return const SizedBox.shrink();
     }
 

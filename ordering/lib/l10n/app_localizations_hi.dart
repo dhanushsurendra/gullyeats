@@ -1278,4 +1278,64 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get samplePhoto => 'नमूना फ़ोटो';
+
+  @override
+  String get areaAlertReport => 'आसपास की गाड़ियों को सूचना दें';
+
+  @override
+  String get areaAlertSheetTitle => 'आपकी गाड़ी के पास क्या हो रहा है?';
+
+  @override
+  String get areaAlertSheetNote =>
+      '1 किमी के अंदर हर GullyEats गाड़ी को सूचना जाएगी। आपकी गाड़ी का नाम नहीं दिखेगा।';
+
+  @override
+  String get areaReasonEviction => 'अतिक्रमण हटाओ अभियान';
+
+  @override
+  String get areaReasonRoadBlocked => 'रास्ता बंद';
+
+  @override
+  String get areaReasonRain => 'तेज़ बारिश';
+
+  @override
+  String get areaReasonCrowd => 'भारी भीड़ या कार्यक्रम';
+
+  @override
+  String get areaAlertSend => 'सूचना भेजें';
+
+  @override
+  String get areaAlertSent => 'आसपास की गाड़ियों को सूचना भेज दी गई';
+
+  @override
+  String get areaAlertCooldown => 'आप पिछले 30 मिनट में एक सूचना भेज चुके हैं';
+
+  @override
+  String areaAlertNearby(String reason, int distance) {
+    return 'लगभग $distance मी दूर $reason की खबर';
+  }
+
+  @override
+  String areaAlertMine(String reason) {
+    return 'आपने बताया: $reason';
+  }
+
+  @override
+  String get areaAlertSeeItToo => 'मैंने भी देखा';
+
+  @override
+  String areaAlertMore(int count) {
+    return '+$count और';
+  }
+
+  @override
+  String get areaAlertsTitle => 'आपकी गाड़ी के पास की सूचनाएँ';
+
+  @override
+  String get areaAlertHide => 'छिपाएँ';
+
+  @override
+  String areaAlertVendors(int count) {
+    return '$count विक्रेता';
+  }
 }

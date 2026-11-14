@@ -1,3 +1,4 @@
+import 'package:clock/clock.dart';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -202,6 +203,15 @@ final fakeBackend = MockClient((request) async {
     return _json({
       'data': [
         for (final e in _names.entries) {'name': e.key, ...e.value},
+      ],
+    });
+  }
+  if (has('/carts/area-alerts/')) {
+    return _json({
+      'data': [
+        {'_id': 'a1', 'reason': 'EVICTION', 'distanceM': 600, 'createdAt': clock.now().subtract(const Duration(minutes: 12)).toIso8601String(), 'confirmations': 3, 'confirmedByMe': false, 'mine': false},
+        {'_id': 'a3', 'reason': 'EVICTION', 'distanceM': 400, 'createdAt': clock.now().subtract(const Duration(minutes: 30)).toIso8601String(), 'confirmations': 1, 'confirmedByMe': false, 'mine': false},
+        {'_id': 'a2', 'reason': 'RAIN', 'distanceM': 300, 'createdAt': clock.now().subtract(const Duration(minutes: 20)).toIso8601String(), 'confirmations': 0, 'confirmedByMe': false, 'mine': false},
       ],
     });
   }

@@ -12,7 +12,10 @@ import 'package:ordering/core/utils/payment_lock.dart';
 import 'package:ordering/core/utils/push.dart';
 import 'package:ordering/core/utils/session.dart';
 import 'package:ordering/features/cart/providers/cart_provider.dart';
+import 'package:ordering/features/alerts/area_alert_service.dart';
+import 'package:ordering/features/alerts/area_alerts.dart';
 import 'package:ordering/features/auth/providers/auth_provider.dart';
+import 'package:ordering/features/orders/providers/order_provider.dart';
 import 'package:ordering/features/cart/presentation/sales_screen.dart';
 import 'package:ordering/features/orders/screens/handover_screen.dart';
 import 'package:ordering/features/orders/screens/orders_screen.dart';
@@ -33,6 +36,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   int _currentIndex = 1;
   PaymentStatusModel? _status;
   Timer? _lockTimer;
+  // Every active alert near the cart, newest first (the sheet follows it too).
+  late final ValueNotifier<List<AreaAlert>> _alerts;
+  // Alerts closed with the X on this phone; a newer alert shows again.
+  // shortcut: kept in memory, so they come back after the app restarts; save them if vendors mind.
+  final Set<String> _hidden = {};
+  late final ValueNotifier<int> _alertTick;
 
   @override
   void initState() {
@@ -41,17 +50,24 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     Push.feeTap.addListener(_checkLock);
     // The cart can become due while the app stays open all day, so the lock
     // is checked here too, not only on the welcome screen at start-up.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _checkLock());
-    _lockTimer = Timer.periodic(
-      const Duration(minutes: 10),
-      (_) => _checkLock(),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkLock();
+      _loadAlerts();
+    });
+    _alerts = context.read<OrderProvider>().areaAlerts;
+    _alertTick = context.read<OrderProvider>().areaAlertTick
+      ..addListener(_loadAlerts);
+    _lockTimer = Timer.periodic(const Duration(minutes: 10), (_) {
+      _checkLock();
+      _loadAlerts(); // also drops alerts that have ended
+    });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     Push.feeTap.removeListener(_checkLock);
+    _alertTick.removeListener(_loadAlerts);
     _lockTimer?.cancel();
     super.dispose();
   }
@@ -61,6 +77,21 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       _checkLock();
       _refreshCart();
+      _loadAlerts();
+    }
+  }
+
+  /// Area alerts from carts within 1 km. A failed load keeps the last list.
+  Future<void> _loadAlerts() async {
+    if (!mounted) return;
+    final token = context.read<AuthProvider>().token;
+    final cartId = context.read<CartProvider>().selectedCart?.id;
+    if (token == null || cartId == null) return;
+    try {
+      final alerts = await AreaAlertService.list(token, cartId);
+      if (mounted) setState(() => _alerts.value = groupAreaAlerts(alerts));
+    } catch (e) {
+      debugPrint('Area alerts failed: $e');
     }
   }
 
@@ -113,7 +144,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final status = _status;
     // Only between midnight (the day's bill is final) and the 2:00am lock,
     // so vendors aren't interrupted while they serve during the day.
-    final showBanner = status != null && status.isFeeComingDue && status.canPay;
+    final showFeeBanner = status != null && status.isFeeComingDue && status.canPay;
+    final shown = _alerts.value.where((a) => !_hidden.contains(a.id)).toList();
+    final showBanner = showFeeBanner || shown.isNotEmpty;
     // Staff see today's handover instead of the owner's sales.
     final screens = [
       context.watch<AuthProvider>().isStaff
@@ -128,7 +161,22 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       body: Column(
         children: [
           if (showBanner)
-            SafeArea(bottom: false, child: _FeeDueBanner(status: status)),
+            SafeArea(
+              bottom: false,
+              child: Column(
+                children: [
+                  if (shown.isNotEmpty)
+                    AreaAlertBanner(
+                      alert: shown.first,
+                      more: shown.length - 1,
+                      onChanged: _loadAlerts,
+                      onTap: () => showAreaAlertsSheet(context, _alerts, _loadAlerts),
+                      onDismiss: () => setState(() => _hidden.addAll(shown.map((a) => a.id))),
+                    ),
+                  if (showFeeBanner) _FeeDueBanner(status: status),
+                ],
+              ),
+            ),
           Expanded(
             // The banner already took the status-bar inset.
             child: MediaQuery.removePadding(

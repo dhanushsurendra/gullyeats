@@ -1298,4 +1298,65 @@ class AppLocalizationsKn extends AppLocalizations {
 
   @override
   String get samplePhoto => 'ಮಾದರಿ ಫೋಟೋ';
+
+  @override
+  String get areaAlertReport => 'ಹತ್ತಿರದ ಗಾಡಿಗಳಿಗೆ ಎಚ್ಚರಿಕೆ ನೀಡಿ';
+
+  @override
+  String get areaAlertSheetTitle => 'ನಿಮ್ಮ ಗಾಡಿಯ ಹತ್ತಿರ ಏನಾಗುತ್ತಿದೆ?';
+
+  @override
+  String get areaAlertSheetNote =>
+      '1 ಕಿ.ಮೀ ಒಳಗಿನ ಪ್ರತಿ GullyEats ಗಾಡಿಗೆ ಸೂಚನೆ ಹೋಗುತ್ತದೆ. ನಿಮ್ಮ ಗಾಡಿಯ ಹೆಸರು ತೋರಿಸುವುದಿಲ್ಲ.';
+
+  @override
+  String get areaReasonEviction => 'ಒತ್ತುವರಿ ತೆರವು ಕಾರ್ಯಾಚರಣೆ';
+
+  @override
+  String get areaReasonRoadBlocked => 'ರಸ್ತೆ ಬಂದ್';
+
+  @override
+  String get areaReasonRain => 'ಭಾರೀ ಮಳೆ';
+
+  @override
+  String get areaReasonCrowd => 'ದೊಡ್ಡ ಜನಸಂದಣಿ ಅಥವಾ ಕಾರ್ಯಕ್ರಮ';
+
+  @override
+  String get areaAlertSend => 'ಎಚ್ಚರಿಕೆ ಕಳುಹಿಸಿ';
+
+  @override
+  String get areaAlertSent => 'ಹತ್ತಿರದ ಗಾಡಿಗಳಿಗೆ ಎಚ್ಚರಿಕೆ ಕಳುಹಿಸಲಾಗಿದೆ';
+
+  @override
+  String get areaAlertCooldown =>
+      'ನೀವು ಕಳೆದ 30 ನಿಮಿಷದಲ್ಲಿ ಈಗಾಗಲೇ ಎಚ್ಚರಿಕೆ ಕಳುಹಿಸಿದ್ದೀರಿ';
+
+  @override
+  String areaAlertNearby(String reason, int distance) {
+    return 'ಸುಮಾರು $distance ಮೀ ದೂರದಲ್ಲಿ $reason ವರದಿಯಾಗಿದೆ';
+  }
+
+  @override
+  String areaAlertMine(String reason) {
+    return 'ನೀವು ವರದಿ ಮಾಡಿದ್ದು: $reason';
+  }
+
+  @override
+  String get areaAlertSeeItToo => 'ನಾನೂ ನೋಡಿದೆ';
+
+  @override
+  String areaAlertMore(int count) {
+    return '+$count ಇನ್ನಷ್ಟು';
+  }
+
+  @override
+  String get areaAlertsTitle => 'ನಿಮ್ಮ ಗಾಡಿಯ ಹತ್ತಿರದ ಎಚ್ಚರಿಕೆಗಳು';
+
+  @override
+  String get areaAlertHide => 'ಮರೆಮಾಡಿ';
+
+  @override
+  String areaAlertVendors(int count) {
+    return '$count ವ್ಯಾಪಾರಿಗಳು';
+  }
 }

@@ -1297,4 +1297,65 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get samplePhoto => 'Sample photo';
+
+  @override
+  String get areaAlertReport => 'Alert nearby carts';
+
+  @override
+  String get areaAlertSheetTitle => 'What\'s happening near your cart?';
+
+  @override
+  String get areaAlertSheetNote =>
+      'Every GullyEats cart within 1 km gets a notification. Your cart\'s name is not shown.';
+
+  @override
+  String get areaReasonEviction => 'Eviction drive';
+
+  @override
+  String get areaReasonRoadBlocked => 'Road blocked';
+
+  @override
+  String get areaReasonRain => 'Heavy rain';
+
+  @override
+  String get areaReasonCrowd => 'Big crowd or event';
+
+  @override
+  String get areaAlertSend => 'Send alert';
+
+  @override
+  String get areaAlertSent => 'Alert sent to nearby carts';
+
+  @override
+  String get areaAlertCooldown =>
+      'You already sent an alert in the last 30 minutes';
+
+  @override
+  String areaAlertNearby(String reason, int distance) {
+    return '$reason reported about $distance m away';
+  }
+
+  @override
+  String areaAlertMine(String reason) {
+    return 'You reported: $reason';
+  }
+
+  @override
+  String get areaAlertSeeItToo => 'I SEE IT TOO';
+
+  @override
+  String areaAlertMore(int count) {
+    return '+$count more';
+  }
+
+  @override
+  String get areaAlertsTitle => 'Alerts near your cart';
+
+  @override
+  String get areaAlertHide => 'Hide';
+
+  @override
+  String areaAlertVendors(int count) {
+    return '$count vendors';
+  }
 }

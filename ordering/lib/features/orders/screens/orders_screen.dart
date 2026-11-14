@@ -2,6 +2,7 @@ import 'package:ordering/core/widgets/app_logo.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:ordering/features/alerts/area_alerts.dart';
 import 'package:ordering/core/utils/order_alerts.dart';
 import 'package:ordering/core/widgets/skeleton.dart';
 import 'package:ordering/core/error/app_exceptions.dart';
@@ -450,10 +451,17 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 children: [
                   const AppLogo(),
                   AppGaps.w16,
-                  const Flexible(
-                    child: Align(
-                      alignment: Alignment.centerRight,
-                      child: CartSelector(),
+                  Expanded(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        const AreaAlertButton(),
+                        // No gap when the cart switcher is hidden (a single cart).
+                        if (context.select<CartProvider, bool>(CartSelector.shows)) ...const [
+                          AppGaps.w8,
+                          Flexible(child: CartSelector()),
+                        ],
+                      ],
                     ),
                   ),
                 ],

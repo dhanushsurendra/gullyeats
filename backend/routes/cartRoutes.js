@@ -31,6 +31,7 @@ const { getSalesDashboard } = require('../controllers/salesController')
 const asyncHandler = require('../utils/asyncHandler')
 const { discoverCarts, RADIUS_KM } = require('../utils/discoverCarts')
 const auth = require('../middlewares/auth')
+const { createAreaAlert, getAreaAlerts, confirmAreaAlert } = require('../controllers/areaAlertController')
 
 router.post('/create-basic-cart', auth, createBasicCart)
 
@@ -100,5 +101,11 @@ router.get('/get-qr-details/:cartId', getQRDetails)
 router.patch('/update-stock/:cartId/:itemId', auth, updateMenuItemStock)
 
 router.put('/toggle-cart-status/:cartId', auth, toggleCartStatus)
+
+// Area alerts between nearby carts. Not behind the fee lock: a locked cart
+// still needs to hear about an eviction drive.
+router.post('/area-alerts/:cartId', auth, createAreaAlert)
+router.get('/area-alerts/:cartId', auth, getAreaAlerts)
+router.post('/area-alerts/:cartId/confirm/:alertId', auth, confirmAreaAlert)
 
 module.exports = router

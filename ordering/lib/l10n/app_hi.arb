@@ -381,5 +381,22 @@
   "overallRating": "कुल रेटिंग",
   "recentFeedback": "ताज़ा राय",
   "bestWeekday": "आपका सबसे अच्छा दिन आमतौर पर {day} होता है",
-  "samplePhoto": "नमूना फ़ोटो"
+  "samplePhoto": "नमूना फ़ोटो",
+  "areaAlertReport": "आसपास की गाड़ियों को सूचना दें",
+  "areaAlertSheetTitle": "आपकी गाड़ी के पास क्या हो रहा है?",
+  "areaAlertSheetNote": "1 किमी के अंदर हर GullyEats गाड़ी को सूचना जाएगी। आपकी गाड़ी का नाम नहीं दिखेगा।",
+  "areaReasonEviction": "अतिक्रमण हटाओ अभियान",
+  "areaReasonRoadBlocked": "रास्ता बंद",
+  "areaReasonRain": "तेज़ बारिश",
+  "areaReasonCrowd": "भारी भीड़ या कार्यक्रम",
+  "areaAlertSend": "सूचना भेजें",
+  "areaAlertSent": "आसपास की गाड़ियों को सूचना भेज दी गई",
+  "areaAlertCooldown": "आप पिछले 30 मिनट में एक सूचना भेज चुके हैं",
+  "areaAlertNearby": "लगभग {distance} मी दूर {reason} की खबर",
+  "areaAlertMine": "आपने बताया: {reason}",
+  "areaAlertSeeItToo": "मैंने भी देखा",
+  "areaAlertMore": "+{count} और",
+  "areaAlertsTitle": "आपकी गाड़ी के पास की सूचनाएँ",
+  "areaAlertHide": "छिपाएँ",
+  "areaAlertVendors": "{count} विक्रेता"
 }

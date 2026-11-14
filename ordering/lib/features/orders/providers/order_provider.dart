@@ -10,6 +10,7 @@ import 'package:ordering/features/orders/models/order_model.dart';
 import 'package:ordering/features/orders/services/menu_service.dart';
 import 'package:ordering/features/orders/services/orders_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:ordering/features/alerts/area_alert_service.dart';
 import 'package:socket_io_client/socket_io_client.dart' as socket_io;
 
 class OrderProvider with ChangeNotifier {
@@ -96,6 +97,13 @@ class OrderProvider with ChangeNotifier {
 
   /// The latest order that arrived live, for the screen's alert.
   final ValueNotifier<OrderModel?> incomingOrder = ValueNotifier(null);
+
+  /// Bumped when a nearby cart sends an area alert, so HomeScreen reloads them.
+  final ValueNotifier<int> areaAlertTick = ValueNotifier(0);
+
+  /// Active area alerts near the selected cart, newest first. HomeScreen
+  /// loads them; the Home banner and the megaphone's sheet and badge read them.
+  final ValueNotifier<List<AreaAlert>> areaAlerts = ValueNotifier(const []);
 
   // Orders that just arrived; their cards glow for a few seconds.
   final Set<String> _freshIds = {};
@@ -225,6 +233,8 @@ class OrderProvider with ChangeNotifier {
     });
 
     _socket!.onConnectError((_) => _setLive(false));
+
+    _socket!.on('area_alert', (_) => areaAlertTick.value++);
 
     // New order
     _socket!.on('new_order_received', (data) {

@@ -381,5 +381,22 @@
   "overallRating": "மொத்த மதிப்பீடு",
   "recentFeedback": "சமீபத்திய கருத்து",
   "bestWeekday": "உங்கள் சிறந்த நாள் பொதுவாக {day}",
-  "samplePhoto": "மாதிரி புகைப்படம்"
+  "samplePhoto": "மாதிரி புகைப்படம்",
+  "areaAlertReport": "அருகிலுள்ள வண்டிகளுக்கு எச்சரிக்கை",
+  "areaAlertSheetTitle": "உங்கள் வண்டி அருகே என்ன நடக்கிறது?",
+  "areaAlertSheetNote": "1 கி.மீ.க்குள் உள்ள ஒவ்வொரு GullyEats வண்டிக்கும் அறிவிப்பு செல்லும். உங்கள் வண்டியின் பெயர் காட்டப்படாது.",
+  "areaReasonEviction": "ஆக்கிரமிப்பு அகற்றும் நடவடிக்கை",
+  "areaReasonRoadBlocked": "சாலை மூடப்பட்டுள்ளது",
+  "areaReasonRain": "கனமழை",
+  "areaReasonCrowd": "பெரிய கூட்டம் அல்லது நிகழ்ச்சி",
+  "areaAlertSend": "எச்சரிக்கை அனுப்பு",
+  "areaAlertSent": "அருகிலுள்ள வண்டிகளுக்கு எச்சரிக்கை அனுப்பப்பட்டது",
+  "areaAlertCooldown": "கடந்த 30 நிமிடங்களில் ஏற்கனவே எச்சரிக்கை அனுப்பியுள்ளீர்கள்",
+  "areaAlertNearby": "சுமார் {distance} மீ தொலைவில் {reason} என தகவல்",
+  "areaAlertMine": "நீங்கள் தெரிவித்தது: {reason}",
+  "areaAlertSeeItToo": "நானும் பார்த்தேன்",
+  "areaAlertMore": "+{count} மேலும்",
+  "areaAlertsTitle": "உங்கள் வண்டி அருகே உள்ள எச்சரிக்கைகள்",
+  "areaAlertHide": "மறை",
+  "areaAlertVendors": "{count} வியாபாரிகள்"
 }

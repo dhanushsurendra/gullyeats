@@ -60,6 +60,7 @@ async function cleanup(db) {
     menuitems: { cartId: { $in: carts } },
     payments: { cartId: { $in: carts } },
     counters: { cartId: { $in: carts } },
+    areaalerts: { cartId: { $in: carts } },
     carts: { _id: { $in: carts } },
     // The QA admin stays so its login keeps working between runs.
     users: { phoneNumber: QA_PHONE, email: { $ne: QA_ADMIN } },

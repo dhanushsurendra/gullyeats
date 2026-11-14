@@ -1311,4 +1311,66 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get samplePhoto => 'மாதிரி புகைப்படம்';
+
+  @override
+  String get areaAlertReport => 'அருகிலுள்ள வண்டிகளுக்கு எச்சரிக்கை';
+
+  @override
+  String get areaAlertSheetTitle => 'உங்கள் வண்டி அருகே என்ன நடக்கிறது?';
+
+  @override
+  String get areaAlertSheetNote =>
+      '1 கி.மீ.க்குள் உள்ள ஒவ்வொரு GullyEats வண்டிக்கும் அறிவிப்பு செல்லும். உங்கள் வண்டியின் பெயர் காட்டப்படாது.';
+
+  @override
+  String get areaReasonEviction => 'ஆக்கிரமிப்பு அகற்றும் நடவடிக்கை';
+
+  @override
+  String get areaReasonRoadBlocked => 'சாலை மூடப்பட்டுள்ளது';
+
+  @override
+  String get areaReasonRain => 'கனமழை';
+
+  @override
+  String get areaReasonCrowd => 'பெரிய கூட்டம் அல்லது நிகழ்ச்சி';
+
+  @override
+  String get areaAlertSend => 'எச்சரிக்கை அனுப்பு';
+
+  @override
+  String get areaAlertSent =>
+      'அருகிலுள்ள வண்டிகளுக்கு எச்சரிக்கை அனுப்பப்பட்டது';
+
+  @override
+  String get areaAlertCooldown =>
+      'கடந்த 30 நிமிடங்களில் ஏற்கனவே எச்சரிக்கை அனுப்பியுள்ளீர்கள்';
+
+  @override
+  String areaAlertNearby(String reason, int distance) {
+    return 'சுமார் $distance மீ தொலைவில் $reason என தகவல்';
+  }
+
+  @override
+  String areaAlertMine(String reason) {
+    return 'நீங்கள் தெரிவித்தது: $reason';
+  }
+
+  @override
+  String get areaAlertSeeItToo => 'நானும் பார்த்தேன்';
+
+  @override
+  String areaAlertMore(int count) {
+    return '+$count மேலும்';
+  }
+
+  @override
+  String get areaAlertsTitle => 'உங்கள் வண்டி அருகே உள்ள எச்சரிக்கைகள்';
+
+  @override
+  String get areaAlertHide => 'மறை';
+
+  @override
+  String areaAlertVendors(int count) {
+    return '$count வியாபாரிகள்';
+  }
 }

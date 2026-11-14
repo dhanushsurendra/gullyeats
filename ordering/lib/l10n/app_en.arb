@@ -650,5 +650,54 @@
   "samplePhoto": "Sample photo",
   "@samplePhoto": {
     "description": "Label on a dish's default photo shown when the item has no photo of its own"
+  },
+  "areaAlertReport": "Alert nearby carts",
+  "areaAlertSheetTitle": "What's happening near your cart?",
+  "areaAlertSheetNote": "Every GullyEats cart within 1 km gets a notification. Your cart's name is not shown.",
+  "areaReasonEviction": "Eviction drive",
+  "areaReasonRoadBlocked": "Road blocked",
+  "areaReasonRain": "Heavy rain",
+  "areaReasonCrowd": "Big crowd or event",
+  "areaAlertSend": "Send alert",
+  "areaAlertSent": "Alert sent to nearby carts",
+  "areaAlertCooldown": "You already sent an alert in the last 30 minutes",
+  "areaAlertNearby": "{reason} reported about {distance} m away",
+  "@areaAlertNearby": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      },
+      "distance": {
+        "type": "int"
+      }
+    }
+  },
+  "areaAlertMine": "You reported: {reason}",
+  "@areaAlertMine": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "areaAlertSeeItToo": "I SEE IT TOO",
+  "areaAlertMore": "+{count} more",
+  "areaAlertsTitle": "Alerts near your cart",
+  "areaAlertHide": "Hide",
+  "@areaAlertMore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "areaAlertVendors": "{count} vendors",
+  "@areaAlertVendors": {
+    "description": "How many vendors reported or confirmed an area alert (always 2 or more)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }
