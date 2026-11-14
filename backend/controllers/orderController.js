@@ -12,6 +12,7 @@ const paymentLock = require('../utils/cartPaymentLock')
 const { getISTMidnight } = paymentLock
 const { holdsOrderKey } = require('../utils/orderKey')
 const { notifyNewOrder } = require('../utils/push')
+const { notifyAdmins, cartName } = require('../utils/adminNotify')
 const webPush = require('../utils/webPush')
 const { getPlatformFee } = require('../utils/platformFee')
 
@@ -652,6 +653,12 @@ exports.flagRefund = asyncHandler(async (req, res) => {
   last.flaggedAt = new Date()
   await order.save()
   emitOrder(req, order)
+  notifyAdmins(async () => ({
+    type: 'refund-flag',
+    title: `Customer says they weren't refunded · ${await cartName(order.cartId)}`,
+    text: `₹${last.amount} on order #${order.orderNumber}`,
+    to: '/collections?refunds=flagged',
+  }))
   res.status(200).json({ success: true, data: order })
 })
 
@@ -750,10 +757,19 @@ exports.submitOrderFeedback = asyncHandler(async (req, res) => {
   // Only food that was handed over can be rated.
   if (order.status !== 'SERVED') fail(res, 400, 'You can rate an order once it is served')
 
+  const firstLowRating = rating != null && rating <= 2 && order.rating == null
   if (text.trim()) order.feedback = text.trim().slice(0, 500)
   if (rating != null) order.rating = rating
 
   await order.save()
+  if (firstLowRating) {
+    notifyAdmins(async () => ({
+      type: 'low-rating',
+      title: `${rating}★ rating · ${await cartName(order.cartId)}`,
+      text: order.feedback ? `“${order.feedback.slice(0, 90)}” · order #${order.orderNumber}` : `Order #${order.orderNumber}`,
+      to: '/feedback',
+    }))
+  }
 
   res.status(200).json({
     success: true,

@@ -1,5 +1,9 @@
 const DishCandidate = require('../models/DishCandidate')
 const FoodName = require('../models/FoodName')
+const { notifyAdmins } = require('./adminNotify')
+
+// A name enters the admin's review list once this many different carts use it.
+const MIN_CARTS = 3
 
 // Words vendors add around a dish name that don't change the dish.
 const EXTRA = /\b(spl|special|half|full|jumbo|mini|regular|plate|pcs|pc|piece|pieces|combo|\d+)\b/g
@@ -63,15 +67,24 @@ async function trackDishes(cartId, items) {
     for (const { name, names } of items) {
       const key = dishKey(name)
       if (key.length < 3 || keys.has(key)) continue
-      await DishCandidate.updateOne(
+      const dish = await DishCandidate.findOneAndUpdate(
         { _id: key },
         {
           $setOnInsert: { name: String(name).trim(), firstSeen: new Date() },
           $addToSet: { carts: cartId },
           $set: { lastSeen: new Date() },
         },
-        { upsert: true },
-      )
+        { upsert: true, returnDocument: 'after', projection: { name: 1, carts: 1, status: 1 } },
+      ).lean()
+      if (dish.status === 'PENDING' && dish.carts.length >= MIN_CARTS) {
+        notifyAdmins({
+          type: 'dish',
+          title: `New dish to review · ${dish.name}`,
+          text: `${dish.carts.length} carts sell it. Check its spellings and photo.`,
+          to: '/dishes',
+          key: `dish:${key}`,
+        })
+      }
       const typed = Object.fromEntries(['hi', 'kn', 'ta'].filter((l) => names?.[l]).map((l) => [l, names[l]]))
       if (Object.keys(typed).length) {
         await DishCandidate.updateOne({ _id: key }, { $pull: { corrections: { cartId } } })
@@ -95,4 +108,4 @@ function commonSpellings(corrections = []) {
   return out
 }
 
-module.exports = { dishKey, trackDishes, knownKeys, forgetKnown, commonSpellings, defaultImages }
+module.exports = { MIN_CARTS, dishKey, trackDishes, knownKeys, forgetKnown, commonSpellings, defaultImages }

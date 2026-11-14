@@ -19,6 +19,7 @@ const translit = require('../utils/transliterate')
 const { trackDishes, defaultImages } = require('../utils/dishCandidates')
 const FoodName = require('../models/FoodName')
 const { getPlatformFee } = require('../utils/platformFee')
+const { notifyAdmins } = require('../utils/adminNotify')
 
 // The only uploads allowed: the bucket is public, so anything else (an HTML
 // page, say) would be served from our address.
@@ -77,6 +78,12 @@ exports.createBasicCart = asyncHandler(async (req, res) => {
     cartCity,
     cartId,
     userId: _id,
+  })
+  notifyAdmins({
+    type: 'new-cart',
+    title: `New cart · ${cartName}`,
+    text: `Onboarded in ${cartCity}`,
+    to: `/restaurants?cart=${cart._id}`,
   })
 
   res.status(201).json({

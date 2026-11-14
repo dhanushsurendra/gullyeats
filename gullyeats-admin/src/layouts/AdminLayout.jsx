@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 import Topbar from '../components/Topbar'
 import { DialogHost } from '../components/ui'
+import NotificationsLive from '../components/NotificationsLive'
 
 export default function AdminLayout() {
   const [open, setOpen] = useState(false)
@@ -14,6 +15,7 @@ export default function AdminLayout() {
         <div className="mx-auto max-w-[1500px] px-3 py-5 sm:px-6"><Outlet /></div>
       </main>
       <DialogHost />
+      <NotificationsLive />
     </div>
   )
 }

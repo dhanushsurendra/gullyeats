@@ -5,11 +5,13 @@ import storage from 'redux-persist/lib/storage'
 import auth, { sessionExpired } from './authSlice'
 import { SESSION_EXPIRED_EVENT } from '../services/api'
 import admin from './adminSlice'
+import notify from './notifySlice'
 
 const rootReducer = combineReducers({
   auth,
   // Only the view choices; fetched data is refetched on load.
   admin: persistReducer({ key: 'admin', storage, whitelist: ['range', 'period'] }, admin),
+  notify,
 })
 
 const persistConfig = {

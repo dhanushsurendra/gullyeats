@@ -108,6 +108,7 @@ async function startServer() {
   })
 
   require('./utils/feeReminders').startFeeReminders()
+  require('./utils/adminNotify').startAttentionChecks()
 }
 
 startServer().catch((err) => {
@@ -117,3 +118,4 @@ startServer().catch((err) => {
 
 // Who may join which live-update room: see utils/socketRooms.js.
 registerSocketHandlers(io)
+require('./utils/adminNotify').init(io)

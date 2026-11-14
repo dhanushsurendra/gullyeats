@@ -2,14 +2,12 @@ const asyncHandler = require('../utils/asyncHandler')
 const DishCandidate = require('../models/DishCandidate')
 const FoodName = require('../models/FoodName')
 const translit = require('../utils/transliterate')
-const { dishKey, forgetKnown, commonSpellings } = require('../utils/dishCandidates')
+const { MIN_CARTS, dishKey, forgetKnown, commonSpellings } = require('../utils/dishCandidates')
 const { logAction } = require('../utils/adminLog')
 const { s3Client } = require('../utils/s3Client')
 const { PutObjectCommand } = require('@aws-sdk/client-s3')
 const sharp = require('sharp')
 
-// A name enters the review list once this many different carts use it.
-const MIN_CARTS = 3
 const LANGS = ['hi', 'kn', 'ta']
 
 const fail = (res, status, message) => {

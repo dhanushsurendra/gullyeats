@@ -232,8 +232,16 @@ export const api = {
   settings: () => request(`${ADMIN}/settings`),
   updateSettings: (body) => post(`${ADMIN}/settings`, body),
 
+  // Things that need attention (Notifications page); also pushed live over SOCKET_URL.
+  notifications: (p) => request(`${ADMIN}/notifications`, p),
+  readNotifications: (body) => post(`${ADMIN}/notifications/read`, body),
+  socketToken: () => request(`${ADMIN}/notifications/socket-token`),
+
   resetVendorPin: (vendorId) =>
     post(`${ADMIN}/vendors/${encodeURIComponent(vendorId.trim())}/reset-pin`),
 }
 
 export const API_BASE = BASE
+
+// Vercel's /api rewrite can't carry a WebSocket, so live updates go straight to the backend.
+export const SOCKET_URL = import.meta.env.DEV ? BASE : import.meta.env.VITE_SOCKET_URL || 'https://api.gullyeats.in'

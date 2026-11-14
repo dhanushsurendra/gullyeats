@@ -111,7 +111,8 @@ const LEAK_MIN_ORDERS = 10
 const LEAK_MIN_RATE = 0.25
 const STALE_PENDING_MS = 2 * 3600e3
 
-exports.leakage = asyncHandler(async (req, res) => {
+// Also used by the daily admin notification (utils/adminNotify).
+async function leakReport() {
   const since = new Date(+today() - 29 * DAY)
   // Unpaid this long means the customer never paid through the app.
   const stale = new Date(Date.now() - STALE_PENDING_MS)
@@ -142,24 +143,26 @@ exports.leakage = asyncHandler(async (req, res) => {
   )
   const info = await cartsInfo(flagged.map((r) => r._id))
 
-  res.json({
-    success: true,
-    data: {
-      platform: { orders, rate: share(lost, orders), threshold: round(threshold * 100, 1) },
-      minOrders: LEAK_MIN_ORDERS,
-      items: flagged
-        .map((r) => ({
-          ...withInfo(info, r._id),
-          orders: r.orders,
-          cancelled: r.cancelled,
-          unpaid: r.unpaid,
-          leakRate: share(r.cancelled + r.unpaid, r.orders),
-          manualShare: share(r.manual, r.orders),
-          feesAtRisk: r.feesAtRisk,
-        }))
-        .sort((a, b) => b.leakRate - a.leakRate),
-    },
-  })
+  return {
+    platform: { orders, rate: share(lost, orders), threshold: round(threshold * 100, 1) },
+    minOrders: LEAK_MIN_ORDERS,
+    items: flagged
+      .map((r) => ({
+        ...withInfo(info, r._id),
+        orders: r.orders,
+        cancelled: r.cancelled,
+        unpaid: r.unpaid,
+        leakRate: share(r.cancelled + r.unpaid, r.orders),
+        manualShare: share(r.manual, r.orders),
+        feesAtRisk: r.feesAtRisk,
+      }))
+      .sort((a, b) => b.leakRate - a.leakRate),
+  }
+}
+exports.leakReport = leakReport
+
+exports.leakage = asyncHandler(async (req, res) => {
+  res.json({ success: true, data: await leakReport() })
 })
 
 // ------------------------------------------------------------------

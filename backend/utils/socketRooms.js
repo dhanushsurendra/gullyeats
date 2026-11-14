@@ -44,6 +44,22 @@ async function joinOrder(socket, orderKey) {
   return true
 }
 
+// Admins get a one-minute token from GET /api/admin/notifications/socket-token
+// (their login cookie stays on the dashboard's own site), signed with its own
+// secret so it can't be used as an API login.
+const adminSocketSecret = () => `${process.env.JWT_SECRET}:admin-socket`
+
+function joinAdmin(socket) {
+  try {
+    const decoded = jwt.verify(socket.handshake?.auth?.adminToken, adminSocketSecret())
+    if (decoded.role !== 'admin') return false
+    socket.join('admins')
+    return true
+  } catch {
+    return false
+  }
+}
+
 // The queue room only ever carries "queue_changed", with no order details,
 // so anyone at the cart (customers, without logging in) may join it.
 function joinQueue(socket, cartId) {
@@ -66,7 +82,11 @@ function registerSocketHandlers(io) {
       if (typeof ack === 'function') ack(joined)
     })
     socket.on('join_queue', (cartId) => joinQueue(socket, cartId))
+    socket.on('join_admin', (ack) => {
+      const joined = joinAdmin(socket)
+      if (typeof ack === 'function') ack(joined)
+    })
   })
 }
 
-module.exports = { joinVendor, joinOrder, joinQueue, registerSocketHandlers }
+module.exports = { adminSocketSecret, joinAdmin, joinVendor, joinOrder, joinQueue, registerSocketHandlers }

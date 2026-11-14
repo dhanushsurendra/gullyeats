@@ -6,6 +6,7 @@ const ConfessionComment = require('../models/ConfessionComment')
 const ConfessionLike = require('../models/ConfessionLike')
 const ConfessionReport = require('../models/ConfessionReport')
 const { check } = require('../utils/wordFilter')
+const { notifyAdmins } = require('../utils/adminNotify')
 const { HOT_DIVISOR, PIPELINE, hotUpdate, bumpCommentCount } = require('../utils/confessionScore')
 
 // GullyPulse: anonymous confessions from customers (see middlewares/confessionPoster.js).
@@ -147,6 +148,15 @@ exports.mine = asyncHandler(async (req, res) => {
   })
 })
 
+const snippet = (text) => (text.length > 90 ? `${text.slice(0, 90)}…` : text)
+const notifyReview = (kind, text) =>
+  notifyAdmins({
+    type: 'review',
+    title: `${kind === 'comment' ? 'Comment' : 'Confession'} waiting for review`,
+    text: snippet(text),
+    to: `/moderation?q=review&kind=${kind}`,
+  })
+
 exports.create = asyncHandler(async (req, res) => {
   const text = readText(res, req.body, 'confession')
   const { authorKey, orderId, cartId } = req.poster
@@ -174,6 +184,7 @@ exports.create = asyncHandler(async (req, res) => {
   if (status === 'BLOCKED') {
     return res.status(422).json({ success: false, code: 'BLOCKED', message: GUIDELINES })
   }
+  if (status === 'PENDING_REVIEW') notifyReview('confession', text)
   res.status(status === 'PUBLISHED' ? 201 : 202).json({
     success: true,
     data: {
@@ -241,6 +252,7 @@ exports.addComment = asyncHandler(async (req, res) => {
     return res.status(422).json({ success: false, code: 'BLOCKED', message: GUIDELINES })
   }
   if (status === 'PUBLISHED') await bumpCommentCount(c._id, 1)
+  if (status === 'PENDING_REVIEW') notifyReview('comment', text)
   res.status(status === 'PUBLISHED' ? 201 : 202).json({
     success: true,
     data: { status: status === 'PUBLISHED' ? 'published' : 'in_review', comment: commentToPublic(doc, req.poster) },
@@ -305,6 +317,14 @@ async function report(req, res, kind, Model, item) {
     ).lean()
     hidden = Boolean(flipped)
     if (flipped && kind === 'comment') await bumpCommentCount(updated.confessionId, -1)
+    if (flipped) {
+      notifyAdmins({
+        type: 'reported',
+        title: `${kind === 'comment' ? 'Comment' : 'Confession'} hidden after ${REPORT_THRESHOLD} reports`,
+        text: snippet(item.text),
+        to: kind === 'comment' ? '/moderation?q=reportedComments' : '/moderation?q=reported',
+      })
+    }
   }
   res.status(201).json({ success: true, data: { reported: true, hidden } })
 }

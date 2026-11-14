@@ -2,6 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import {
   LayoutDashboard,
+  Bell,
   Users,
   Store,
   ShoppingBag,
@@ -21,7 +22,13 @@ import {
 import { logout } from '../store/authSlice'
 
 const NAV = [
-  ['Overview', [['Dashboard', '/', LayoutDashboard]]],
+  [
+    'Overview',
+    [
+      ['Dashboard', '/', LayoutDashboard],
+      ['Notifications', '/notifications', Bell],
+    ],
+  ],
   [
     'Management',
     [
@@ -56,6 +63,7 @@ export default function Sidebar({ open, onClose }) {
   const dispatch = useDispatch()
   const nav = useNavigate()
   const user = useSelector((s) => s.auth.user)
+  const unread = useSelector((s) => s.notify.unread)
 
   const handleLogout = async () => {
     try {
@@ -114,6 +122,11 @@ export default function Sidebar({ open, onClose }) {
                 >
                   <Icon size={16} strokeWidth={2.2} />
                   {label}
+                  {to === '/notifications' && unread > 0 && (
+                    <span className='ml-auto rounded-full bg-red-500 px-1.5 py-px text-[10.5px] font-bold text-white'>
+                      {unread > 99 ? '99+' : unread}
+                    </span>
+                  )}
                 </NavLink>
               ))}
             </div>

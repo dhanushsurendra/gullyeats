@@ -17,6 +17,7 @@ const c = require('../controllers/adminController')
 const insights = require('../controllers/insightsController')
 const moderation = require('../controllers/moderationController')
 const dishes = require('../controllers/dishController')
+const notifications = require('../controllers/notificationController')
 const auth = require('../middlewares/auth')
 
 const adminOnly = [
@@ -65,6 +66,10 @@ router.post('/moderation/:kind/:id/suspend', adminOnly, moderation.suspend)
 router.post('/moderation/:kind/:id/:action', adminOnly, moderation.act)
 router.get('/refunds', adminOnly, c.refunds)
 router.post('/refunds/:orderId/resolve', adminOnly, c.resolveRefundFlag)
+// Things that need an admin's attention, also pushed live (Notifications page).
+router.get('/notifications', adminOnly, notifications.list)
+router.post('/notifications/read', adminOnly, notifications.markRead)
+router.get('/notifications/socket-token', adminOnly, notifications.socketToken)
 router.get('/settings', adminOnly, c.getSettings)
 router.post('/settings', adminOnly, c.updateSettings)
 router.post('/login', loginLimit, c.login)

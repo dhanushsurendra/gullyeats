@@ -4,6 +4,7 @@ const asyncHandler = require('../utils/asyncHandler')
 const Payment = require('../models/Payment')
 const { findManagedCart, findOwnedCart } = require('../utils/cartAccess')
 const { logAction } = require('../utils/adminLog')
+const { notifyAdmins } = require('../utils/adminNotify')
 const {
   createBillPayment,
   getCartPaymentStatus,
@@ -364,6 +365,12 @@ async function refundDuplicatePayment(payment, razorpayPaymentId, amountPaise) {
     await Payment.updateOne(where, { $set: { 'refunds.$.status': 'FAILED', 'refunds.$.error': message } })
     await logAction(null, 'AUTO_REFUND', target, {
       razorpayPaymentId, amount: amountPaise / 100, status: 'FAILED', error: message,
+    })
+    notifyAdmins({
+      type: 'refund-failed',
+      title: `Automatic refund failed · ${payment.cartName}`,
+      text: `₹${amountPaise / 100} duplicate fee payment. Refund it in the Razorpay dashboard.`,
+      to: '/actions?action=AUTO_REFUND',
     })
   }
   return true

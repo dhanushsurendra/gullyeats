@@ -17,6 +17,7 @@ const TITLES = {
   '/actions': ['Action log', 'Who did what, and when'],
   '/moderation': ['Moderation', 'GullyPulse confessions and comments'],
   '/insights': ['Business Insights', 'Growth, vendors, fee leakage and operations'],
+  '/notifications': ['Notifications', 'Everything that needs your attention, as it happens'],
   '/feedback': ['Feedback', 'What customers are saying'],
   '/settings': ['Settings', 'Account and connection'],
 }
@@ -37,9 +38,7 @@ export default function Topbar({ onMenu }) {
   const { range, search } = useSelector((s) => s.admin)
   const user = useSelector((s) => s.auth.user)
 
-  const attention = useSelector(
-    (s) => s.admin.data.overview?.attention?.length || 0,
-  )
+  const unread = useSelector((s) => s.notify.unread)
 
   const [title, sub] = TITLES[pathname] || TITLES['/']
 
@@ -143,6 +142,20 @@ export default function Topbar({ onMenu }) {
           className='w-full bg-transparent text-ink outline-none'
         />
       </label>
+
+      {/* Notifications */}
+      <button
+        onClick={() => nav('/notifications')}
+        aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'}
+        className='relative grid h-9 w-9 place-items-center rounded-full border border-line bg-white text-neutral-500 shadow-sm transition hover:text-ink'
+      >
+        <Bell size={16} />
+        {unread > 0 && (
+          <span className='absolute -right-1 -top-1 min-w-[18px] rounded-full bg-red-500 px-1 text-center text-[10px] font-bold leading-[18px] text-white'>
+            {unread > 99 ? '99+' : unread}
+          </span>
+        )}
+      </button>
 
       {/* Dark Mode */}
       <button
