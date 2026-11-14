@@ -37,6 +37,19 @@ function useLocation() {
       { enableHighAccuracy: false, timeout: 12000, maximumAge: 5 * 60 * 1000 },
     )
   }
+  // A denied site is never asked again, so locate as soon as the customer allows it in site settings.
+  useEffect(() => {
+    let perm
+    const onChange = () => perm.state !== 'denied' && locate()
+    navigator.permissions?.query({ name: 'geolocation' }).then(
+      (p) => {
+        perm = p
+        p.addEventListener('change', onChange)
+      },
+      () => {},
+    )
+    return () => perm?.removeEventListener('change', onChange)
+  }, [])
   return [state, locate]
 }
 
@@ -255,7 +268,6 @@ function EmptyNote({ title, text }) {
 
 // No location: what GullyEats is, how to find a cart, and a way to try again.
 function Landing({ status, onRetry }) {
-  const [tried, setTried] = useState(false)
   const denied = status === 'denied'
   return (
     <div className='animate-fade-up'>
@@ -267,8 +279,8 @@ function Landing({ status, onRetry }) {
           <div className='min-w-0'>
             <p className='font-semibold'>{denied ? 'Location is off' : "Couldn't find your location"}</p>
             <p className='mt-1 text-sm text-white/70'>
-              {denied && tried
-                ? 'Your browser is blocking it. Allow location for this site in the browser settings, or search above.'
+              {denied
+                ? 'Your browser is blocking it. Tap the icon left of the web address, then Permissions › Location › Allow (or reload the page if it was a one-time block), or search above.'
                 : 'Turn it on to see the carts around you, or search for one above.'}
             </p>
           </div>
@@ -276,7 +288,6 @@ function Landing({ status, onRetry }) {
         <Button
           className='mt-4 h-11'
           onClick={() => {
-            setTried(true)
             onRetry()
           }}
         >
