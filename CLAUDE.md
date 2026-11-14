@@ -17,7 +17,10 @@ GullyEats is a QR-based ordering platform for street food carts. It's a monorepo
 ## Commands
 
 ```bash
-# backend (needs backend/.env with MONGO_URI, JWT_SECRET, AWS_*, BUCKET_NAME, RAZORPAY_*, FRONTEND_URL_CUSTOMER, FRONTEND_URL_ADMIN)
+# backend (needs backend/.env, see backend/.env.example). Local work, e2e and device tests use the DEV database
+# gullyeats_dev (Atlas user gullyeats_dev, readWrite on that DB only) and Razorpay test keys; production
+# (DB gullyeats, live keys, its own JWT_SECRET) is configured only in Render's environment. Seed a fresh dev DB with
+# node scripts/seed-food-names.js and node scripts/qa.js setup.
 npm run dev        # nodemon server.js, default port 5000
 npm start
 
