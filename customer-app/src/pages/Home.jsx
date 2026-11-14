@@ -211,6 +211,36 @@ export default function Home() {
   )
 }
 
+// Carts without a photo get a stable food tile picked from their id, like GullyPulse's animal avatars.
+const CART_TILES = [
+  ['#ff8a3d', '#ef4444', '🌮'],
+  ['#f59e0b', '#ea580c', '🍜'],
+  ['#ec4899', '#8b5cf6', '🍡'],
+  ['#22c55e', '#0d9488', '🥗'],
+  ['#38bdf8', '#6366f1', '🍧'],
+  ['#facc15', '#f97316', '🍟'],
+  ['#f43f5e', '#be123c', '🌶️'],
+  ['#a78bfa', '#db2777', '🍩'],
+  ['#fb923c', '#b45309', '🥘'],
+  ['#2dd4bf', '#2563eb', '🥤'],
+]
+
+function CartTile({ seed }) {
+  const n = [...seed].reduce((sum, ch) => sum + ch.charCodeAt(0), 0)
+  const [from, to, emoji] = CART_TILES[n % CART_TILES.length]
+  return (
+    <span
+      aria-hidden
+      className='relative flex h-full w-full items-center justify-center text-4xl'
+      style={{ backgroundImage: `linear-gradient(135deg, ${from}, ${to})` }}
+    >
+      <span className='absolute -right-3 -top-3 h-10 w-10 rounded-full bg-white/20' />
+      <span className='absolute -bottom-4 -left-2 h-8 w-8 rounded-full bg-white/10' />
+      <span className='relative drop-shadow-md'>{emoji}</span>
+    </span>
+  )
+}
+
 function CartRow({ cart, onOpen }) {
   const [broken, setBroken] = useState(false) // a photo that fails to load shows the icon
   return (
@@ -229,9 +259,7 @@ function CartRow({ cart, onOpen }) {
             className='h-full w-full object-cover'
           />
         ) : (
-          <span className='flex h-full w-full items-center justify-center text-white/90'>
-            <RiStore2Line size={30} />
-          </span>
+          <CartTile seed={cart._id} />
         )}
       </span>
       <span className='min-w-0 flex-1'>
