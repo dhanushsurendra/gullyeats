@@ -107,7 +107,7 @@ export default function Home() {
           className='pointer-events-none absolute -right-16 -top-4 h-40 opacity-15 [filter:brightness(0)_invert(1)]'
         />
         <div className='relative flex items-center justify-between'>
-          <p className='rounded-full bg-surface/90 px-3 py-1 text-xs font-bold tracking-wide text-primary'>GullyEats</p>
+          <img src='/logo.svg' alt='GullyEats' className='h-16 w-auto drop-shadow-[0_2px_6px_rgba(0,0,0,0.18)]' />
           <ThemeToggle className='bg-black/20 text-white backdrop-blur-sm hover:bg-black/30' />
         </div>
         <h1 className='animate-fade-up relative mt-6 text-[28px] font-extrabold leading-tight'>

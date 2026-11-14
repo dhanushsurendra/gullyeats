@@ -61,15 +61,12 @@ export default function Welcome() {
   return (
     <Page className='bg-surface'>
       <div className='relative h-64 overflow-hidden bg-linear-to-br from-[#ff8a3d] to-primary'>
-        {cart.cartImageUrl ? (
-          <img src={cart.cartImageUrl} alt='' className='h-full w-full object-cover' />
-        ) : (
-          <img src={illustration} alt='' className='mx-auto h-full object-contain py-4' />
-        )}
-        <div className='absolute inset-0 bg-linear-to-t from-black/45 to-transparent' />
-        <p className='absolute left-4 top-4 rounded-full bg-surface/90 px-3 py-1 text-xs font-bold tracking-wide text-primary'>
-          GullyEats
-        </p>
+        <img src={illustration} alt='' className='animate-pop mx-auto h-full object-contain pb-8 pt-4 drop-shadow-xl' />
+        <img
+          src='/logo.svg'
+          alt='GullyEats'
+          className='absolute left-4 top-3 h-12 w-auto drop-shadow-[0_2px_6px_rgba(0,0,0,0.18)]'
+        />
         <ThemeToggle className='absolute right-3 top-3 bg-black/30 text-white backdrop-blur-sm hover:bg-black/40' />
       </div>
 
