@@ -4,9 +4,7 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   audioplayers_linux
-  file_saver
   file_selector_linux
-  rive_native
   url_launcher_linux
 )
 

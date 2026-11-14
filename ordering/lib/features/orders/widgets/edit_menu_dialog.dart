@@ -22,6 +22,7 @@ import 'package:ordering/features/profile/providers/language_provider.dart';
 import 'package:ordering/l10n/l10n.dart';
 import 'package:ordering/core/widgets/app_input.dart';
 import 'package:ordering/core/utils/format_price.dart';
+import 'package:ordering/core/utils/preview_width.dart';
 
 class EditMenuDialog extends StatefulWidget {
   final String initialName;
@@ -589,6 +590,8 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
                   children: [
                     Image.file(
                       _selectedPhoto!,
+                      // Decode at screen width, not the full 1600px upload.
+                      cacheWidth: previewWidth(context),
                       width: double.infinity,
                       height: 180,
                       fit: BoxFit.cover,
@@ -602,6 +605,8 @@ class _EditMenuDialogState extends State<EditMenuDialog> {
                   children: [
                     Image.network(
                       shownUrl,
+                      // Decode at screen width, not the full 1600px upload.
+                      cacheWidth: previewWidth(context),
                       width: double.infinity,
                       height: 180,
                       fit: BoxFit.cover,

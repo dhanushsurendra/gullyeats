@@ -106,6 +106,23 @@ void main() {
     expect(provider.parcelPrice, 10, reason: 'removing items keeps the typed value');
   });
 
+  test('building an order notifies listeners but leaves ordersVersion alone', () async {
+    final provider = await providerWithMenu();
+    var notified = 0;
+    provider.addListener(() => notified++);
+    final version = provider.ordersVersion;
+
+    provider.addItem(provider.menu.first);
+    provider.removeItem(provider.menu.first);
+    provider.setParcelPrice(5);
+    provider.clearOrder();
+    expect(notified, 4, reason: 'the new-order sheet still redraws');
+    expect(provider.ordersVersion, version, reason: 'the orders list does not');
+
+    provider.clear();
+    expect(provider.ordersVersion, version + 1);
+  });
+
   test('old orders without paidAmount count as fully paid when PAID', () {
     expect(OrderModel.fromJson({'status': 'PAID', 'totalPrice': 50}).paidAmount, 50);
     expect(OrderModel.fromJson({'status': 'PENDING', 'totalPrice': 50}).paidAmount, 0);

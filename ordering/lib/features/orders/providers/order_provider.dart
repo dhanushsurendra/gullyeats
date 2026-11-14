@@ -576,6 +576,25 @@ class OrderProvider with ChangeNotifier {
     }
   }
 
+  // Bumped on every change except to the order being built, so the orders
+  // list (open under the new-order sheet) skips redrawing on each item tap.
+  // Screens showing orders select this; the new-order sheet watches it all.
+  int _ordersVersion = 0;
+  int get ordersVersion => _ordersVersion;
+  bool _basketOnly = false;
+
+  @override
+  void notifyListeners() {
+    if (!_basketOnly) _ordersVersion++;
+    _basketOnly = false;
+    super.notifyListeners();
+  }
+
+  void _notifyBasket() {
+    _basketOnly = true;
+    notifyListeners();
+  }
+
   // ---------------------------------------------------------------------------
   // CART ITEMS
   // ---------------------------------------------------------------------------
@@ -583,14 +602,14 @@ class OrderProvider with ChangeNotifier {
   void addItem(MenuItemModel item) {
     _cart[item.id] = (_cart[item.id] ?? 0) + 1;
 
-    notifyListeners();
+    _notifyBasket();
   }
 
   void removeItem(MenuItemModel item) {
     if ((_cart[item.id] ?? 0) > 0) {
       _cart[item.id] = _cart[item.id]! - 1;
 
-      notifyListeners();
+      _notifyBasket();
     }
   }
 
@@ -618,7 +637,7 @@ class OrderProvider with ChangeNotifier {
     _parcelPrice = order.parcelCharge;
     _editFee = order.platformFee;
 
-    notifyListeners();
+    _notifyBasket();
   }
 
   MenuItemModel _lineAsItem(OrderItemModel line) => MenuItemModel(
@@ -670,13 +689,13 @@ class OrderProvider with ChangeNotifier {
     _parcelPrice = 0;
     _editFee = null;
 
-    notifyListeners();
+    _notifyBasket();
   }
 
   void setParcelPrice(double value) {
     _parcelPrice = value < 0 ? 0 : value;
 
-    notifyListeners();
+    _notifyBasket();
   }
 
   // ---------------------------------------------------------------------------

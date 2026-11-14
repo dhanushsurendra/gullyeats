@@ -126,7 +126,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<OrderProvider>();
+    // Not the order being built: see OrderProvider.ordersVersion.
+    context.select<OrderProvider, int>((p) => p.ordersVersion);
+    final provider = context.read<OrderProvider>();
     final authProvider = context.read<AuthProvider>();
 
     List<OrderModel> filteredOrders;
@@ -235,7 +237,11 @@ class _OrdersScreenState extends State<OrdersScreen> {
         await context.read<OrderProvider>().markRefunded(token, orderId);
       } catch (e) {
         if (!context.mounted) return;
-        AppSnackBar.show(context, message: AppExceptionHandler.getMessage(e), isError: true);
+        AppSnackBar.show(
+          context,
+          message: AppExceptionHandler.getMessage(e),
+          isError: true,
+        );
       }
     }
 
@@ -346,65 +352,89 @@ class _OrdersScreenState extends State<OrdersScreen> {
         ("CANCELLED", l10n.cancelled),
       ];
 
+      // One flat list (message, section headers, cards, gaps) so only the rows
+      // on screen are built: a busy day has hundreds of cards.
+      final rows = <Object>[
+        if (_loadFailed && provider.orders.isEmpty)
+          #failed
+        else if (filteredOrders.isEmpty)
+          #empty,
+      ];
+      for (final (status, label) in sections) {
+        final inSection = filteredOrders
+            .where((o) => o.status == status)
+            .toList();
+        if (inSection.isEmpty) continue;
+        rows
+          ..add((status, label, inSection.length))
+          ..addAll(inSection)
+          ..add(#gap);
+      }
+
+      Widget row(Object r) {
+        if (r == #failed) {
+          return ListMessage.failed(
+            message: context.l10n.couldntLoadOrders,
+            onRetry: _loadOrders,
+          );
+        }
+        if (r == #empty) return _buildEmptyState();
+        if (r == #gap) return AppGaps.h12;
+        if (r is (String, String, int)) {
+          return _SectionHeader(
+            label: r.$2,
+            color: orderStatusColor(r.$1),
+            count: r.$3,
+          );
+        }
+        final order = r as OrderModel;
+        return Padding(
+          // Keyed, so a new order on top doesn't reuse the cards below.
+          key: ValueKey(order.id),
+          padding: const EdgeInsets.only(bottom: 12),
+          child: OrderCard(
+            isFresh: provider.isFresh(order.id),
+            // The server refuses edits to served and cancelled orders.
+            onTap: order.status == 'CANCELLED' || order.status == 'SERVED'
+                ? null
+                : () => showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (_) => FractionallySizedBox(
+                      heightFactor: 0.95,
+                      child: AddNewOrder(existingOrder: order),
+                    ),
+                  ),
+            order: order,
+            onServe: () => markOrderServed(authProvider.token ?? "", order.id),
+            onMarkPaid: () => markOrderPaid(authProvider.token ?? "", order.id),
+            onDelete: () => deleteOrder(authProvider.token ?? "", order.id),
+            onPreparing: (on) =>
+                setPreparing(authProvider.token ?? "", order.id, on),
+            onMarkRefunded: () =>
+                markRefunded(authProvider.token ?? "", order.id),
+          ),
+        );
+      }
+
       return RefreshIndicator(
         color: AppColors.primary,
         onRefresh: _loadOrders,
-        child: ListView(
+        child: ListView.builder(
           physics: const AlwaysScrollableScrollPhysics(),
           // Room for the add button and the floating bottom navigation bar.
           padding: const EdgeInsets.only(top: 8, bottom: 180),
-          children: [
-            if (_loadFailed && provider.orders.isEmpty)
-              ListMessage.failed(
-                message: context.l10n.couldntLoadOrders,
-                onRetry: _loadOrders,
-              )
-            else if (filteredOrders.isEmpty)
-              _buildEmptyState(),
-            for (final (status, label) in sections)
-              if (filteredOrders.any((o) => o.status == status)) ...[
-                _SectionHeader(
-                  label: label,
-                  color: orderStatusColor(status),
-                  count: filteredOrders.where((o) => o.status == status).length,
-                ),
-                for (final order in filteredOrders.where(
-                  (o) => o.status == status,
-                ))
-                  Padding(
-                    // Keyed, so a new order on top doesn't reuse the cards below.
-                    key: ValueKey(order.id),
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: OrderCard(
-                      isFresh: provider.isFresh(order.id),
-                      // The server refuses edits to served and cancelled orders.
-                      onTap: order.status == 'CANCELLED' || order.status == 'SERVED'
-                          ? null
-                          : () => showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              backgroundColor: Colors.transparent,
-                              builder: (_) => FractionallySizedBox(
-                                heightFactor: 0.95,
-                                child: AddNewOrder(existingOrder: order),
-                              ),
-                            ),
-                      order: order,
-                      onServe: () =>
-                          markOrderServed(authProvider.token ?? "", order.id),
-                      onMarkPaid: () =>
-                          markOrderPaid(authProvider.token ?? "", order.id),
-                      onDelete: () =>
-                          deleteOrder(authProvider.token ?? "", order.id),
-                      onPreparing: (on) =>
-                          setPreparing(authProvider.token ?? "", order.id, on),
-                      onMarkRefunded: () =>
-                          markRefunded(authProvider.token ?? "", order.id),
-                    ),
-                  ),
-                AppGaps.h12,
-              ],
-          ],
+          itemCount: rows.length,
+          // Cards keep their place (and animations) when an order arrives on top.
+          findChildIndexCallback: (key) {
+            if (key is! ValueKey<String>) return null;
+            final at = rows.indexWhere(
+              (r) => r is OrderModel && r.id == key.value,
+            );
+            return at < 0 ? null : at;
+          },
+          itemBuilder: (_, i) => row(rows[i]),
         ),
       );
     }
@@ -511,9 +541,16 @@ class _NoOrdersArt extends StatelessWidget {
           Container(
             width: size * 0.82,
             height: size * 0.82,
-            decoration: BoxDecoration(color: AppColors.lightOrange, shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: AppColors.lightOrange,
+              shape: BoxShape.circle,
+            ),
           ),
-          Icon(Icons.receipt_long_rounded, size: size * 0.42, color: AppColors.primary),
+          Icon(
+            Icons.receipt_long_rounded,
+            size: size * 0.42,
+            color: AppColors.primary,
+          ),
           Positioned(
             right: size * 0.16,
             bottom: size * 0.18,
@@ -524,17 +561,28 @@ class _NoOrdersArt extends StatelessWidget {
                 shape: BoxShape.circle,
                 border: Border.all(color: AppColors.lightOrange, width: 3),
               ),
-              child: Icon(Icons.schedule_rounded, size: size * 0.14, color: AppColors.grey500),
+              child: Icon(
+                Icons.schedule_rounded,
+                size: size * 0.14,
+                color: AppColors.grey500,
+              ),
             ),
           ),
-          for (final (dx, dy, r) in [(0.12, 0.22, 0.03), (0.86, 0.26, 0.022), (0.2, 0.84, 0.02)])
+          for (final (dx, dy, r) in [
+            (0.12, 0.22, 0.03),
+            (0.86, 0.26, 0.022),
+            (0.2, 0.84, 0.02),
+          ])
             Positioned(
               left: size * dx,
               top: size * dy,
               child: Container(
                 width: size * r * 2,
                 height: size * r * 2,
-                decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+                decoration: const BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                ),
               ),
             ),
         ],

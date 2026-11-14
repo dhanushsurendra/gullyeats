@@ -8,6 +8,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
 import 'package:ordering/l10n/l10n.dart';
+import 'package:ordering/core/utils/preview_width.dart';
 
 /// A tappable cart-photo preview + camera launcher.
 ///
@@ -114,10 +115,17 @@ class _CartPhotoFieldState extends State<CartPhotoField> {
               border: Border.all(color: AppColors.grey200),
             ),
             child: hasNewPhoto
-                ? Image.file(_newPhoto!, fit: BoxFit.cover, width: double.infinity)
+                ? Image.file(
+                    _newPhoto!,
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    cacheWidth: previewWidth(context),
+                  )
                 : hasExistingPhoto
                     ? Image.network(
                         widget.existingImageUrl!,
+                        // Decode at screen width, not the full 1600px upload.
+                        cacheWidth: previewWidth(context),
                         fit: BoxFit.cover,
                         width: double.infinity,
                         loadingBuilder: (context, child, progress) {

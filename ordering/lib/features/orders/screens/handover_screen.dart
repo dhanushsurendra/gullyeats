@@ -23,7 +23,9 @@ class HandoverScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final t = Handover.of(context.watch<OrderProvider>().orders, clock.now());
+    // Not the order being built: see OrderProvider.ordersVersion.
+    context.select<OrderProvider, int>((p) => p.ordersVersion);
+    final t = Handover.of(context.read<OrderProvider>().orders, clock.now());
 
     return BaseScreen(
       showBackButton: false,
@@ -155,7 +157,10 @@ class Handover {
 
   factory Handover.of(List<OrderModel> orders, DateTime now) {
     var collected = 0.0, toCollect = 0.0, refunded = 0.0, toRefund = 0.0;
-    var collectedOrders = 0, unpaidOrders = 0, refundedOrders = 0, toRefundOrders = 0;
+    var collectedOrders = 0,
+        unpaidOrders = 0,
+        refundedOrders = 0,
+        toRefundOrders = 0;
 
     for (final o in orders) {
       // The list can still hold yesterday's orders if the app stayed open

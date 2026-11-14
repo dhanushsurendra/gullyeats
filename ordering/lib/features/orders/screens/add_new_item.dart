@@ -22,6 +22,7 @@ import 'package:ordering/features/profile/providers/language_provider.dart';
 import 'package:ordering/l10n/l10n.dart';
 import 'package:ordering/core/widgets/base_screen.dart';
 import 'package:ordering/core/widgets/app_footer.dart';
+import 'package:ordering/core/utils/preview_width.dart';
 
 class AddItemScreen extends StatefulWidget {
   const AddItemScreen({super.key});
@@ -380,6 +381,8 @@ class _AddItemScreenState extends State<AddItemScreen> {
                   children: [
                     Image.file(
                       _capturedPhoto!,
+                      // Decode at screen width, not the full 1600px upload.
+                      cacheWidth: previewWidth(context),
                       width: double.infinity,
                       height: 180,
                       fit: BoxFit.cover,
