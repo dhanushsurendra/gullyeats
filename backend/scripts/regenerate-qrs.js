@@ -1,4 +1,4 @@
-// Redraws every cart's QR image (S3 qrs/<cartId>.png) to open <base>/c/<cartId>,
+// Redraws every cart's QR image (S3 carts/<cartId>/qr.png) to open <base>/c/<cartId>,
 // e.g. after moving the customer app to a new domain. Posters already printed
 // keep their old address, so keep that domain live and allowed.
 //   node scripts/regenerate-qrs.js https://gullyeats.in [--dry]

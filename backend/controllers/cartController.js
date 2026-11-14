@@ -26,10 +26,10 @@ const { notifyAdmins } = require('../utils/adminNotify')
 // The vendor app sends "image/jpg" for .jpg files, so that is allowed too.
 const IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
 
-// The cart photo getPresignedUploadUrl hands out: uploads/<cartId>.<ext>?v=<n>.
+// The cart photo getPresignedUploadUrl hands out: carts/<cartId>/photo?v=<n>.
 function isCartImage(cartId, url) {
-  const prefix = `https://${process.env.BUCKET_NAME}.s3.amazonaws.com/uploads/${cartId}.`
-  return typeof url === 'string' && url.startsWith(prefix) && /^(jpeg|jpg|png|webp)(\?v=\d+)?$/.test(url.slice(prefix.length))
+  const prefix = `https://${process.env.BUCKET_NAME}.s3.amazonaws.com/carts/${cartId}/photo`
+  return typeof url === 'string' && url.startsWith(prefix) && /^(\?v=\d+)?$/.test(url.slice(prefix.length))
 }
 
 // { type: 'Point', coordinates: [lat, lng] } (lat first, see CLAUDE.md), or null if invalid.
@@ -350,10 +350,10 @@ exports.getMenuItems = asyncHandler(async (req, res) => {
   })
 })
 
-// Menu photos live under uploads/<cart _id>/menu/ (see the presigned URL
+// Menu photos live under carts/<cart _id>/menu/ (see the presigned URL
 // handlers below). Anything else is not ours to delete or to point at.
 function menuImagePrefix(cartId) {
-  return `https://${process.env.BUCKET_NAME}.s3.amazonaws.com/uploads/${cartId}/menu/`
+  return `https://${process.env.BUCKET_NAME}.s3.amazonaws.com/carts/${cartId}/menu/`
 }
 
 // One file directly in that folder (<uuid>.<ext>): no "..", "%2F" or
@@ -568,7 +568,7 @@ exports.getPresignedUploadUrlForMenuItem = asyncHandler(async (req, res) => {
   // Generate a unique ID for this menu image
   const imageId = crypto.randomUUID()
 
-  const s3Key = `uploads/${cartId}/menu/${imageId}.${extension}`
+  const s3Key = `carts/${cartId}/menu/${imageId}.${extension}`
 
   let oldImageUrl = null
 
@@ -637,7 +637,7 @@ exports.getPresignedUploadUrlForExistingMenuItem = asyncHandler(
 
     const imageId = crypto.randomUUID()
 
-    const s3Key = `uploads/${cartId}/menu/${imageId}.${extension}`
+    const s3Key = `carts/${cartId}/menu/${imageId}.${extension}`
 
     const command = new PutObjectCommand({
       Bucket: bucketName,
@@ -792,17 +792,17 @@ exports.getPresignedUploadUrl = asyncHandler(async (req, res) => {
   }
   const bucketName = process.env.BUCKET_NAME
 
-  const extension = fileType.split('/')[1]
-
+  // One fixed name whatever the format, so a new photo replaces the old file
+  // (Content-Type tells browsers the format).
+  const s3Key = `carts/${cartId}/photo`
   const command = new PutObjectCommand({
     Bucket: bucketName,
-    Key: `uploads/${cartId}.${extension}`,
+    Key: s3Key,
     ContentType: fileType,
   })
 
   const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 60 })
 
-  const s3Key = `uploads/${cartId}.${extension}`
   // The key never changes, so ?v= makes phones and CDNs fetch the new photo.
   const fileUrl = `https://${process.env.BUCKET_NAME}.s3.amazonaws.com/${s3Key}?v=${Date.now()}`
 

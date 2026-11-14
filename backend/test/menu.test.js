@@ -12,7 +12,7 @@ afterEach(restoreAll)
 process.env.BUCKET_NAME = 'bucket'
 
 const owner = { _id: 'owner1', role: 'vendor' }
-const prefix = 'https://bucket.s3.amazonaws.com/uploads/cart1/menu/'
+const prefix = 'https://bucket.s3.amazonaws.com/carts/cart1/menu/'
 
 function setup(item) {
   stub(Cart, 'findById', () => q({ _id: 'cart1', userId: 'owner1' }))
@@ -30,12 +30,12 @@ test('update ignores cartId and the client oldImageUrl, deletes only the stored 
   const r = await call(c.updateMenuItem, {
     user: owner,
     params: { cartId: 'cart1' },
-    body: { id: 'i1', cartId: 'other', price: 50, imageUrl: `${prefix}new.jpg`, oldImageUrl: 'https://bucket.s3.amazonaws.com/qrs/x.png' },
+    body: { id: 'i1', cartId: 'other', price: 50, imageUrl: `${prefix}new.jpg`, oldImageUrl: 'https://bucket.s3.amazonaws.com/carts/cart1/qr.png' },
   })
   assert.strictEqual(r.status, 201)
   assert.strictEqual(item.cartId, 'cart1')
   assert.strictEqual(item.price, 50)
-  assert.deepStrictEqual(deleted, ['uploads/cart1/menu/old.jpg'])
+  assert.deepStrictEqual(deleted, ['carts/cart1/menu/old.jpg'])
 })
 
 test('update rejects bad prices and foreign image URLs', async () => {
@@ -43,7 +43,7 @@ test('update rejects bad prices and foreign image URLs', async () => {
   setup(item)
   let r = await call(c.updateMenuItem, { user: owner, params: { cartId: 'cart1' }, body: { id: 'i1', price: -1 } })
   assert.strictEqual(r.status, 400)
-  r = await call(c.updateMenuItem, { user: owner, params: { cartId: 'cart1' }, body: { id: 'i1', imageUrl: 'https://bucket.s3.amazonaws.com/qrs/x.png' } })
+  r = await call(c.updateMenuItem, { user: owner, params: { cartId: 'cart1' }, body: { id: 'i1', imageUrl: 'https://bucket.s3.amazonaws.com/carts/cart1/qr.png' } })
   assert.strictEqual(r.status, 400)
   assert.strictEqual(item.price, 40)
 })
@@ -132,4 +132,16 @@ test("a cart's details include its average star rating and how many rated it", a
   stub(Order, 'aggregate', async () => [])
   r = await call(c.getCart, { params: { cartId: 'cart1' } })
   assert.deepStrictEqual(r.body.data.rating, { average: null, count: 0 })
+})
+
+test('cart photo must be this cart\'s carts/<id>/photo', async () => {
+  setup({})
+  stub(Cart, 'findByIdAndUpdate', () => q({ _id: 'cart1' }))
+  const s3 = 'https://bucket.s3.amazonaws.com/carts/'
+  const photo = (imageUrl) => call(c.updateCartImage, { user: owner, params: { cartId: 'cart1' }, body: { imageUrl } })
+  assert.strictEqual((await photo(`${s3}cart1/photo?v=123`)).status, 200)
+  assert.strictEqual((await photo(`${s3}cart1/photo`)).status, 200)
+  for (const bad of [`${s3}cart2/photo?v=1`, `${s3}cart1/qr.png`, `${s3}cart1/photo/../qr.png`, `${s3}cart1/photo?v=1&x=2`]) {
+    assert.strictEqual((await photo(bad)).status, 400, bad)
+  }
 })

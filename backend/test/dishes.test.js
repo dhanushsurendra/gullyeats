@@ -206,7 +206,7 @@ test('items without a photo get the dish default: exact name, alias, or a dish n
   const cartId = new mongoose.Types.ObjectId()
   await MenuItem.collection.insertMany([
     { cartId, name: 'Masala Dosa', price: 60 },
-    { cartId, name: 'Pani Puri', price: 30, imageUrl: 'https://test-bucket.s3.amazonaws.com/uploads/x/menu/own.jpg' },
+    { cartId, name: 'Pani Puri', price: 30, imageUrl: 'https://test-bucket.s3.amazonaws.com/carts/x/menu/own.jpg' },
     { cartId, name: 'Kulhad Chai', price: 20 },
   ])
   const r = await call(getMenuItems, { params: { cartId: String(cartId) } })
