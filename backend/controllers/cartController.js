@@ -4,13 +4,13 @@ const User = require('../models/User')
 const Order = require('../models/Order')
 const { findManagedCart, findOwnedCart } = require('../utils/cartAccess')
 const crypto = require('crypto')
-const QRCode = require('qrcode')
 const asyncHandler = require('../utils/asyncHandler')
 const bcrypt = require('bcrypt')
 const generateUserId = require('../utils/generateUserId')
 const { PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3')
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner')
 const { s3Client } = require('../utils/s3Client')
+const { uploadCartQr } = require('../utils/cartQr')
 const generatePin = require('../utils/generatePin')
 const { validatePhone } = require('../utils/validators')
 const Menu = require('../models/Menu')
@@ -671,32 +671,8 @@ exports.generateAndUploadQR = asyncHandler(async (req, res) => {
     throw new Error('Customer app URL is not configured')
   }
 
-  const url = `${customerAppUrl}/c/${cartId}`
-  const qrBinary = await QRCode.toBuffer(url, {
-    errorCorrectionLevel: 'H',
-    type: 'image/png',
-    quality: 0.95,
-    margin: 2,
-    scale: 10,
-    width: 1024,
-    color: {
-      light: '#FFFFFF',
-    },
-  })
-  const bucketName = process.env.BUCKET_NAME
-  const s3Key = `qrs/${cartId}.png`
-
   try {
-    const command = new PutObjectCommand({
-      Bucket: bucketName,
-      Key: s3Key,
-      Body: qrBinary,
-      ContentType: 'image/png',
-    })
-
-    await s3Client.send(command)
-
-    const qrImageUrl = `https://${bucketName}.s3.amazonaws.com/${s3Key}`
+    const qrImageUrl = await uploadCartQr(cartId, customerAppUrl)
     cart.qrImageUrl = qrImageUrl
     await cart.save()
 
