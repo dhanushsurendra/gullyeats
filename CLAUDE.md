@@ -48,6 +48,8 @@ Flutter work uses the official `dart-flutter` Claude Code plugin (`claude plugin
 
 ## API base URLs (hardcoded)
 
+Domains: `gullyeats.in` = customer app, `admin.gullyeats.in` = admin (both Vercel), `api.gullyeats.in` = backend (Render custom domain). The old `gullyeats.vercel.app`, `gullyeats-admin.vercel.app` and `gullyeats.onrender.com` stay live and allowed (printed QR posters and installed Flutter apps use them). The first entry of `FRONTEND_URL_CUSTOMER` is the address new QR posters open.
+
 Every client points at the deployed backend by default, so check these before testing locally:
 - `frontend/lib/core/constants/api_constants.dart` and `ordering/lib/core/constants/api_constants.dart` (`baseUrl`)
 - `customer-app/src/constants/api.js` (`API_BASE_URL`, overridable with `VITE_API_BASE_URL`; the Socket.IO URL comes from stripping `/api` off it)

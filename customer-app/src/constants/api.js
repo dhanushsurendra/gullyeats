@@ -1,7 +1,7 @@
 import { store } from '../store/store'
 
 // Set VITE_API_BASE_URL to test against a local backend.
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://gullyeats.onrender.com/api'
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.gullyeats.in/api'
 
 export const SOCKET_URL = API_BASE_URL.replace(/\/api$/, '')
 
