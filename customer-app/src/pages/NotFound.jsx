@@ -16,6 +16,9 @@ export default function NotFound() {
         message="This link doesn't lead to a cart. Scan the QR code on a GullyEats cart to see its menu."
       >
         {cart?._id && <Button onClick={() => navigate(`/c/${cart._id}/menu`)}>Back to {cart.cartName}</Button>}
+        <Button variant={cart?._id ? 'secondary' : 'primary'} onClick={() => navigate('/')}>
+          Find carts near me
+        </Button>
       </StatusScreen>
     </Page>
   )

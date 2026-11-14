@@ -10,7 +10,9 @@ import { api } from '../constants/api'
 import { setCartDetails } from '../store/cartSlice'
 import { shortAddress } from '../utils/format'
 
-const STEPS = [
+// Also shown on the home page when there are no carts to list.
+// eslint-disable-next-line react-refresh/only-export-components
+export const STEPS = [
   { icon: RiRestaurantLine, title: 'Pick your food', text: 'Add items from the menu. No login.' },
   { icon: RiTicket2Line, title: 'Get your token', text: 'Your token number appears instantly.' },
   { icon: RiWallet3Line, title: 'Pay at the counter', text: 'Cooking starts once you pay.' },

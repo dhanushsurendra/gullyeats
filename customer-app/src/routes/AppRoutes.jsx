@@ -8,7 +8,7 @@ import OrderServed from '../pages/OrderServed'
 import ThankYou from '../pages/ThankYou'
 import Splash from '../pages/Splash'
 import OrderCancelled from '../pages/OrderCancelled'
-import RootRedirect from '../components/RootRedirect'
+import Home from '../pages/Home'
 import Confessions from '../pages/Confessions'
 import ConfessionNew from '../pages/ConfessionNew'
 import ConfessionDetail from '../pages/ConfessionDetail'
@@ -21,7 +21,7 @@ export default function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path='/' element={<RootRedirect />} />
+        <Route path='/' element={<Home />} />
         <Route path='/c/:cartId' element={<Splash />} />
         <Route path='/c/:cartId/welcome' element={<Welcome />} />
         <Route path='/c/:cartId/menu' element={<Menu />} />

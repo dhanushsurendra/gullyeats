@@ -28,6 +28,8 @@ const {
   getFoodNames,
 } = require('../controllers/cartController')
 const { getSalesDashboard } = require('../controllers/salesController')
+const asyncHandler = require('../utils/asyncHandler')
+const { discoverCarts, RADIUS_KM } = require('../utils/discoverCarts')
 const auth = require('../middlewares/auth')
 
 router.post('/create-basic-cart', auth, createBasicCart)
@@ -75,6 +77,17 @@ router.get('/get-menu-items/:cartId', getMenuItems)
 router.get('/food-names', auth, getFoodNames)
 
 router.get('/photo-credits', getPhotoCredits)
+
+// Customer home page: nearby carts and/or a search. Public, like get-cart.
+router.get('/discover', asyncHandler(async (req, res) => {
+  const lat = Number(req.query.lat)
+  const lng = Number(req.query.lng)
+  const here =
+    req.query.lat !== undefined && Math.abs(lat) <= 90 && Math.abs(lng) <= 180 && Number.isFinite(lat + lng)
+      ? [lat, lng]
+      : null
+  res.json({ success: true, data: await discoverCarts({ here, q: req.query.q }), radiusKm: RADIUS_KM })
+}))
 
 router.put('/update-menu-item/:cartId', auth, updateMenuItem)
 
