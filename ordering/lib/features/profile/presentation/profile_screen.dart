@@ -136,7 +136,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             context.l10n.termsAndConditions,
             context.l10n.termsAndPrivacySubtitle,
             onTap: () => launchUrl(
-              Uri.parse('https://gullyeats.vercel.app/vendor-terms.html'),
+              Uri.parse('https://gullyeats.in/vendor-terms.html'),
               mode: LaunchMode.externalApplication,
             ),
           ),

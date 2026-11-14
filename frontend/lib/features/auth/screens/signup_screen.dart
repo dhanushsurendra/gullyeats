@@ -177,7 +177,7 @@ class _TermsAndConditionFooter extends StatelessWidget {
               final url = Uri.parse(
                 // Vendor terms, served by the customer web app
                 // (customer-app/public/vendor-terms.html).
-                'https://gullyeats.vercel.app/vendor-terms.html',
+                'https://gullyeats.in/vendor-terms.html',
               );
               if (await canLaunchUrl(url)) {
                 await launchUrl(url, mode: LaunchMode.externalApplication);
