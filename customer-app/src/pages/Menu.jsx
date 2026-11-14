@@ -247,7 +247,10 @@ export default function Menu() {
             />
           )}
         </div>
-        <button type='button' onClick={() => navigate('/photo-credits')} className='mx-auto mt-6 block text-xs text-grey-500 underline underline-offset-2'>
+        <p className='mx-auto mt-6 max-w-xs text-center text-xs text-grey-500'>
+          Photos are for reference only. Your food may look different.
+        </p>
+        <button type='button' onClick={() => navigate('/photo-credits')} className='mx-auto mt-2 block text-xs text-grey-500 underline underline-offset-2'>
           Photo credits
         </button>
       </main>
