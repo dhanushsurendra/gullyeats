@@ -211,7 +211,7 @@ export default function Home() {
   )
 }
 
-// Carts without a photo get a stable food tile picked from their id, like GullyPulse's animal avatars.
+// Every cart gets a stable food tile picked from its id, like GullyPulse's animal avatars.
 const CART_TILES = [
   ['#ff8a3d', '#ef4444', '🌮'],
   ['#f59e0b', '#ea580c', '🍜'],
@@ -242,25 +242,14 @@ function CartTile({ seed }) {
 }
 
 function CartRow({ cart, onOpen }) {
-  const [broken, setBroken] = useState(false) // a photo that fails to load shows the icon
   return (
     <button
       type='button'
       onClick={onOpen}
       className='flex w-full items-center gap-3 rounded-card bg-surface p-3 text-left shadow-card transition active:scale-[0.98]'
     >
-      <span className='h-18 w-18 shrink-0 overflow-hidden rounded-2xl bg-linear-to-br from-[#ff8a3d] to-primary'>
-        {cart.cartImageUrl && !broken ? (
-          <img
-            src={cart.cartImageUrl}
-            alt=''
-            loading='lazy'
-            onError={() => setBroken(true)}
-            className='h-full w-full object-cover'
-          />
-        ) : (
-          <CartTile seed={cart._id} />
-        )}
+      <span className='h-18 w-18 shrink-0 overflow-hidden rounded-2xl'>
+        <CartTile seed={cart._id} />
       </span>
       <span className='min-w-0 flex-1'>
         <span className='block truncate text-[15px] font-semibold'>{cart.cartName}</span>
