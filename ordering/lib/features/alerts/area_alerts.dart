@@ -15,6 +15,7 @@ import 'package:ordering/features/cart/providers/cart_provider.dart';
 import 'package:ordering/features/orders/providers/order_provider.dart';
 import 'package:ordering/l10n/l10n.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 String areaReasonLabel(AppLocalizations l10n, String reason) =>
     switch (reason) {
@@ -225,6 +226,36 @@ class _AreaAlertBannerState extends State<AreaAlertBanner> {
   }
 }
 
+/// Which other carts' alerts this phone has already seen in the alerts
+/// sheet, so the Profile tile counts only new ones (a later report has a new
+/// id and counts again). Saved on the phone, so a restart doesn't bring the
+/// count back.
+class AreaAlertsSeen {
+  AreaAlertsSeen._();
+
+  static const _key = 'area_alerts_seen';
+  static final ids = ValueNotifier<Set<String>>({});
+
+  static Future<void> load() async {
+    final prefs = await SharedPreferences.getInstance();
+    ids.value = {...?prefs.getStringList(_key)};
+  }
+
+  /// Marks the active alerts seen. Only active ids are kept, so the list
+  /// stays small: alerts end within hours.
+  static Future<void> markSeen(List<AreaAlert> alerts) async {
+    final next = alerts.where((a) => !a.mine).map((a) => a.id).toSet();
+    if (setEquals(next, ids.value)) return;
+    ids.value = next;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_key, next.toList());
+  }
+
+  /// Other carts' alerts not seen yet.
+  static int unseen(List<AreaAlert> alerts) =>
+      alerts.where((a) => !a.mine && !ids.value.contains(a.id)).length;
+}
+
 /// Every active alert near the cart, newest first. Follows [alerts] so a
 /// confirmation or a new alert shows while it's open.
 void showAreaAlertsSheet(
@@ -232,6 +263,7 @@ void showAreaAlertsSheet(
   ValueListenable<List<AreaAlert>> alerts,
   VoidCallback onChanged,
 ) {
+  AreaAlertsSeen.markSeen(alerts.value);
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -269,11 +301,13 @@ void showAreaAlertsSheet(
         ),
       ),
     ),
-  );
+  ).whenComplete(() => AreaAlertsSeen.markSeen(alerts.value));
 }
 
 /// The alerts sheet: active alerts near the cart above the send options.
 Future<void> openAreaAlertSheet(BuildContext context) async {
+  final alerts = context.read<OrderProvider>().areaAlerts;
+  AreaAlertsSeen.markSeen(alerts.value);
   final sent = await showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
@@ -284,6 +318,8 @@ Future<void> openAreaAlertSheet(BuildContext context) async {
     ),
     builder: (_) => const _ReportSheet(),
   );
+  // Alerts that arrived while it was open were seen too.
+  AreaAlertsSeen.markSeen(alerts.value);
   if (sent == true && context.mounted) {
     // The server tells only the other carts, so reload our own list here.
     context.read<OrderProvider>().areaAlertTick.value++;
@@ -297,18 +333,19 @@ Future<void> openAreaAlertSheet(BuildContext context) async {
 
 /// The "Alert nearby carts" tile on Profile; opens [openAreaAlertSheet].
 /// Orange like the other items while it's quiet; red, with a count, while
-/// other carts' alerts are active (still there after the Home banner is
-/// closed), so red always means something to look at.
+/// other carts' alerts haven't been seen in the sheet yet (still there after
+/// the Home banner is closed), so red always means something new.
 class AreaAlertTile extends StatelessWidget {
   const AreaAlertTile({super.key});
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return ValueListenableBuilder(
-      valueListenable: context.read<OrderProvider>().areaAlerts,
-      builder: (context, list, _) {
-        final count = list.where((a) => !a.mine).length;
+    final alerts = context.read<OrderProvider>().areaAlerts;
+    return ListenableBuilder(
+      listenable: Listenable.merge([alerts, AreaAlertsSeen.ids]),
+      builder: (context, _) {
+        final count = AreaAlertsSeen.unseen(alerts.value);
         final alert = count > 0;
         return IconTile(
           icon: Icons.campaign_outlined,

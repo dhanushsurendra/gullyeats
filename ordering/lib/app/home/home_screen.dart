@@ -56,6 +56,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     Push.feeTap.addListener(_checkLock);
     // The cart can become due while the app stays open all day, so the lock
     // is checked here too, not only on the welcome screen at start-up.
+    AreaAlertsSeen.load();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkLock();
       _loadAlerts();

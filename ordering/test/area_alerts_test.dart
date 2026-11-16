@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ordering/features/alerts/area_alert_service.dart';
+import 'package:ordering/features/alerts/area_alerts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 AreaAlert alert(
   String id,
@@ -49,5 +51,24 @@ void main() {
   test('a group of only this cart\'s reports is its own', () {
     final g = groupAreaAlerts([alert('m', 'CROWD', 1, mine: true)]).single;
     expect(g.mine, isTrue);
+  });
+
+  test('the Profile count clears once alerts are seen, and a new one counts again', () async {
+    SharedPreferences.setMockInitialValues({});
+    await AreaAlertsSeen.load();
+    final mine = alert('m1', 'RAIN', 1, mine: true);
+    final road = alert('r1', 'ROAD_BLOCKED', 2);
+    expect(AreaAlertsSeen.unseen([road, mine]), 1, reason: 'own reports never count');
+
+    await AreaAlertsSeen.markSeen([road, mine]);
+    expect(AreaAlertsSeen.unseen([road, mine]), 0);
+
+    final eviction = alert('e1', 'EVICTION', 0);
+    expect(AreaAlertsSeen.unseen([eviction, road, mine]), 1);
+
+    // Kept on the phone: a restart doesn't bring the count back.
+    AreaAlertsSeen.ids.value = {};
+    await AreaAlertsSeen.load();
+    expect(AreaAlertsSeen.unseen([road]), 0);
   });
 }
