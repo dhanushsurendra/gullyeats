@@ -52,7 +52,10 @@ class _AddNewOrderState extends State<AddNewOrder> {
     super.initState();
 
     parcelChargeController = TextEditingController(
-      text: widget.existingOrder?.parcelCharge.toStringAsFixed(0) ?? '0',
+      // Empty, not "0": the hint shows 0, and typing never makes "060".
+      text: (widget.existingOrder?.parcelCharge ?? 0) > 0
+          ? widget.existingOrder!.parcelCharge.toStringAsFixed(0)
+          : '',
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -637,7 +640,10 @@ class _AddNewOrderState extends State<AddNewOrder> {
             child: AppInput(
               controller: parcelChargeController,
               keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                noLeadingZeros,
+              ],
               hint: "0",
               prefix: Padding(
                 padding: const EdgeInsets.only(left: 16, right: 8),
@@ -865,3 +871,14 @@ class _AddNewOrderState extends State<AddNewOrder> {
     );
   }
 }
+
+/// "060" -> "60" (a lone "0" stays), keeping the cursor at the end.
+final noLeadingZeros = TextInputFormatter.withFunction((old, value) {
+  final t = value.text.replaceFirst(RegExp(r'^0+(?=\d)'), '');
+  return t == value.text
+      ? value
+      : TextEditingValue(
+          text: t,
+          selection: TextSelection.collapsed(offset: t.length),
+        );
+});
