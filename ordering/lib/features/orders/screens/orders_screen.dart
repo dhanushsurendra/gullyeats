@@ -478,7 +478,10 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 children: [
                   Text(
                     getOrdersTitle(selectedTab, filteredOrders),
-                    style: AppTextStyles.heading1,
+                    // Section size, not page size: the logo already heads the screen.
+                    style: AppTextStyles.heading2.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   _LiveBadge(isLive: provider.isLive),
                 ],
