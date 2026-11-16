@@ -171,94 +171,99 @@ class _Hero extends StatelessWidget {
           end: Alignment.bottomRight,
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              CharacterView(mood: mood, size: 112),
-              AppGaps.w12,
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${w.tempC}°',
-                      style: AppTextStyles.display.copyWith(
-                        color: ink,
-                        height: 1.1,
-                      ),
-                    ),
-                    AppGaps.h4,
-                    Row(
-                      children: [
-                        Icon(
-                          conditionIcon(w.condition, night: night),
-                          size: 18,
+      child: CustomPaint(
+        painter: moodHasStars(mood) ? const NightStars() : null,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                CharacterView(mood: mood, size: 112),
+                AppGaps.w12,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${w.tempC}°',
+                        style: AppTextStyles.display.copyWith(
                           color: ink,
+                          height: 1.1,
                         ),
-                        AppGaps.w4,
-                        Flexible(
-                          child: Text(
-                            conditionLabel(l10n, w.condition),
-                            style: AppTextStyles.body.copyWith(
-                              color: ink,
-                              fontWeight: FontWeight.w700,
+                      ),
+                      AppGaps.h4,
+                      Row(
+                        children: [
+                          Icon(
+                            conditionIcon(w.condition, night: night),
+                            size: 18,
+                            color: ink,
+                          ),
+                          AppGaps.w4,
+                          Flexible(
+                            child: Text(
+                              conditionLabel(l10n, w.condition),
+                              style: AppTextStyles.body.copyWith(
+                                color: ink,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    Text(
-                      l10n.weatherFeelsLike(w.feelsC),
-                      style: AppTextStyles.caption.copyWith(
-                        color: ink.withValues(alpha: 0.8),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          AppGaps.h12,
-          // What the character says, as a speech bubble.
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: dark
-                  ? AppColors.white.withValues(alpha: 0.12)
-                  : AppColors.white.withValues(alpha: 0.65),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(4),
-                topRight: Radius.circular(12),
-                bottomLeft: Radius.circular(12),
-                bottomRight: Radius.circular(12),
-              ),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (warn) ...[
-                  Icon(
-                    Icons.warning_amber_rounded,
-                    size: 18,
-                    color: dark ? const Color(0xFFFCA5A5) : AppColors.error,
-                  ),
-                  AppGaps.w8,
-                ],
-                Expanded(
-                  child: Text(
-                    moodMessage(context, mood, w),
-                    style: AppTextStyles.body.copyWith(
-                      color: ink,
-                      fontWeight: FontWeight.w600,
-                    ),
+                      Text(
+                        l10n.weatherFeelsLike(w.feelsC),
+                        style: AppTextStyles.caption.copyWith(
+                          color: dark
+                              ? AppColors.lilac
+                              : ink.withValues(alpha: 0.8),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-          ),
-        ],
+            AppGaps.h12,
+            // What the character says, as a speech bubble.
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: dark
+                    ? AppColors.white.withValues(alpha: 0.12)
+                    : AppColors.white.withValues(alpha: 0.65),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(4),
+                  topRight: Radius.circular(12),
+                  bottomLeft: Radius.circular(12),
+                  bottomRight: Radius.circular(12),
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (warn) ...[
+                    Icon(
+                      Icons.warning_amber_rounded,
+                      size: 18,
+                      color: dark ? const Color(0xFFFCA5A5) : AppColors.error,
+                    ),
+                    AppGaps.w8,
+                  ],
+                  Expanded(
+                    child: Text(
+                      moodMessage(context, mood, w),
+                      style: AppTextStyles.body.copyWith(
+                        color: ink,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -655,7 +660,11 @@ class _Figure extends StatelessWidget {
 /// Forecast rain for an hour: "0 mm", "0.4 mm", "12 mm".
 String rainText(double mm) {
   final r = (mm * 10).round() / 10;
-  return '${r == 0 ? '0' : r < 10 ? r.toStringAsFixed(1) : r.round()} mm';
+  return '${r == 0
+      ? '0'
+      : r < 10
+      ? r.toStringAsFixed(1)
+      : r.round()} mm';
 }
 
 /// Forecast rain for an hour in words, by the usual hourly rates: under

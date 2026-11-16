@@ -9,6 +9,7 @@ import 'package:ordering/core/constants/api_constants.dart';
 class HourWeather {
   final DateTime at;
   final int tempC;
+
   /// Forecast rain in that hour, in mm.
   final double rainMm;
   final String condition;
@@ -37,6 +38,7 @@ class WeatherData {
   final int humidity;
   final int windKph;
   final String condition;
+
   /// Forecast rain in that hour, in mm.
   final double rainMm;
   final DateTime sunrise;

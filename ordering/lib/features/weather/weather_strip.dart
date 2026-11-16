@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_gaps.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
 import 'package:ordering/features/cart/providers/cart_provider.dart';
@@ -14,15 +15,53 @@ import 'package:ordering/l10n/l10n.dart';
 import 'package:provider/provider.dart';
 
 /// The sky behind a mood: an illustration, the same in light and dark theme.
+/// Chill's nights use the Sales revenue card's night gradient.
 List<Color> moodSky(Mood m) => switch (m) {
   Mood.sunnyClear => const [Color(0xFF8FD3FF), Color(0xFFDDF3FF)],
   Mood.sunnyHot => const [Color(0xFFFFC46B), Color(0xFFFFE9C2)],
   Mood.sunnyCloudy => const [Color(0xFFA9C7E3), Color(0xFFE3EEF8)],
   Mood.sunnyRain => const [Color(0xFF8DA4BF), Color(0xFFD3DEEA)],
   Mood.chillHeavyRain => const [Color(0xFF34435E), Color(0xFF55657F)],
-  Mood.sleeping => const [Color(0xFF0B1230), Color(0xFF1E2350)],
-  _ => const [Color(0xFF1A0F45), Color(0xFF2E3A7A)],
+  Mood.sleeping => const [
+    Color(0xFF060A1C),
+    AppColors.nightDeep,
+    AppColors.night,
+  ],
+  _ => const [AppColors.nightDeep, AppColors.night, AppColors.nightSoft],
 };
+
+/// A few faint stars on a dry night sky.
+bool moodHasStars(Mood m) =>
+    m == Mood.chillEvening || m == Mood.chillCool || m == Mood.sleeping;
+
+/// Static stars at fixed spots (fractions of the card), drawn behind the
+/// content. Fixed, so goldens stay stable and nothing moves.
+class NightStars extends CustomPainter {
+  const NightStars();
+
+  static const _stars = [
+    (0.08, 0.18, 1.2),
+    (0.22, 0.72, 0.9),
+    (0.38, 0.12, 1.0),
+    (0.55, 0.30, 1.4),
+    (0.66, 0.82, 0.9),
+    (0.78, 0.16, 1.1),
+    (0.88, 0.55, 1.3),
+    (0.95, 0.10, 0.8),
+    (0.47, 0.90, 0.8),
+  ];
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final dot = Paint()..color = AppColors.white.withValues(alpha: 0.55);
+    for (final (x, y, r) in _stars) {
+      canvas.drawCircle(Offset(x * size.width, y * size.height), r, dot);
+    }
+  }
+
+  @override
+  bool shouldRepaint(NightStars oldDelegate) => false;
+}
 
 bool moodIsDark(Mood m) => m.character != Character.sunny;
 
@@ -125,73 +164,76 @@ class _WeatherStripState extends State<WeatherStrip> {
               ),
               child: InkWell(
                 onTap: () => showWeatherSheet(context, mood),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 6, 12, 6),
-                  child: Row(
-                    children: [
-                      // The handover: a new character slides in.
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 1200),
-                        transitionBuilder: (child, a) => FadeTransition(
-                          opacity: a,
-                          child: SlideTransition(
-                            position:
-                                Tween(
-                                  begin: const Offset(0, 0.6),
-                                  end: Offset.zero,
-                                ).animate(
-                                  CurvedAnimation(
-                                    parent: a,
-                                    curve: Curves.easeOutBack,
+                child: CustomPaint(
+                  painter: moodHasStars(mood) ? const NightStars() : null,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 6, 12, 6),
+                    child: Row(
+                      children: [
+                        // The handover: a new character slides in.
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 1200),
+                          transitionBuilder: (child, a) => FadeTransition(
+                            opacity: a,
+                            child: SlideTransition(
+                              position:
+                                  Tween(
+                                    begin: const Offset(0, 0.6),
+                                    end: Offset.zero,
+                                  ).animate(
+                                    CurvedAnimation(
+                                      parent: a,
+                                      curve: Curves.easeOutBack,
+                                    ),
                                   ),
+                              child: child,
+                            ),
+                          ),
+                          child: CharacterView(
+                            key: ValueKey(mood.character),
+                            mood: mood,
+                            size: 60,
+                          ),
+                        ),
+                        AppGaps.w8,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                '${w.tempC}° · ${conditionLabel(context.l10n, w.condition)}',
+                                style: AppTextStyles.body.copyWith(
+                                  color: ink,
+                                  fontWeight: FontWeight.w700,
                                 ),
-                            child: child,
+                              ),
+                              Text(
+                                moodMessage(context, mood, w),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTextStyles.caption.copyWith(
+                                  color: ink.withValues(alpha: 0.85),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        child: CharacterView(
-                          key: ValueKey(mood.character),
-                          mood: mood,
-                          size: 60,
-                        ),
-                      ),
-                      AppGaps.w8,
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              '${w.tempC}° · ${conditionLabel(context.l10n, w.condition)}',
-                              style: AppTextStyles.body.copyWith(
-                                color: ink,
-                                fontWeight: FontWeight.w700,
-                              ),
+                        if (warn)
+                          const Padding(
+                            padding: EdgeInsets.only(left: 6),
+                            child: Icon(
+                              Icons.warning_amber_rounded,
+                              color: Color(0xFFDC2626),
+                              size: 20,
                             ),
-                            Text(
-                              moodMessage(context, mood, w),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppTextStyles.caption.copyWith(
-                                color: ink.withValues(alpha: 0.85),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (warn)
-                        const Padding(
-                          padding: EdgeInsets.only(left: 6),
-                          child: Icon(
-                            Icons.warning_amber_rounded,
-                            color: Color(0xFFDC2626),
-                            size: 20,
                           ),
+                        Icon(
+                          Icons.chevron_right,
+                          color: ink.withValues(alpha: 0.6),
                         ),
-                      Icon(
-                        Icons.chevron_right,
-                        color: ink.withValues(alpha: 0.6),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
