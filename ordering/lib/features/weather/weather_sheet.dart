@@ -25,6 +25,7 @@ void showWeatherSheet(BuildContext context, Mood mood) {
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
+    showDragHandle: true,
     backgroundColor: AppColors.surface,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -33,8 +34,18 @@ void showWeatherSheet(BuildContext context, Mood mood) {
   );
 }
 
-/// Current conditions, the next hours and, in the evening, Chill's card with
-/// today's business so far.
+/// Cards inside the sheet: a soft grey on the sheet in both themes, like
+/// the app's other sheets (never the page colour, which reads as a hole).
+BoxDecoration _card({Color? color, Color? border}) => BoxDecoration(
+  color: color ?? AppColors.grey100,
+  borderRadius: BorderRadius.circular(16),
+  border: border == null ? null : Border.all(color: border, width: 1.5),
+);
+
+const _rainBlue = Color(0xFF3B82F6);
+
+/// Current conditions, the day's light, the next hours and, in the evening,
+/// Chill's card with today's business so far.
 class WeatherDetails extends StatelessWidget {
   final Mood mood;
 
@@ -48,101 +59,83 @@ class WeatherDetails extends StatelessWidget {
       valueListenable: WeatherService.current,
       builder: (context, w, _) {
         if (w == null || w.isStale) return const SizedBox.shrink();
-        final dark = moodIsDark(mood);
-        final ink = dark ? Colors.white : const Color(0xFF1F2430);
-        final night = MoodPicker.isNight(clock.now(), w);
-        final ago = clock.now().difference(w.updatedAt).inMinutes;
+        final now = clock.now();
+        final night = MoodPicker.isNight(now, w);
+        final ago = now.difference(w.updatedAt).inMinutes;
 
         return ListView(
           shrinkWrap: true,
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
           children: [
-            // The sky, the character and the headline numbers.
-            Container(
-              padding: const EdgeInsets.fromLTRB(8, 8, 16, 16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                gradient: LinearGradient(
-                  colors: moodSky(mood),
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
+            _Hero(mood: mood, weather: w, night: night),
+            AppGaps.h12,
+            IntrinsicHeight(
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  CharacterView(mood: mood, size: 128),
+                  _Stat(
+                    Icons.water_drop_rounded,
+                    l10n.weatherRain,
+                    rainWord(l10n, w.rainMm),
+                  ),
                   AppGaps.w8,
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${w.tempC}°',
-                          style: AppTextStyles.display.copyWith(color: ink),
-                        ),
-                        Text(
-                          conditionLabel(l10n, w.condition),
-                          style: AppTextStyles.body.copyWith(
-                            color: ink,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        Text(
-                          '${l10n.weatherFeelsLike(w.feelsC)} · ${l10n.weatherSunset(DateFormat.jm(locale).format(w.sunset))}',
-                          style: AppTextStyles.caption.copyWith(
-                            color: ink.withValues(alpha: 0.8),
-                          ),
-                        ),
-                        AppGaps.h8,
-                        Text(
-                          moodMessage(context, mood, w),
-                          style: AppTextStyles.caption.copyWith(
-                            color: ink,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
+                  _Stat(
+                    Icons.opacity_rounded,
+                    l10n.weatherHumidity,
+                    '${w.humidity}%',
+                  ),
+                  AppGaps.w8,
+                  _Stat(
+                    Icons.air_rounded,
+                    l10n.weatherWind,
+                    '${w.windKph} km/h',
                   ),
                 ],
               ),
             ),
-            AppGaps.h16,
-            Row(
-              children: [
-                _Stat(
-                  Icons.water_drop_outlined,
-                  l10n.weatherRain,
-                  rainWord(l10n, w.rainMm),
-                ),
-                AppGaps.w8,
-                _Stat(Icons.opacity, l10n.weatherHumidity, '${w.humidity}%'),
-                AppGaps.w8,
-                _Stat(Icons.air, l10n.weatherWind, '${w.windKph} km/h'),
-              ],
-            ),
-            AppGaps.h16,
+            AppGaps.h12,
+            _DayLight(weather: w, now: now, locale: locale),
+            AppGaps.h24,
             Text(l10n.weatherNextHours, style: AppTextStyles.heading3),
             AppGaps.h8,
             // A row that sizes itself to its text, so large system text fits.
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   for (final (i, h) in w.hourly.indexed) ...[
                     if (i > 0) AppGaps.w8,
-                    _hour(locale, h, w),
+                    _Hour(hour: h, weather: w, now: i == 0, locale: locale),
                   ],
                 ],
               ),
             ),
-            AppGaps.h8,
-            Text(
-              '${l10n.weatherForecastNote} ${l10n.weatherUpdated(ago < 1 ? l10n.justNow : l10n.minutesAgo(ago))}',
-              style: AppTextStyles.caption.copyWith(fontSize: 11),
+            AppGaps.h12,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 1),
+                  child: Icon(
+                    Icons.info_outline_rounded,
+                    size: 14,
+                    color: AppColors.grey400,
+                  ),
+                ),
+                AppGaps.w8,
+                Expanded(
+                  child: Text(
+                    '${l10n.weatherForecastNote} ${l10n.weatherUpdated(ago < 1 ? l10n.justNow : l10n.minutesAgo(ago))}',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.grey400,
+                    ),
+                  ),
+                ),
+              ],
             ),
             if (night && !context.read<AuthProvider>().isStaff) ...[
-              AppGaps.h16,
+              AppGaps.h24,
               const EveningCard(),
             ],
           ],
@@ -150,43 +143,289 @@ class WeatherDetails extends StatelessWidget {
       },
     );
   }
+}
 
-  Widget _hour(String locale, HourWeather h, WeatherData w) {
-    final hourNight = h.at.isBefore(w.sunrise) || !h.at.isBefore(w.sunset);
+/// The sky with the character, the temperature and what they say.
+class _Hero extends StatelessWidget {
+  final Mood mood;
+  final WeatherData weather;
+  final bool night;
+
+  const _Hero({required this.mood, required this.weather, required this.night});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final w = weather;
+    final dark = moodIsDark(mood);
+    final ink = dark ? AppColors.white : const Color(0xFF1F2430);
+    final warn = w.heavyRainAt != null && !w.isHeavy && mood != Mood.sleeping;
+
     return Container(
-      constraints: const BoxConstraints(minWidth: 64),
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.grey200),
+        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          colors: moodSky(mood),
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              CharacterView(mood: mood, size: 112),
+              AppGaps.w12,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${w.tempC}°',
+                      style: AppTextStyles.display.copyWith(
+                        color: ink,
+                        height: 1.1,
+                      ),
+                    ),
+                    AppGaps.h4,
+                    Row(
+                      children: [
+                        Icon(
+                          conditionIcon(w.condition, night: night),
+                          size: 18,
+                          color: ink,
+                        ),
+                        AppGaps.w4,
+                        Flexible(
+                          child: Text(
+                            conditionLabel(l10n, w.condition),
+                            style: AppTextStyles.body.copyWith(
+                              color: ink,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      l10n.weatherFeelsLike(w.feelsC),
+                      style: AppTextStyles.caption.copyWith(
+                        color: ink.withValues(alpha: 0.8),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          AppGaps.h12,
+          // What the character says, as a speech bubble.
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: dark
+                  ? AppColors.white.withValues(alpha: 0.12)
+                  : AppColors.white.withValues(alpha: 0.65),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(4),
+                topRight: Radius.circular(12),
+                bottomLeft: Radius.circular(12),
+                bottomRight: Radius.circular(12),
+              ),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (warn) ...[
+                  Icon(
+                    Icons.warning_amber_rounded,
+                    size: 18,
+                    color: dark ? const Color(0xFFFCA5A5) : AppColors.error,
+                  ),
+                  AppGaps.w8,
+                ],
+                Expanded(
+                  child: Text(
+                    moodMessage(context, mood, w),
+                    style: AppTextStyles.body.copyWith(
+                      color: ink,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Sunrise to sunset as a bar, with the sun's place in the day.
+class _DayLight extends StatelessWidget {
+  final WeatherData weather;
+  final DateTime now;
+  final String locale;
+
+  const _DayLight({
+    required this.weather,
+    required this.now,
+    required this.locale,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final rise = weather.sunrise, set = weather.sunset;
+    final day = set.difference(rise).inSeconds;
+    final done = day <= 0
+        ? 0.0
+        : (now.difference(rise).inSeconds / day).clamp(0.0, 1.0);
+    final fmt = DateFormat.jm(locale);
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      decoration: _card(),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.wb_twilight_rounded,
+                size: 18,
+                color: AppColors.warning,
+              ),
+              AppGaps.w8,
+              Expanded(
+                child: Text(
+                  l10n.weatherSunrise(fmt.format(rise)),
+                  style: AppTextStyles.caption,
+                ),
+              ),
+              AppGaps.w8,
+              Expanded(
+                child: Text(
+                  l10n.weatherSunset(fmt.format(set)),
+                  textAlign: TextAlign.end,
+                  style: AppTextStyles.caption,
+                ),
+              ),
+              AppGaps.w8,
+              const Icon(
+                Icons.nights_stay_rounded,
+                size: 18,
+                color: AppColors.lilac,
+              ),
+            ],
+          ),
+          AppGaps.h12,
+          SizedBox(
+            height: 14,
+            child: LayoutBuilder(
+              builder: (context, c) => Stack(
+                alignment: Alignment.centerLeft,
+                children: [
+                  Container(
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: AppColors.grey200,
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                  Container(
+                    height: 6,
+                    width: c.maxWidth * done,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(3),
+                      gradient: const LinearGradient(
+                        colors: [AppColors.warning, AppColors.primary],
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    left: (c.maxWidth - 14) * done,
+                    child: Container(
+                      width: 14,
+                      height: 14,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: done >= 1 ? AppColors.lilac : AppColors.warning,
+                        border: Border.all(color: AppColors.grey100, width: 2),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One hour of the forecast; the hour under way is marked "Now".
+class _Hour extends StatelessWidget {
+  final HourWeather hour;
+  final WeatherData weather;
+  final bool now;
+  final String locale;
+
+  const _Hour({
+    required this.hour,
+    required this.weather,
+    required this.now,
+    required this.locale,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final h = hour;
+    final hourNight =
+        h.at.isBefore(weather.sunrise) || !h.at.isBefore(weather.sunset);
+    final wet =
+        h.condition.contains('rain') ||
+        h.condition == 'drizzle' ||
+        h.condition == 'storm';
+    return Container(
+      constraints: const BoxConstraints(minWidth: 68),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+      decoration: now
+          ? _card(color: AppColors.lightOrange, border: AppColors.primary)
+          : _card(),
+      child: Column(
         mainAxisSize: MainAxisSize.min,
-        spacing: 4,
+        spacing: 6,
         children: [
           Text(
-            DateFormat.jm(locale).format(h.at),
-            style: AppTextStyles.caption,
+            now ? context.l10n.weatherNow : DateFormat.jm(locale).format(h.at),
+            style: AppTextStyles.caption.copyWith(
+              color: now ? AppColors.primary : null,
+              fontWeight: now ? FontWeight.w700 : null,
+            ),
             maxLines: 1,
           ),
           Icon(
             conditionIcon(h.condition, night: hourNight),
-            size: 20,
-            color: h.condition.contains('rain') || h.condition == 'storm'
-                ? const Color(0xFF3B82F6)
+            size: 22,
+            color: wet
+                ? _rainBlue
+                : hourNight && h.condition == 'clear'
+                ? AppColors.lilac
                 : AppColors.warning,
           ),
           Text(
             '${h.tempC}°',
-            style: AppTextStyles.body.copyWith(
-              color: AppColors.black,
-              fontWeight: FontWeight.w600,
-            ),
+            style: AppTextStyles.heading3.copyWith(color: AppColors.black),
           ),
           Text(
             rainText(h.rainMm),
-            style: AppTextStyles.caption.copyWith(fontSize: 11),
+            style: AppTextStyles.caption.copyWith(
+              color: h.rainMm > 0 ? _rainBlue : AppColors.grey400,
+            ),
           ),
         ],
       ),
@@ -205,36 +444,34 @@ class _Stat extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: AppColors.background,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.grey200),
-        ),
+        padding: const EdgeInsets.all(12),
+        decoration: _card(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, size: 18, color: AppColors.grey500),
-            AppGaps.h4,
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: AppColors.lightOrange,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, size: 18, color: AppColors.primary),
+            ),
+            AppGaps.h8,
             // Value and label shrink rather than break a word at large text.
             FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
               child: Text(
                 value,
-                style: AppTextStyles.body.copyWith(
-                  color: AppColors.black,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: AppTextStyles.heading3.copyWith(color: AppColors.black),
               ),
             ),
             FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
-              child: Text(
-                label,
-                style: AppTextStyles.caption.copyWith(fontSize: 11),
-              ),
+              child: Text(label, style: AppTextStyles.caption),
             ),
           ],
         ),
@@ -286,59 +523,93 @@ class _EveningCardState extends State<EveningCard> {
 
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.grey200),
-      ),
+      decoration: _card(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const CharacterView(mood: Mood.chillEvening, size: 36),
-              AppGaps.w8,
-              Text(l10n.eveningTitle, style: AppTextStyles.heading3),
+              const CharacterView(mood: Mood.chillEvening, size: 44),
+              AppGaps.w12,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(l10n.eveningTitle, style: AppTextStyles.heading3),
+                    Text(l10n.eveningFeeNote, style: AppTextStyles.caption),
+                  ],
+                ),
+              ),
             ],
           ),
-          AppGaps.h12,
-          Row(
-            children: [
-              _Figure(l10n.orders, '${paid.length}'),
-              _Figure(l10n.sales, '₹${formatPrice(sales)}'),
-              _Figure(l10n.platformFee, '₹${formatPrice(fee)}'),
-            ],
+          AppGaps.h16,
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _Figure(l10n.orders, '${paid.length}'),
+                AppGaps.w8,
+                _Figure(l10n.sales, '₹${formatPrice(sales)}'),
+                AppGaps.w8,
+                _Figure(l10n.platformFee, '₹${formatPrice(fee)}'),
+              ],
+            ),
           ),
-          AppGaps.h8,
-          Text(l10n.eveningFeeNote, style: AppTextStyles.caption),
           if (status != null) ...[
             AppGaps.h12,
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
+            Container(
+              padding: EdgeInsets.fromLTRB(12, due ? 6 : 10, 6, due ? 6 : 10),
+              decoration: BoxDecoration(
+                color: due
+                    ? AppColors.lightOrange
+                    : AppColors.success.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Icon(
                     due
-                        ? l10n.eveningBillDue(formatPrice(status.totalPending))
-                        : l10n.eveningNoBill,
-                    style: AppTextStyles.body.copyWith(
-                      color: due ? AppColors.warning : AppColors.success,
-                      fontWeight: FontWeight.w600,
-                    ),
+                        ? Icons.receipt_long_rounded
+                        : Icons.check_circle_rounded,
+                    size: 18,
+                    color: due ? AppColors.primary : AppColors.success,
                   ),
-                ),
-                if (due)
-                  TextButton(
-                    // Over the sheet, so Back returns to it.
-                    onPressed: () => openFeePayment(context, status),
+                  AppGaps.w8,
+                  Expanded(
                     child: Text(
-                      l10n.payNowCaps,
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w700,
+                      due
+                          ? l10n.eveningBillDue(
+                              formatPrice(status.totalPending),
+                            )
+                          : l10n.eveningNoBill,
+                      style: AppTextStyles.body.copyWith(
+                        color: due ? AppColors.black : AppColors.success,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
-              ],
+                  if (due)
+                    FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: AppColors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      // Over the sheet, so Back returns to it.
+                      onPressed: () => openFeePayment(context, status),
+                      child: Text(
+                        l10n.payNowCaps,
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ],
         ],
@@ -356,15 +627,26 @@ class _Figure extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            value,
-            style: AppTextStyles.heading3.copyWith(color: AppColors.black),
-          ),
-          Text(label, style: AppTextStyles.caption, maxLines: 2),
-        ],
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                value,
+                style: AppTextStyles.heading3.copyWith(color: AppColors.black),
+              ),
+            ),
+            Text(label, style: AppTextStyles.caption, maxLines: 2),
+          ],
+        ),
       ),
     );
   }

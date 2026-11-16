@@ -423,6 +423,8 @@
   "weatherWind": "हवा",
   "weatherNextHours": "अगले घंटे",
   "weatherUpdated": "अपडेट: {ago}",
+  "weatherNow": "अभी",
+  "weatherSunrise": "सूर्योदय {time}",
   "weatherSunset": "सूर्यास्त {time}",
   "weatherForecastNote": "MET Norway का पूर्वानुमान, आधिकारिक मौसम चेतावनी नहीं।",
   "eveningTitle": "आज अब तक",

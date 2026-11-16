@@ -1421,6 +1421,14 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String get weatherNow => 'अभी';
+
+  @override
+  String weatherSunrise(String time) {
+    return 'सूर्योदय $time';
+  }
+
+  @override
   String weatherSunset(String time) {
     return 'सूर्यास्त $time';
   }

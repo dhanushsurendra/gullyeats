@@ -745,6 +745,13 @@
       }
     }
   },
+  "weatherNow": "Now",
+  "weatherSunrise": "Sunrise {time}",
+  "@weatherSunrise": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
   "weatherSunset": "Sunset {time}",
   "@weatherSunset": {
     "placeholders": {

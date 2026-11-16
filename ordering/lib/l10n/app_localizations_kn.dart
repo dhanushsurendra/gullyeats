@@ -1442,6 +1442,14 @@ class AppLocalizationsKn extends AppLocalizations {
   }
 
   @override
+  String get weatherNow => 'ಈಗ';
+
+  @override
+  String weatherSunrise(String time) {
+    return 'ಸೂರ್ಯೋದಯ $time';
+  }
+
+  @override
   String weatherSunset(String time) {
     return 'ಸೂರ್ಯಾಸ್ತ $time';
   }

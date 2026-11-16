@@ -1458,6 +1458,14 @@ class AppLocalizationsTa extends AppLocalizations {
   }
 
   @override
+  String get weatherNow => 'இப்போது';
+
+  @override
+  String weatherSunrise(String time) {
+    return 'சூரிய உதயம் $time';
+  }
+
+  @override
   String weatherSunset(String time) {
     return 'சூரிய அஸ்தமனம் $time';
   }

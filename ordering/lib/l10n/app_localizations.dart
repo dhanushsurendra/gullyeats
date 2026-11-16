@@ -2640,6 +2640,18 @@ abstract class AppLocalizations {
   /// **'Updated {ago}'**
   String weatherUpdated(String ago);
 
+  /// No description provided for @weatherNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Now'**
+  String get weatherNow;
+
+  /// No description provided for @weatherSunrise.
+  ///
+  /// In en, this message translates to:
+  /// **'Sunrise {time}'**
+  String weatherSunrise(String time);
+
   /// No description provided for @weatherSunset.
   ///
   /// In en, this message translates to:

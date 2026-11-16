@@ -423,6 +423,8 @@
   "weatherWind": "ಗಾಳಿ",
   "weatherNextHours": "ಮುಂದಿನ ಗಂಟೆಗಳು",
   "weatherUpdated": "ನವೀಕರಣ: {ago}",
+  "weatherNow": "ಈಗ",
+  "weatherSunrise": "ಸೂರ್ಯೋದಯ {time}",
   "weatherSunset": "ಸೂರ್ಯಾಸ್ತ {time}",
   "weatherForecastNote": "MET Norway ಮುನ್ಸೂಚನೆ, ಅಧಿಕೃತ ಹವಾಮಾನ ಎಚ್ಚರಿಕೆ ಅಲ್ಲ.",
   "eveningTitle": "ಇಂದು ಇಲ್ಲಿಯವರೆಗೆ",

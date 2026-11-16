@@ -1444,6 +1444,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get weatherNow => 'Now';
+
+  @override
+  String weatherSunrise(String time) {
+    return 'Sunrise $time';
+  }
+
+  @override
   String weatherSunset(String time) {
     return 'Sunset $time';
   }

@@ -423,6 +423,8 @@
   "weatherWind": "காற்று",
   "weatherNextHours": "அடுத்த மணி நேரங்கள்",
   "weatherUpdated": "புதுப்பிப்பு: {ago}",
+  "weatherNow": "இப்போது",
+  "weatherSunrise": "சூரிய உதயம் {time}",
   "weatherSunset": "சூரிய அஸ்தமனம் {time}",
   "weatherForecastNote": "MET Norway முன்னறிவிப்பு, அதிகாரப்பூர்வ வானிலை எச்சரிக்கை அல்ல.",
   "eveningTitle": "இன்று இதுவரை",
