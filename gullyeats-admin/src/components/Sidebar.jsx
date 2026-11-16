@@ -16,6 +16,7 @@ import {
   Settings,
   ShieldAlert,
   Utensils,
+  Rocket,
   LogOut,
   X,
 } from 'lucide-react'
@@ -63,6 +64,7 @@ const NAV = [
       ['Action log', '/actions', History],
       ['Feedback', '/feedback', MessageSquare],
       ['Settings', '/settings', Settings],
+      ['Launch', '/launch', Rocket],
     ],
   ],
 ]

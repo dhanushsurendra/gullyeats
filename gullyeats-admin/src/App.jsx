@@ -9,6 +9,7 @@ import Actions from './pages/Actions'
 import Moderation from './pages/Moderation'
 import Dishes from './pages/Dishes'
 import Notifications from './pages/Notifications'
+import Launch from './pages/Launch'
 import {
   Owners,
   Restaurants,
@@ -35,6 +36,16 @@ export default function App() {
         path="/login"
         element={
           user ? <Navigate to="/" replace /> : <Login />
+        }
+      />
+
+      {/* The launch ceremony: full screen, without the sidebar. */}
+      <Route
+        path="/launch"
+        element={
+          <Protected>
+            <Launch />
+          </Protected>
         }
       />
 
