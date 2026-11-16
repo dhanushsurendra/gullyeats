@@ -179,52 +179,106 @@ class _OrderCardState extends State<OrderCard>
         final glow = widget.isFresh && status == 'PENDING'
             ? AppColors.primary
             : color;
-        return Material(
-          color: Color.lerp(
-            AppColors.surface,
-            Color.alphaBlend(glow.withValues(alpha: 0.10), AppColors.surface),
-            t,
-          ),
-          shape: RoundedRectangleBorder(
+        Color tint(Color c) => Color.lerp(
+          c,
+          Color.alphaBlend(glow.withValues(alpha: 0.10), c),
+          t,
+        )!;
+        // Depth without clutter: a soft shadow on the light theme, and on
+        // both a faint top-to-bottom sheen so the card isn't a flat slab.
+        final top = AppColors.dark
+            ? Color.lerp(AppColors.surface, Colors.white, 0.04)!
+            : AppColors.surface;
+        final bottom = AppColors.dark
+            ? AppColors.surface
+            : const Color(0xFFFBFAF9);
+        return DecoratedBox(
+          decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            side: BorderSide(
-              color: Color.lerp(AppColors.grey200, glow, t)!,
-              width: 1 + t,
-            ),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(onTap: widget.onTap, child: child),
-        );
-      },
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        // Cancelled orders stay readable but step back.
-        child: AnimatedOpacity(
-          duration: const Duration(milliseconds: 300),
-          opacity: isCancelled ? 0.6 : 1,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _topRow(isActive),
-              if (status == "PAID" && widget.onPreparing != null) ...[
-                AppGaps.h8,
-                _preparingChip(),
-              ],
-              AppGaps.h12,
-              ..._itemLines(),
-              AppGaps.h12,
-              _bottomRow(),
-              if (widget.order.paymentAdjustment?.action == 'COLLECT') ...[
-                AppGaps.h8,
-                _paymentAdjustmentBanner(widget.order.paymentAdjustment!),
-              ],
-              if (widget.order.refundOwed > 0 ||
-                  widget.order.refunds.isNotEmpty) ...[
-                AppGaps.h8,
-                _refundBanner(),
-              ],
+            boxShadow: [
+              if (!AppColors.dark)
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.06),
+                  blurRadius: 18,
+                  offset: const Offset(0, 6),
+                ),
+              if (t > 0)
+                BoxShadow(
+                  color: glow.withValues(alpha: 0.25 * t),
+                  blurRadius: 16,
+                ),
             ],
           ),
+          child: Material(
+            color: Colors.transparent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(
+                color: Color.lerp(AppColors.grey200, glow, t)!,
+                width: 1 + t,
+              ),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Ink(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [tint(top), tint(bottom)],
+                ),
+              ),
+              child: InkWell(onTap: widget.onTap, child: child),
+            ),
+          ),
+        );
+      },
+      // Cancelled orders stay readable but step back.
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 300),
+        opacity: isCancelled ? 0.6 : 1,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _topRow(isActive),
+                  if (status == "PAID" && widget.onPreparing != null) ...[
+                    AppGaps.h8,
+                    _preparingChip(),
+                  ],
+                  AppGaps.h12,
+                  ..._itemLines(),
+                ],
+              ),
+            ),
+            const _TicketTear(),
+            // The footer: total and the next step, on a faint tint.
+            ColoredBox(
+              color: AppColors.grey100.withValues(alpha: 0.5),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _bottomRow(),
+                    if (widget.order.paymentAdjustment?.action ==
+                        'COLLECT') ...[
+                      AppGaps.h8,
+                      _paymentAdjustmentBanner(widget.order.paymentAdjustment!),
+                    ],
+                    if (widget.order.refundOwed > 0 ||
+                        widget.order.refunds.isNotEmpty) ...[
+                      AppGaps.h8,
+                      _refundBanner(),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -676,4 +730,67 @@ class _OrderCardState extends State<OrderCard>
       ),
     );
   }
+}
+
+/// A kitchen ticket's tear line: a dashed rule with a half-circle notch cut
+/// into each side (circles in the page colour, clipped by the card).
+class _TicketTear extends StatelessWidget {
+  const _TicketTear();
+
+  static const double _notch = 22;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget notch(double? left, double? right) => Positioned(
+      left: left,
+      right: right,
+      top: 0,
+      child: Container(
+        width: _notch,
+        height: _notch,
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          shape: BoxShape.circle,
+          border: Border.all(color: AppColors.grey200),
+        ),
+      ),
+    );
+
+    return SizedBox(
+      height: _notch,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            left: _notch,
+            right: _notch,
+            child: CustomPaint(painter: _DashPainter(AppColors.grey300)),
+          ),
+          notch(-_notch / 2, null),
+          notch(null, -_notch / 2),
+        ],
+      ),
+    );
+  }
+}
+
+class _DashPainter extends CustomPainter {
+  final Color color;
+
+  const _DashPainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round;
+    final y = size.height / 2;
+    for (var x = 2.0; x < size.width - 2; x += 9) {
+      canvas.drawLine(Offset(x, y), Offset(x + 4, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DashPainter old) => old.color != color;
 }
