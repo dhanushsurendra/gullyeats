@@ -1,5 +1,6 @@
 import 'package:ordering/core/widgets/app_logo.dart';
 import 'package:flutter/material.dart';
+import 'package:ordering/features/alerts/area_alerts.dart';
 import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
 import 'package:ordering/core/theme/app_padding.dart';
@@ -82,6 +83,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           AppGaps.h12,
 
           _outletCard(context, selectedCart),
+          AppGaps.h12,
+
+          // Owners and staff can both warn nearby carts.
+          const AreaAlertTile(),
           AppGaps.h12,
 
           // Fee bills, the menu and staff logins are the owner's (the server

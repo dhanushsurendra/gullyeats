@@ -1303,6 +1303,10 @@ class AppLocalizationsKn extends AppLocalizations {
   String get areaAlertReport => 'ಹತ್ತಿರದ ಗಾಡಿಗಳಿಗೆ ಎಚ್ಚರಿಕೆ ನೀಡಿ';
 
   @override
+  String get areaAlertTileNote =>
+      '1 ಕಿ.ಮೀ ಒಳಗಿನ ಗಾಡಿಗಳಿಗೆ ಎಚ್ಚರಿಕೆ ನೀಡಿ, ಹತ್ತಿರದ ಎಚ್ಚರಿಕೆಗಳನ್ನು ನೋಡಿ';
+
+  @override
   String get areaAlertSheetTitle => 'ನಿಮ್ಮ ಗಾಡಿಯ ಹತ್ತಿರ ಏನಾಗುತ್ತಿದೆ?';
 
   @override

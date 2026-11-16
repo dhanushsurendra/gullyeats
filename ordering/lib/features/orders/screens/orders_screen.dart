@@ -2,7 +2,6 @@ import 'package:ordering/core/widgets/app_logo.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:ordering/features/alerts/area_alerts.dart';
 import 'package:ordering/features/weather/weather_service.dart';
 import 'package:ordering/features/weather/weather_strip.dart';
 import 'package:ordering/core/utils/order_alerts.dart';
@@ -465,18 +464,12 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 children: [
                   const AppLogo(),
                   AppGaps.w16,
-                  Expanded(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        const AreaAlertButton(),
-                        // No gap when the cart switcher is hidden (a single cart).
-                        if (context.select<CartProvider, bool>(CartSelector.shows)) ...const [
-                          AppGaps.w8,
-                          // The welcome screen, as on app start.
-                          Flexible(child: CartSelector(stayOnScreen: false)),
-                        ],
-                      ],
+                  // Area alerts moved to Profile; only the cart switcher here
+                  // (hidden for a single cart). Through the welcome screen.
+                  const Expanded(
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: CartSelector(stayOnScreen: false),
                     ),
                   ),
                 ],

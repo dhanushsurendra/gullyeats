@@ -1316,6 +1316,10 @@ class AppLocalizationsTa extends AppLocalizations {
   String get areaAlertReport => 'அருகிலுள்ள வண்டிகளுக்கு எச்சரிக்கை';
 
   @override
+  String get areaAlertTileNote =>
+      '1 கி.மீ.க்குள் உள்ள வண்டிகளை எச்சரிக்கவும், அருகிலுள்ள எச்சரிக்கைகளைப் பார்க்கவும்';
+
+  @override
   String get areaAlertSheetTitle => 'உங்கள் வண்டி அருகே என்ன நடக்கிறது?';
 
   @override

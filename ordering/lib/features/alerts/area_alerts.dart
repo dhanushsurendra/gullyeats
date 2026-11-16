@@ -1,6 +1,7 @@
 import 'package:clock/clock.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:ordering/core/widgets/app_card.dart';
 import 'package:ordering/core/error/api_exception.dart';
 import 'package:ordering/core/error/app_exceptions.dart';
 import 'package:ordering/core/theme/app_colors.dart';
@@ -232,57 +233,74 @@ void showAreaAlertsSheet(
   );
 }
 
-/// The round "Alert nearby carts" button in the Orders screen's top row
-/// (its name is the tooltip, which screen readers read out). Its badge counts
-/// other carts' active alerts; its sheet lists them above the send options.
-class AreaAlertButton extends StatelessWidget {
-  const AreaAlertButton({super.key});
+/// The alerts sheet: active alerts near the cart above the send options.
+Future<void> openAreaAlertSheet(BuildContext context) async {
+  final sent = await showModalBottomSheet<bool>(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    backgroundColor: AppColors.surface,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (_) => const _ReportSheet(),
+  );
+  if (sent == true && context.mounted) {
+    // The server tells only the other carts, so reload our own list here.
+    context.read<OrderProvider>().areaAlertTick.value++;
+    AppSnackBar.show(
+      context,
+      message: context.l10n.areaAlertSent,
+      isInfo: true,
+    );
+  }
+}
+
+/// The "Alert nearby carts" tile on Profile; opens [openAreaAlertSheet].
+/// A red count shows other carts' active alerts, still there after the Home
+/// banner is closed.
+class AreaAlertTile extends StatelessWidget {
+  const AreaAlertTile({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final alerts = context.read<OrderProvider>().areaAlerts;
+    final l10n = context.l10n;
     return ValueListenableBuilder(
-      valueListenable: alerts,
-      // Alerts from other carts: still counted after the Home banner is closed.
-      builder: (context, list, button) {
+      valueListenable: context.read<OrderProvider>().areaAlerts,
+      builder: (context, list, _) {
         final count = list.where((a) => !a.mine).length;
-        return Badge(
-          isLabelVisible: count > 0,
-          label: Text('$count'),
-          backgroundColor: AppColors.error,
-          offset: const Offset(-2, 2),
-          child: button,
+        return AppCard(
+          padding: EdgeInsets.zero,
+          child: ListTile(
+            onTap: () => openAreaAlertSheet(context),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            leading: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.campaign_outlined, color: AppColors.error),
+            ),
+            title: Text(l10n.areaAlertReport, style: AppTextStyles.heading3),
+            subtitle: Text(l10n.areaAlertTileNote, style: AppTextStyles.caption),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (count > 0)
+                  Badge(
+                    label: Text('$count'),
+                    backgroundColor: AppColors.error,
+                  ),
+                Icon(Icons.chevron_right, color: AppColors.grey500),
+              ],
+            ),
+          ),
         );
       },
-      child: IconButton(
-        onPressed: () async {
-          final sent = await showModalBottomSheet<bool>(
-            context: context,
-            isScrollControlled: true,
-            useSafeArea: true,
-            backgroundColor: AppColors.surface,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            builder: (_) => const _ReportSheet(),
-          );
-          if (sent == true && context.mounted) {
-            // The server tells only the other carts, so reload our own list here.
-            context.read<OrderProvider>().areaAlertTick.value++;
-            AppSnackBar.show(
-              context,
-              message: context.l10n.areaAlertSent,
-              isInfo: true,
-            );
-          }
-        },
-        tooltip: context.l10n.areaAlertReport,
-        icon: const Icon(Icons.campaign_outlined, color: AppColors.error),
-        style: IconButton.styleFrom(
-          side: BorderSide(color: AppColors.error.withValues(alpha: 0.4)),
-          backgroundColor: AppColors.error.withValues(alpha: 0.08),
-        ),
-      ),
     );
   }
 }

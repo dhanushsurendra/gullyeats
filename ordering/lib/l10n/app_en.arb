@@ -652,6 +652,7 @@
     "description": "Label on a dish's default photo shown when the item has no photo of its own"
   },
   "areaAlertReport": "Alert nearby carts",
+  "areaAlertTileNote": "Warn carts within 1 km and see alerts near you",
   "areaAlertSheetTitle": "What's happening near your cart?",
   "areaAlertSheetNote": "Every GullyEats cart within 1 km gets a notification. Your cart's name is not shown.",
   "areaReasonEviction": "Eviction drive",

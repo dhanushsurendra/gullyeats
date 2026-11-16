@@ -383,6 +383,7 @@
   "bestWeekday": "आपका सबसे अच्छा दिन आमतौर पर {day} होता है",
   "samplePhoto": "नमूना फ़ोटो",
   "areaAlertReport": "आसपास की गाड़ियों को सूचना दें",
+  "areaAlertTileNote": "1 किमी के अंदर की गाड़ियों को सूचना दें और पास की सूचनाएँ देखें",
   "areaAlertSheetTitle": "आपकी गाड़ी के पास क्या हो रहा है?",
   "areaAlertSheetNote": "1 किमी के अंदर हर GullyEats गाड़ी को सूचना जाएगी। आपकी गाड़ी का नाम नहीं दिखेगा।",
   "areaReasonEviction": "अतिक्रमण हटाओ अभियान",

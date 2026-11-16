@@ -1302,6 +1302,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get areaAlertReport => 'Alert nearby carts';
 
   @override
+  String get areaAlertTileNote =>
+      'Warn carts within 1 km and see alerts near you';
+
+  @override
   String get areaAlertSheetTitle => 'What\'s happening near your cart?';
 
   @override

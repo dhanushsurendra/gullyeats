@@ -1283,6 +1283,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get areaAlertReport => 'आसपास की गाड़ियों को सूचना दें';
 
   @override
+  String get areaAlertTileNote =>
+      '1 किमी के अंदर की गाड़ियों को सूचना दें और पास की सूचनाएँ देखें';
+
+  @override
   String get areaAlertSheetTitle => 'आपकी गाड़ी के पास क्या हो रहा है?';
 
   @override

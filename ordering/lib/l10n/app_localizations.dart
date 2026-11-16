@@ -2400,6 +2400,12 @@ abstract class AppLocalizations {
   /// **'Alert nearby carts'**
   String get areaAlertReport;
 
+  /// No description provided for @areaAlertTileNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Warn carts within 1 km and see alerts near you'**
+  String get areaAlertTileNote;
+
   /// No description provided for @areaAlertSheetTitle.
   ///
   /// In en, this message translates to:
