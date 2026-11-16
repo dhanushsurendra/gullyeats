@@ -16,6 +16,7 @@ import 'package:ordering/features/alerts/area_alert_service.dart';
 import 'package:ordering/features/alerts/area_alerts.dart';
 import 'package:ordering/features/auth/providers/auth_provider.dart';
 import 'package:ordering/features/orders/providers/order_provider.dart';
+import 'package:ordering/features/weather/weather_service.dart';
 import 'package:ordering/features/cart/presentation/sales_screen.dart';
 import 'package:ordering/features/orders/screens/handover_screen.dart';
 import 'package:ordering/features/orders/screens/orders_screen.dart';
@@ -53,6 +54,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkLock();
       _loadAlerts();
+      _loadWeather();
     });
     _alerts = context.read<OrderProvider>().areaAlerts;
     _alertTick = context.read<OrderProvider>().areaAlertTick
@@ -60,6 +62,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _lockTimer = Timer.periodic(const Duration(minutes: 10), (_) {
       _checkLock();
       _loadAlerts(); // also drops alerts that have ended
+      _loadWeather(); // asks the server at most every 25 min
     });
   }
 
@@ -78,7 +81,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       _checkLock();
       _refreshCart();
       _loadAlerts();
+      _loadWeather();
     }
+  }
+
+  void _loadWeather() {
+    if (!mounted) return;
+    final token = context.read<AuthProvider>().token;
+    final cartId = context.read<CartProvider>().selectedCart?.id;
+    if (token != null && cartId != null) WeatherService.refresh(token, cartId);
   }
 
   /// Area alerts from carts within 1 km. A failed load keeps the last list.
@@ -188,10 +199,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     child: IndexedStack(
                       index: _currentIndex,
                       children: List.generate(screens.length, (i) {
-                        return AnimatedOpacity(
-                          opacity: _currentIndex == i ? 1 : 0,
-                          duration: const Duration(milliseconds: 250),
-                          child: screens[i],
+                        // Hidden tabs keep their state but stop animating
+                        // (the weather characters, shimmers).
+                        return TickerMode(
+                          enabled: _currentIndex == i,
+                          child: AnimatedOpacity(
+                            opacity: _currentIndex == i ? 1 : 0,
+                            duration: const Duration(milliseconds: 250),
+                            child: screens[i],
+                          ),
                         );
                       }),
                     ),

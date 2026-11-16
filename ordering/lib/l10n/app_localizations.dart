@@ -2495,6 +2495,180 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} vendors'**
   String areaAlertVendors(int count);
+
+  /// No description provided for @weatherMsgClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Beautiful day! Have a great one at the stall.'**
+  String get weatherMsgClear;
+
+  /// No description provided for @weatherMsgCloudy.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloudy and comfortable. A good day to sell!'**
+  String get weatherMsgCloudy;
+
+  /// No description provided for @weatherMsgHot.
+  ///
+  /// In en, this message translates to:
+  /// **'It\'s hot! Keep drinking water and stay in the shade.'**
+  String get weatherMsgHot;
+
+  /// No description provided for @weatherMsgRainDay.
+  ///
+  /// In en, this message translates to:
+  /// **'A little rain about. Keep your stall covered.'**
+  String get weatherMsgRainDay;
+
+  /// No description provided for @weatherMsgEvening.
+  ///
+  /// In en, this message translates to:
+  /// **'I\'m here for the evening shift. Let\'s make it a good one!'**
+  String get weatherMsgEvening;
+
+  /// No description provided for @weatherMsgCool.
+  ///
+  /// In en, this message translates to:
+  /// **'Cool evening. Stay warm!'**
+  String get weatherMsgCool;
+
+  /// No description provided for @weatherMsgRainNight.
+  ///
+  /// In en, this message translates to:
+  /// **'Rainy evening. Keep your stall and stove covered.'**
+  String get weatherMsgRainNight;
+
+  /// No description provided for @weatherMsgHeavy.
+  ///
+  /// In en, this message translates to:
+  /// **'Heavy rain. Cover your stall and protect your equipment.'**
+  String get weatherMsgHeavy;
+
+  /// No description provided for @weatherMsgSleeping.
+  ///
+  /// In en, this message translates to:
+  /// **'Shop\'s closed. Good night, see you tomorrow!'**
+  String get weatherMsgSleeping;
+
+  /// No description provided for @weatherHeavySoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Heavy rain likely around {time}. Cover your stall in time.'**
+  String weatherHeavySoon(String time);
+
+  /// No description provided for @weatherCondClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get weatherCondClear;
+
+  /// No description provided for @weatherCondCloudy.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloudy'**
+  String get weatherCondCloudy;
+
+  /// No description provided for @weatherCondFog.
+  ///
+  /// In en, this message translates to:
+  /// **'Hazy'**
+  String get weatherCondFog;
+
+  /// No description provided for @weatherCondDrizzle.
+  ///
+  /// In en, this message translates to:
+  /// **'Drizzle'**
+  String get weatherCondDrizzle;
+
+  /// No description provided for @weatherCondRain.
+  ///
+  /// In en, this message translates to:
+  /// **'Rain'**
+  String get weatherCondRain;
+
+  /// No description provided for @weatherCondHeavyRain.
+  ///
+  /// In en, this message translates to:
+  /// **'Heavy rain'**
+  String get weatherCondHeavyRain;
+
+  /// No description provided for @weatherCondStorm.
+  ///
+  /// In en, this message translates to:
+  /// **'Thunderstorm'**
+  String get weatherCondStorm;
+
+  /// No description provided for @weatherFeelsLike.
+  ///
+  /// In en, this message translates to:
+  /// **'Feels like {temp}°'**
+  String weatherFeelsLike(int temp);
+
+  /// No description provided for @weatherRainChance.
+  ///
+  /// In en, this message translates to:
+  /// **'Rain chance'**
+  String get weatherRainChance;
+
+  /// No description provided for @weatherHumidity.
+  ///
+  /// In en, this message translates to:
+  /// **'Humidity'**
+  String get weatherHumidity;
+
+  /// No description provided for @weatherWind.
+  ///
+  /// In en, this message translates to:
+  /// **'Wind'**
+  String get weatherWind;
+
+  /// No description provided for @weatherNextHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Next hours'**
+  String get weatherNextHours;
+
+  /// No description provided for @weatherUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated {ago}'**
+  String weatherUpdated(String ago);
+
+  /// No description provided for @weatherSunset.
+  ///
+  /// In en, this message translates to:
+  /// **'Sunset {time}'**
+  String weatherSunset(String time);
+
+  /// No description provided for @weatherForecastNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Forecast from Open-Meteo, not an official weather warning.'**
+  String get weatherForecastNote;
+
+  /// No description provided for @eveningTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Today so far'**
+  String get eveningTitle;
+
+  /// No description provided for @eveningFeeNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s fee goes on your bill after midnight.'**
+  String get eveningFeeNote;
+
+  /// No description provided for @eveningBillDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Bill due: ₹{amount}'**
+  String eveningBillDue(String amount);
+
+  /// No description provided for @eveningNoBill.
+  ///
+  /// In en, this message translates to:
+  /// **'No bill due'**
+  String get eveningNoBill;
 }
 
 class _AppLocalizationsDelegate

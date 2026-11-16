@@ -183,6 +183,36 @@ final staffJson = [
   },
 ];
 
+/// The weather strip's sample: a cloudy noon with heavy rain due in 2 hours
+/// (the strip's longest line). [evening] moves sunset an hour back, for Chill.
+Map<String, dynamic> weatherJson({bool evening = false}) {
+  final now = clock.now();
+  final day = DateTime(now.year, now.month, now.day);
+  String iso(DateTime t) => t.toUtc().toIso8601String();
+  final hour = DateTime(now.year, now.month, now.day, now.hour);
+  return {
+    'tempC': 26,
+    'feelsC': 27,
+    'humidity': 62,
+    'windKph': 11,
+    'condition': 'cloudy',
+    'rainChance': 20,
+    'sunrise': iso(day.add(const Duration(hours: 6, minutes: 16))),
+    'sunset': iso(evening ? now.subtract(const Duration(hours: 1)) : day.add(const Duration(hours: 17, minutes: 52))),
+    'hourly': [
+      for (var i = 0; i < 8; i++)
+        {
+          'at': iso(hour.add(Duration(hours: i))),
+          'tempC': 26 - i,
+          'rainChance': const [20, 45, 80, 70, 40, 20, 10, 10][i],
+          'condition': const ['cloudy', 'rain', 'heavy_rain', 'rain', 'cloudy', 'cloudy', 'clear', 'clear'][i],
+        },
+    ],
+    'heavyRainAt': iso(hour.add(const Duration(hours: 2))),
+    'updatedAt': iso(now.subtract(const Duration(minutes: 12))),
+  };
+}
+
 http.Response _json(Object body, [int status = 200]) => http.Response(
   jsonEncode(body),
   status,
@@ -206,6 +236,7 @@ final fakeBackend = MockClient((request) async {
       ],
     });
   }
+  if (has('/carts/weather/')) return _json({'data': weatherJson()});
   if (has('/carts/area-alerts/')) {
     return _json({
       'data': [

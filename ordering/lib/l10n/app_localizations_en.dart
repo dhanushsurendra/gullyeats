@@ -1358,4 +1358,108 @@ class AppLocalizationsEn extends AppLocalizations {
   String areaAlertVendors(int count) {
     return '$count vendors';
   }
+
+  @override
+  String get weatherMsgClear => 'Beautiful day! Have a great one at the stall.';
+
+  @override
+  String get weatherMsgCloudy => 'Cloudy and comfortable. A good day to sell!';
+
+  @override
+  String get weatherMsgHot =>
+      'It\'s hot! Keep drinking water and stay in the shade.';
+
+  @override
+  String get weatherMsgRainDay =>
+      'A little rain about. Keep your stall covered.';
+
+  @override
+  String get weatherMsgEvening =>
+      'I\'m here for the evening shift. Let\'s make it a good one!';
+
+  @override
+  String get weatherMsgCool => 'Cool evening. Stay warm!';
+
+  @override
+  String get weatherMsgRainNight =>
+      'Rainy evening. Keep your stall and stove covered.';
+
+  @override
+  String get weatherMsgHeavy =>
+      'Heavy rain. Cover your stall and protect your equipment.';
+
+  @override
+  String get weatherMsgSleeping =>
+      'Shop\'s closed. Good night, see you tomorrow!';
+
+  @override
+  String weatherHeavySoon(String time) {
+    return 'Heavy rain likely around $time. Cover your stall in time.';
+  }
+
+  @override
+  String get weatherCondClear => 'Clear';
+
+  @override
+  String get weatherCondCloudy => 'Cloudy';
+
+  @override
+  String get weatherCondFog => 'Hazy';
+
+  @override
+  String get weatherCondDrizzle => 'Drizzle';
+
+  @override
+  String get weatherCondRain => 'Rain';
+
+  @override
+  String get weatherCondHeavyRain => 'Heavy rain';
+
+  @override
+  String get weatherCondStorm => 'Thunderstorm';
+
+  @override
+  String weatherFeelsLike(int temp) {
+    return 'Feels like $temp°';
+  }
+
+  @override
+  String get weatherRainChance => 'Rain chance';
+
+  @override
+  String get weatherHumidity => 'Humidity';
+
+  @override
+  String get weatherWind => 'Wind';
+
+  @override
+  String get weatherNextHours => 'Next hours';
+
+  @override
+  String weatherUpdated(String ago) {
+    return 'Updated $ago';
+  }
+
+  @override
+  String weatherSunset(String time) {
+    return 'Sunset $time';
+  }
+
+  @override
+  String get weatherForecastNote =>
+      'Forecast from Open-Meteo, not an official weather warning.';
+
+  @override
+  String get eveningTitle => 'Today so far';
+
+  @override
+  String get eveningFeeNote => 'Today\'s fee goes on your bill after midnight.';
+
+  @override
+  String eveningBillDue(String amount) {
+    return 'Bill due: ₹$amount';
+  }
+
+  @override
+  String get eveningNoBill => 'No bill due';
 }

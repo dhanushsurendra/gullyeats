@@ -3,6 +3,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:ordering/features/alerts/area_alerts.dart';
+import 'package:ordering/features/weather/weather_service.dart';
+import 'package:ordering/features/weather/weather_strip.dart';
 import 'package:ordering/core/utils/order_alerts.dart';
 import 'package:ordering/core/widgets/skeleton.dart';
 import 'package:ordering/core/error/app_exceptions.dart';
@@ -480,6 +482,10 @@ class _OrdersScreenState extends State<OrdersScreen> {
                   _LiveBadge(isLive: provider.isLive),
                 ],
               ),
+              // Hidden while there's no fresh weather, so it never pushes
+              // orders down for nothing.
+              const _WeatherGap(),
+              const WeatherStrip(),
             ],
           ),
           expandToFullHeight: true,
@@ -749,4 +755,15 @@ class _SectionHeader extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The space above the weather strip, only while the strip shows.
+class _WeatherGap extends StatelessWidget {
+  const _WeatherGap();
+
+  @override
+  Widget build(BuildContext context) => ValueListenableBuilder(
+    valueListenable: WeatherService.current,
+    builder: (_, w, _) => w == null || w.isStale ? const SizedBox.shrink() : AppGaps.h16,
+  );
 }

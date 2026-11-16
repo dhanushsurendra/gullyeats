@@ -27,6 +27,10 @@ import 'package:ordering/features/profile/presentation/profile_screen.dart';
 import 'package:ordering/features/profile/presentation/qr_screen.dart';
 import 'package:ordering/features/profile/presentation/staff_management_screen.dart';
 import 'package:ordering/features/splash/presentation/splash_screen.dart';
+import 'package:ordering/core/theme/app_colors.dart';
+import 'package:ordering/features/weather/mood.dart';
+import 'package:ordering/features/weather/weather_service.dart';
+import 'package:ordering/features/weather/weather_sheet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'fake_backend.dart';
@@ -111,6 +115,15 @@ final screens = <ScreenCase>[
   ScreenCase('qr_poster', () => const QrPosterScreen()),
   ScreenCase('staff', () => const StaffManagementScreen(), hasInputs: true),
   ScreenCase('payments', () => const PaymentScreen()),
+  // The weather sheet by day, and in the evening with Chill's business card.
+  sheetCase('weather_sheet', () {
+    WeatherService.current.value = WeatherData.fromJson(weatherJson());
+    return Material(color: AppColors.surface, child: const WeatherDetails(mood: Mood.sunnyCloudy));
+  }),
+  sheetCase('weather_sheet_evening', () {
+    WeatherService.current.value = WeatherData.fromJson(weatherJson(evening: true));
+    return Material(color: AppColors.surface, child: const WeatherDetails(mood: Mood.chillEvening));
+  }),
   ScreenCase(
     'payment_lock',
     () => const PaymentLockScreen(

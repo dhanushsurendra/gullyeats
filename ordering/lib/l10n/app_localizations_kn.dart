@@ -1359,4 +1359,106 @@ class AppLocalizationsKn extends AppLocalizations {
   String areaAlertVendors(int count) {
     return '$count ವ್ಯಾಪಾರಿಗಳು';
   }
+
+  @override
+  String get weatherMsgClear => 'ಸುಂದರ ದಿನ! ನಿಮ್ಮ ಅಂಗಡಿಗೆ ಒಳ್ಳೆಯ ದಿನವಾಗಲಿ.';
+
+  @override
+  String get weatherMsgCloudy =>
+      'ಮೋಡ ಕವಿದ ಹಿತವಾದ ವಾತಾವರಣ. ಮಾರಾಟಕ್ಕೆ ಒಳ್ಳೆಯ ದಿನ!';
+
+  @override
+  String get weatherMsgHot => 'ತುಂಬಾ ಬಿಸಿಲು! ನೀರು ಕುಡಿಯುತ್ತಿರಿ, ನೆರಳಿನಲ್ಲಿರಿ.';
+
+  @override
+  String get weatherMsgRainDay => 'ಸ್ವಲ್ಪ ಮಳೆ ಇದೆ. ನಿಮ್ಮ ಅಂಗಡಿಯನ್ನು ಮುಚ್ಚಿಡಿ.';
+
+  @override
+  String get weatherMsgEvening =>
+      'ಸಂಜೆಯ ಶಿಫ್ಟ್‌ಗೆ ನಾನು ಬಂದಿದ್ದೇನೆ! ಇಂದಿನ ಸಂಜೆ ಚೆನ್ನಾಗಿರಲಿ.';
+
+  @override
+  String get weatherMsgCool => 'ತಂಪಾದ ಸಂಜೆ. ಬೆಚ್ಚಗಿರಿ!';
+
+  @override
+  String get weatherMsgRainNight => 'ಮಳೆಯ ಸಂಜೆ. ಅಂಗಡಿ ಮತ್ತು ಒಲೆಯನ್ನು ಮುಚ್ಚಿಡಿ.';
+
+  @override
+  String get weatherMsgHeavy =>
+      'ಭಾರೀ ಮಳೆ. ಅಂಗಡಿಯನ್ನು ಮುಚ್ಚಿ, ಸಾಮಾನುಗಳನ್ನು ರಕ್ಷಿಸಿ.';
+
+  @override
+  String get weatherMsgSleeping => 'ಅಂಗಡಿ ಮುಚ್ಚಿದೆ. ಶುಭ ರಾತ್ರಿ, ನಾಳೆ ಸಿಗೋಣ!';
+
+  @override
+  String weatherHeavySoon(String time) {
+    return 'ಸುಮಾರು $time ಕ್ಕೆ ಭಾರೀ ಮಳೆ ಸಾಧ್ಯತೆ. ಸಮಯಕ್ಕೆ ಅಂಗಡಿ ಮುಚ್ಚಿಡಿ.';
+  }
+
+  @override
+  String get weatherCondClear => 'ಶುಭ್ರ';
+
+  @override
+  String get weatherCondCloudy => 'ಮೋಡ';
+
+  @override
+  String get weatherCondFog => 'ಮಂಜು';
+
+  @override
+  String get weatherCondDrizzle => 'ತುಂತುರು ಮಳೆ';
+
+  @override
+  String get weatherCondRain => 'ಮಳೆ';
+
+  @override
+  String get weatherCondHeavyRain => 'ಭಾರೀ ಮಳೆ';
+
+  @override
+  String get weatherCondStorm => 'ಗುಡುಗು ಮಳೆ';
+
+  @override
+  String weatherFeelsLike(int temp) {
+    return 'ಅನುಭವ $temp°';
+  }
+
+  @override
+  String get weatherRainChance => 'ಮಳೆ ಸಾಧ್ಯತೆ';
+
+  @override
+  String get weatherHumidity => 'ತೇವಾಂಶ';
+
+  @override
+  String get weatherWind => 'ಗಾಳಿ';
+
+  @override
+  String get weatherNextHours => 'ಮುಂದಿನ ಗಂಟೆಗಳು';
+
+  @override
+  String weatherUpdated(String ago) {
+    return 'ನವೀಕರಣ: $ago';
+  }
+
+  @override
+  String weatherSunset(String time) {
+    return 'ಸೂರ್ಯಾಸ್ತ $time';
+  }
+
+  @override
+  String get weatherForecastNote =>
+      'Open-Meteo ಮುನ್ಸೂಚನೆ, ಅಧಿಕೃತ ಹವಾಮಾನ ಎಚ್ಚರಿಕೆ ಅಲ್ಲ.';
+
+  @override
+  String get eveningTitle => 'ಇಂದು ಇಲ್ಲಿಯವರೆಗೆ';
+
+  @override
+  String get eveningFeeNote =>
+      'ಇಂದಿನ ಶುಲ್ಕ ಮಧ್ಯರಾತ್ರಿಯ ನಂತರ ನಿಮ್ಮ ಬಿಲ್‌ಗೆ ಸೇರುತ್ತದೆ.';
+
+  @override
+  String eveningBillDue(String amount) {
+    return 'ಬಾಕಿ ಬಿಲ್: ₹$amount';
+  }
+
+  @override
+  String get eveningNoBill => 'ಯಾವುದೇ ಬಾಕಿ ಬಿಲ್ ಇಲ್ಲ';
 }

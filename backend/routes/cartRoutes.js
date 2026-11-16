@@ -31,6 +31,8 @@ const { getSalesDashboard } = require('../controllers/salesController')
 const asyncHandler = require('../utils/asyncHandler')
 const { discoverCarts, RADIUS_KM } = require('../utils/discoverCarts')
 const { mainRoadNear } = require('../utils/mainRoads')
+const { weatherNear } = require('../utils/weather')
+const { findManagedCart } = require('../utils/cartAccess')
 const auth = require('../middlewares/auth')
 const { createAreaAlert, getAreaAlerts, confirmAreaAlert } = require('../controllers/areaAlertController')
 
@@ -89,6 +91,15 @@ router.get('/discover', asyncHandler(async (req, res) => {
       ? [lat, lng]
       : null
   res.json({ success: true, data: await discoverCarts({ here, q: req.query.q }), radiusKm: RADIUS_KM })
+}))
+
+// Vendor app weather strip: the forecast at the cart (a shared city cache,
+// utils/weather.js), or data: null when there's no fresh data.
+router.get('/weather/:cartId', auth, asyncHandler(async (req, res) => {
+  const cart = await findManagedCart(req, res, req.params.cartId)
+  const spot = cart.location?.coordinates
+  const data = spot?.length === 2 ? await weatherNear(spot[0], spot[1]) : null
+  res.json({ success: true, data })
 }))
 
 // Onboarding app: is this spot right next to a main road? A risk hint only.

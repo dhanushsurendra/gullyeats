@@ -699,5 +699,69 @@
         "type": "int"
       }
     }
-  }
+  },
+  "weatherMsgClear": "Beautiful day! Have a great one at the stall.",
+  "weatherMsgCloudy": "Cloudy and comfortable. A good day to sell!",
+  "weatherMsgHot": "It's hot! Keep drinking water and stay in the shade.",
+  "weatherMsgRainDay": "A little rain about. Keep your stall covered.",
+  "weatherMsgEvening": "I'm here for the evening shift. Let's make it a good one!",
+  "weatherMsgCool": "Cool evening. Stay warm!",
+  "weatherMsgRainNight": "Rainy evening. Keep your stall and stove covered.",
+  "weatherMsgHeavy": "Heavy rain. Cover your stall and protect your equipment.",
+  "weatherMsgSleeping": "Shop's closed. Good night, see you tomorrow!",
+  "weatherHeavySoon": "Heavy rain likely around {time}. Cover your stall in time.",
+  "@weatherHeavySoon": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "weatherCondClear": "Clear",
+  "weatherCondCloudy": "Cloudy",
+  "weatherCondFog": "Hazy",
+  "weatherCondDrizzle": "Drizzle",
+  "weatherCondRain": "Rain",
+  "weatherCondHeavyRain": "Heavy rain",
+  "weatherCondStorm": "Thunderstorm",
+  "weatherFeelsLike": "Feels like {temp}°",
+  "@weatherFeelsLike": {
+    "placeholders": {
+      "temp": {
+        "type": "int"
+      }
+    }
+  },
+  "weatherRainChance": "Rain chance",
+  "weatherHumidity": "Humidity",
+  "weatherWind": "Wind",
+  "weatherNextHours": "Next hours",
+  "weatherUpdated": "Updated {ago}",
+  "@weatherUpdated": {
+    "placeholders": {
+      "ago": {
+        "type": "String"
+      }
+    }
+  },
+  "weatherSunset": "Sunset {time}",
+  "@weatherSunset": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "weatherForecastNote": "Forecast from Open-Meteo, not an official weather warning.",
+  "eveningTitle": "Today so far",
+  "eveningFeeNote": "Today's fee goes on your bill after midnight.",
+  "eveningBillDue": "Bill due: ₹{amount}",
+  "@eveningBillDue": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "eveningNoBill": "No bill due"
 }
