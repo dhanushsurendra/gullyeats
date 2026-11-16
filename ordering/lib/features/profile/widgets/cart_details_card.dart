@@ -12,11 +12,12 @@ import 'package:ordering/features/cart/models/cart_model.dart';
 import 'package:ordering/features/cart/presentation/edit_cart_screen.dart';
 import 'package:ordering/features/cart/providers/cart_provider.dart';
 import 'package:ordering/features/profile/presentation/qr_screen.dart';
+import 'package:ordering/features/weather/weather_strip.dart' show NightStars;
 import 'package:ordering/l10n/l10n.dart';
 import 'package:provider/provider.dart';
 
-/// The selected cart on Profile: its photo (or a brand gradient) with the
-/// name and address, the open/closed switch, the cart ID and its QR poster.
+/// The selected cart on Profile: a night-sky header (the app's purple, as on
+/// Sales and the weather strip) with the name and address, the open/closed switch, the cart ID and its QR poster.
 class CartDetailsCard extends StatelessWidget {
   final CartModel? cart;
 
@@ -65,7 +66,7 @@ class CartDetailsCard extends StatelessWidget {
   }
 }
 
-/// Photo or gradient, with the status pill, the edit button, the name and
+/// The night-sky header, with the status pill, the edit button, the name and
 /// the address. It grows with the text, so long names and large system text
 /// fit.
 class _Header extends StatelessWidget {
@@ -78,60 +79,58 @@ class _Header extends StatelessWidget {
     final l10n = context.l10n;
     final cart = this.cart;
     final isOpen = cart?.isOpen ?? false;
-    final photo = cart?.cartImageUrl ?? '';
     // Cart details (name, address, photo, parcel charge) are the owner's.
     final canEdit = cart != null && !context.watch<AuthProvider>().isStaff;
 
-    Widget fallback() => DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFFF8A3D), AppColors.primary, Color(0xFFC94200)],
-        ),
-      ),
-      child: Align(
-        alignment: const Alignment(1.08, 1.25),
-        child: Icon(
-          Icons.storefront_rounded,
-          size: 120,
-          color: AppColors.white.withValues(alpha: 0.1),
-        ),
-      ),
-    );
-
+    // The app's night sky (the Sales card and Chill's weather strip): the
+    // night gradient, a few stars, and a warm stall-lamp glow behind a
+    // faint shop silhouette.
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
       child: Stack(
         children: [
-          Positioned.fill(
-            child: photo.isEmpty
-                ? fallback()
-                : Image.network(
-                    photo,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => fallback(),
-                  ),
-          ),
-          // Keeps white text readable on a photo (the gradient needs none).
-          if (photo.isNotEmpty)
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    // Darker behind the pill and the name, lighter between.
-                    stops: const [0, 0.35, 1],
-                    colors: [
-                      Colors.black.withValues(alpha: 0.3),
-                      Colors.black.withValues(alpha: 0.15),
-                      Colors.black.withValues(alpha: 0.8),
-                    ],
-                  ),
+          const Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.nightDeep,
+                    AppColors.night,
+                    AppColors.nightSoft,
+                  ],
                 ),
               ),
             ),
+          ),
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  center: const Alignment(0.95, 1.1),
+                  radius: 0.9,
+                  colors: [
+                    AppColors.primary.withValues(alpha: 0.35),
+                    AppColors.primary.withValues(alpha: 0),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          // Only in the empty sky: never on the name, the pill or the button.
+          const Positioned.fill(
+            child: CustomPaint(painter: NightStars(stars: _headerStars)),
+          ),
+          Positioned(
+            right: -22,
+            bottom: -24,
+            child: Icon(
+              Icons.storefront_rounded,
+              size: 120,
+              color: AppColors.lilac.withValues(alpha: 0.1),
+            ),
+          ),
           ConstrainedBox(
             constraints: const BoxConstraints(minHeight: 160),
             child: Padding(
@@ -146,7 +145,7 @@ class _Header extends StatelessWidget {
                       const Spacer(),
                       if (canEdit)
                         Material(
-                          color: Colors.black.withValues(alpha: 0.35),
+                          color: AppColors.white.withValues(alpha: 0.12),
                           shape: const CircleBorder(),
                           child: IconButton(
                             tooltip: l10n.cartDetails,
@@ -221,7 +220,7 @@ class _StatusPill extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
     decoration: BoxDecoration(
-      color: Colors.black.withValues(alpha: 0.4),
+      color: AppColors.white.withValues(alpha: 0.12),
       borderRadius: BorderRadius.circular(20),
     ),
     child: Row(
@@ -370,3 +369,14 @@ class _CartId extends StatelessWidget {
     );
   }
 }
+
+const _headerStars = [
+  (0.33, 0.10, 1.1),
+  (0.40, 0.32, 0.9),
+  (0.52, 0.18, 1.4),
+  (0.63, 0.40, 0.9),
+  (0.72, 0.12, 1.0),
+  (0.48, 0.45, 0.8),
+  (0.30, 0.42, 1.2),
+  (0.78, 0.46, 0.8),
+];

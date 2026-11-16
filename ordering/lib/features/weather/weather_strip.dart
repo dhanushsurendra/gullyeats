@@ -37,24 +37,29 @@ bool moodHasStars(Mood m) =>
 /// Static stars at fixed spots (fractions of the card), drawn behind the
 /// content. Fixed, so goldens stay stable and nothing moves.
 class NightStars extends CustomPainter {
-  const NightStars();
+  /// (x, y, radius), x and y as fractions of the size.
+  final List<(double, double, double)> stars;
 
+  const NightStars({this.stars = _stars});
+
+  // Along the top and bottom edges and on the right, clear of the text
+  // (which starts after the character and runs to about 70% of the width).
   static const _stars = [
-    (0.08, 0.18, 1.2),
-    (0.22, 0.72, 0.9),
-    (0.38, 0.12, 1.0),
-    (0.55, 0.30, 1.4),
-    (0.66, 0.82, 0.9),
-    (0.78, 0.16, 1.1),
-    (0.88, 0.55, 1.3),
-    (0.95, 0.10, 0.8),
-    (0.47, 0.90, 0.8),
+    (0.06, 0.12, 1.1),
+    (0.30, 0.09, 0.9),
+    (0.46, 0.13, 1.2),
+    (0.62, 0.08, 0.9),
+    (0.80, 0.18, 1.3),
+    (0.92, 0.10, 0.8),
+    (0.84, 0.82, 1.0),
+    (0.40, 0.92, 0.8),
+    (0.66, 0.90, 1.1),
   ];
 
   @override
   void paint(Canvas canvas, Size size) {
     final dot = Paint()..color = AppColors.white.withValues(alpha: 0.55);
-    for (final (x, y, r) in _stars) {
+    for (final (x, y, r) in stars) {
       canvas.drawCircle(Offset(x * size.width, y * size.height), r, dot);
     }
   }
