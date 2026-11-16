@@ -1424,7 +1424,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get weatherRain => 'Rain, next hour';
+  String get weatherRain => 'Next hour';
+
+  @override
+  String get weatherNoRain => 'No rain';
 
   @override
   String get weatherHumidity => 'Humidity';

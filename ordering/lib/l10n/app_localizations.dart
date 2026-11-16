@@ -2607,8 +2607,14 @@ abstract class AppLocalizations {
   /// No description provided for @weatherRain.
   ///
   /// In en, this message translates to:
-  /// **'Rain, next hour'**
+  /// **'Next hour'**
   String get weatherRain;
+
+  /// No description provided for @weatherNoRain.
+  ///
+  /// In en, this message translates to:
+  /// **'No rain'**
+  String get weatherNoRain;
 
   /// No description provided for @weatherHumidity.
   ///

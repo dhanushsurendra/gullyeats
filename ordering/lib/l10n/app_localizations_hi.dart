@@ -1401,7 +1401,10 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
-  String get weatherRain => 'अगले घंटे बारिश';
+  String get weatherRain => 'अगले घंटे';
+
+  @override
+  String get weatherNoRain => 'बारिश नहीं';
 
   @override
   String get weatherHumidity => 'नमी';

@@ -732,7 +732,8 @@
       }
     }
   },
-  "weatherRain": "Rain, next hour",
+  "weatherRain": "Next hour",
+  "weatherNoRain": "No rain",
   "weatherHumidity": "Humidity",
   "weatherWind": "Wind",
   "weatherNextHours": "Next hours",

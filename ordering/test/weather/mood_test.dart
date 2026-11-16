@@ -7,6 +7,8 @@ import 'package:http/testing.dart';
 import 'package:ordering/features/weather/mood.dart';
 import 'package:ordering/features/weather/weather_service.dart';
 import 'package:ordering/features/weather/weather_sheet.dart';
+import 'package:ordering/l10n/app_localizations.dart';
+import 'package:flutter/widgets.dart' show Locale;
 
 final day = DateTime(2026, 11, 16);
 DateTime at(int h, [int m = 0]) => day.add(Duration(hours: h, minutes: m));
@@ -160,5 +162,11 @@ void main() {
 
   test('rain is shown in mm, as MET Norway gives it', () {
     expect([0.0, 0.04, 0.4, 9.96, 12.5].map(rainText), ['0 mm', '0 mm', '0.4 mm', '10 mm', '13 mm']);
+  });
+
+  test('rain amounts read as words', () {
+    final l10n = lookupAppLocalizations(const Locale('en'));
+    expect([0.0, 0.04, 0.4, 2.5, 7.5, 7.6, 20.0].map((mm) => rainWord(l10n, mm)),
+        ['No rain', 'No rain', 'Drizzle', 'Rain', 'Rain', 'Heavy rain', 'Heavy rain']);
   });
 }

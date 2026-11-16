@@ -113,7 +113,7 @@ class WeatherDetails extends StatelessWidget {
                 _Stat(
                   Icons.water_drop_outlined,
                   l10n.weatherRain,
-                  rainText(w.rainMm),
+                  rainWord(l10n, w.rainMm),
                 ),
                 AppGaps.w8,
                 _Stat(Icons.opacity, l10n.weatherHumidity, '${w.humidity}%'),
@@ -216,17 +216,25 @@ class _Stat extends StatelessWidget {
           children: [
             Icon(icon, size: 18, color: AppColors.grey500),
             AppGaps.h4,
-            Text(
-              value,
-              style: AppTextStyles.body.copyWith(
-                color: AppColors.black,
-                fontWeight: FontWeight.w700,
+            // Value and label shrink rather than break a word at large text.
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                value,
+                style: AppTextStyles.body.copyWith(
+                  color: AppColors.black,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
-            Text(
-              label,
-              maxLines: 2,
-              style: AppTextStyles.caption.copyWith(fontSize: 11),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                label,
+                style: AppTextStyles.caption.copyWith(fontSize: 11),
+              ),
             ),
           ],
         ),
@@ -366,4 +374,14 @@ class _Figure extends StatelessWidget {
 String rainText(double mm) {
   final r = (mm * 10).round() / 10;
   return '${r == 0 ? '0' : r < 10 ? r.toStringAsFixed(1) : r.round()} mm';
+}
+
+/// Forecast rain for an hour in words, by the usual hourly rates: under
+/// 2.5 mm light, under 7.6 mm moderate, then heavy.
+String rainWord(AppLocalizations l10n, double mm) {
+  final r = (mm * 10).round() / 10;
+  if (r == 0) return l10n.weatherNoRain;
+  if (r < 2.5) return l10n.weatherCondDrizzle;
+  if (r < 7.6) return l10n.weatherCondRain;
+  return l10n.weatherCondHeavyRain;
 }

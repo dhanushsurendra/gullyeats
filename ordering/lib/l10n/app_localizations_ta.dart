@@ -1438,7 +1438,10 @@ class AppLocalizationsTa extends AppLocalizations {
   }
 
   @override
-  String get weatherRain => 'அடுத்த ஒரு மணி நேர மழை';
+  String get weatherRain => 'அடுத்த மணி';
+
+  @override
+  String get weatherNoRain => 'மழை இல்லை';
 
   @override
   String get weatherHumidity => 'ஈரப்பதம்';

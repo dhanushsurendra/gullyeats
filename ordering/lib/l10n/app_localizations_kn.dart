@@ -1422,7 +1422,10 @@ class AppLocalizationsKn extends AppLocalizations {
   }
 
   @override
-  String get weatherRain => 'ಮುಂದಿನ ಗಂಟೆ ಮಳೆ';
+  String get weatherRain => 'ಮುಂದಿನ ಗಂಟೆ';
+
+  @override
+  String get weatherNoRain => 'ಮಳೆ ಇಲ್ಲ';
 
   @override
   String get weatherHumidity => 'ತೇವಾಂಶ';
