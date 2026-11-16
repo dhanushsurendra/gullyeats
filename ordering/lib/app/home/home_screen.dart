@@ -319,8 +319,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 }
 
 /// Pays a fee that is due before the cart locks (the screen can be closed).
-void openFeePayment(BuildContext context, PaymentStatusModel status) {
-  Navigator.push(
+/// Completes when the payment screen closes, so callers can refresh.
+Future<void> openFeePayment(BuildContext context, PaymentStatusModel status) {
+  return Navigator.push(
     context,
     MaterialPageRoute(
       builder: (_) => PaymentLockScreen(

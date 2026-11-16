@@ -328,6 +328,7 @@
   "ordersTimesFee": "{count} ऑर्डर × ₹{fee}",
   "walletSelected": "{wallet} चुना गया।",
   "externalWallet": "बाहरी वॉलेट",
+  "feeLocksAt": "ऑर्डर लेते रहने के लिए {time} से पहले भुगतान करें",
   "feeDueBanner": "आपकी कार्ट {time} पर लॉक होगी। ऑर्डर लेते रहने के लिए अभी ₹{amount} भरें।",
   "payNowCaps": "अभी भरें",
   "payEarlySubtitle": "लॉक होने के बाद भी ऑर्डर लेते रहने के लिए अभी भुगतान करें।",

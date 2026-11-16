@@ -1103,6 +1103,11 @@ class AppLocalizationsKn extends AppLocalizations {
   String get externalWallet => 'ಬಾಹ್ಯ ವಾಲೆಟ್';
 
   @override
+  String feeLocksAt(String time) {
+    return 'ಆರ್ಡರ್ ಪಡೆಯುತ್ತಿರಲು $time ಒಳಗೆ ಪಾವತಿಸಿ';
+  }
+
+  @override
   String feeDueBanner(String time, String amount) {
     return 'ನಿಮ್ಮ ಕಾರ್ಟ್ $time ಕ್ಕೆ ಲಾಕ್ ಆಗುತ್ತದೆ. ಆರ್ಡರ್ ಪಡೆಯುತ್ತಿರಲು ಈಗಲೇ ₹$amount ಪಾವತಿಸಿ.';
   }

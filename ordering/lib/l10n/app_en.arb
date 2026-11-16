@@ -508,6 +508,12 @@
     }
   },
   "externalWallet": "External wallet",
+  "feeLocksAt": "Pay before {time} to keep taking orders",
+  "@feeLocksAt": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
   "feeDueBanner": "Your cart locks at {time}. Pay ₹{amount} now to keep taking orders.",
   "@feeDueBanner": {
     "placeholders": {

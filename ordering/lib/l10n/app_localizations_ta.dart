@@ -1114,6 +1114,11 @@ class AppLocalizationsTa extends AppLocalizations {
   String get externalWallet => 'வெளிப்புற வாலெட்';
 
   @override
+  String feeLocksAt(String time) {
+    return 'ஆர்டர்கள் தொடர்ந்து பெற $timeக்கு முன் செலுத்துங்கள்';
+  }
+
+  @override
   String feeDueBanner(String time, String amount) {
     return 'உங்கள் கார்ட் $time-க்கு பூட்டப்படும். ஆர்டர்களைத் தொடர்ந்து பெற இப்போதே ₹$amount செலுத்தவும்.';
   }

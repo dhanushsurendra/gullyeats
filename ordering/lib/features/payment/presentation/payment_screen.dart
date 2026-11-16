@@ -9,6 +9,9 @@ import 'package:ordering/features/cart/providers/cart_provider.dart';
 import 'package:ordering/features/payment/models/payment_model.dart';
 import 'package:ordering/features/payment/providers/payment_provider.dart';
 import 'package:ordering/features/payment/widgets/payment_history_tile.dart';
+import 'package:ordering/app/home/home_screen.dart' show openFeePayment;
+import 'package:ordering/features/payment/models/payment_status_model.dart';
+import 'package:ordering/features/payment/widgets/fee_due_card.dart';
 import 'package:provider/provider.dart';
 import 'package:ordering/l10n/l10n.dart';
 import 'package:ordering/core/widgets/base_screen.dart';
@@ -24,6 +27,8 @@ class PaymentScreen extends StatefulWidget {
 }
 
 class _PaymentScreenState extends State<PaymentScreen> {
+  PaymentStatusModel? _status;
+
   bool _init = false;
   String? _lastLoadedCartId;
 
@@ -92,6 +97,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
     final cartId = cartProvider.selectedCart?.id;
 
     if (cartId == null) return;
+
+    // The open bill, for the Pay card above the history (read-only check).
+    paymentProvider.refreshStatus(authProvider.token ?? '', cartId).then((s) {
+      if (mounted) setState(() => _status = s);
+    });
 
     await paymentProvider.loadPaymentHistory(
       authProvider.token,
@@ -236,6 +246,18 @@ class _PaymentScreenState extends State<PaymentScreen> {
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.only(bottom: 24),
           children: [
+            // A bill that can be paid now, also after the Home warning was
+            // closed with its X.
+            if (FeeDueCard.shows(_status)) ...[
+              FeeDueCard(
+                status: _status!,
+                onPay: () async {
+                  await openFeePayment(context, _status!);
+                  _loadPaymentHistory();
+                },
+              ),
+              AppGaps.h24,
+            ],
             DateRangeFilter(
               start: _startDate,
               end: _endDate,

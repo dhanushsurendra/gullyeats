@@ -1088,6 +1088,11 @@ class AppLocalizationsHi extends AppLocalizations {
   String get externalWallet => 'बाहरी वॉलेट';
 
   @override
+  String feeLocksAt(String time) {
+    return 'ऑर्डर लेते रहने के लिए $time से पहले भुगतान करें';
+  }
+
+  @override
   String feeDueBanner(String time, String amount) {
     return 'आपकी कार्ट $time पर लॉक होगी। ऑर्डर लेते रहने के लिए अभी ₹$amount भरें।';
   }

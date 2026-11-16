@@ -2070,6 +2070,12 @@ abstract class AppLocalizations {
   /// **'External wallet'**
   String get externalWallet;
 
+  /// No description provided for @feeLocksAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay before {time} to keep taking orders'**
+  String feeLocksAt(String time);
+
   /// No description provided for @feeDueBanner.
   ///
   /// In en, this message translates to:
