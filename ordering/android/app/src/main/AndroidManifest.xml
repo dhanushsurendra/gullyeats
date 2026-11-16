@@ -7,6 +7,8 @@
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Voice orders on the Orders screen: only while listening, never recorded. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
@@ -70,6 +72,13 @@
             <data android:mimeType="text/plain" />
         </intent>
 
+        <!-- Voice orders: the phone's speech recogniser and text-to-speech (Android 11+). -->
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
     </queries>
 
 </manifest>

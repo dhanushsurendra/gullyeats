@@ -1488,4 +1488,66 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get eveningNoBill => 'No bill due';
+
+  @override
+  String get voiceTapToSpeak => 'Say an order';
+
+  @override
+  String get voiceListening => 'Listening…';
+
+  @override
+  String get voiceExample =>
+      'Try: \"2 masala dosa paid\" or \"number 6 served\"';
+
+  @override
+  String get voiceNotUnderstood => 'Sorry, didn\'t get that.';
+
+  @override
+  String voiceDidntCatch(String words) {
+    return 'Didn\'t catch: $words';
+  }
+
+  @override
+  String get voiceNewOrder => 'New order';
+
+  @override
+  String voiceMarkPaidQuestion(String number) {
+    return 'Mark #$number paid?';
+  }
+
+  @override
+  String voiceServeQuestion(String number) {
+    return 'Serve #$number?';
+  }
+
+  @override
+  String voiceNotWaiting(String number) {
+    return '#$number isn\'t waiting for that';
+  }
+
+  @override
+  String get voiceSayYes => 'Say \"yes\" or tap Confirm';
+
+  @override
+  String get voiceConfirmCaps => 'CONFIRM';
+
+  @override
+  String get voiceEditCaps => 'EDIT';
+
+  @override
+  String voiceReadTotal(String amount) {
+    return 'Total $amount rupees';
+  }
+
+  @override
+  String get voiceMicNeeded => 'Allow the microphone to take orders by voice';
+
+  @override
+  String get voiceUnavailable => 'Voice orders aren\'t available on this phone';
+
+  @override
+  String get voiceWaveOn => 'Wave over the phone to talk: on';
+
+  @override
+  String get voiceWaveOff => 'Wave over the phone to talk: off';
 }

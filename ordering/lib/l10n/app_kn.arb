@@ -434,5 +434,22 @@
   "eveningTitle": "ಇಂದು ಇಲ್ಲಿಯವರೆಗೆ",
   "eveningFeeNote": "ಇಂದಿನ ಶುಲ್ಕ ಮಧ್ಯರಾತ್ರಿಯ ನಂತರ ನಿಮ್ಮ ಬಿಲ್‌ಗೆ ಸೇರುತ್ತದೆ.",
   "eveningBillDue": "ಬಾಕಿ ಬಿಲ್: ₹{amount}",
-  "eveningNoBill": "ಯಾವುದೇ ಬಾಕಿ ಬಿಲ್ ಇಲ್ಲ"
+  "eveningNoBill": "ಯಾವುದೇ ಬಾಕಿ ಬಿಲ್ ಇಲ್ಲ",
+  "voiceTapToSpeak": "ಆರ್ಡರ್ ಹೇಳಿ",
+  "voiceListening": "ಕೇಳಿಸಿಕೊಳ್ಳುತ್ತಿದೆ…",
+  "voiceExample": "ಉದಾ: \"ಎರಡು ಮಸಾಲಾ ದೋಸೆ ಪೇಡ್\" ಅಥವಾ \"ನಂಬರ್ 6 ರೆಡಿ\"",
+  "voiceNotUnderstood": "ಕ್ಷಮಿಸಿ, ಅರ್ಥವಾಗಲಿಲ್ಲ.",
+  "voiceDidntCatch": "ಅರ್ಥವಾಗಲಿಲ್ಲ: {words}",
+  "voiceNewOrder": "ಹೊಸ ಆರ್ಡರ್",
+  "voiceMarkPaidQuestion": "#{number} ಪೇಡ್ ಮಾಡುವುದೇ?",
+  "voiceServeQuestion": "#{number} ಸರ್ವ್ ಮಾಡುವುದೇ?",
+  "voiceNotWaiting": "#{number} ಗೆ ಇದು ಬಾಕಿ ಇಲ್ಲ",
+  "voiceSayYes": "\"ಹೌದು\" ಎನ್ನಿ ಅಥವಾ ಕನ್ಫರ್ಮ್ ಒತ್ತಿ",
+  "voiceConfirmCaps": "ಕನ್ಫರ್ಮ್",
+  "voiceEditCaps": "ಬದಲಿಸಿ",
+  "voiceReadTotal": "ಒಟ್ಟು {amount} ರೂಪಾಯಿ",
+  "voiceMicNeeded": "ಧ್ವನಿಯಿಂದ ಆರ್ಡರ್ ತೆಗೆದುಕೊಳ್ಳಲು ಮೈಕ್ರೊಫೋನ್ ಅನುಮತಿಸಿ",
+  "voiceUnavailable": "ಈ ಫೋನ್‌ನಲ್ಲಿ ಧ್ವನಿ ಆರ್ಡರ್ ಲಭ್ಯವಿಲ್ಲ",
+  "voiceWaveOn": "ಫೋನ್ ಮೇಲೆ ಕೈ ಆಡಿಸಿ ಮಾತನಾಡಿ: ಆನ್",
+  "voiceWaveOff": "ಫೋನ್ ಮೇಲೆ ಕೈ ಆಡಿಸಿ ಮಾತನಾಡಿ: ಆಫ್"
 }

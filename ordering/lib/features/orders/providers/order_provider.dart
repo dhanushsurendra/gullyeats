@@ -79,6 +79,9 @@ class OrderProvider with ChangeNotifier {
 
   double get platformFee => _hasItems ? (_editFee ?? _currentFee) : 0.0;
 
+  /// The fee a new order gets, whatever is in the basket (voice orders).
+  double get newOrderFee => _currentFee;
+
   // ---------------------------------------------------------------------------
   // SOCKET
   // ---------------------------------------------------------------------------

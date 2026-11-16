@@ -2711,6 +2711,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No bill due'**
   String get eveningNoBill;
+
+  /// No description provided for @voiceTapToSpeak.
+  ///
+  /// In en, this message translates to:
+  /// **'Say an order'**
+  String get voiceTapToSpeak;
+
+  /// No description provided for @voiceListening.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening…'**
+  String get voiceListening;
+
+  /// No description provided for @voiceExample.
+  ///
+  /// In en, this message translates to:
+  /// **'Try: \"2 masala dosa paid\" or \"number 6 served\"'**
+  String get voiceExample;
+
+  /// No description provided for @voiceNotUnderstood.
+  ///
+  /// In en, this message translates to:
+  /// **'Sorry, didn\'t get that.'**
+  String get voiceNotUnderstood;
+
+  /// No description provided for @voiceDidntCatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Didn\'t catch: {words}'**
+  String voiceDidntCatch(String words);
+
+  /// No description provided for @voiceNewOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'New order'**
+  String get voiceNewOrder;
+
+  /// No description provided for @voiceMarkPaidQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark #{number} paid?'**
+  String voiceMarkPaidQuestion(String number);
+
+  /// No description provided for @voiceServeQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Serve #{number}?'**
+  String voiceServeQuestion(String number);
+
+  /// No description provided for @voiceNotWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'#{number} isn\'t waiting for that'**
+  String voiceNotWaiting(String number);
+
+  /// No description provided for @voiceSayYes.
+  ///
+  /// In en, this message translates to:
+  /// **'Say \"yes\" or tap Confirm'**
+  String get voiceSayYes;
+
+  /// No description provided for @voiceConfirmCaps.
+  ///
+  /// In en, this message translates to:
+  /// **'CONFIRM'**
+  String get voiceConfirmCaps;
+
+  /// No description provided for @voiceEditCaps.
+  ///
+  /// In en, this message translates to:
+  /// **'EDIT'**
+  String get voiceEditCaps;
+
+  /// No description provided for @voiceReadTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total {amount} rupees'**
+  String voiceReadTotal(String amount);
+
+  /// No description provided for @voiceMicNeeded.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow the microphone to take orders by voice'**
+  String get voiceMicNeeded;
+
+  /// No description provided for @voiceUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice orders aren\'t available on this phone'**
+  String get voiceUnavailable;
+
+  /// No description provided for @voiceWaveOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Wave over the phone to talk: on'**
+  String get voiceWaveOn;
+
+  /// No description provided for @voiceWaveOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Wave over the phone to talk: off'**
+  String get voiceWaveOff;
 }
 
 class _AppLocalizationsDelegate

@@ -780,5 +780,27 @@
       }
     }
   },
-  "eveningNoBill": "No bill due"
+  "eveningNoBill": "No bill due",
+  "voiceTapToSpeak": "Say an order",
+  "voiceListening": "Listening…",
+  "voiceExample": "Try: \"2 masala dosa paid\" or \"number 6 served\"",
+  "voiceNotUnderstood": "Sorry, didn't get that.",
+  "voiceDidntCatch": "Didn't catch: {words}",
+  "@voiceDidntCatch": {"placeholders": {"words": {"type": "String"}}},
+  "voiceNewOrder": "New order",
+  "voiceMarkPaidQuestion": "Mark #{number} paid?",
+  "@voiceMarkPaidQuestion": {"placeholders": {"number": {"type": "String"}}},
+  "voiceServeQuestion": "Serve #{number}?",
+  "@voiceServeQuestion": {"placeholders": {"number": {"type": "String"}}},
+  "voiceNotWaiting": "#{number} isn't waiting for that",
+  "@voiceNotWaiting": {"placeholders": {"number": {"type": "String"}}},
+  "voiceSayYes": "Say \"yes\" or tap Confirm",
+  "voiceConfirmCaps": "CONFIRM",
+  "voiceEditCaps": "EDIT",
+  "voiceReadTotal": "Total {amount} rupees",
+  "@voiceReadTotal": {"placeholders": {"amount": {"type": "String"}}},
+  "voiceMicNeeded": "Allow the microphone to take orders by voice",
+  "voiceUnavailable": "Voice orders aren't available on this phone",
+  "voiceWaveOn": "Wave over the phone to talk: on",
+  "voiceWaveOff": "Wave over the phone to talk: off"
 }

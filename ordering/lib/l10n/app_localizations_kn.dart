@@ -1487,4 +1487,67 @@ class AppLocalizationsKn extends AppLocalizations {
 
   @override
   String get eveningNoBill => 'ಯಾವುದೇ ಬಾಕಿ ಬಿಲ್ ಇಲ್ಲ';
+
+  @override
+  String get voiceTapToSpeak => 'ಆರ್ಡರ್ ಹೇಳಿ';
+
+  @override
+  String get voiceListening => 'ಕೇಳಿಸಿಕೊಳ್ಳುತ್ತಿದೆ…';
+
+  @override
+  String get voiceExample =>
+      'ಉದಾ: \"ಎರಡು ಮಸಾಲಾ ದೋಸೆ ಪೇಡ್\" ಅಥವಾ \"ನಂಬರ್ 6 ರೆಡಿ\"';
+
+  @override
+  String get voiceNotUnderstood => 'ಕ್ಷಮಿಸಿ, ಅರ್ಥವಾಗಲಿಲ್ಲ.';
+
+  @override
+  String voiceDidntCatch(String words) {
+    return 'ಅರ್ಥವಾಗಲಿಲ್ಲ: $words';
+  }
+
+  @override
+  String get voiceNewOrder => 'ಹೊಸ ಆರ್ಡರ್';
+
+  @override
+  String voiceMarkPaidQuestion(String number) {
+    return '#$number ಪೇಡ್ ಮಾಡುವುದೇ?';
+  }
+
+  @override
+  String voiceServeQuestion(String number) {
+    return '#$number ಸರ್ವ್ ಮಾಡುವುದೇ?';
+  }
+
+  @override
+  String voiceNotWaiting(String number) {
+    return '#$number ಗೆ ಇದು ಬಾಕಿ ಇಲ್ಲ';
+  }
+
+  @override
+  String get voiceSayYes => '\"ಹೌದು\" ಎನ್ನಿ ಅಥವಾ ಕನ್ಫರ್ಮ್ ಒತ್ತಿ';
+
+  @override
+  String get voiceConfirmCaps => 'ಕನ್ಫರ್ಮ್';
+
+  @override
+  String get voiceEditCaps => 'ಬದಲಿಸಿ';
+
+  @override
+  String voiceReadTotal(String amount) {
+    return 'ಒಟ್ಟು $amount ರೂಪಾಯಿ';
+  }
+
+  @override
+  String get voiceMicNeeded =>
+      'ಧ್ವನಿಯಿಂದ ಆರ್ಡರ್ ತೆಗೆದುಕೊಳ್ಳಲು ಮೈಕ್ರೊಫೋನ್ ಅನುಮತಿಸಿ';
+
+  @override
+  String get voiceUnavailable => 'ಈ ಫೋನ್‌ನಲ್ಲಿ ಧ್ವನಿ ಆರ್ಡರ್ ಲಭ್ಯವಿಲ್ಲ';
+
+  @override
+  String get voiceWaveOn => 'ಫೋನ್ ಮೇಲೆ ಕೈ ಆಡಿಸಿ ಮಾತನಾಡಿ: ಆನ್';
+
+  @override
+  String get voiceWaveOff => 'ಫೋನ್ ಮೇಲೆ ಕೈ ಆಡಿಸಿ ಮಾತನಾಡಿ: ಆಫ್';
 }

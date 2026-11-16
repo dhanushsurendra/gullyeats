@@ -20,6 +20,7 @@ import 'package:ordering/features/weather/weather_service.dart';
 import 'package:ordering/features/cart/presentation/sales_screen.dart';
 import 'package:ordering/features/orders/screens/handover_screen.dart';
 import 'package:ordering/features/orders/screens/orders_screen.dart';
+import 'package:ordering/features/orders/voice/voice_button.dart';
 import 'package:ordering/features/payment/models/payment_status_model.dart';
 import 'package:ordering/features/payment/presentation/payment_lock_screen.dart';
 import 'package:ordering/features/profile/presentation/profile_screen.dart';
@@ -282,6 +283,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
+                        // Voice orders sit on the + button, Orders tab only.
+                        if (_currentIndex == 1)
+                          const SafeArea(
+                            top: false,
+                            bottom: false,
+                            child: VoiceOrderButton(),
+                          ),
                         if (_currentIndex == 1)
                           SafeArea(
                             top: false,

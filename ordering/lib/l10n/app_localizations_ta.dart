@@ -1503,4 +1503,67 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get eveningNoBill => 'நிலுவை பில் இல்லை';
+
+  @override
+  String get voiceTapToSpeak => 'ஆர்டர் சொல்லுங்கள்';
+
+  @override
+  String get voiceListening => 'கேட்கிறது…';
+
+  @override
+  String get voiceExample =>
+      'உதா: \"இரண்டு மசாலா தோசை பெய்டு\" அல்லது \"நம்பர் 6 ரெடி\"';
+
+  @override
+  String get voiceNotUnderstood => 'மன்னிக்கவும், புரியவில்லை.';
+
+  @override
+  String voiceDidntCatch(String words) {
+    return 'புரியவில்லை: $words';
+  }
+
+  @override
+  String get voiceNewOrder => 'புதிய ஆர்டர்';
+
+  @override
+  String voiceMarkPaidQuestion(String number) {
+    return '#$number பெய்டு செய்யவா?';
+  }
+
+  @override
+  String voiceServeQuestion(String number) {
+    return '#$number சர்வ் செய்யவா?';
+  }
+
+  @override
+  String voiceNotWaiting(String number) {
+    return '#$number க்கு இது நிலுவையில் இல்லை';
+  }
+
+  @override
+  String get voiceSayYes => '\"ஆமா\" சொல்லுங்கள் அல்லது உறுதிசெய் அழுத்துங்கள்';
+
+  @override
+  String get voiceConfirmCaps => 'உறுதிசெய்';
+
+  @override
+  String get voiceEditCaps => 'மாற்று';
+
+  @override
+  String voiceReadTotal(String amount) {
+    return 'மொத்தம் $amount ரூபாய்';
+  }
+
+  @override
+  String get voiceMicNeeded =>
+      'குரலில் ஆர்டர் எடுக்க மைக்ரோஃபோனை அனுமதிக்கவும்';
+
+  @override
+  String get voiceUnavailable => 'இந்த ஃபோனில் குரல் ஆர்டர் கிடைக்காது';
+
+  @override
+  String get voiceWaveOn => 'ஃபோன் மேல் கையசைத்து பேசு: ஆன்';
+
+  @override
+  String get voiceWaveOff => 'ஃபோன் மேல் கையசைத்து பேசு: ஆஃப்';
 }

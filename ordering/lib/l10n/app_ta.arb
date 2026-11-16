@@ -434,5 +434,22 @@
   "eveningTitle": "இன்று இதுவரை",
   "eveningFeeNote": "இன்றைய கட்டணம் நள்ளிரவுக்குப் பிறகு உங்கள் பில்லில் சேரும்.",
   "eveningBillDue": "நிலுவை பில்: ₹{amount}",
-  "eveningNoBill": "நிலுவை பில் இல்லை"
+  "eveningNoBill": "நிலுவை பில் இல்லை",
+  "voiceTapToSpeak": "ஆர்டர் சொல்லுங்கள்",
+  "voiceListening": "கேட்கிறது…",
+  "voiceExample": "உதா: \"இரண்டு மசாலா தோசை பெய்டு\" அல்லது \"நம்பர் 6 ரெடி\"",
+  "voiceNotUnderstood": "மன்னிக்கவும், புரியவில்லை.",
+  "voiceDidntCatch": "புரியவில்லை: {words}",
+  "voiceNewOrder": "புதிய ஆர்டர்",
+  "voiceMarkPaidQuestion": "#{number} பெய்டு செய்யவா?",
+  "voiceServeQuestion": "#{number} சர்வ் செய்யவா?",
+  "voiceNotWaiting": "#{number} க்கு இது நிலுவையில் இல்லை",
+  "voiceSayYes": "\"ஆமா\" சொல்லுங்கள் அல்லது உறுதிசெய் அழுத்துங்கள்",
+  "voiceConfirmCaps": "உறுதிசெய்",
+  "voiceEditCaps": "மாற்று",
+  "voiceReadTotal": "மொத்தம் {amount} ரூபாய்",
+  "voiceMicNeeded": "குரலில் ஆர்டர் எடுக்க மைக்ரோஃபோனை அனுமதிக்கவும்",
+  "voiceUnavailable": "இந்த ஃபோனில் குரல் ஆர்டர் கிடைக்காது",
+  "voiceWaveOn": "ஃபோன் மேல் கையசைத்து பேசு: ஆன்",
+  "voiceWaveOff": "ஃபோன் மேல் கையசைத்து பேசு: ஆஃப்"
 }

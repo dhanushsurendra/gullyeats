@@ -3,6 +3,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ordering/features/orders/voice/voice_confirm_sheet.dart';
+import 'package:ordering/features/orders/voice/voice_parser.dart';
+import 'package:ordering/features/orders/voice/voice_session.dart';
+import 'package:ordering/features/orders/models/menu_item_model.dart';
 import 'package:ordering/app/home/home_screen.dart';
 import 'package:ordering/features/auth/presentation/login_screen.dart';
 import 'package:ordering/features/cart/models/cart_model.dart';
@@ -123,6 +127,23 @@ final screens = <ScreenCase>[
   sheetCase('weather_sheet_evening', () {
     WeatherService.current.value = WeatherData.fromJson(weatherJson(evening: true));
     return Material(color: AppColors.surface, child: const WeatherDetails(mood: Mood.chillEvening));
+  }),
+  // A voice order heard with a long dish name, an out-of-stock dish and an
+  // unmatched word: the confirmation sheet at every size.
+  sheetCase('voice_confirm', () {
+    final menu = [for (final j in menuJson) MenuItemModel.fromJson(j)];
+    const heard = '2 masala dosa 1 ghee roast paper dosa with extra chutney and sambar 1 filter coffee pizza parcel paid';
+    return Material(
+      color: AppColors.surface,
+      child: VoiceConfirmSheet(
+        command: parseVoiceCommand(heard, menu, const []),
+        heard: heard,
+        session: VoiceSession(),
+        parcelCharge: 10,
+        platformFee: 2,
+        onEdit: (_) {},
+      ),
+    );
   }),
   ScreenCase(
     'payment_lock',

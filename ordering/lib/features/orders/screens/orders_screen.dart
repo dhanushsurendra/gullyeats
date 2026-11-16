@@ -28,11 +28,17 @@ import 'package:ordering/features/cart/widgets/cart_selector.dart';
 
 /// Opens the "Create order" sheet. The + button that calls it sits on the
 /// home screen, stacked on the bottom navigation bar (see HomeScreen).
-void showCreateOrderSheet(BuildContext context) {
+void showCreateOrderSheet(
+  BuildContext context, {
+  Map<String, int>? prefill,
+  double prefillParcel = 0,
+}) {
   Navigator.of(context).push(
     PageRouteBuilder(
-      pageBuilder: (context, animation, secondaryAnimation) =>
-          const AddNewOrder(),
+      pageBuilder: (context, animation, secondaryAnimation) => AddNewOrder(
+        prefill: prefill,
+        prefillParcel: prefillParcel,
+      ),
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
         const begin = Offset(0.0, 1.0);
         const end = Offset.zero;
@@ -51,6 +57,102 @@ void showCreateOrderSheet(BuildContext context) {
       barrierColor: Colors.black54,
     ),
   );
+}
+
+/// Serves an order and offers UNDO, as the card's button does (also used
+/// by voice orders).
+Future<void> markOrderServedWithUndo(
+  BuildContext context,
+  String token,
+  String orderId,
+) async {
+  try {
+    final provider = context.read<OrderProvider>();
+
+    await provider.serveOrder(token, orderId);
+
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(context).clearSnackBars();
+
+    AppSnackBar.show(
+      context,
+      isInfo: true,
+      message: context.l10n.orderMarkedServed,
+      action: SnackBarAction(
+        label: context.l10n.undo.toUpperCase(),
+        textColor: AppColors.primary,
+        onPressed: () async {
+          try {
+            await provider.serveOrderUndo(token, orderId);
+
+            if (context.mounted) {
+              AppSnackBar.show(context, message: context.l10n.serveReverted);
+            }
+          } catch (e) {
+            final message = AppExceptionHandler.getMessage(e);
+
+            if (!context.mounted) return;
+
+            AppSnackBar.show(context, message: message, isError: true);
+          }
+        },
+      ),
+    );
+  } catch (e) {
+    final message = AppExceptionHandler.getMessage(e);
+    if (context.mounted) {
+      AppSnackBar.show(context, message: message, isError: true);
+    }
+  }
+}
+
+/// Marks an order paid and offers UNDO, as the card's button does (also used
+/// by voice orders).
+Future<void> markOrderPaidWithUndo(
+  BuildContext context,
+  String token,
+  String orderId,
+) async {
+  try {
+    final provider = context.read<OrderProvider>();
+
+    await provider.markOrderPaid(token, orderId);
+
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(context).clearSnackBars();
+
+    AppSnackBar.show(
+      context,
+      isInfo: true,
+      message: context.l10n.orderMarkedPaid,
+      action: SnackBarAction(
+        label: context.l10n.undo.toUpperCase(),
+        textColor: AppColors.primary,
+        onPressed: () async {
+          try {
+            await provider.markOrderUnpaid(token, orderId);
+
+            if (context.mounted) {
+              AppSnackBar.show(context, message: context.l10n.paymentReverted);
+            }
+          } catch (e) {
+            final message = AppExceptionHandler.getMessage(e);
+
+            if (!context.mounted) return;
+
+            AppSnackBar.show(context, message: message, isError: true);
+          }
+        },
+      ),
+    );
+  } catch (e) {
+    final message = AppExceptionHandler.getMessage(e);
+    if (context.mounted) {
+      AppSnackBar.show(context, message: message, isError: true);
+    }
+  }
 }
 
 class OrdersScreen extends StatefulWidget {
@@ -204,50 +306,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
           _ => "all",
         }, filteredOrders.where((o) => !_leaving.containsKey(o.id)).length);
 
-    Future<void> markOrderServed(String token, String orderId) async {
-      try {
-        final provider = context.read<OrderProvider>();
-
-        await provider.serveOrder(token, orderId);
-
-        if (!context.mounted) return;
-
-        ScaffoldMessenger.of(context).clearSnackBars();
-
-        AppSnackBar.show(
-          context,
-          isInfo: true,
-          message: context.l10n.orderMarkedServed,
-          action: SnackBarAction(
-            label: context.l10n.undo.toUpperCase(),
-            textColor: AppColors.primary,
-            onPressed: () async {
-              try {
-                await provider.serveOrderUndo(token, orderId);
-
-                if (context.mounted) {
-                  AppSnackBar.show(
-                    context,
-                    message: context.l10n.serveReverted,
-                  );
-                }
-              } catch (e) {
-                final message = AppExceptionHandler.getMessage(e);
-
-                if (!context.mounted) return;
-
-                AppSnackBar.show(context, message: message, isError: true);
-              }
-            },
-          ),
-        );
-      } catch (e) {
-        final message = AppExceptionHandler.getMessage(e);
-        if (mounted) {
-          AppSnackBar.show(context, message: message, isError: true);
-        }
-      }
-    }
+    Future<void> markOrderServed(String token, String orderId) =>
+        markOrderServedWithUndo(context, token, orderId);
 
     Future<void> setPreparing(
       String token,
@@ -283,50 +343,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
       }
     }
 
-    Future<void> markOrderPaid(String token, String orderId) async {
-      try {
-        final provider = context.read<OrderProvider>();
-
-        await provider.markOrderPaid(token, orderId);
-
-        if (!context.mounted) return;
-
-        ScaffoldMessenger.of(context).clearSnackBars();
-
-        AppSnackBar.show(
-          context,
-          isInfo: true,
-          message: context.l10n.orderMarkedPaid,
-          action: SnackBarAction(
-            label: context.l10n.undo.toUpperCase(),
-            textColor: AppColors.primary,
-            onPressed: () async {
-              try {
-                await provider.markOrderUnpaid(token, orderId);
-
-                if (context.mounted) {
-                  AppSnackBar.show(
-                    context,
-                    message: context.l10n.paymentReverted,
-                  );
-                }
-              } catch (e) {
-                final message = AppExceptionHandler.getMessage(e);
-
-                if (!context.mounted) return;
-
-                AppSnackBar.show(context, message: message, isError: true);
-              }
-            },
-          ),
-        );
-      } catch (e) {
-        final message = AppExceptionHandler.getMessage(e);
-        if (mounted) {
-          AppSnackBar.show(context, message: message, isError: true);
-        }
-      }
-    }
+    Future<void> markOrderPaid(String token, String orderId) =>
+        markOrderPaidWithUndo(context, token, orderId);
 
     Future<void> deleteOrder(String token, String orderId) async {
       try {

@@ -1466,4 +1466,66 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get eveningNoBill => 'कोई बकाया बिल नहीं';
+
+  @override
+  String get voiceTapToSpeak => 'ऑर्डर बोलें';
+
+  @override
+  String get voiceListening => 'सुन रहे हैं…';
+
+  @override
+  String get voiceExample => 'जैसे: \"दो मसाला डोसा पेड\" या \"नंबर 6 सर्व\"';
+
+  @override
+  String get voiceNotUnderstood => 'माफ़ कीजिए, समझ नहीं आया।';
+
+  @override
+  String voiceDidntCatch(String words) {
+    return 'समझ नहीं आया: $words';
+  }
+
+  @override
+  String get voiceNewOrder => 'नया ऑर्डर';
+
+  @override
+  String voiceMarkPaidQuestion(String number) {
+    return '#$number को पेड करें?';
+  }
+
+  @override
+  String voiceServeQuestion(String number) {
+    return '#$number सर्व करें?';
+  }
+
+  @override
+  String voiceNotWaiting(String number) {
+    return '#$number के लिए यह बाकी नहीं है';
+  }
+
+  @override
+  String get voiceSayYes => '\"हाँ\" बोलें या कन्फ़र्म दबाएँ';
+
+  @override
+  String get voiceConfirmCaps => 'कन्फ़र्म';
+
+  @override
+  String get voiceEditCaps => 'बदलें';
+
+  @override
+  String voiceReadTotal(String amount) {
+    return 'कुल $amount रुपये';
+  }
+
+  @override
+  String get voiceMicNeeded =>
+      'आवाज़ से ऑर्डर लेने के लिए माइक्रोफ़ोन की अनुमति दें';
+
+  @override
+  String get voiceUnavailable => 'इस फ़ोन पर आवाज़ से ऑर्डर उपलब्ध नहीं है';
+
+  @override
+  String get voiceWaveOn => 'फ़ोन पर हाथ हिलाकर बोलें: चालू';
+
+  @override
+  String get voiceWaveOff => 'फ़ोन पर हाथ हिलाकर बोलें: बंद';
 }

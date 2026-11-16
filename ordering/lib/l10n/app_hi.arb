@@ -434,5 +434,22 @@
   "eveningTitle": "आज अब तक",
   "eveningFeeNote": "आज का शुल्क आधी रात के बाद आपके बिल में जुड़ेगा।",
   "eveningBillDue": "बकाया बिल: ₹{amount}",
-  "eveningNoBill": "कोई बकाया बिल नहीं"
+  "eveningNoBill": "कोई बकाया बिल नहीं",
+  "voiceTapToSpeak": "ऑर्डर बोलें",
+  "voiceListening": "सुन रहे हैं…",
+  "voiceExample": "जैसे: \"दो मसाला डोसा पेड\" या \"नंबर 6 सर्व\"",
+  "voiceNotUnderstood": "माफ़ कीजिए, समझ नहीं आया।",
+  "voiceDidntCatch": "समझ नहीं आया: {words}",
+  "voiceNewOrder": "नया ऑर्डर",
+  "voiceMarkPaidQuestion": "#{number} को पेड करें?",
+  "voiceServeQuestion": "#{number} सर्व करें?",
+  "voiceNotWaiting": "#{number} के लिए यह बाकी नहीं है",
+  "voiceSayYes": "\"हाँ\" बोलें या कन्फ़र्म दबाएँ",
+  "voiceConfirmCaps": "कन्फ़र्म",
+  "voiceEditCaps": "बदलें",
+  "voiceReadTotal": "कुल {amount} रुपये",
+  "voiceMicNeeded": "आवाज़ से ऑर्डर लेने के लिए माइक्रोफ़ोन की अनुमति दें",
+  "voiceUnavailable": "इस फ़ोन पर आवाज़ से ऑर्डर उपलब्ध नहीं है",
+  "voiceWaveOn": "फ़ोन पर हाथ हिलाकर बोलें: चालू",
+  "voiceWaveOff": "फ़ोन पर हाथ हिलाकर बोलें: बंद"
 }

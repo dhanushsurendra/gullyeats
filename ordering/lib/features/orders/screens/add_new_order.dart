@@ -26,7 +26,17 @@ import 'package:ordering/core/utils/payment_lock.dart';
 class AddNewOrder extends StatefulWidget {
   final OrderModel? existingOrder;
 
-  const AddNewOrder({super.key, this.existingOrder});
+  /// A new order to start from (menu item id -> quantity), with a parcel
+  /// charge: what a voice order heard, opened here to change.
+  final Map<String, int>? prefill;
+  final double prefillParcel;
+
+  const AddNewOrder({
+    super.key,
+    this.existingOrder,
+    this.prefill,
+    this.prefillParcel = 0,
+  });
 
   bool get isEditing => existingOrder != null;
 
@@ -77,6 +87,20 @@ class _AddNewOrderState extends State<AddNewOrder> {
         _orderProvider.startEditing(widget.existingOrder!);
       } else {
         _orderProvider.clearOrder();
+        final prefill = widget.prefill;
+        if (prefill != null) {
+          for (final item in _orderProvider.menu) {
+            for (var n = prefill[item.id] ?? 0; n > 0; n--) {
+              _orderProvider.addItem(item);
+            }
+          }
+          if (widget.prefillParcel > 0) {
+            _orderProvider.setParcelPrice(widget.prefillParcel);
+            parcelChargeController.text = widget.prefillParcel.toStringAsFixed(
+              0,
+            );
+          }
+        }
       }
 
       if (!mounted) return;
