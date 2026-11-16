@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:ordering/app/home/widgets/bottom_nav_bar.dart';
 import 'package:ordering/core/theme/app_colors.dart';
-import 'package:ordering/core/theme/app_gaps.dart';
-import 'package:ordering/core/theme/app_text_styles.dart';
 import 'package:ordering/core/utils/format_price.dart';
 import 'package:ordering/core/routes/app_routes.dart';
 import 'package:ordering/core/utils/payment_lock.dart';
 import 'package:ordering/core/utils/push.dart';
+import 'package:ordering/core/widgets/notice_banner.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ordering/core/utils/session.dart';
 import 'package:ordering/features/cart/providers/cart_provider.dart';
 import 'package:ordering/features/alerts/area_alert_service.dart';
@@ -39,13 +39,29 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Timer? _lockTimer;
   // Every active alert near the cart, newest first (the sheet follows it too).
   late final ValueNotifier<List<AreaAlert>> _alerts;
-  // Alerts closed with the X on this phone; a newer alert shows again.
-  // shortcut: kept in memory, so they come back after the app restarts; save them if vendors mind.
-  final Set<String> _hidden = {};
   late final ValueNotifier<int> _alertTick;
   // The cart switcher can change the cart while Home stays open.
   late final CartProvider _carts;
   String? _cartId;
+  // The fee warning closed with its X: for that cart and that night's lock
+  // only, so the next bill (or another cart's) shows again.
+  String? _feeHidden;
+  static const _feeHiddenKey = 'fee_banner_hidden';
+
+  String _feeKey(PaymentStatusModel s) =>
+      '${_carts.selectedCart?.id}|${s.dueAt?.toIso8601String()}';
+
+  Future<void> _hideFeeBanner(PaymentStatusModel status) async {
+    setState(() => _feeHidden = _feeKey(status));
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_feeHiddenKey, _feeHidden!);
+  }
+
+  Future<void> _loadClosedBanners() async {
+    final prefs = await SharedPreferences.getInstance();
+    await AreaAlertsHidden.load();
+    if (mounted) setState(() => _feeHidden = prefs.getString(_feeHiddenKey));
+  }
 
   @override
   void initState() {
@@ -57,6 +73,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     // The cart can become due while the app stays open all day, so the lock
     // is checked here too, not only on the welcome screen at start-up.
     AreaAlertsSeen.load();
+    _loadClosedBanners();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkLock();
       _loadAlerts();
@@ -78,7 +95,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final id = _carts.selectedCart?.id;
     if (id == null || id == _cartId || !mounted) return;
     _cartId = id;
-    _hidden.clear();
     _alerts.value = [];
     setState(() => _status = null);
     _checkLock();
@@ -139,8 +155,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         Push.feeTap.value = null;
       } else {
         await carts.selectCart(cart);
-        navigatorKey.currentState
-            ?.pushNamedAndRemoveUntil(AppRoutes.welcome, (_) => false);
+        navigatorKey.currentState?.pushNamedAndRemoveUntil(
+          AppRoutes.welcome,
+          (_) => false,
+        );
         return;
       }
     }
@@ -168,7 +186,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   void _refreshCart() {
     final auth = context.read<AuthProvider>();
-    context.read<CartProvider>().refreshSelectedCart(auth.token ?? '', auth.user?['id']?.toString() ?? '');
+    context.read<CartProvider>().refreshSelectedCart(
+      auth.token ?? '',
+      auth.user?['id']?.toString() ?? '',
+    );
   }
 
   @override
@@ -176,8 +197,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final status = _status;
     // Only between midnight (the day's bill is final) and the 2:00am lock,
     // so vendors aren't interrupted while they serve during the day.
-    final showFeeBanner = status != null && status.isFeeComingDue && status.canPay;
-    final shown = _alerts.value.where((a) => !_hidden.contains(a.id)).toList();
+    final showFeeBanner =
+        status != null &&
+        status.isFeeComingDue &&
+        status.canPay &&
+        _feeKey(status) != _feeHidden;
+    final hidden = AreaAlertsHidden.ids.value;
+    final shown = _alerts.value.where((a) => !hidden.contains(a.id)).toList();
     final showBanner = showFeeBanner || shown.isNotEmpty;
     // Staff see today's handover instead of the owner's sales.
     final screens = [
@@ -202,10 +228,22 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       alert: shown.first,
                       more: shown.length - 1,
                       onChanged: _loadAlerts,
-                      onTap: () => showAreaAlertsSheet(context, _alerts, _loadAlerts),
-                      onDismiss: () => setState(() => _hidden.addAll(shown.map((a) => a.id))),
+                      onTap: () =>
+                          showAreaAlertsSheet(context, _alerts, _loadAlerts),
+                      // Closed for good on this phone; a new report shows again.
+                      onDismiss: () async {
+                        await AreaAlertsHidden.hide(
+                          shown.map((a) => a.id),
+                          _alerts.value,
+                        );
+                        if (mounted) setState(() {});
+                      },
                     ),
-                  if (showFeeBanner) _FeeDueBanner(status: status),
+                  if (showFeeBanner)
+                    _FeeDueBanner(
+                      status: status,
+                      onDismiss: () => _hideFeeBanner(status),
+                    ),
                 ],
               ),
             ),
@@ -298,11 +336,13 @@ void openFeePayment(BuildContext context, PaymentStatusModel status) {
 }
 
 /// "Your cart locks at 2:00 AM. Pay ₹X now…" with Pay now. Shown from
-/// midnight until the lock; staff see the warning without the button.
+/// midnight until the lock; staff see the warning without the button. The
+/// X hides it for this bill only (the lock and the fee reminders still come).
 class _FeeDueBanner extends StatelessWidget {
   final PaymentStatusModel status;
+  final VoidCallback onDismiss;
 
-  const _FeeDueBanner({required this.status});
+  const _FeeDueBanner({required this.status, required this.onDismiss});
 
   @override
   Widget build(BuildContext context) {
@@ -311,41 +351,20 @@ class _FeeDueBanner extends StatelessWidget {
     final lockTime = DateFormat.jm(locale).format(status.dueAt!.toLocal());
     final canPay = !context.watch<AuthProvider>().isStaff;
 
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
-      decoration: BoxDecoration(
-        color: AppColors.warning.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.schedule, color: AppColors.warning, size: 20),
-          AppGaps.w12,
-          Expanded(
-            child: Text(
-              l10n.feeDueBanner(lockTime, formatPrice(status.totalPending)),
-              style: AppTextStyles.caption.copyWith(
-                color: AppColors.grey600,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+    return NoticeBanner(
+      icon: Icons.schedule,
+      color: AppColors.warning,
+      text: l10n.feeDueBanner(lockTime, formatPrice(status.totalPending)),
+      onDismiss: onDismiss,
+      dismissTooltip: l10n.areaAlertHide,
+      actions: [
+        if (canPay)
+          NoticeAction(
+            label: l10n.payNowCaps,
+            color: AppColors.primary,
+            onPressed: () => openFeePayment(context, status),
           ),
-          if (canPay)
-            TextButton(
-              onPressed: () => openFeePayment(context, status),
-              child: Text(
-                l10n.payNowCaps,
-                style: AppTextStyles.caption.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-        ],
-      ),
+      ],
     );
   }
 }

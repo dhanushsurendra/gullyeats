@@ -71,4 +71,22 @@ void main() {
     await AreaAlertsSeen.load();
     expect(AreaAlertsSeen.unseen([road]), 0);
   });
+
+  test('an alert closed with X stays closed after a restart; a new one shows', () async {
+    SharedPreferences.setMockInitialValues({});
+    await AreaAlertsHidden.load();
+    final road = alert('r1', 'ROAD_BLOCKED', 2);
+    final old = alert('o1', 'RAIN', 90);
+    await AreaAlertsHidden.hide(['r1'], [road]);
+
+    AreaAlertsHidden.ids.value = {};
+    await AreaAlertsHidden.load();
+    expect(AreaAlertsHidden.ids.value, {'r1'});
+
+    // Ended alerts are dropped on the next close, so the list stays small.
+    final crowd = alert('c1', 'CROWD', 0);
+    await AreaAlertsHidden.hide(['c1'], [crowd]);
+    expect(AreaAlertsHidden.ids.value, {'c1'});
+    expect(old.id, isNot(isIn(AreaAlertsHidden.ids.value)));
+  });
 }

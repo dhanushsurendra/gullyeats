@@ -2,6 +2,7 @@ import 'package:clock/clock.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:ordering/core/widgets/icon_tile.dart';
+import 'package:ordering/core/widgets/notice_banner.dart';
 import 'package:ordering/core/error/api_exception.dart';
 import 'package:ordering/core/error/app_exceptions.dart';
 import 'package:ordering/core/theme/app_colors.dart';
@@ -98,131 +99,59 @@ class _AreaAlertBannerState extends State<AreaAlertBanner> {
       if (a.vendors > 1) l10n.areaAlertVendors(a.vendors),
     ];
     final canConfirm = !a.mine && !a.confirmedByMe;
-    final action = AppTextStyles.caption.copyWith(
+    return NoticeBanner(
+      icon: _reasonIcon(a.reason),
       color: AppColors.error,
-      fontWeight: FontWeight.w700,
-    );
-    final textStyle = AppTextStyles.caption.copyWith(
-      color: AppColors.grey600,
-      fontWeight: FontWeight.w600,
-    );
-    // The icon and the close button sit on the text's first line, however
-    // many lines follow: both are centred in a band as tall as the close
-    // button, and the first line is centred in that band too.
-    const band = 40.0;
-    final line = (TextPainter(
-      text: TextSpan(text: 'A', style: textStyle),
-      textScaler: MediaQuery.textScalerOf(context),
-      textDirection: TextDirection.ltr,
-      maxLines: 1,
-    )..layout()).height;
-    final textTop = line < band ? (band - line) / 2 : 0.0;
-
-    return Container(
-      width: double.infinity,
+      text: parts.join(' · '),
       margin: widget.margin,
-      decoration: BoxDecoration(
-        color: AppColors.error.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
-      ),
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: widget.onTap,
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(
-              16,
-              6,
-              widget.onDismiss == null ? 16 : 4,
-              6,
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  height: band,
-                  child: Center(
-                    child: Icon(
-                      _reasonIcon(a.reason),
-                      color: AppColors.error,
-                      size: 20,
-                    ),
-                  ),
-                ),
-                AppGaps.w12,
-                Expanded(
-                  child: Padding(
-                    // Same space below the text as above it; the action
-                    // buttons under it bring their own.
-                    padding: EdgeInsets.only(
-                      top: textTop,
-                      bottom: canConfirm || widget.more > 0 ? 0 : textTop,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(parts.join(' · '), style: textStyle),
-                        // Under the text, so a long translation never squeezes it.
-                        if (canConfirm || widget.more > 0)
-                          Wrap(
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            spacing: 16,
-                            children: [
-                              if (canConfirm)
-                                TextButton(
-                                  onPressed: _busy ? null : _confirm,
-                                  style: TextButton.styleFrom(
-                                    padding: EdgeInsets.zero,
-                                    visualDensity: VisualDensity.compact,
-                                  ),
-                                  child: Text(
-                                    l10n.areaAlertSeeItToo,
-                                    style: action,
-                                  ),
-                                ),
-                              if (widget.more > 0)
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 10,
-                                  ),
-                                  child: Text(
-                                    l10n.areaAlertMore(widget.more),
-                                    style: action,
-                                  ),
-                                ),
-                            ],
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-                if (widget.onDismiss != null)
-                  SizedBox(
-                    height: band,
-                    child: IconButton(
-                      onPressed: widget.onDismiss,
-                      tooltip: l10n.areaAlertHide,
-                      visualDensity: VisualDensity.compact,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints.tightFor(
-                        width: band,
-                        height: band,
-                      ),
-                      icon: Icon(
-                        Icons.close,
-                        size: 18,
-                        color: AppColors.grey500,
-                      ),
-                    ),
-                  ),
-              ],
+      onTap: widget.onTap,
+      onDismiss: widget.onDismiss,
+      dismissTooltip: l10n.areaAlertHide,
+      actions: [
+        if (canConfirm)
+          NoticeAction(
+            label: l10n.areaAlertSeeItToo,
+            color: AppColors.error,
+            onPressed: _busy ? null : _confirm,
+          ),
+        if (widget.more > 0)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            child: Text(
+              l10n.areaAlertMore(widget.more),
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.error,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
-        ),
-      ),
+      ],
     );
+  }
+}
+
+/// Alerts closed with the X on Home, kept on the phone so they stay closed
+/// after a restart; a newer report has a new id and shows again. Only ids
+/// still active are kept.
+class AreaAlertsHidden {
+  AreaAlertsHidden._();
+
+  static const _key = 'area_alerts_hidden';
+  static final ids = ValueNotifier<Set<String>>({});
+
+  static Future<void> load() async {
+    final prefs = await SharedPreferences.getInstance();
+    ids.value = {...?prefs.getStringList(_key)};
+  }
+
+  static Future<void> hide(
+    Iterable<String> hidden,
+    List<AreaAlert> active,
+  ) async {
+    final live = active.map((a) => a.id).toSet();
+    ids.value = {...ids.value.where(live.contains), ...hidden};
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_key, ids.value.toList());
   }
 }
 
