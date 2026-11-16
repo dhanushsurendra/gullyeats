@@ -1,5 +1,6 @@
 import 'package:ordering/core/widgets/app_logo.dart';
 import 'package:flutter/material.dart';
+import 'package:ordering/core/widgets/icon_tile.dart';
 import 'package:ordering/features/alerts/area_alerts.dart';
 import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
@@ -369,110 +370,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  /// The orange icon badge every Profile item starts with (the alerts tile
-  /// has the same badge in red).
-  Widget _iconBox(IconData icon) => Container(
-    width: 40,
-    height: 40,
-    decoration: BoxDecoration(
-      color: AppColors.lightOrange,
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: Icon(icon, size: 22, color: AppColors.primary),
-  );
-
   Widget _sectionCard(
     IconData icon,
     String title,
     String subtitle, {
     required VoidCallback onTap,
-  }) {
-    return AppCard(
-      padding: EdgeInsets.zero,
-      child: ListTile(
-        onTap: onTap,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        leading: _iconBox(icon),
-        title: Text(title, style: AppTextStyles.heading3),
-        subtitle: Text(subtitle, style: AppTextStyles.caption),
-        trailing: Icon(Icons.chevron_right, color: AppColors.grey500),
-      ),
-    );
-  }
+  }) => IconTile(icon: icon, title: title, subtitle: subtitle, onTap: onTap);
 
   Widget _languageCard(BuildContext context) {
-    return AppCard(
-      padding: AppPadding.card,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _iconBox(Icons.translate_rounded),
-          AppGaps.w16,
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        context.l10n.languagePreferences,
-                        style: AppTextStyles.heading3,
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const LanguagePreferencesScreen(),
-                        ),
-                      ),
-                      child: Text(
-                        context.l10n.change,
-                        style: AppTextStyles.body.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                Text(
-                  LanguageProvider.languages[context
-                      .watch<LanguageProvider>()
-                      .locale
-                      .languageCode]!,
-                  style: AppTextStyles.body,
-                ),
-                AppGaps.h4,
-                Text(
-                  context.l10n.supportedLanguages,
-                  style: AppTextStyles.caption,
-                ),
-              ],
-            ),
-          ),
-        ],
+    void change() => Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const LanguagePreferencesScreen()),
+    );
+    return IconTile(
+      icon: Icons.translate_rounded,
+      title: context.l10n.languagePreferences,
+      subtitle: LanguageProvider
+          .languages[context.watch<LanguageProvider>().locale.languageCode]!,
+      footnote: context.l10n.supportedLanguages,
+      onTap: change,
+      trailing: Text(
+        context.l10n.change,
+        style: AppTextStyles.body.copyWith(
+          color: AppColors.primary,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
 
   Widget _themeCard(BuildContext context) {
     final theme = context.watch<ThemeProvider>();
-    return AppCard(
-      padding: EdgeInsets.zero,
-      child: SwitchListTile(
+    return IconTile(
+      icon: theme.dark ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
+      title: context.l10n.darkTheme,
+      subtitle: context.l10n.darkThemeSubtitle,
+      onTap: () => theme.setDark(!theme.dark),
+      trailing: Switch(
         value: theme.dark,
         onChanged: theme.setDark,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        secondary: _iconBox(
-          theme.dark ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
-        ),
-        title: Text(context.l10n.darkTheme, style: AppTextStyles.heading3),
-        subtitle: Text(
-          context.l10n.darkThemeSubtitle,
-          style: AppTextStyles.caption,
-        ),
         activeTrackColor: AppColors.primary,
         inactiveTrackColor: AppColors.grey300,
         thumbColor: WidgetStateProperty.all(Colors.white),
@@ -486,24 +422,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
       padding: AppPadding.card,
       child: Column(
         children: [
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: _iconBox(Icons.lock_outline_rounded),
-            title: Text(
-              context.l10n.securityAndLogin,
-              style: AppTextStyles.heading3,
-            ),
-            subtitle: Text(
-              context.l10n.changePin,
-              style: AppTextStyles.caption,
-            ),
-            trailing: Icon(Icons.chevron_right, color: AppColors.grey500),
+          IconTile(
+            card: false,
+            icon: Icons.lock_outline_rounded,
+            title: context.l10n.securityAndLogin,
+            subtitle: context.l10n.changePin,
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const ChangePinScreen()),
             ),
           ),
-          AppGaps.h8,
+          AppGaps.h16,
           Divider(color: AppColors.grey200),
           AppGaps.h16,
           AppButton(

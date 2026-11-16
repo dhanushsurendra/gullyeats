@@ -1,7 +1,7 @@
 import 'package:clock/clock.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:ordering/core/widgets/app_card.dart';
+import 'package:ordering/core/widgets/icon_tile.dart';
 import 'package:ordering/core/error/api_exception.dart';
 import 'package:ordering/core/error/app_exceptions.dart';
 import 'package:ordering/core/theme/app_colors.dart';
@@ -257,8 +257,9 @@ Future<void> openAreaAlertSheet(BuildContext context) async {
 }
 
 /// The "Alert nearby carts" tile on Profile; opens [openAreaAlertSheet].
-/// A red count shows other carts' active alerts, still there after the Home
-/// banner is closed.
+/// Orange like the other items while it's quiet; red, with a count, while
+/// other carts' alerts are active (still there after the Home banner is
+/// closed), so red always means something to look at.
 class AreaAlertTile extends StatelessWidget {
   const AreaAlertTile({super.key});
 
@@ -269,35 +270,21 @@ class AreaAlertTile extends StatelessWidget {
       valueListenable: context.read<OrderProvider>().areaAlerts,
       builder: (context, list, _) {
         final count = list.where((a) => !a.mine).length;
-        return AppCard(
-          padding: EdgeInsets.zero,
-          child: ListTile(
-            onTap: () => openAreaAlertSheet(context),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            leading: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: AppColors.error.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.campaign_outlined, color: AppColors.error),
-            ),
-            title: Text(l10n.areaAlertReport, style: AppTextStyles.heading3),
-            subtitle: Text(l10n.areaAlertTileNote, style: AppTextStyles.caption),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (count > 0)
-                  Badge(
-                    label: Text('$count'),
-                    backgroundColor: AppColors.error,
-                  ),
-                Icon(Icons.chevron_right, color: AppColors.grey500),
-              ],
-            ),
+        final alert = count > 0;
+        return IconTile(
+          icon: Icons.campaign_outlined,
+          title: l10n.areaAlertReport,
+          subtitle: l10n.areaAlertTileNote,
+          color: alert ? AppColors.error : null,
+          background: alert ? AppColors.error.withValues(alpha: 0.1) : null,
+          onTap: () => openAreaAlertSheet(context),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (alert)
+                Badge(label: Text('$count'), backgroundColor: AppColors.error),
+              Icon(Icons.chevron_right, color: AppColors.grey500),
+            ],
           ),
         );
       },
