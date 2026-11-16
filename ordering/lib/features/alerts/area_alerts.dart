@@ -101,6 +101,21 @@ class _AreaAlertBannerState extends State<AreaAlertBanner> {
       color: AppColors.error,
       fontWeight: FontWeight.w700,
     );
+    final textStyle = AppTextStyles.caption.copyWith(
+      color: AppColors.grey600,
+      fontWeight: FontWeight.w600,
+    );
+    // The icon and the close button sit on the text's first line, however
+    // many lines follow: both are centred in a band as tall as the close
+    // button, and the first line is centred in that band too.
+    const band = 40.0;
+    final line = (TextPainter(
+      text: TextSpan(text: 'A', style: textStyle),
+      textScaler: MediaQuery.textScalerOf(context),
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+    )..layout()).height;
+    final textTop = line < band ? (band - line) / 2 : 0.0;
 
     return Container(
       width: double.infinity,
@@ -116,66 +131,90 @@ class _AreaAlertBannerState extends State<AreaAlertBanner> {
           borderRadius: BorderRadius.circular(12),
           onTap: widget.onTap,
           child: Padding(
-            // The close button brings its own height: less padding with it.
-            padding: widget.onDismiss == null
-                ? const EdgeInsets.symmetric(horizontal: 16, vertical: 12)
-                : const EdgeInsets.fromLTRB(16, 6, 4, 6),
+            padding: EdgeInsets.fromLTRB(
+              16,
+              6,
+              widget.onDismiss == null ? 16 : 4,
+              6,
+            ),
             child: Row(
-              // Icon, text and close button on one centre line.
-              crossAxisAlignment: CrossAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(_reasonIcon(a.reason), color: AppColors.error, size: 20),
+                SizedBox(
+                  height: band,
+                  child: Center(
+                    child: Icon(
+                      _reasonIcon(a.reason),
+                      color: AppColors.error,
+                      size: 20,
+                    ),
+                  ),
+                ),
                 AppGaps.w12,
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        parts.join(' · '),
-                        style: AppTextStyles.caption.copyWith(
-                          color: AppColors.grey600,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      // Under the text, so a long translation never squeezes it.
-                      if (canConfirm || widget.more > 0)
-                        Wrap(
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          spacing: 16,
-                          children: [
-                            if (canConfirm)
-                              TextButton(
-                                onPressed: _busy ? null : _confirm,
-                                style: TextButton.styleFrom(
-                                  padding: EdgeInsets.zero,
-                                  visualDensity: VisualDensity.compact,
+                  child: Padding(
+                    // Same space below the text as above it; the action
+                    // buttons under it bring their own.
+                    padding: EdgeInsets.only(
+                      top: textTop,
+                      bottom: canConfirm || widget.more > 0 ? 0 : textTop,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(parts.join(' · '), style: textStyle),
+                        // Under the text, so a long translation never squeezes it.
+                        if (canConfirm || widget.more > 0)
+                          Wrap(
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 16,
+                            children: [
+                              if (canConfirm)
+                                TextButton(
+                                  onPressed: _busy ? null : _confirm,
+                                  style: TextButton.styleFrom(
+                                    padding: EdgeInsets.zero,
+                                    visualDensity: VisualDensity.compact,
+                                  ),
+                                  child: Text(
+                                    l10n.areaAlertSeeItToo,
+                                    style: action,
+                                  ),
                                 ),
-                                child: Text(
-                                  l10n.areaAlertSeeItToo,
-                                  style: action,
+                              if (widget.more > 0)
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 10,
+                                  ),
+                                  child: Text(
+                                    l10n.areaAlertMore(widget.more),
+                                    style: action,
+                                  ),
                                 ),
-                              ),
-                            if (widget.more > 0)
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 10,
-                                ),
-                                child: Text(
-                                  l10n.areaAlertMore(widget.more),
-                                  style: action,
-                                ),
-                              ),
-                          ],
-                        ),
-                    ],
+                            ],
+                          ),
+                      ],
+                    ),
                   ),
                 ),
                 if (widget.onDismiss != null)
-                  IconButton(
-                    onPressed: widget.onDismiss,
-                    tooltip: l10n.areaAlertHide,
-                    visualDensity: VisualDensity.compact,
-                    icon: Icon(Icons.close, size: 18, color: AppColors.grey500),
+                  SizedBox(
+                    height: band,
+                    child: IconButton(
+                      onPressed: widget.onDismiss,
+                      tooltip: l10n.areaAlertHide,
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints.tightFor(
+                        width: band,
+                        height: band,
+                      ),
+                      icon: Icon(
+                        Icons.close,
+                        size: 18,
+                        color: AppColors.grey500,
+                      ),
+                    ),
                   ),
               ],
             ),
