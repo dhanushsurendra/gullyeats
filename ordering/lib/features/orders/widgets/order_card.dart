@@ -3,7 +3,6 @@ import 'package:ordering/core/utils/order_alerts.dart';
 import 'package:intl/intl.dart';
 import 'package:ordering/core/theme/app_colors.dart';
 import 'package:ordering/core/theme/app_text_styles.dart';
-import 'package:ordering/core/theme/app_padding.dart';
 import 'package:ordering/core/theme/app_gaps.dart';
 import 'package:ordering/features/orders/models/order_model.dart';
 import 'package:ordering/l10n/l10n.dart';
@@ -50,19 +49,47 @@ class OrderCard extends StatefulWidget {
   State<OrderCard> createState() => _OrderCardState();
 }
 
-class _OrderCardState extends State<OrderCard> {
-  // True from the tap until the server answers: SERVE shows "SERVED",
-  // MARK PAID shows a spinner.
+class _OrderCardState extends State<OrderCard>
+    with SingleTickerProviderStateMixin {
+  // True from the tap until the server answers: SERVE turns green "SERVED",
+  // MARK PAID turns green "PAID", so the vendor sees the tap land at once.
   bool _done = false;
 
   // Item lines shown before "+N more".
   static const _visibleItems = 3;
 
+  // 1 → 0: a soft glow in the stage colour when an order arrives or moves
+  // to its next stage, so the jump to another group reads as one motion.
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1400),
+  );
+
+  void _glow() {
+    _pulse.value = 1;
+    _pulse.animateTo(0, curve: Curves.easeOut);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.isFresh) _glow();
+  }
+
   @override
   void didUpdateWidget(OrderCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     // The server answered: the new stage's button starts fresh.
-    if (oldWidget.order.status != widget.order.status) _done = false;
+    if (oldWidget.order.status != widget.order.status) {
+      _done = false;
+      _glow();
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
   }
 
   void _confirm(VoidCallback action, Future<void> Function() feedback) {
@@ -144,141 +171,123 @@ class _OrderCardState extends State<OrderCard> {
     final isActive = status == "PENDING" || status == "PAID";
     final color = orderStatusColor(status);
 
-    return TweenAnimationBuilder<double>(
-      // 1 → 0: the fresh-order glow fades out.
-      tween: Tween(begin: widget.isFresh ? 1 : 0, end: 0),
-      duration: const Duration(seconds: 4),
-      curve: Curves.easeIn,
-      builder: (context, glow, child) => TweenAnimationBuilder<double>(
-        tween: Tween(begin: widget.isFresh ? 1 : 0, end: 0),
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeOutCubic,
-        builder: (context, slide, _) => Opacity(
-          opacity: 1 - slide,
-          child: Transform.translate(
-            offset: Offset(0, -24 * slide),
-            child: Material(
-              color: Color.lerp(AppColors.surface, AppColors.lightOrange, glow),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(
-                  color: Color.lerp(AppColors.grey200, AppColors.primary, glow)!,
-                  width: 1 + glow,
-                ),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: InkWell(onTap: widget.onTap, child: child),
+    final card = AnimatedBuilder(
+      animation: _pulse,
+      builder: (context, child) {
+        final t = _pulse.value;
+        // A fresh order glows orange; a stage change in its new colour.
+        final glow = widget.isFresh && status == 'PENDING'
+            ? AppColors.primary
+            : color;
+        return Material(
+          color: Color.lerp(
+            AppColors.surface,
+            Color.alphaBlend(glow.withValues(alpha: 0.10), AppColors.surface),
+            t,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: Color.lerp(AppColors.grey200, glow, t)!,
+              width: 1 + t,
             ),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(onTap: widget.onTap, child: child),
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        // Cancelled orders stay readable but step back.
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 300),
+          opacity: isCancelled ? 0.6 : 1,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _topRow(isActive),
+              if (status == "PAID" && widget.onPreparing != null) ...[
+                AppGaps.h8,
+                _preparingChip(),
+              ],
+              AppGaps.h12,
+              ..._itemLines(),
+              AppGaps.h12,
+              _bottomRow(),
+              if (widget.order.paymentAdjustment?.action == 'COLLECT') ...[
+                AppGaps.h8,
+                _paymentAdjustmentBanner(widget.order.paymentAdjustment!),
+              ],
+              if (widget.order.refundOwed > 0 ||
+                  widget.order.refunds.isNotEmpty) ...[
+                AppGaps.h8,
+                _refundBanner(),
+              ],
+            ],
           ),
         ),
       ),
-      // A Stack, not IntrinsicHeight: the stage-coloured edge stretches to
-      // whatever height the content takes.
-      child: Stack(
-        children: [
-          Positioned(
-            left: 0,
-            top: 0,
-            bottom: 0,
-            width: 5,
-            child: ColoredBox(color: color),
-          ),
-          Padding(
-            padding: AppPadding.card.add(const EdgeInsets.only(left: 5, top: 4, bottom: 4)),
-            // Cancelled orders stay readable but step back.
-            child: Opacity(
-              opacity: isCancelled ? 0.6 : 1,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _topRow(color, isActive),
-                  AppGaps.h12,
-                  ..._itemLines(),
-                  AppGaps.h12,
-                  Divider(height: 1, color: AppColors.grey200),
-                  AppGaps.h12,
-                  _bottomRow(),
-                  if (widget.order.paymentAdjustment?.action == 'COLLECT') ...[
-                    AppGaps.h8,
-                    _paymentAdjustmentBanner(widget.order.paymentAdjustment!),
-                  ],
-                  if (widget.order.refundOwed > 0 || widget.order.refunds.isNotEmpty) ...[
-                    AppGaps.h8,
-                    _refundBanner(),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ],
+    );
+
+    // A new live order slides in from above.
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: widget.isFresh ? 1 : 0, end: 0),
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeOutCubic,
+      builder: (context, slide, child) => Opacity(
+        opacity: 1 - slide,
+        child: Transform.translate(
+          offset: Offset(0, -24 * slide),
+          child: child,
+        ),
       ),
+      child: card,
     );
   }
 
   // ---------------------------------------------------------------------
-  // Top row: number badge, source, wait time, delete
+  // Top row: number, source and wait time, delete
   // ---------------------------------------------------------------------
 
-  Widget _topRow(Color color, bool isActive) {
+  Widget _topRow(bool isActive) {
     final l10n = context.l10n;
     final isQr = widget.order.isQrOrder;
 
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            "#${widget.order.orderNumber}",
-            style: AppTextStyles.heading3.copyWith(color: color),
+        Text(
+          "#${widget.order.orderNumber}",
+          style: AppTextStyles.heading2.copyWith(
+            color: AppColors.black,
+            fontWeight: FontWeight.w700,
           ),
         ),
         AppGaps.w12,
         // Wrap: the wait time drops below the source on narrow screens.
         Expanded(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Wrap(
-              spacing: 12,
-              runSpacing: 4,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                _iconLabel(
-                  isQr ? Icons.qr_code_2_rounded : Icons.storefront_rounded,
-                  isQr ? l10n.qrOrder : l10n.manual,
-                  AppColors.grey500,
-                ),
-                if (isActive) _waitTime(),
-                if (widget.order.status == "PAID" && widget.onPreparing != null)
-                  _preparingChip(),
-              ],
-            ),
+          child: Wrap(
+            spacing: 10,
+            runSpacing: 2,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              _iconLabel(
+                isQr ? Icons.qr_code_2_rounded : Icons.storefront_rounded,
+                isQr ? l10n.qrOrder : l10n.manual,
+                AppColors.grey500,
+              ),
+              if (isActive) _waitTime(),
+            ],
           ),
         ),
         if (isActive)
-          Material(
-            color: AppColors.grey100,
-            shape: const CircleBorder(),
-            child: InkWell(
-              customBorder: const CircleBorder(),
-              onTap: () => _showDeleteDialog(context),
-              child: Semantics(
-                label: l10n.deleteOrder,
-                button: true,
-                child: const SizedBox(
-                  width: 36,
-                  height: 36,
-                  child: Icon(
-                    Icons.delete_outline,
-                    color: AppColors.error,
-                    size: 20,
-                  ),
-                ),
-              ),
+          IconButton(
+            onPressed: () => _showDeleteDialog(context),
+            tooltip: l10n.deleteOrder,
+            visualDensity: VisualDensity.compact,
+            icon: Icon(
+              Icons.delete_outline_rounded,
+              size: 20,
+              color: AppColors.grey400,
             ),
           ),
       ],
@@ -300,30 +309,24 @@ class _OrderCardState extends State<OrderCard> {
       ];
     }
 
+    final cancelled = widget.order.status == "CANCELLED";
     return [
       for (final item in items.take(_visibleItems))
         Padding(
-          padding: const EdgeInsets.only(bottom: 6),
+          padding: const EdgeInsets.only(bottom: 4),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                constraints: const BoxConstraints(minWidth: 34),
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppColors.grey100,
-                  borderRadius: BorderRadius.circular(8),
-                ),
+              SizedBox(
+                width: 32,
                 child: Text(
                   "${item.quantity}×",
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.black,
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.primary,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
-              AppGaps.w8,
               Expanded(
                 child: Text(
                   item.displayName,
@@ -332,9 +335,7 @@ class _OrderCardState extends State<OrderCard> {
                   style: AppTextStyles.body.copyWith(
                     color: AppColors.black,
                     fontWeight: FontWeight.w500,
-                    decoration: widget.order.status == "CANCELLED"
-                        ? TextDecoration.lineThrough
-                        : null,
+                    decoration: cancelled ? TextDecoration.lineThrough : null,
                   ),
                 ),
               ),
@@ -343,7 +344,7 @@ class _OrderCardState extends State<OrderCard> {
         ),
       if (items.length > _visibleItems)
         Padding(
-          padding: const EdgeInsets.only(left: 42),
+          padding: const EdgeInsets.only(left: 32),
           child: Text(
             context.l10n.moreItems(items.length - _visibleItems),
             style: AppTextStyles.caption.copyWith(
@@ -360,22 +361,23 @@ class _OrderCardState extends State<OrderCard> {
   // ---------------------------------------------------------------------
 
   Widget _bottomRow() {
-    final l10n = context.l10n;
-    final status = widget.order.status;
-
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                l10n.total,
+                context.l10n.total,
                 style: AppTextStyles.caption.copyWith(color: AppColors.grey400),
               ),
               Text(
                 "₹${formatPrice(widget.order.totalPrice)}",
-                style: AppTextStyles.heading2,
+                style: AppTextStyles.heading2.copyWith(
+                  color: AppColors.black,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),
@@ -384,127 +386,155 @@ class _OrderCardState extends State<OrderCard> {
         // Capped, so a long translation wraps instead of squeezing the total.
         ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 170),
-          // Stage changes cross-fade; while saving, the button itself changes.
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            child: switch (status) {
-              "CANCELLED" => _statusChip(
-                Icons.block_rounded,
-                l10n.cancelled.toUpperCase(),
-                AppColors.error,
-              ),
-              "SERVED" => _statusChip(
-                Icons.check_circle_rounded,
-                l10n.served.toUpperCase(),
-                AppColors.success,
-              ),
-              // Turns green and says SERVED straight away; the card then
-              // moves to the Served group when the server confirms.
-              "PAID" => _actionButton(
-                key: const ValueKey('serve'),
-                icon: _done ? Icons.check_rounded : Icons.room_service_rounded,
-                label: _done
-                    ? l10n.served.toUpperCase()
-                    : l10n.serve.toUpperCase(),
-                color: _done ? AppColors.success : AppColors.primary,
-                filled: true,
-                onTap: _done ? null : () => _confirm(widget.onServe, OrderAlerts.served),
-              ),
-              _ => _actionButton(
-                key: const ValueKey('paid'),
-                icon: Icons.currency_rupee_rounded,
-                label: l10n.markPaidCaps,
-                color: AppColors.primary,
-                filled: false,
-                busy: _done,
-                onTap: _done ? null : () => _confirm(widget.onMarkPaid, OrderAlerts.paid),
-              ),
-            },
-          ),
+          child: _action(),
         ),
       ],
     );
   }
 
-  /// A pill button. Colour changes animate, and [busy] swaps the icon for a
-  /// small spinner while the request runs.
-  Widget _actionButton({
-    required Key key,
-    required IconData icon,
-    required String label,
-    required Color color,
-    required bool filled,
-    required VoidCallback? onTap,
-    bool busy = false,
-  }) {
-    final fg = filled ? AppColors.white : color;
+  /// One button that morphs through the order's life instead of being
+  /// swapped: MARK PAID (outlined) → PAID ✓ (green, right on tap) → SERVE
+  /// (filled) → SERVED ✓ (green) → the Served chip. Colour, size, icon and
+  /// label all animate, so each step flows into the next.
+  Widget _action() {
+    final l10n = context.l10n;
+    final status = widget.order.status;
 
-    return InkWell(
-      key: key,
-      borderRadius: BorderRadius.circular(26),
-      onTap: onTap,
+    final (
+      IconData icon,
+      String label,
+      Color bg,
+      Color fg,
+      Color edge,
+      VoidCallback? onTap,
+    ) = switch (status) {
+      "CANCELLED" => (
+        Icons.block_rounded,
+        l10n.cancelled.toUpperCase(),
+        AppColors.error.withValues(alpha: 0.12),
+        AppColors.error,
+        Colors.transparent,
+        null,
+      ),
+      "SERVED" => (
+        Icons.check_circle_rounded,
+        l10n.served.toUpperCase(),
+        AppColors.success.withValues(alpha: 0.12),
+        AppColors.success,
+        Colors.transparent,
+        null,
+      ),
+      "PAID" when _done => (
+        Icons.check_rounded,
+        l10n.served.toUpperCase(),
+        AppColors.success,
+        AppColors.white,
+        AppColors.success,
+        null,
+      ),
+      "PAID" => (
+        Icons.room_service_rounded,
+        l10n.serve.toUpperCase(),
+        AppColors.primary,
+        AppColors.white,
+        AppColors.primary,
+        () => _confirm(widget.onServe, OrderAlerts.served),
+      ),
+      _ when _done => (
+        Icons.check_rounded,
+        l10n.paid.toUpperCase(),
+        AppColors.success,
+        AppColors.white,
+        AppColors.success,
+        null,
+      ),
+      _ => (
+        Icons.currency_rupee_rounded,
+        l10n.markPaidCaps,
+        AppColors.lightOrange,
+        AppColors.primary,
+        AppColors.primary,
+        () => _confirm(widget.onMarkPaid, OrderAlerts.paid),
+      ),
+    };
+
+    const motion = Duration(milliseconds: 350);
+    return Semantics(
+      button: onTap != null,
+      label: label,
+      excludeSemantics: true,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-        // A min height (not fixed), so large system text still fits.
-        constraints: const BoxConstraints(minHeight: 44),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        duration: motion,
+        curve: Curves.easeOutCubic,
         decoration: BoxDecoration(
-          color: filled ? color : AppColors.lightOrange,
+          color: bg,
           borderRadius: BorderRadius.circular(26),
-          border: Border.all(color: color),
+          border: Border.all(color: edge),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: 18,
-              height: 18,
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                child: busy
-                    ? CircularProgressIndicator(
-                        key: const ValueKey('busy'),
-                        strokeWidth: 2,
-                        color: fg,
-                      )
-                    : Icon(icon, key: ValueKey(icon), size: 18, color: fg),
-              ),
-            ),
-            AppGaps.w8,
-            Flexible(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                child: Text(
-                  label,
-                  key: ValueKey(label),
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.caption.copyWith(
-                    color: fg,
-                    fontWeight: FontWeight.w700,
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(26),
+            onTap: onTap,
+            child: AnimatedSize(
+              duration: motion,
+              curve: Curves.easeOutCubic,
+              child: ConstrainedBox(
+                // A min height (not fixed), so large system text still fits.
+                constraints: const BoxConstraints(minHeight: 44),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: AnimatedSwitcher(
+                    duration: motion,
+                    switchInCurve: Curves.easeOutCubic,
+                    switchOutCurve: Curves.easeInCubic,
+                    transitionBuilder: (child, a) => FadeTransition(
+                      opacity: a,
+                      child: SlideTransition(
+                        position: Tween(
+                          begin: const Offset(0, 0.4),
+                          end: Offset.zero,
+                        ).animate(a),
+                        child: child,
+                      ),
+                    ),
+                    child: Row(
+                      key: ValueKey(label),
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(icon, size: 18, color: fg),
+                        AppGaps.w8,
+                        Flexible(
+                          child: Text(
+                            label,
+                            textAlign: TextAlign.center,
+                            style: AppTextStyles.caption.copyWith(
+                              color: fg,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _statusChip(IconData icon, String text, Color color) {
-    return Container(
-      key: ValueKey(text),
-      padding: AppPadding.chip,
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: _iconLabel(icon, text, color, bold: true),
-    );
-  }
-
-  Widget _iconLabel(IconData icon, String text, Color color, {bool bold = false}) {
+  Widget _iconLabel(
+    IconData icon,
+    String text,
+    Color color, {
+    bool bold = false,
+  }) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -544,7 +574,9 @@ class _OrderCardState extends State<OrderCard> {
             border: Border.all(color: AppColors.warning),
           ),
           child: _iconLabel(
-            on ? Icons.local_fire_department_rounded : Icons.local_fire_department_outlined,
+            on
+                ? Icons.local_fire_department_rounded
+                : Icons.local_fire_department_outlined,
             label,
             on ? AppColors.white : AppColors.warning,
             bold: true,
@@ -590,7 +622,10 @@ class _OrderCardState extends State<OrderCard> {
               Expanded(
                 child: Text(
                   l10n.returnToCustomer(formatPrice(o.refundOwed)),
-                  style: AppTextStyles.caption.copyWith(color: AppColors.warning, fontWeight: FontWeight.w600),
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.warning,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               if (widget.onMarkRefunded != null)
@@ -608,14 +643,20 @@ class _OrderCardState extends State<OrderCard> {
         else if (o.refundedAmount > 0)
           Text(
             '✓ ${l10n.refundedAmount(formatPrice(o.refundedAmount))}',
-            style: AppTextStyles.caption.copyWith(color: AppColors.success, fontWeight: FontWeight.w600),
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.success,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         if (o.refundFlagged)
           Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Text(
               l10n.customerSaysNotRefunded,
-              style: AppTextStyles.caption.copyWith(color: AppColors.error, fontWeight: FontWeight.w600),
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.error,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
       ],

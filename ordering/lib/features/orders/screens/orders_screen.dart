@@ -71,6 +71,33 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
   String? _cartId;
 
+  // Active orders as last shown (id -> status), and those that just left
+  // (served or cancelled) with the section they were in. A leaving card
+  // stays a moment, showing SERVED, then shrinks away so the cards below
+  // slide up instead of jumping.
+  Map<String, String> _shownActive = {};
+  final Map<String, String> _leaving = {};
+  static const _leaveFor = Duration(milliseconds: 900);
+
+  List<OrderModel> _activeWithLeaving(List<OrderModel> all) {
+    final now = {
+      for (final o in all)
+        if (o.status == "PENDING" || o.status == "PAID") o.id: o.status,
+    };
+    for (final MapEntry(key: id, value: was) in _shownActive.entries) {
+      if (now.containsKey(id) || _leaving.containsKey(id)) continue;
+      if (!all.any((o) => o.id == id)) continue; // deleted: nothing to show
+      _leaving[id] = was;
+      Future.delayed(_leaveFor, () {
+        if (mounted) setState(() => _leaving.remove(id));
+      });
+    }
+    _shownActive = now;
+    return all
+        .where((o) => now.containsKey(o.id) || _leaving.containsKey(o.id))
+        .toList();
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -147,9 +174,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
     List<OrderModel> filteredOrders;
     switch (selectedTab) {
       case "Active":
-        filteredOrders = provider.orders
-            .where((o) => o.status == "PENDING" || o.status == "PAID")
-            .toList();
+        filteredOrders = _activeWithLeaving(provider.orders);
         break;
       case "QR Orders":
         filteredOrders = provider.orders.where((o) => o.isQrOrder).toList();
@@ -177,7 +202,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
           "QR Orders" => "qr",
           "Manual" => "manual",
           _ => "all",
-        }, filteredOrders.length);
+        }, filteredOrders.where((o) => !_leaving.containsKey(o.id)).length);
 
     Future<void> markOrderServed(String token, String orderId) async {
       try {
@@ -375,7 +400,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
       ];
       for (final (status, label) in sections) {
         final inSection = filteredOrders
-            .where((o) => o.status == status)
+            .where((o) => (_leaving[o.id] ?? o.status) == status)
             .toList();
         if (inSection.isEmpty) continue;
         rows
@@ -401,32 +426,37 @@ class _OrdersScreenState extends State<OrdersScreen> {
           );
         }
         final order = r as OrderModel;
-        return Padding(
+        return _Collapse(
           // Keyed, so a new order on top doesn't reuse the cards below.
           key: ValueKey(order.id),
-          padding: const EdgeInsets.only(bottom: 12),
-          child: OrderCard(
-            isFresh: provider.isFresh(order.id),
-            // The server refuses edits to served and cancelled orders.
-            onTap: order.status == 'CANCELLED' || order.status == 'SERVED'
-                ? null
-                : () => showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                    builder: (_) => FractionallySizedBox(
-                      heightFactor: 0.95,
-                      child: AddNewOrder(existingOrder: order),
+          leaving: _leaving.containsKey(order.id),
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: OrderCard(
+              isFresh: provider.isFresh(order.id),
+              // The server refuses edits to served and cancelled orders.
+              onTap: order.status == 'CANCELLED' || order.status == 'SERVED'
+                  ? null
+                  : () => showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) => FractionallySizedBox(
+                        heightFactor: 0.95,
+                        child: AddNewOrder(existingOrder: order),
+                      ),
                     ),
-                  ),
-            order: order,
-            onServe: () => markOrderServed(authProvider.token ?? "", order.id),
-            onMarkPaid: () => markOrderPaid(authProvider.token ?? "", order.id),
-            onDelete: () => deleteOrder(authProvider.token ?? "", order.id),
-            onPreparing: (on) =>
-                setPreparing(authProvider.token ?? "", order.id, on),
-            onMarkRefunded: () =>
-                markRefunded(authProvider.token ?? "", order.id),
+              order: order,
+              onServe: () =>
+                  markOrderServed(authProvider.token ?? "", order.id),
+              onMarkPaid: () =>
+                  markOrderPaid(authProvider.token ?? "", order.id),
+              onDelete: () => deleteOrder(authProvider.token ?? "", order.id),
+              onPreparing: (on) =>
+                  setPreparing(authProvider.token ?? "", order.id, on),
+              onMarkRefunded: () =>
+                  markRefunded(authProvider.token ?? "", order.id),
+            ),
           ),
         );
       }
@@ -773,6 +803,33 @@ class _WeatherGap extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ValueListenableBuilder(
     valueListenable: WeatherService.current,
-    builder: (_, w, _) => w == null || w.isStale ? const SizedBox.shrink() : AppGaps.h12,
+    builder: (_, w, _) =>
+        w == null || w.isStale ? const SizedBox.shrink() : AppGaps.h12,
+  );
+}
+
+/// Shrinks and fades a card out after a short pause (it just showed SERVED),
+/// so the list closes up smoothly. Always in the tree, so the card keeps its
+/// state when it starts leaving.
+class _Collapse extends StatelessWidget {
+  final bool leaving;
+  final Widget child;
+
+  const _Collapse({super.key, required this.leaving, required this.child});
+
+  @override
+  Widget build(BuildContext context) => TweenAnimationBuilder<double>(
+    tween: Tween(begin: 1, end: leaving ? 0 : 1),
+    duration: const Duration(milliseconds: 800),
+    // The first part holds still, so the green SERVED is seen.
+    curve: const Interval(0.35, 1, curve: Curves.easeInOutCubic),
+    builder: (context, t, child) => ClipRect(
+      child: Align(
+        alignment: Alignment.topCenter,
+        heightFactor: t,
+        child: Opacity(opacity: t, child: child),
+      ),
+    ),
+    child: child,
   );
 }
