@@ -115,14 +115,13 @@ class _AreaAlertBannerState extends State<AreaAlertBanner> {
           borderRadius: BorderRadius.circular(12),
           onTap: widget.onTap,
           child: Padding(
-            padding: EdgeInsets.fromLTRB(
-              16,
-              12,
-              widget.onDismiss == null ? 16 : 0,
-              8,
-            ),
+            // The close button brings its own height: less padding with it.
+            padding: widget.onDismiss == null
+                ? const EdgeInsets.symmetric(horizontal: 16, vertical: 12)
+                : const EdgeInsets.fromLTRB(16, 6, 4, 6),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              // Icon, text and close button on one centre line.
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Icon(_reasonIcon(a.reason), color: AppColors.error, size: 20),
                 AppGaps.w12,
@@ -166,9 +165,7 @@ class _AreaAlertBannerState extends State<AreaAlertBanner> {
                                 ),
                               ),
                           ],
-                        )
-                      else
-                        AppGaps.h4,
+                        ),
                     ],
                   ),
                 ),
