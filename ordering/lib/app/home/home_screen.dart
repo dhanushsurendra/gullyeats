@@ -43,10 +43,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   // shortcut: kept in memory, so they come back after the app restarts; save them if vendors mind.
   final Set<String> _hidden = {};
   late final ValueNotifier<int> _alertTick;
+  // The cart switcher can change the cart while Home stays open.
+  late final CartProvider _carts;
+  String? _cartId;
 
   @override
   void initState() {
     super.initState();
+    _carts = context.read<CartProvider>()..addListener(_onCartChanged);
+    _cartId = _carts.selectedCart?.id;
     WidgetsBinding.instance.addObserver(this);
     Push.feeTap.addListener(_checkLock);
     // The cart can become due while the app stays open all day, so the lock
@@ -66,8 +71,23 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     });
   }
 
+  /// Another cart was picked from a screen that stays open: re-check its
+  /// fee lock (a locked cart goes to the lock screen), alerts and weather.
+  void _onCartChanged() {
+    final id = _carts.selectedCart?.id;
+    if (id == null || id == _cartId || !mounted) return;
+    _cartId = id;
+    _hidden.clear();
+    _alerts.value = [];
+    setState(() => _status = null);
+    _checkLock();
+    _loadAlerts();
+    _loadWeather();
+  }
+
   @override
   void dispose() {
+    _carts.removeListener(_onCartChanged);
     WidgetsBinding.instance.removeObserver(this);
     Push.feeTap.removeListener(_checkLock);
     _alertTick.removeListener(_loadAlerts);

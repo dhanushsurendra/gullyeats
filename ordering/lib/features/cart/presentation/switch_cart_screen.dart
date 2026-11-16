@@ -22,7 +22,16 @@ import 'package:ordering/core/theme/app_gaps.dart';
 class SwitchCartScreen extends StatefulWidget {
   final bool isDraggable;
 
-  const SwitchCartScreen({super.key, required this.isDraggable});
+  /// After switching, just close the sheet and stay on the screen below,
+  /// which reloads for the new cart. Otherwise go through the welcome screen
+  /// (app start, the Orders screen and the lock screen).
+  final bool stayOnScreen;
+
+  const SwitchCartScreen({
+    super.key,
+    required this.isDraggable,
+    this.stayOnScreen = false,
+  });
 
   @override
   State<SwitchCartScreen> createState() => _SwitchCartScreenState();
@@ -107,7 +116,10 @@ class _SwitchCartScreenState extends State<SwitchCartScreen> {
   // LIST + BUTTON (shared by the start-up screen and the sheet)
   // ==========================================================================
 
-  Widget _cartList(ScrollController? controller, List<CartModel> filteredCarts) {
+  Widget _cartList(
+    ScrollController? controller,
+    List<CartModel> filteredCarts,
+  ) {
     final cartProvider = context.watch<CartProvider>();
     final carts = cartProvider.carts;
 
@@ -124,11 +136,20 @@ class _SwitchCartScreenState extends State<SwitchCartScreen> {
         if (cartProvider.isLoading && carts.isEmpty)
           Skeleton.rows(count: 4, height: 84)
         else if (_loadFailed && carts.isEmpty)
-          ListMessage.failed(message: context.l10n.couldntLoadCarts, onRetry: _loadCarts)
+          ListMessage.failed(
+            message: context.l10n.couldntLoadCarts,
+            onRetry: _loadCarts,
+          )
         else if (carts.isEmpty)
-          ListMessage(icon: Icons.storefront_outlined, message: context.l10n.noCartsAssigned)
+          ListMessage(
+            icon: Icons.storefront_outlined,
+            message: context.l10n.noCartsAssigned,
+          )
         else if (filteredCarts.isEmpty)
-          ListMessage(icon: Icons.search_off_rounded, message: context.l10n.noCartsAvailable)
+          ListMessage(
+            icon: Icons.search_off_rounded,
+            message: context.l10n.noCartsAvailable,
+          )
         else
           for (final cart in filteredCarts) ...[
             CartCard(
@@ -159,7 +180,16 @@ class _SwitchCartScreenState extends State<SwitchCartScreen> {
         );
         await cartProvider.selectCart(selectedCart);
         if (!mounted) return;
-        Navigator.of(context).pushReplacementNamed(AppRoutes.welcome);
+        if (widget.stayOnScreen) {
+          // Home re-checks the new cart's fee lock and shows the lock
+          // screen if it is locked.
+          Navigator.of(context).pop();
+        } else {
+          // Start over from the welcome screen; nothing old stays underneath.
+          Navigator.of(
+            context,
+          ).pushNamedAndRemoveUntil(AppRoutes.welcome, (_) => false);
+        }
       },
     );
   }
@@ -207,7 +237,9 @@ class _SwitchCartScreenState extends State<SwitchCartScreen> {
                   AppGaps.h4,
                   Text(
                     l10n.chooseCartToSwitch,
-                    style: AppTextStyles.body.copyWith(color: AppColors.grey400),
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.grey400,
+                    ),
                   ),
                 ],
               ),
@@ -259,7 +291,10 @@ class _SwitchCartScreenState extends State<SwitchCartScreen> {
                         children: [
                           Text(l10n.switchCart, style: AppTextStyles.heading2),
                           AppGaps.h4,
-                          Text(l10n.chooseCartToSwitch, style: AppTextStyles.caption),
+                          Text(
+                            l10n.chooseCartToSwitch,
+                            style: AppTextStyles.caption,
+                          ),
                         ],
                       ),
                     ),

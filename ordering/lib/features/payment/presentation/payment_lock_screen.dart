@@ -339,7 +339,8 @@ class _PaymentLockScreenState extends State<PaymentLockScreen> {
             style: AppTextStyles.body.copyWith(color: AppColors.grey400),
           ),
           AppGaps.h12,
-          const CartSelector(),
+          // Through the welcome screen: an unlocked cart leaves the lock screen.
+          const CartSelector(stayOnScreen: false),
         ],
       ),
       // Only the owner can pay; staff are told who to ask, and can log out.

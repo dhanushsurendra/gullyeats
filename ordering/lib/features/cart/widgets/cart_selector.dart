@@ -10,10 +10,14 @@ import 'package:provider/provider.dart';
 /// The selected cart's name and address; tapping opens the cart switcher.
 /// Hidden for vendors with a single cart, who have nothing to switch to.
 class CartSelector extends StatelessWidget {
-  const CartSelector({super.key});
+  /// Stay on this screen after switching (see [SwitchCartScreen.stayOnScreen]).
+  final bool stayOnScreen;
+
+  const CartSelector({super.key, this.stayOnScreen = true});
 
   /// Whether the switcher shows: not for a vendor with a single cart.
-  static bool shows(CartProvider p) => p.selectedCart != null && p.carts.length != 1;
+  static bool shows(CartProvider p) =>
+      p.selectedCart != null && p.carts.length != 1;
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +33,8 @@ class CartSelector extends StatelessWidget {
         context: context,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
-        builder: (_) => const SwitchCartScreen(isDraggable: true),
+        builder: (_) =>
+            SwitchCartScreen(isDraggable: true, stayOnScreen: stayOnScreen),
       ),
       child: Container(
         constraints: const BoxConstraints(maxWidth: 180),

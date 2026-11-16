@@ -59,12 +59,22 @@ class _SalesScreenState extends State<SalesScreen> {
     });
   }
 
+  String? _cartId;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final cartId = context.watch<CartProvider>().selectedCart?.id;
     if (!_init) {
       _init = true;
+      _cartId = cartId;
       _loadSales();
+    } else if (cartId != null && cartId != _cartId) {
+      // Switched here: stay on Sales with the new cart's numbers.
+      _cartId = cartId;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _loadSales();
+      });
     }
   }
 

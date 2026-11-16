@@ -70,11 +70,22 @@ class _OrdersScreenState extends State<OrdersScreen> {
   Timer? _clock;
   OrderProvider? _orderProvider;
 
+  String? _cartId;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final cartId = context.watch<CartProvider>().selectedCart?.id;
+    if (_isInit && cartId != null && cartId != _cartId) {
+      // Switched from another tab: this tab stays, with the new cart's orders.
+      _cartId = cartId;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _loadOrders();
+      });
+    }
     if (!_isInit) {
       _isInit = true;
+      _cartId = cartId;
       _orderProvider = context.read<OrderProvider>()
         ..incomingOrder.addListener(_onIncomingOrder);
       _clock = Timer.periodic(const Duration(seconds: 30), (_) {
@@ -462,7 +473,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
                         // No gap when the cart switcher is hidden (a single cart).
                         if (context.select<CartProvider, bool>(CartSelector.shows)) ...const [
                           AppGaps.w8,
-                          Flexible(child: CartSelector()),
+                          // The welcome screen, as on app start.
+                          Flexible(child: CartSelector(stayOnScreen: false)),
                         ],
                       ],
                     ),

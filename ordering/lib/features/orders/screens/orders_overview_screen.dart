@@ -69,7 +69,8 @@ class _OrdersOverviewScreenState extends State<OrdersOverviewScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    final cartId = context.read<CartProvider>().selectedCart?.id;
+    // Watched, so switching cart on this screen reloads it in place.
+    final cartId = context.watch<CartProvider>().selectedCart?.id;
 
     if (!_init || (cartId != null && cartId != _lastLoadedCartId)) {
       _init = true;
