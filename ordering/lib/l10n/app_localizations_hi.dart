@@ -917,6 +917,12 @@ class AppLocalizationsHi extends AppLocalizations {
   String get cartDetails => 'कार्ट की जानकारी';
 
   @override
+  String get cartClosedNote => 'अभी ग्राहक ऑर्डर नहीं कर सकते';
+
+  @override
+  String get cartIdCopied => 'कार्ट ID कॉपी हो गया';
+
+  @override
   String get cartIdCaps => 'कार्ट ID';
 
   @override

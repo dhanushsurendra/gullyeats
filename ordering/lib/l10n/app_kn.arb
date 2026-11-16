@@ -276,6 +276,8 @@
   "editStaffDetails": "ಸಿಬ್ಬಂದಿ ವಿವರ ಬದಲಾಯಿಸಿ",
   "viewOrderDetails": "ಆರ್ಡರ್ ವಿವರ ನೋಡಿ",
   "cartDetails": "ಕಾರ್ಟ್ ವಿವರಗಳು",
+  "cartClosedNote": "ಈಗ ಗ್ರಾಹಕರು ಆರ್ಡರ್ ಮಾಡಲು ಆಗುವುದಿಲ್ಲ",
+  "cartIdCopied": "ಕಾರ್ಟ್ ID ಕಾಪಿ ಆಯಿತು",
   "cartIdCaps": "ಕಾರ್ಟ್ ID",
   "viewQrCaps": "QR ನೋಡಿ",
   "securityAndLogin": "ಭದ್ರತೆ ಮತ್ತು ಲಾಗಿನ್",

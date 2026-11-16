@@ -276,6 +276,8 @@
   "editStaffDetails": "பணியாளர் விவரங்களைத் திருத்து",
   "viewOrderDetails": "ஆர்டர் விவரங்களைப் பார்",
   "cartDetails": "கார்ட் விவரங்கள்",
+  "cartClosedNote": "இப்போது வாடிக்கையாளர்கள் ஆர்டர் செய்ய முடியாது",
+  "cartIdCopied": "கார்ட் ID நகலெடுக்கப்பட்டது",
   "cartIdCaps": "கார்ட் ID",
   "viewQrCaps": "QR-ஐப் பார்",
   "securityAndLogin": "பாதுகாப்பு மற்றும் உள்நுழைவு",

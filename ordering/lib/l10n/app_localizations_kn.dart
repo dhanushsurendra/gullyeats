@@ -932,6 +932,12 @@ class AppLocalizationsKn extends AppLocalizations {
   String get cartDetails => 'ಕಾರ್ಟ್ ವಿವರಗಳು';
 
   @override
+  String get cartClosedNote => 'ಈಗ ಗ್ರಾಹಕರು ಆರ್ಡರ್ ಮಾಡಲು ಆಗುವುದಿಲ್ಲ';
+
+  @override
+  String get cartIdCopied => 'ಕಾರ್ಟ್ ID ಕಾಪಿ ಆಯಿತು';
+
+  @override
   String get cartIdCaps => 'ಕಾರ್ಟ್ ID';
 
   @override

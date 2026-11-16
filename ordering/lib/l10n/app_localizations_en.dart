@@ -928,6 +928,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cartDetails => 'Cart Details';
 
   @override
+  String get cartClosedNote => 'Customers can\'t order right now';
+
+  @override
+  String get cartIdCopied => 'Cart ID copied';
+
+  @override
   String get cartIdCaps => 'CART ID';
 
   @override

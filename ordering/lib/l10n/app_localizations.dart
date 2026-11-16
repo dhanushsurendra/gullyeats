@@ -1758,6 +1758,18 @@ abstract class AppLocalizations {
   /// **'Cart Details'**
   String get cartDetails;
 
+  /// No description provided for @cartClosedNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Customers can\'t order right now'**
+  String get cartClosedNote;
+
+  /// No description provided for @cartIdCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Cart ID copied'**
+  String get cartIdCopied;
+
   /// No description provided for @cartIdCaps.
   ///
   /// In en, this message translates to:

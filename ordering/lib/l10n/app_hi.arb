@@ -276,6 +276,8 @@
   "editStaffDetails": "स्टाफ़ की जानकारी बदलें",
   "viewOrderDetails": "ऑर्डर की जानकारी देखें",
   "cartDetails": "कार्ट की जानकारी",
+  "cartClosedNote": "अभी ग्राहक ऑर्डर नहीं कर सकते",
+  "cartIdCopied": "कार्ट ID कॉपी हो गया",
   "cartIdCaps": "कार्ट ID",
   "viewQrCaps": "QR देखें",
   "securityAndLogin": "सुरक्षा और लॉगिन",

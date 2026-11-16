@@ -411,6 +411,8 @@
   "editStaffDetails": "Edit Staff Details",
   "viewOrderDetails": "View Order Details",
   "cartDetails": "Cart Details",
+  "cartClosedNote": "Customers can't order right now",
+  "cartIdCopied": "Cart ID copied",
   "cartIdCaps": "CART ID",
   "viewQrCaps": "VIEW QR",
   "securityAndLogin": "Security & Login",

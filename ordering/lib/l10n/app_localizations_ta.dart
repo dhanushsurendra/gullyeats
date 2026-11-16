@@ -943,6 +943,12 @@ class AppLocalizationsTa extends AppLocalizations {
   String get cartDetails => 'கார்ட் விவரங்கள்';
 
   @override
+  String get cartClosedNote => 'இப்போது வாடிக்கையாளர்கள் ஆர்டர் செய்ய முடியாது';
+
+  @override
+  String get cartIdCopied => 'கார்ட் ID நகலெடுக்கப்பட்டது';
+
+  @override
   String get cartIdCaps => 'கார்ட் ID';
 
   @override

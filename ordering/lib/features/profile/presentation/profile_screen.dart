@@ -10,25 +10,21 @@ import 'package:ordering/core/theme/theme_provider.dart';
 import 'package:ordering/core/widgets/app_button.dart';
 import 'package:ordering/core/widgets/app_card.dart';
 import 'package:ordering/features/auth/providers/auth_provider.dart';
-import 'package:ordering/features/cart/models/cart_model.dart';
-import 'package:ordering/features/cart/presentation/edit_cart_screen.dart';
 import 'package:ordering/features/cart/providers/cart_provider.dart';
 import 'package:ordering/features/orders/screens/edit_menu_screen.dart';
 import 'package:ordering/features/orders/screens/orders_overview_screen.dart';
 import 'package:ordering/features/payment/presentation/payment_screen.dart';
 import 'package:ordering/features/profile/presentation/change_pin_screen.dart';
 import 'package:ordering/features/profile/presentation/language_preferences_screen.dart';
-import 'package:ordering/features/profile/presentation/qr_screen.dart';
 import 'package:ordering/features/profile/presentation/staff_management_screen.dart';
 import 'package:ordering/core/utils/session.dart';
-import 'package:ordering/core/error/app_exceptions.dart';
-import 'package:ordering/core/widgets/app_snack_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:ordering/features/profile/providers/language_provider.dart';
 import 'package:ordering/l10n/l10n.dart';
 import 'package:ordering/core/widgets/base_screen.dart';
 import 'package:ordering/features/cart/widgets/cart_selector.dart';
+import 'package:ordering/features/profile/widgets/cart_details_card.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -83,7 +79,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _profileCard(context, initials, vendorName, phoneNumber),
           AppGaps.h12,
 
-          _outletCard(context, selectedCart),
+          CartDetailsCard(cart: selectedCart),
           AppGaps.h12,
 
           // Owners and staff can both warn nearby carts.
@@ -201,168 +197,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 if (phoneNumber.toString().isNotEmpty)
                   Text(phoneNumber, style: AppTextStyles.caption),
               ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _outletCard(BuildContext context, CartModel? selectedCart) {
-    final isOpen = selectedCart?.isOpen ?? false;
-
-    return AppCard(
-      padding: AppPadding.card,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  context.l10n.cartDetails,
-                  style: AppTextStyles.heading3,
-                ),
-              ),
-              // Cart details (name, address, photo, parcel charge) are the owner's.
-              if (!context.watch<AuthProvider>().isStaff)
-                Material(
-                  color: AppColors.grey100,
-                  borderRadius: BorderRadius.circular(12),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: selectedCart == null
-                        ? null
-                        : () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  EditCartScreen(cart: selectedCart),
-                            ),
-                          ),
-                    child: const SizedBox(
-                      width: 40,
-                      height: 40,
-                      child: Icon(
-                        Icons.edit_outlined,
-                        size: 20,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          AppGaps.h8,
-          // Open/closed on its own row, so a long label never squeezes the title.
-          Row(
-            children: [
-              Icon(
-                Icons.circle,
-                size: 10,
-                color: isOpen ? AppColors.success : AppColors.grey400,
-              ),
-              AppGaps.w8,
-              Expanded(
-                child: Text(
-                  isOpen ? context.l10n.cartOpen : context.l10n.closed,
-                  style: AppTextStyles.body.copyWith(
-                    color: isOpen ? AppColors.success : AppColors.grey600,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              Switch(
-                value: isOpen,
-                onChanged: (value) async {
-                  if (selectedCart == null) return;
-                  try {
-                    await context.read<CartProvider>().toggleCartStatus(
-                      context.read<AuthProvider>().token ?? '',
-                      selectedCart.id,
-                      value,
-                    );
-                  } catch (e) {
-                    if (!context.mounted) return;
-                    AppSnackBar.show(
-                      context,
-                      message: AppExceptionHandler.getMessage(e),
-                      isError: true,
-                    );
-                  }
-                },
-                activeTrackColor: AppColors.primary,
-                inactiveTrackColor: AppColors.grey300,
-                thumbColor: WidgetStateProperty.all(Colors.white),
-                trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
-              ),
-            ],
-          ),
-
-          AppGaps.h16,
-
-          // Cart information          AppGaps.h16,
-
-          // Cart information
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: AppColors.grey100,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  context.l10n.cartIdCaps,
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.grey600,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-
-                const SizedBox(height: 3),
-
-                Text(
-                  selectedCart?.cartId ?? context.l10n.notAvailable,
-                  style: AppTextStyles.body.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-
-                AppGaps.h12,
-
-                Text(
-                  context.l10n.address.toUpperCase(),
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.grey600,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-
-                const SizedBox(height: 3),
-
-                Text(
-                  selectedCart?.address ?? context.l10n.notAvailable,
-                  style: AppTextStyles.body,
-                ),
-              ],
-            ),
-          ),
-
-          AppGaps.h16,
-
-          AppButton(
-            label: context.l10n.viewQrCaps,
-            backgroundColor: AppColors.surface,
-            borderColor: AppColors.primary,
-            textColor: AppColors.primary,
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const QrPosterScreen()),
             ),
           ),
         ],
