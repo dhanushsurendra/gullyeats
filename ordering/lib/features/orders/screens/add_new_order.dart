@@ -369,7 +369,11 @@ class _AddNewOrderState extends State<AddNewOrder> {
                     // MENU
                     // ------------------------------------------------
                     provider.isMenuLoading
-                        ? Skeleton.rows(count: 5, height: 72)
+                        // Same side padding as the menu list it stands in for.
+                        ? Padding(
+                            padding: AppPadding.horizontalScreen,
+                            child: Skeleton.rows(count: 5, height: 72),
+                          )
                         : filteredMenu.isEmpty
                         ? ListMessage(
                             icon: searchQuery.isEmpty
