@@ -221,4 +221,22 @@ class CartService {
 
     return true;
   }
+
+  /// The main road this spot is right next to ('' when it has no name), or
+  /// null when there is none. Only a hint for the "near a main road" warning,
+  /// so any failure (slow network, old server) also gives null.
+  Future<String?> mainRoadNear(String? token, double lat, double lng) async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse("${ApiConstants.carts}/main-road?lat=$lat&lng=$lng"),
+            headers: {"Authorization": "Bearer $token"},
+          )
+          .timeout(const Duration(seconds: 5));
+      if (response.statusCode != 200) return null;
+      return json.decode(response.body)['road'] as String?;
+    } catch (_) {
+      return null;
+    }
+  }
 }

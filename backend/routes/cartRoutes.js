@@ -30,6 +30,7 @@ const {
 const { getSalesDashboard } = require('../controllers/salesController')
 const asyncHandler = require('../utils/asyncHandler')
 const { discoverCarts, RADIUS_KM } = require('../utils/discoverCarts')
+const { mainRoadNear } = require('../utils/mainRoads')
 const auth = require('../middlewares/auth')
 const { createAreaAlert, getAreaAlerts, confirmAreaAlert } = require('../controllers/areaAlertController')
 
@@ -89,6 +90,16 @@ router.get('/discover', asyncHandler(async (req, res) => {
       : null
   res.json({ success: true, data: await discoverCarts({ here, q: req.query.q }), radiusKm: RADIUS_KM })
 }))
+
+// Onboarding app: is this spot right next to a main road? A risk hint only.
+router.get('/main-road', auth, (req, res) => {
+  const lat = Number(req.query.lat)
+  const lng = Number(req.query.lng)
+  if (!(Math.abs(lat) <= 90 && Math.abs(lng) <= 180)) {
+    return res.status(400).json({ success: false, message: 'lat and lng are required' })
+  }
+  res.json({ success: true, road: mainRoadNear(lat, lng) })
+})
 
 router.put('/update-menu-item/:cartId', auth, updateMenuItem)
 

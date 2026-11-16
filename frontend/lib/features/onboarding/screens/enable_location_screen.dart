@@ -14,6 +14,10 @@ import 'package:gullyeats/core/widgets/app_button.dart';
 import 'package:gullyeats/core/widgets/app_snack_bar.dart';
 import 'package:gullyeats/core/widgets/base_screen.dart';
 import 'package:gullyeats/core/widgets/app_footer.dart';
+import 'package:gullyeats/features/auth/providers/auth_provider.dart';
+import 'package:gullyeats/features/onboarding/services/cart_service.dart';
+import 'package:gullyeats/features/onboarding/widgets/main_road_warning.dart';
+import 'package:provider/provider.dart';
 
 class EnableLocationScreen extends StatefulWidget {
   const EnableLocationScreen({super.key});
@@ -31,6 +35,9 @@ class _EnableLocationScreenState extends State<EnableLocationScreen> {
   double? lng;
   Placemark? address;
   double? accuracyValue;
+
+  /// The main road the captured spot is next to ('' if unnamed), or null.
+  String? _mainRoad;
 
   vt.Style? _mapStyle;
   bool _isMapLoading = true;
@@ -187,7 +194,9 @@ class _EnableLocationScreenState extends State<EnableLocationScreen> {
         accuracyValue = position.accuracy;
         address = addressResult;
         _isLocationCaptured = true;
+        _mainRoad = null;
       });
+      _checkMainRoad(position.latitude, position.longitude);
     } catch (_) {
       if (mounted) {
         setState(() => _isLocationCaptured = false);
@@ -202,6 +211,16 @@ class _EnableLocationScreenState extends State<EnableLocationScreen> {
       if (mounted) {
         setState(() => _isLocating = false);
       }
+    }
+  }
+
+  /// Not awaited: the warning appears when the answer comes, and a slow or
+  /// failed check just shows nothing. An answer for an older capture is dropped.
+  Future<void> _checkMainRoad(double atLat, double atLng) async {
+    final token = context.read<AuthProvider>().token;
+    final road = await CartService().mainRoadNear(token, atLat, atLng);
+    if (mounted && lat == atLat && lng == atLng) {
+      setState(() => _mainRoad = road);
     }
   }
 
@@ -241,6 +260,10 @@ class _EnableLocationScreenState extends State<EnableLocationScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildMap(lat, lng),
+            if (_mainRoad != null && !_isLocating) ...[
+              AppGaps.h16,
+              MainRoadWarning(road: _mainRoad!),
+            ],
             AppGaps.h32,
             _buildWhyLocationCard(),
           ],

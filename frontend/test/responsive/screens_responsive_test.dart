@@ -21,6 +21,8 @@ import 'package:gullyeats/features/onboarding/screens/cart_photo_screen.dart';
 import 'package:gullyeats/features/onboarding/screens/carts_screen.dart';
 import 'package:gullyeats/features/onboarding/screens/confirm_location_screen.dart';
 import 'package:gullyeats/features/onboarding/screens/enable_location_screen.dart';
+import 'package:gullyeats/core/widgets/base_screen.dart';
+import 'package:gullyeats/features/onboarding/widgets/main_road_warning.dart';
 import 'package:gullyeats/features/splash/presentation/splash_screen.dart';
 import 'package:gullyeats/features/staff_management/screens/operating_setup_screen.dart';
 import 'package:gullyeats/features/staff_management/screens/staff_management_screen.dart';
@@ -85,6 +87,15 @@ final screens = <ScreenCase>[
   ScreenCase('cart_details', () => const CartDetailsScreen(), hasInputs: true),
   ScreenCase('cart_photo', () => const CartPhotoScreen()),
   ScreenCase('enable_location', () => const EnableLocationScreen()),
+  // The warning Enable Location adds under the map near a main road.
+  ScreenCase(
+    'main_road_warning',
+    () => const BaseScreen(
+      title: 'Enable Location',
+      subtitle: 'We need your location to verify your cart',
+      child: MainRoadWarning(road: 'Hosur Road (Bengaluru–Hosur Highway)'),
+    ),
+  ),
   ScreenCase(
     'confirm_location',
     () => const ConfirmLocationScreen(),
