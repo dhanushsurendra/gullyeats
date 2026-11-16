@@ -8,6 +8,7 @@ const weatherCacheSchema = new mongoose.Schema(
   {
     _id: { type: String },
     points: { type: mongoose.Schema.Types.Mixed, default: [] },
+    days: { type: mongoose.Schema.Types.Mixed, default: [] },
     fetchedAt: { type: Date, required: true },
   },
   { versionKey: false },

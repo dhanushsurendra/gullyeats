@@ -1401,7 +1401,7 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
-  String get weatherRainChance => 'बारिश की संभावना';
+  String get weatherRain => 'अगले घंटे बारिश';
 
   @override
   String get weatherHumidity => 'नमी';
@@ -1424,7 +1424,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get weatherForecastNote =>
-      'Open-Meteo का पूर्वानुमान, आधिकारिक मौसम चेतावनी नहीं।';
+      'MET Norway का पूर्वानुमान, आधिकारिक मौसम चेतावनी नहीं।';
 
   @override
   String get eveningTitle => 'आज अब तक';

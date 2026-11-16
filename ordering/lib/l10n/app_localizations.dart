@@ -2604,11 +2604,11 @@ abstract class AppLocalizations {
   /// **'Feels like {temp}°'**
   String weatherFeelsLike(int temp);
 
-  /// No description provided for @weatherRainChance.
+  /// No description provided for @weatherRain.
   ///
   /// In en, this message translates to:
-  /// **'Rain chance'**
-  String get weatherRainChance;
+  /// **'Rain, next hour'**
+  String get weatherRain;
 
   /// No description provided for @weatherHumidity.
   ///
@@ -2643,7 +2643,7 @@ abstract class AppLocalizations {
   /// No description provided for @weatherForecastNote.
   ///
   /// In en, this message translates to:
-  /// **'Forecast from Open-Meteo, not an official weather warning.'**
+  /// **'Forecast from MET Norway, not an official weather warning.'**
   String get weatherForecastNote;
 
   /// No description provided for @eveningTitle.

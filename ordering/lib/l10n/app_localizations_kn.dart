@@ -1422,7 +1422,7 @@ class AppLocalizationsKn extends AppLocalizations {
   }
 
   @override
-  String get weatherRainChance => 'ಮಳೆ ಸಾಧ್ಯತೆ';
+  String get weatherRain => 'ಮುಂದಿನ ಗಂಟೆ ಮಳೆ';
 
   @override
   String get weatherHumidity => 'ತೇವಾಂಶ';
@@ -1445,7 +1445,7 @@ class AppLocalizationsKn extends AppLocalizations {
 
   @override
   String get weatherForecastNote =>
-      'Open-Meteo ಮುನ್ಸೂಚನೆ, ಅಧಿಕೃತ ಹವಾಮಾನ ಎಚ್ಚರಿಕೆ ಅಲ್ಲ.';
+      'MET Norway ಮುನ್ಸೂಚನೆ, ಅಧಿಕೃತ ಹವಾಮಾನ ಎಚ್ಚರಿಕೆ ಅಲ್ಲ.';
 
   @override
   String get eveningTitle => 'ಇಂದು ಇಲ್ಲಿಯವರೆಗೆ';

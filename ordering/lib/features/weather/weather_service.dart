@@ -9,20 +9,21 @@ import 'package:ordering/core/constants/api_constants.dart';
 class HourWeather {
   final DateTime at;
   final int tempC;
-  final int rainChance;
+  /// Forecast rain in that hour, in mm.
+  final double rainMm;
   final String condition;
 
   const HourWeather({
     required this.at,
     required this.tempC,
-    required this.rainChance,
+    required this.rainMm,
     required this.condition,
   });
 
   factory HourWeather.fromJson(Map<String, dynamic> j) => HourWeather(
     at: DateTime.parse(j['at'] as String).toLocal(),
     tempC: (j['tempC'] as num).round(),
-    rainChance: (j['rainChance'] as num? ?? 0).round(),
+    rainMm: (j['rainMm'] as num? ?? 0).toDouble(),
     condition: j['condition'] as String,
   );
 }
@@ -36,7 +37,8 @@ class WeatherData {
   final int humidity;
   final int windKph;
   final String condition;
-  final int rainChance;
+  /// Forecast rain in that hour, in mm.
+  final double rainMm;
   final DateTime sunrise;
   final DateTime sunset;
   final List<HourWeather> hourly;
@@ -51,7 +53,7 @@ class WeatherData {
     required this.humidity,
     required this.windKph,
     required this.condition,
-    required this.rainChance,
+    required this.rainMm,
     required this.sunrise,
     required this.sunset,
     required this.hourly,
@@ -65,7 +67,7 @@ class WeatherData {
     humidity: (j['humidity'] as num).round(),
     windKph: (j['windKph'] as num).round(),
     condition: j['condition'] as String,
-    rainChance: (j['rainChance'] as num? ?? 0).round(),
+    rainMm: (j['rainMm'] as num? ?? 0).toDouble(),
     sunrise: DateTime.parse(j['sunrise'] as String).toLocal(),
     sunset: DateTime.parse(j['sunset'] as String).toLocal(),
     hourly: [

@@ -1438,7 +1438,7 @@ class AppLocalizationsTa extends AppLocalizations {
   }
 
   @override
-  String get weatherRainChance => 'மழை வாய்ப்பு';
+  String get weatherRain => 'அடுத்த ஒரு மணி நேர மழை';
 
   @override
   String get weatherHumidity => 'ஈரப்பதம்';
@@ -1461,7 +1461,7 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get weatherForecastNote =>
-      'Open-Meteo முன்னறிவிப்பு, அதிகாரப்பூர்வ வானிலை எச்சரிக்கை அல்ல.';
+      'MET Norway முன்னறிவிப்பு, அதிகாரப்பூர்வ வானிலை எச்சரிக்கை அல்ல.';
 
   @override
   String get eveningTitle => 'இன்று இதுவரை';

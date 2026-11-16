@@ -732,7 +732,7 @@
       }
     }
   },
-  "weatherRainChance": "Rain chance",
+  "weatherRain": "Rain, next hour",
   "weatherHumidity": "Humidity",
   "weatherWind": "Wind",
   "weatherNextHours": "Next hours",
@@ -752,7 +752,7 @@
       }
     }
   },
-  "weatherForecastNote": "Forecast from Open-Meteo, not an official weather warning.",
+  "weatherForecastNote": "Forecast from MET Norway, not an official weather warning.",
   "eveningTitle": "Today so far",
   "eveningFeeNote": "Today's fee goes on your bill after midnight.",
   "eveningBillDue": "Bill due: ₹{amount}",

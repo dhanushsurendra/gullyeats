@@ -196,7 +196,7 @@ Map<String, dynamic> weatherJson({bool evening = false}) {
     'humidity': 62,
     'windKph': 11,
     'condition': 'cloudy',
-    'rainChance': 20,
+    'rainMm': 0.4,
     'sunrise': iso(day.add(const Duration(hours: 6, minutes: 16))),
     'sunset': iso(evening ? now.subtract(const Duration(hours: 1)) : day.add(const Duration(hours: 17, minutes: 52))),
     'hourly': [
@@ -204,7 +204,7 @@ Map<String, dynamic> weatherJson({bool evening = false}) {
         {
           'at': iso(hour.add(Duration(hours: i))),
           'tempC': 26 - i,
-          'rainChance': const [20, 45, 80, 70, 40, 20, 10, 10][i],
+          'rainMm': const [0.4, 2.1, 12.5, 3.0, 0.0, 0.0, 0.0, 0.0][i],
           'condition': const ['cloudy', 'rain', 'heavy_rain', 'rain', 'cloudy', 'cloudy', 'clear', 'clear'][i],
         },
     ],

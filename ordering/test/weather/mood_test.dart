@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:ordering/features/weather/mood.dart';
 import 'package:ordering/features/weather/weather_service.dart';
+import 'package:ordering/features/weather/weather_sheet.dart';
 
 final day = DateTime(2026, 11, 16);
 DateTime at(int h, [int m = 0]) => day.add(Duration(hours: h, minutes: m));
@@ -22,7 +23,7 @@ WeatherData weather({
   humidity: 60,
   windKph: 10,
   condition: condition,
-  rainChance: 0,
+  rainMm: 0,
   sunrise: at(6, 16),
   sunset: at(sunsetH, sunsetM),
   hourly: const [],
@@ -114,11 +115,11 @@ void main() {
       'humidity': 62,
       'windKph': 11,
       'condition': 'rain',
-      'rainChance': 40,
+      'rainMm': 1.2,
       'sunrise': '2026-11-16T00:46:00.000Z',
       'sunset': '2026-11-16T12:22:00.000Z',
       'hourly': [
-        {'at': '2026-11-16T06:30:00.000Z', 'tempC': 26, 'rainChance': 40, 'condition': 'rain'},
+        {'at': '2026-11-16T06:30:00.000Z', 'tempC': 26, 'rainMm': 1.2, 'condition': 'rain'},
       ],
       'heavyRainAt': null,
       'updatedAt': '2026-11-16T06:20:00.000Z',
@@ -155,5 +156,9 @@ void main() {
         expect(WeatherService.current.value, isNull);
       }, () => MockClient((_) async => throw http.ClientException('offline')));
     });
+  });
+
+  test('rain is shown in mm, as MET Norway gives it', () {
+    expect([0.0, 0.04, 0.4, 9.96, 12.5].map(rainText), ['0 mm', '0 mm', '0.4 mm', '10 mm', '13 mm']);
   });
 }

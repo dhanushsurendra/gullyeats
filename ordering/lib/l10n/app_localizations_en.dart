@@ -1424,7 +1424,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get weatherRainChance => 'Rain chance';
+  String get weatherRain => 'Rain, next hour';
 
   @override
   String get weatherHumidity => 'Humidity';
@@ -1447,7 +1447,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get weatherForecastNote =>
-      'Forecast from Open-Meteo, not an official weather warning.';
+      'Forecast from MET Norway, not an official weather warning.';
 
   @override
   String get eveningTitle => 'Today so far';

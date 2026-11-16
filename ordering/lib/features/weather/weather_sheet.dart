@@ -112,8 +112,8 @@ class WeatherDetails extends StatelessWidget {
               children: [
                 _Stat(
                   Icons.water_drop_outlined,
-                  l10n.weatherRainChance,
-                  '${w.rainChance}%',
+                  l10n.weatherRain,
+                  rainText(w.rainMm),
                 ),
                 AppGaps.w8,
                 _Stat(Icons.opacity, l10n.weatherHumidity, '${w.humidity}%'),
@@ -166,7 +166,7 @@ class WeatherDetails extends StatelessWidget {
         spacing: 4,
         children: [
           Text(
-            DateFormat.j(locale).format(h.at),
+            DateFormat.jm(locale).format(h.at),
             style: AppTextStyles.caption,
             maxLines: 1,
           ),
@@ -185,7 +185,7 @@ class WeatherDetails extends StatelessWidget {
             ),
           ),
           Text(
-            '${h.rainChance}%',
+            rainText(h.rainMm),
             style: AppTextStyles.caption.copyWith(fontSize: 11),
           ),
         ],
@@ -360,4 +360,10 @@ class _Figure extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Forecast rain for an hour: "0 mm", "0.4 mm", "12 mm".
+String rainText(double mm) {
+  final r = (mm * 10).round() / 10;
+  return '${r == 0 ? '0' : r < 10 ? r.toStringAsFixed(1) : r.round()} mm';
 }
