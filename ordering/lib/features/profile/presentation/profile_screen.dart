@@ -93,6 +93,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           // refuses staff). Staff still mark items out of stock from Orders.
           if (!authProvider.isStaff) ...[
             _sectionCard(
+              Icons.receipt_long_rounded,
               context.l10n.paymentsHistory,
               context.l10n.trackPayments,
               onTap: () => Navigator.push(
@@ -103,6 +104,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             AppGaps.h12,
 
             _sectionCard(
+              Icons.restaurant_menu_rounded,
               context.l10n.menuManagement,
               context.l10n.editMenuItems,
               onTap: () => Navigator.push(
@@ -113,6 +115,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             AppGaps.h12,
 
             _sectionCard(
+              Icons.groups_rounded,
               context.l10n.staffManagement,
               context.l10n.editStaffDetails,
               onTap: () => Navigator.push(
@@ -126,6 +129,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
 
           _sectionCard(
+            Icons.insights_rounded,
             context.l10n.ordersOverview,
             context.l10n.viewOrderDetails,
             onTap: () => Navigator.push(
@@ -138,6 +142,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           // Vendor terms, served by the customer web app
           // (customer-app/public/vendor-terms.html).
           _sectionCard(
+            Icons.description_outlined,
             context.l10n.termsAndConditions,
             context.l10n.termsAndPrivacySubtitle,
             onTap: () => launchUrl(
@@ -364,7 +369,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  /// The orange icon badge every Profile item starts with (the alerts tile
+  /// has the same badge in red).
+  Widget _iconBox(IconData icon) => Container(
+    width: 40,
+    height: 40,
+    decoration: BoxDecoration(
+      color: AppColors.lightOrange,
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Icon(icon, size: 22, color: AppColors.primary),
+  );
+
   Widget _sectionCard(
+    IconData icon,
     String title,
     String subtitle, {
     required VoidCallback onTap,
@@ -374,6 +392,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: ListTile(
         onTap: onTap,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        leading: _iconBox(icon),
         title: Text(title, style: AppTextStyles.heading3),
         subtitle: Text(subtitle, style: AppTextStyles.caption),
         trailing: Icon(Icons.chevron_right, color: AppColors.grey500),
@@ -384,43 +403,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _languageCard(BuildContext context) {
     return AppCard(
       padding: AppPadding.card,
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  context.l10n.languagePreferences,
-                  style: AppTextStyles.heading3,
+          _iconBox(Icons.translate_rounded),
+          AppGaps.w16,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        context.l10n.languagePreferences,
+                        style: AppTextStyles.heading3,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const LanguagePreferencesScreen(),
+                        ),
+                      ),
+                      child: Text(
+                        context.l10n.change,
+                        style: AppTextStyles.body.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              TextButton(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const LanguagePreferencesScreen(),
-                  ),
+                Text(
+                  LanguageProvider.languages[context
+                      .watch<LanguageProvider>()
+                      .locale
+                      .languageCode]!,
+                  style: AppTextStyles.body,
                 ),
-                child: Text(
-                  context.l10n.change,
-                  style: AppTextStyles.body.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
+                AppGaps.h4,
+                Text(
+                  context.l10n.supportedLanguages,
+                  style: AppTextStyles.caption,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-          Text(
-            LanguageProvider.languages[context
-                .watch<LanguageProvider>()
-                .locale
-                .languageCode]!,
-            style: AppTextStyles.body,
-          ),
-          AppGaps.h4,
-          Text(context.l10n.supportedLanguages, style: AppTextStyles.caption),
         ],
       ),
     );
@@ -434,12 +465,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         value: theme.dark,
         onChanged: theme.setDark,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        secondary: Icon(
+        secondary: _iconBox(
           theme.dark ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
-          color: AppColors.primary,
         ),
         title: Text(context.l10n.darkTheme, style: AppTextStyles.heading3),
-        subtitle: Text(context.l10n.darkThemeSubtitle, style: AppTextStyles.caption),
+        subtitle: Text(
+          context.l10n.darkThemeSubtitle,
+          style: AppTextStyles.caption,
+        ),
         activeTrackColor: AppColors.primary,
         inactiveTrackColor: AppColors.grey300,
         thumbColor: WidgetStateProperty.all(Colors.white),
@@ -455,6 +488,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           ListTile(
             contentPadding: EdgeInsets.zero,
+            leading: _iconBox(Icons.lock_outline_rounded),
             title: Text(
               context.l10n.securityAndLogin,
               style: AppTextStyles.heading3,
