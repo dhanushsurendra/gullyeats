@@ -446,6 +446,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
       children: [
         BaseScreen(
           showBackButton: false,
+          headerGap: 16,
           header: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -468,7 +469,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                   ),
                 ],
               ),
-              AppGaps.h24,
+              AppGaps.h12,
               // Wrap: the live badge drops below a long translated title.
               Wrap(
                 crossAxisAlignment: WrapCrossAlignment.center,
@@ -507,7 +508,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                   setState(() => selectedTab = tab);
                 },
               ),
-              AppGaps.h16,
+              AppGaps.h8,
               Expanded(child: orderList()),
             ],
           ),
@@ -764,6 +765,6 @@ class _WeatherGap extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ValueListenableBuilder(
     valueListenable: WeatherService.current,
-    builder: (_, w, _) => w == null || w.isStale ? const SizedBox.shrink() : AppGaps.h16,
+    builder: (_, w, _) => w == null || w.isStale ? const SizedBox.shrink() : AppGaps.h12,
   );
 }

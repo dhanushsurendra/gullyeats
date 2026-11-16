@@ -16,6 +16,9 @@ class BaseScreen extends StatelessWidget {
   final bool showBackButton;
   final Widget? bottomNavigationBar;
 
+  /// Space between the header and the content (the Orders screen packs it tighter).
+  final double headerGap;
+
   const BaseScreen({
     super.key,
     this.title,
@@ -27,6 +30,7 @@ class BaseScreen extends StatelessWidget {
     this.header,
     this.showBackButton = true,
     this.bottomNavigationBar,
+    this.headerGap = 32,
   });
 
   Widget _buildHeader() {
@@ -84,7 +88,7 @@ class BaseScreen extends StatelessWidget {
 
                         _buildHeader(),
 
-                        AppGaps.h32,
+                        SizedBox(height: headerGap),
 
                         child,
                       ],
@@ -113,7 +117,7 @@ class BaseScreen extends StatelessWidget {
         AppGaps.h16,
       ],
       _buildHeader(),
-      AppGaps.h32,
+      SizedBox(height: headerGap),
     ];
 
     // Short windows (keyboard open on small phones, split screen) would squeeze
