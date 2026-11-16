@@ -116,12 +116,12 @@ class _Figure extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Shrinks rather than breaking at large system text.
           FittedBox(
             fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
+            alignment: Alignment.center,
             child: Text(
               value,
               style: AppTextStyles.heading3.copyWith(
@@ -129,7 +129,12 @@ class _Figure extends StatelessWidget {
               ),
             ),
           ),
-          Text(label, style: AppTextStyles.caption, maxLines: 2),
+          Text(
+            label,
+            style: AppTextStyles.caption,
+            maxLines: 2,
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
     ),
