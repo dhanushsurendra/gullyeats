@@ -78,12 +78,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _profileCard(context, initials, vendorName, phoneNumber),
-          AppGaps.h12,
-
-          CartDetailsCard(cart: selectedCart),
-          AppGaps.h12,
-
           // GullyWeather: Sunny or Chill, tap for the sheet. Hidden (gap and
           // all) while there's no fresh weather. Heavy rain also comes as a
           // push (backend utils/rainAlerts.js).
@@ -96,6 +90,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: WeatherStrip(),
                   ),
           ),
+
+          _profileCard(context, initials, vendorName, phoneNumber),
+          AppGaps.h12,
+
+          CartDetailsCard(cart: selectedCart),
+          AppGaps.h12,
 
           // Owners and staff can both warn nearby carts.
           const AreaAlertTile(),
