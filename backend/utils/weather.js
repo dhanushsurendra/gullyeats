@@ -131,9 +131,17 @@ async function weatherNear(lat, lng, now = new Date()) {
   }
 }
 
+const RETRY_MS = 5 * 60 * 1000
+
+/** Refreshes every 30 min; after a failure (network down, MET busy), tries again in 5. */
 function startWeather() {
-  const run = () => refreshWeather().catch((e) => console.error('Weather refresh failed:', e.message))
-  setInterval(run, REFRESH_MS).unref()
+  const run = () =>
+    refreshWeather()
+      .then(() => setTimeout(run, REFRESH_MS).unref())
+      .catch((e) => {
+        console.error('Weather refresh failed:', e.message)
+        setTimeout(run, RETRY_MS).unref()
+      })
   run()
 }
 

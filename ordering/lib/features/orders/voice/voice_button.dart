@@ -69,14 +69,19 @@ class _VoiceOrderButtonState extends State<VoiceOrderButton>
   }
 
   // Only while the app is in front: no sensor, no mic in the background.
+  // "Inactive" is not the background: a palm over the top of the screen
+  // brushes the status bar and makes the app briefly inactive mid-wave.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _watchWaves();
-    } else {
-      _proximity?.cancel();
-      _proximity = null;
-      _session.quiet();
+    switch (state) {
+      case AppLifecycleState.resumed:
+        if (_proximity == null) _watchWaves();
+      case AppLifecycleState.inactive:
+        break;
+      default:
+        _proximity?.cancel();
+        _proximity = null;
+        _session.quiet();
     }
   }
 
