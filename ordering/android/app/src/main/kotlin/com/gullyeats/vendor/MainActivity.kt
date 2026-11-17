@@ -47,6 +47,10 @@ class MainActivity : FlutterActivity() {
             manager.createNotificationChannel(
                 NotificationChannel("area_alerts", "Area alerts", NotificationManager.IMPORTANCE_HIGH),
             )
+            // Heavy rain or a storm forecast at the cart (backend rainAlerts.js).
+            manager.createNotificationChannel(
+                NotificationChannel("weather", "Weather alerts", NotificationManager.IMPORTANCE_HIGH),
+            )
         }
     }
 

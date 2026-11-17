@@ -39,6 +39,8 @@
       // The last fee reminder pushed to the owner, as '<IST day>:<due|locked>'
       // (see utils/feeReminders.js).
       feeReminder: String,
+      // The IST day a heavy-rain push went to this cart (utils/rainAlerts.js).
+      weatherAlert: String,
       // Set by a GullyEats admin (e.g. suspected fee avoidance, or the vendor
       // was disabled). A suspended cart takes no orders and can't be reopened
       // from the vendor app until an admin resumes it.

@@ -1,5 +1,7 @@
 import 'package:ordering/core/widgets/app_logo.dart';
 import 'package:flutter/material.dart';
+import 'package:ordering/features/weather/weather_service.dart';
+import 'package:ordering/features/weather/weather_strip.dart';
 import 'package:ordering/core/widgets/icon_tile.dart';
 import 'package:ordering/features/alerts/area_alerts.dart';
 import 'package:ordering/core/theme/app_colors.dart';
@@ -81,6 +83,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           CartDetailsCard(cart: selectedCart),
           AppGaps.h12,
+
+          // GullyWeather: Sunny or Chill, tap for the sheet. Hidden (gap and
+          // all) while there's no fresh weather. Heavy rain also comes as a
+          // push (backend utils/rainAlerts.js).
+          ValueListenableBuilder(
+            valueListenable: WeatherService.current,
+            builder: (_, w, _) => w == null || w.isStale
+                ? const SizedBox.shrink()
+                : const Padding(
+                    padding: EdgeInsets.only(bottom: 12),
+                    child: WeatherStrip(),
+                  ),
+          ),
 
           // Owners and staff can both warn nearby carts.
           const AreaAlertTile(),

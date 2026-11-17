@@ -109,6 +109,7 @@ async function startServer() {
 
   require('./utils/feeReminders').startFeeReminders()
   require('./utils/weather').startWeather()
+  require('./utils/rainAlerts').startRainAlerts()
   require('./utils/adminNotify').startAttentionChecks()
 }
 

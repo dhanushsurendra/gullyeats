@@ -2,8 +2,6 @@ import 'package:ordering/core/widgets/app_logo.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:ordering/features/weather/weather_service.dart';
-import 'package:ordering/features/weather/weather_strip.dart';
 import 'package:ordering/core/utils/order_alerts.dart';
 import 'package:ordering/core/widgets/skeleton.dart';
 import 'package:ordering/core/error/app_exceptions.dart';
@@ -35,10 +33,8 @@ void showCreateOrderSheet(
 }) {
   Navigator.of(context).push(
     PageRouteBuilder(
-      pageBuilder: (context, animation, secondaryAnimation) => AddNewOrder(
-        prefill: prefill,
-        prefillParcel: prefillParcel,
-      ),
+      pageBuilder: (context, animation, secondaryAnimation) =>
+          AddNewOrder(prefill: prefill, prefillParcel: prefillParcel),
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
         const begin = Offset(0.0, 1.0);
         const end = Offset.zero;
@@ -539,10 +535,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
                   _LiveBadge(isLive: provider.isLive),
                 ],
               ),
-              // Hidden while there's no fresh weather, so it never pushes
-              // orders down for nothing.
-              const _WeatherGap(),
-              const WeatherStrip(),
             ],
           ),
           expandToFullHeight: true,
@@ -812,18 +804,6 @@ class _SectionHeader extends StatelessWidget {
       ),
     );
   }
-}
-
-/// The space above the weather strip, only while the strip shows.
-class _WeatherGap extends StatelessWidget {
-  const _WeatherGap();
-
-  @override
-  Widget build(BuildContext context) => ValueListenableBuilder(
-    valueListenable: WeatherService.current,
-    builder: (_, w, _) =>
-        w == null || w.isStale ? const SizedBox.shrink() : AppGaps.h12,
-  );
 }
 
 /// Shrinks and fades a card out after a short pause (it just showed SERVED),
