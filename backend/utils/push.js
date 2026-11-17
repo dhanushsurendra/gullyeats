@@ -63,7 +63,10 @@ function notifyNewOrder(cart, order) {
         title: `New order #${order.orderNumber} · ${cart.cartName}`,
         body: `₹${order.totalPrice} · ${items}`,
       },
-      channelId: 'new_orders',
+      // v2: plays as a notification, so silent / vibrate mode applies (the
+      // old channel rang as an alarm). Older app builds lack it and show
+      // the push on Android's default channel with the default sound.
+      channelId: 'new_orders_v2',
     },
   )
 }

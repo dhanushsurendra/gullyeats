@@ -26,7 +26,7 @@ test('pushes a new order to owner and staff and drops dead ids', async () => {
   assert.deepStrictEqual(sent.fids, ['a', 'b', 'c'])
   assert.strictEqual(sent.notification.title, 'New order #12 · Raju Chaats')
   assert.strictEqual(sent.notification.body, '₹90 · 2× Pani Puri')
-  assert.strictEqual(sent.android.notification.channelId, 'new_orders')
+  assert.strictEqual(sent.android.notification.channelId, 'new_orders_v2')
   assert.deepStrictEqual(pulled.f, { pushIds: { $in: ['b'] } })
 })
 
