@@ -146,6 +146,24 @@ void main() {
       }, () => client));
     });
 
+    test('with no weather yet it asks again after 2 min, not 25', () async {
+      var calls = 0;
+      final client = MockClient((r) async {
+        calls++;
+        return http.Response(jsonEncode({'data': calls == 1 ? null : json()}), 200);
+      });
+      final t0 = DateTime.utc(2026, 11, 16, 6, 30);
+      await http.runWithClient(() async {
+        await withClock(Clock.fixed(t0), () => WeatherService.refresh('t', 'c1'));
+        expect(WeatherService.current.value, isNull);
+        await withClock(Clock.fixed(t0.add(const Duration(minutes: 1))), () => WeatherService.refresh('t', 'c1'));
+        expect(calls, 1, reason: 'not straight away');
+        await withClock(Clock.fixed(t0.add(const Duration(minutes: 3))), () => WeatherService.refresh('t', 'c1'));
+        expect(calls, 2);
+        expect(WeatherService.current.value, isNotNull);
+      }, () => client);
+    });
+
     test('no data from the server, or a failure, shows nothing new', () async {
       await http.runWithClient(() async {
         await WeatherService.refresh('t', 'c1');

@@ -99,14 +99,18 @@ class WeatherService {
   static String? _cartId;
   static DateTime? _askedAt;
   static const _every = Duration(minutes: 25);
+  static const _retry = Duration(minutes: 2);
 
   /// Loads the cart's weather unless it was loaded for it in the last 25 min.
   /// A failure keeps what was there (the strip hides it once it's stale).
   static Future<void> refresh(String token, String cartId) async {
     final now = clock.now();
+    // Showing weather: ask at most every 25 min. Showing none (the server
+    // had none yet): ask again after a couple of minutes.
+    final wait = current.value == null ? _retry : _every;
     if (cartId == _cartId &&
         _askedAt != null &&
-        now.difference(_askedAt!) < _every) {
+        now.difference(_askedAt!) < wait) {
       return;
     }
     if (cartId != _cartId) current.value = null;
