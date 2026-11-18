@@ -91,7 +91,11 @@ function Confetti() {
 
 const two = (n) => String(n).padStart(2, '0')
 // A datetime-local value has no zone: read it as IST.
-const istMs = (v) => (v ? new Date(/[zZ]|[+-]dd:dd$/.test(v) ? v : `${v}:00+05:30`).getTime() : NaN)
+const istMs = (v) => {
+  if (!v) return NaN
+  if (/(Z|[+-]\d\d:\d\d)$/i.test(v)) return new Date(v).getTime()
+  return new Date(`${/T\d\d:\d\d$/.test(v) ? `${v}:00` : v}+05:30`).getTime()
+}
 const whenText = (ms) =>
   new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' }).format(ms)
 
