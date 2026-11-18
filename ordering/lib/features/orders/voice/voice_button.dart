@@ -19,6 +19,11 @@ import 'package:proximity_sensor/proximity_sensor.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Voice orders ship in a later update. To turn them on, set this to true
+/// and put back the RECORD_AUDIO permission and the speech/TTS queries
+/// commented out in android/app/src/main/AndroidManifest.xml.
+const voiceOrdersEnabled = false;
+
 /// Voice orders, on the Orders tab only: tap the mic or wave a hand over the
 /// phone, say the order, and confirm by saying "yes" (or tapping). Long-press
 /// the mic to turn wave-to-talk off or on.
@@ -166,7 +171,7 @@ class _VoiceOrderButtonState extends State<VoiceOrderButton>
     }
   }
 
-  Future<void> _handle(String heard) async {
+  Future<void> _handle(List<String> heard) async {
     final l10n = context.l10n;
     final token = context.read<AuthProvider>().token ?? '';
     final cart = context.read<CartProvider>().selectedCart;
@@ -181,7 +186,7 @@ class _VoiceOrderButtonState extends State<VoiceOrderButton>
       if (!mounted) return;
     }
 
-    final command = parseVoiceCommand(heard, orders.menu, orders.orders);
+    final command = parseBestVoiceCommand(heard, orders.menu, orders.orders);
     switch (command) {
       case NotUnderstood():
         return _sorry();
@@ -200,7 +205,7 @@ class _VoiceOrderButtonState extends State<VoiceOrderButton>
       context,
       key: _sheetKey,
       command: command,
-      heard: heard,
+      heard: heard.first,
       session: _session,
       parcelCharge: cart.parcelCharge.toDouble(),
       platformFee: orders.newOrderFee,

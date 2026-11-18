@@ -140,6 +140,36 @@ void main() {
     });
   });
 
+  test('"to" is how the phone often writes two', () {
+    expect(lines(parse('to masala dosa')), '2 Masala Dosa');
+  });
+
+  test('a bigger menu with dishes that share words', () {
+    final big = [
+      dish('b1', 'Chicken Biriyani', 150),
+      dish('b2', 'Mutton Biriyani', 220),
+      dish('b3', 'Egg Biriyani', 110),
+      dish('b4', 'Chicken Fried Rice', 120),
+      dish('b5', 'Chocolate Milkshake', 80),
+      dish('b6', 'Vanilla Milkshake', 70),
+    ];
+    String read(String heard) => lines(parseVoiceCommand(heard, big, active));
+    expect(read('2 chicken biryani 1 chocolate milk shake'), '2 Chicken Biriyani, 1 Chocolate Milkshake');
+    expect(read('one mutton biryani two vanilla milkshake'), '1 Mutton Biriyani, 2 Vanilla Milkshake');
+    expect(read('egg biryani chicken fried rice'), '1 Egg Biriyani, 1 Chicken Fried Rice');
+    // "biryani" alone could be any of three: not guessed.
+    expect(parseVoiceCommand('biryani', big, active), isA<NotUnderstood>());
+  });
+
+  test("the best of the recogniser's guesses wins, the first on a tie", () {
+    VoiceCommand best(List<String> g) => parseBestVoiceCommand(g, menu, active);
+    expect(lines(best(['to mass a la doors a', '2 masala dosa'])), '2 Masala Dosa');
+    expect(lines(best(['1 dosa', '1 masala dosa'])), '1 Dosa');
+    expect(lines(best(['1 dosa blah', '1 masala dosa'])), '1 Masala Dosa');
+    expect(best(['hello', 'number 6 paid']), isA<MarkPaidCommand>());
+    expect(best([]), isA<NotUnderstood>());
+  });
+
   test('nothing usable', () {
     expect(parse(''), isA<NotUnderstood>());
     expect(parse('hello how are you'), isA<NotUnderstood>());
@@ -147,7 +177,7 @@ void main() {
   });
 
   test('yes and no replies in each language', () {
-    for (final w in ['yes', 'ok', 'haan', 'हाँ', 'houdu', 'ಹೌದು', 'aama', 'சரி']) {
+    for (final w in ['yes', 'ok', 'haan', 'हाँ', 'houdu', 'ಹೌದು', 'aama', 'சரி', 'Yes.', 'यस', 'ಯೆಸ್', 'யெஸ்']) {
       expect(parseYesNo(w), isTrue, reason: w);
     }
     for (final w in ['no', 'cancel', 'nahi', 'नहीं', 'beda', 'ಬೇಡ', 'venda', 'வேண்டாம்']) {

@@ -284,7 +284,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         // Voice orders sit on the + button, Orders tab only.
-                        if (_currentIndex == 1)
+                        if (voiceOrdersEnabled && _currentIndex == 1)
                           const SafeArea(
                             top: false,
                             bottom: false,

@@ -66,6 +66,8 @@ const _numbers = <String, int>{
   'ten': 10, 'eleven': 11, 'twelve': 12, 'thirteen': 13, 'fourteen': 14,
   'fifteen': 15, 'sixteen': 16, 'seventeen': 17, 'eighteen': 18,
   'nineteen': 19, 'twenty': 20,
+  // How the recogniser often writes "two": "to chicken biryani".
+  'to': 2, 'too': 2,
   // Hindi
   'ek': 1, 'do': 2, 'teen': 3, 'char': 4, 'chaar': 4, 'paanch': 5,
   'panch': 5, 'chhe': 6, 'che': 6, 'chah': 6, 'saat': 7, 'aath': 8,
@@ -210,6 +212,7 @@ const _yes = {
   'ok',
   'okay',
   'confirm',
+  'confirmed',
   'done',
   'sure',
   'haan',
@@ -223,6 +226,14 @@ const _yes = {
   'aama',
   'ama',
   'aamam',
+  // English "yes"/"ok" written in each script.
+  'यस',
+  'येस',
+  'ओके',
+  'ಯೆಸ್',
+  'ಎಸ್',
+  'யெஸ்',
+  'எஸ்',
   'हाँ',
   'हां',
   'जी',
@@ -314,6 +325,28 @@ List<String> _spellings(MenuItemModel item) => {item.name, ...item.names.values}
     .map((n) => normalise(n).replaceAll(' ', ''))
     .where((n) => n.isNotEmpty)
     .toList();
+
+/// The best reading among the recogniser's guesses (best first): the
+/// earliest one that understands the most, so a guess that turned
+/// "biryani" into "bury Annie" loses to one that heard the dish.
+VoiceCommand parseBestVoiceCommand(
+  List<String> guesses,
+  List<MenuItemModel> menu,
+  List<OrderModel> active,
+) {
+  int score(VoiceCommand c) => switch (c) {
+    NotUnderstood() => -1000,
+    OrderNotFound() => -500,
+    NewOrderCommand c => -c.unknown.length,
+    _ => 0,
+  };
+  VoiceCommand best = const NotUnderstood();
+  for (final heard in guesses) {
+    final command = parseVoiceCommand(heard, menu, active);
+    if (score(command) > score(best)) best = command;
+  }
+  return best;
+}
 
 /// Understands one spoken command. [active] is today's orders, for "#N".
 VoiceCommand parseVoiceCommand(

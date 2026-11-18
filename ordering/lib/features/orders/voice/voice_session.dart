@@ -13,8 +13,11 @@ class VoiceSession {
   final _stt = SpeechToText();
   final _tts = FlutterTts();
   bool _ready = false;
-  Completer<String>? _heard;
+  Completer<List<String>>? _heard;
   String _words = '';
+  List<String> _alternates = const [];
+  // A "done" left over from the last listen must not end this one.
+  bool _started = false;
 
   static String get _lang => LanguageProvider.current.languageCode;
   static String get _sttLocale => switch (_lang) {
@@ -32,12 +35,17 @@ class VoiceSession {
     try {
       _ready = await _stt.initialize(
         onStatus: (status) {
-          if (status == SpeechToText.doneStatus ||
-              status == SpeechToText.notListeningStatus) {
-            _finish(_words);
+          if (status == SpeechToText.listeningStatus) _started = true;
+          if (_started &&
+              (status == SpeechToText.doneStatus ||
+                  status == SpeechToText.notListeningStatus)) {
+            _finish();
           }
         },
-        onError: (SpeechRecognitionError e) => _finish(_words),
+        onError: (SpeechRecognitionError e) {
+          debugPrint('Voice error: ${e.errorMsg}');
+          if (_started || e.permanent) _finish();
+        },
       );
     } catch (e) {
       debugPrint('Voice init failed: $e');
@@ -48,29 +56,43 @@ class VoiceSession {
 
   bool get isListening => _stt.isListening;
 
-  void _finish(String words) {
+  void _finish() {
     final c = _heard;
-    if (c != null && !c.isCompleted) c.complete(words.trim());
+    if (c != null && !c.isCompleted) c.complete(_result());
   }
 
-  /// Listens once and returns what was said ('' for nothing). Stops on its
+  /// The recogniser's guesses, best first, without repeats or blanks.
+  List<String> _result() {
+    final all = {
+      _words.trim(),
+      ..._alternates.map((a) => a.trim()),
+    }.where((a) => a.isNotEmpty).toList();
+    debugPrint('Voice heard: $all');
+    return all;
+  }
+
+  /// Listens once and returns the recogniser's guesses at what was said,
+  /// best first (empty for nothing). Stops on its
   /// own after a [pauseFor] silence or [listenFor] in all. [onWords] gets
   /// the words as they come.
-  Future<String> listen({
+  Future<List<String>> listen({
     void Function(String words)? onWords,
-    Duration pauseFor = const Duration(seconds: 2),
-    Duration listenFor = const Duration(seconds: 10),
+    Duration pauseFor = const Duration(seconds: 3),
+    Duration listenFor = const Duration(seconds: 15),
   }) async {
-    if (!await init()) return '';
+    if (!await init()) return const [];
     await stop();
     _words = '';
-    final heard = _heard = Completer<String>();
+    _alternates = const [];
+    _started = false;
+    final heard = _heard = Completer<List<String>>();
     try {
       await _stt.listen(
         onResult: (SpeechRecognitionResult r) {
           _words = r.recognizedWords;
+          _alternates = r.alternates.map((a) => a.recognizedWords).toList();
           onWords?.call(_words);
-          if (r.finalResult) _finish(_words);
+          if (r.finalResult) _finish();
         },
         listenOptions: SpeechListenOptions(
           localeId: _sttLocale,
@@ -83,12 +105,12 @@ class VoiceSession {
       );
     } catch (e) {
       debugPrint('Voice listen failed: $e');
-      _finish('');
+      _finish();
     }
     // A last guard in case the recogniser never reports back.
     return heard.future.timeout(
       listenFor + const Duration(seconds: 3),
-      onTimeout: () => _words.trim(),
+      onTimeout: _result,
     );
   }
 

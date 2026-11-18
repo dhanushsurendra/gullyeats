@@ -151,13 +151,14 @@ class VoiceConfirmSheetState extends State<VoiceConfirmSheet> {
   Future<void> listenForYes() async {
     if (_listening || _closed) return;
     setState(() => _listening = true);
+    // The pause counts from when the mic opens, so leave time to start.
     final heard = await widget.session.listen(
-      pauseFor: const Duration(milliseconds: 1500),
-      listenFor: const Duration(seconds: 4),
+      pauseFor: const Duration(seconds: 3),
+      listenFor: const Duration(seconds: 6),
     );
     if (!mounted || _closed) return;
     setState(() => _listening = false);
-    switch (parseYesNo(heard)) {
+    switch (heard.map(parseYesNo).nonNulls.firstOrNull) {
       case true:
         _confirm();
       case false:
