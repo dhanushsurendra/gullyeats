@@ -7,11 +7,14 @@ import useUrlState from '../hooks/useUrlState'
  * The launch ceremony: a big button, 3… 2… 1…, then confetti and "GullyEats
  * is live!". For the event's screen only: nothing in the apps changes.
  *
- * ?at=<date and time> (the muhurat) shows a clock and starts the countdown by
- * itself so "live" lands on that exact minute. Browsers allow sound and full
+ * The muhurat (LAUNCH_AT, or ?at=<date and time> to move it) shows a big
+ * countdown and starts 3… 2… 1… by itself so "live" lands on that exact
+ * minute. Times are India time, whatever the laptop's clock zone. Browsers allow sound and full
  * screen only after a click, so press Full screen once before the moment.
  */
 
+// Friday 20 Nov 2026, 6:45 pm IST (as a datetime-local value).
+const LAUNCH_AT = '2026-11-20T18:45'
 const COUNT_FROM = 3
 const SECOND = 1000
 const ORANGE = ['#FE5200', '#ff9a66', '#FFC21A', '#FFFFFF', '#16A34A', '#A78BFA']
@@ -87,19 +90,38 @@ function Confetti() {
 }
 
 const two = (n) => String(n).padStart(2, '0')
-function untilText(ms) {
+// A datetime-local value has no zone: read it as IST.
+const istMs = (v) => (v ? new Date(/[zZ]|[+-]dd:dd$/.test(v) ? v : `${v}:00+05:30`).getTime() : NaN)
+const whenText = (ms) =>
+  new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' }).format(ms)
+
+// Days / hours / minutes / seconds left, as big tiles.
+function Countdown({ ms }) {
   const s = Math.ceil(ms / 1000)
-  const d = Math.floor(s / 86400)
-  const clock = `${two(Math.floor((s % 86400) / 3600))}:${two(Math.floor((s % 3600) / 60))}:${two(s % 60)}`
-  return d ? `${d} day${d > 1 ? 's' : ''} ${clock}` : clock
+  const parts = [
+    [Math.floor(s / 86400), 'Days'],
+    [Math.floor((s % 86400) / 3600), 'Hours'],
+    [Math.floor((s % 3600) / 60), 'Minutes'],
+    [s % 60, 'Seconds'],
+  ]
+  return (
+    <div className="mt-10 flex gap-2 sm:gap-4" role="timer" aria-label={`${parts.map(([n, l]) => `${n} ${l}`).join(', ')} to launch`}>
+      {parts.map(([n, label]) => (
+        <div key={label} className="w-[19vw] max-w-[140px] rounded-2xl border border-white/10 bg-white/5 py-3 sm:py-5">
+          <div className="font-mono text-[9vw] font-bold leading-none tabular-nums text-white sm:text-6xl">{two(n)}</div>
+          <div className="mt-2 text-[10px] uppercase tracking-[0.2em] text-white/50 sm:text-xs">{label}</div>
+        </div>
+      ))}
+    </div>
+  )
 }
 
 export default function Launch() {
-  const [at, setAt] = useUrlState('at')
+  const [at, setAt] = useUrlState('at', LAUNCH_AT)
   const [count, setCount] = useState(null) // 3, 2, 1, then 0 = live
   const [now, setNow] = useState(() => Date.now())
   const liveAt = useRef(0) // when "live" shows; each number is timed back from it
-  const atMs = at ? new Date(at).getTime() : NaN
+  const atMs = istMs(at)
 
   const start = (at = Date.now() + COUNT_FROM * SECOND) => {
     if (count !== null) return
@@ -157,9 +179,10 @@ export default function Launch() {
             <span className="text-brand">Gully</span>Eats
           </h1>
           {atMs > now && (
-            <p className="mt-6 text-lg text-white/70 sm:text-2xl">
-              Launching in <span className="font-mono font-semibold text-white">{untilText(left)}</span>
-            </p>
+            <>
+              <p className="mt-6 text-lg text-white/70 sm:text-2xl">Launching {whenText(atMs)} IST</p>
+              <Countdown ms={left} />
+            </>
           )}
           <button
             onClick={start}
@@ -168,7 +191,7 @@ export default function Launch() {
             <Rocket size={28} /> Launch GullyEats
           </button>
           <label className="mt-16 flex flex-col items-center gap-2 text-sm text-white/50">
-            Muhurat (optional): starts by itself at this time
+            Muhurat (India time): starts by itself at this time
             <input
               type="datetime-local"
               value={at}
