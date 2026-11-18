@@ -7,10 +7,10 @@ import useUrlState from '../hooks/useUrlState'
  * The launch ceremony: a big button, 3… 2… 1…, then confetti and "GullyEats
  * is live!". For the event's screen only: nothing in the apps changes.
  *
- * The muhurat (LAUNCH_AT; ?at=<date and time> overrides it, for a rehearsal) shows a big
- * countdown and starts 3… 2… 1… by itself so "live" lands on that exact
- * minute. Times are India time, whatever the laptop's clock zone. Browsers allow sound and full
- * screen only after a click, so press Full screen once before the moment.
+ * The muhurat (LAUNCH_AT; ?at=<date and time> overrides it, for a rehearsal)
+ * shows a big countdown that stops at 00 when the moment comes; then someone
+ * presses Launch for 3… 2… 1…. Times are India time, whatever the laptop's
+ * clock zone. Browsers allow sound only after a click: the Launch press is one.
  */
 
 // Friday 20 Nov 2026, 6:45 pm IST (as a datetime-local value).
@@ -127,9 +127,9 @@ export default function Launch() {
   const liveAt = useRef(0) // when "live" shows; each number is timed back from it
   const atMs = istMs(at)
 
-  const start = (at = Date.now() + COUNT_FROM * SECOND) => {
+  const start = () => {
     if (count !== null) return
-    liveAt.current = at
+    liveAt.current = Date.now() + COUNT_FROM * SECOND
     setCount(COUNT_FROM)
   }
 
@@ -144,25 +144,19 @@ export default function Launch() {
     return () => clearTimeout(t)
   }, [count])
 
-  // The muhurat clock: start so that "live" lands exactly on the set time.
+  // The muhurat clock ticks down to the moment, then stops at 00.
+  const due = !atMs || now >= atMs
   useEffect(() => {
-    if (!atMs || count !== null) return
-    const t = setInterval(() => {
-      const left = atMs - Date.now()
-      setNow(Date.now())
-      // Up to 2 min late still fires (a background tab's timers can run once
-      // a minute); opening the page later than that doesn't replay a launch.
-      if (left <= COUNT_FROM * SECOND && left > -2 * 60 * SECOND) start(Math.max(atMs, Date.now()))
-    }, 50)
+    if (due || count !== null) return
+    const t = setInterval(() => setNow(Date.now()), 200)
     return () => clearInterval(t)
-  })
+  }, [due, count])
 
   const fullScreen = () => {
-    beep(0, 1) // unlocks sound for an automatic start later
     document.documentElement.requestFullscreen?.().catch(() => {})
   }
 
-  const left = atMs - now
+  const left = Math.max(0, atMs - now)
 
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#0B1230] px-4 text-center text-white">
@@ -182,15 +176,19 @@ export default function Launch() {
           <h1 className="text-4xl font-bold sm:text-6xl">
             <span className="text-brand">Gully</span>Eats
           </h1>
-          {atMs > now && (
+          {!!atMs && (
             <>
-              <p className="mt-6 text-lg text-white/70 sm:text-2xl">Launching {whenText(atMs)} IST</p>
+              <p className="mt-6 text-lg text-white/70 sm:text-2xl" aria-live="polite">
+                {left ? `Launching ${whenText(atMs)} IST` : "It's time!"}
+              </p>
               <Countdown ms={left} />
             </>
           )}
           <button
             onClick={start}
-            className="mt-12 flex items-center gap-3 rounded-full bg-brand px-10 py-5 text-xl font-semibold shadow-[0_0_60px_rgba(254,82,0,0.5)] transition hover:scale-105 hover:bg-brand-600 sm:text-2xl"
+            className={`mt-12 flex items-center gap-3 rounded-full bg-brand px-10 py-5 text-xl font-semibold shadow-[0_0_60px_rgba(254,82,0,0.5)] transition hover:scale-105 hover:bg-brand-600 sm:text-2xl ${
+              atMs && !left ? 'motion-safe:animate-pulse ring-4 ring-brand/40' : ''
+            }`}
           >
             <Rocket size={28} /> Launch GullyEats
           </button>
