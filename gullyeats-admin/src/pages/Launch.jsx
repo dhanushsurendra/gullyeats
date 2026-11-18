@@ -7,7 +7,7 @@ import useUrlState from '../hooks/useUrlState'
  * The launch ceremony: a big button, 3… 2… 1…, then confetti and "GullyEats
  * is live!". For the event's screen only: nothing in the apps changes.
  *
- * The muhurat (LAUNCH_AT, or ?at=<date and time> to move it) shows a big
+ * The muhurat (LAUNCH_AT; ?at=<date and time> overrides it, for a rehearsal) shows a big
  * countdown and starts 3… 2… 1… by itself so "live" lands on that exact
  * minute. Times are India time, whatever the laptop's clock zone. Browsers allow sound and full
  * screen only after a click, so press Full screen once before the moment.
@@ -117,7 +117,7 @@ function Countdown({ ms }) {
 }
 
 export default function Launch() {
-  const [at, setAt] = useUrlState('at', LAUNCH_AT)
+  const [at] = useUrlState('at', LAUNCH_AT)
   const [count, setCount] = useState(null) // 3, 2, 1, then 0 = live
   const [now, setNow] = useState(() => Date.now())
   const liveAt = useRef(0) // when "live" shows; each number is timed back from it
@@ -146,9 +146,9 @@ export default function Launch() {
     const t = setInterval(() => {
       const left = atMs - Date.now()
       setNow(Date.now())
-      // Only within a few seconds of the moment: opening the page later
-      // doesn't fire a launch that has passed.
-      if (left <= COUNT_FROM * SECOND && left > -5000) start(Math.max(atMs, Date.now()))
+      // Up to 2 min late still fires (a background tab's timers can run once
+      // a minute); opening the page later than that doesn't replay a launch.
+      if (left <= COUNT_FROM * SECOND && left > -2 * 60 * SECOND) start(Math.max(atMs, Date.now()))
     }, 50)
     return () => clearInterval(t)
   })
@@ -190,15 +190,6 @@ export default function Launch() {
           >
             <Rocket size={28} /> Launch GullyEats
           </button>
-          <label className="mt-16 flex flex-col items-center gap-2 text-sm text-white/50">
-            Muhurat (India time): starts by itself at this time
-            <input
-              type="datetime-local"
-              value={at}
-              onChange={(e) => setAt(e.target.value)}
-              className="rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-white [color-scheme:dark]"
-            />
-          </label>
         </>
       )}
 
