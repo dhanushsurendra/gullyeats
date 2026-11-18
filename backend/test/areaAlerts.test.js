@@ -109,3 +109,21 @@ test('expired alerts are not shown', async () => {
   await AreaAlert.updateMany({}, { expiresAt: new Date(Date.now() - 1000) })
   assert.strictEqual((await list(userB, cartB)).body.data.length, 0)
 })
+
+test('admin view: counts reports, names the sender, groups nearby alerts into hotspots', async () => {
+  const at = (cartId, coordinates, reason, confirmedBy = [], ago = 0) => ({
+    cartId, userId: ownerA, reason, coordinates, confirmedBy,
+    createdAt: new Date(Date.now() - ago * 60000), expiresAt: new Date(Date.now() + (60 - ago) * 60000),
+  })
+  await AreaAlert.collection.insertMany([
+    at(cartA, [12.9716, 77.5946], 'EVICTION', [ownerB], 120), // ended
+    at(cartB, [12.9760, 77.5946], 'EVICTION'), // ~490 m away: same hotspot
+    at(cartFar, [12.9900, 77.5946], 'RAIN'), // ~2 km: its own hotspot
+  ])
+  const res = await call(c.adminAreaAlerts, { user: { role: 'admin' }, query: {} })
+  const d = res.body.data
+  assert.deepStrictEqual(d.totals, { alerts: 3, reports: 4, carts: 3, active: 2 })
+  assert.strictEqual(d.byReason.EVICTION, 2)
+  assert.deepStrictEqual(d.hotspots.map((h) => [h.alerts, h.reports, h.carts]), [[2, 3, 2], [1, 1, 1]])
+  assert.strictEqual(d.alerts.find((a) => a.reason === 'RAIN').cart.name, `Cart ${cartFar}`)
+})

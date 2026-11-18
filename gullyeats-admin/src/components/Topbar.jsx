@@ -10,6 +10,8 @@ const TITLES = {
   '/collections': ['Collections', 'Overdue platform fees and refunds owed'],
   '/moderation': ['Moderation', 'GullyPulse confessions and comments'],
   '/dishes': ['Dishes', 'New dish names from vendors, to review'],
+  '/area-alerts': ['Area alerts', 'Where vendors warned nearby carts'],
+  '/broadcast': ['Send message', 'A notification to all vendors, a group or one cart'],
   '/restaurants': ['Carts', 'Every cart across the platform'],
   '/owners': ['Owners', 'Business owners on GullyEats'],
   '/orders': ['Orders', 'Every order across the platform'],

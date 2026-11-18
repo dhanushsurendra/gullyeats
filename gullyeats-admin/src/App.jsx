@@ -10,6 +10,8 @@ import Moderation from './pages/Moderation'
 import Dishes from './pages/Dishes'
 import Notifications from './pages/Notifications'
 import Launch from './pages/Launch'
+import AreaAlerts from './pages/AreaAlerts'
+import Broadcast from './pages/Broadcast'
 import {
   Owners,
   Restaurants,
@@ -70,6 +72,8 @@ export default function App() {
         <Route path="actions" element={<Actions />} />
         <Route path="moderation" element={<Moderation />} />
         <Route path="dishes" element={<Dishes />} />
+        <Route path="area-alerts" element={<AreaAlerts />} />
+        <Route path="broadcast" element={<Broadcast />} />
         <Route path="notifications" element={<Notifications />} />
         <Route path="feedback" element={<Feedback />} />
         <Route path="settings" element={<SettingsPage />} />

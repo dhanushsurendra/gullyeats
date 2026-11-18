@@ -40,6 +40,8 @@ const adminActionSchema = new mongoose.Schema(
         'SET_PLATFORM_FEE',
         // A customer's "not refunded" flag dealt with (target kind order).
         'RESOLVE_REFUND_FLAG',
+        // A message pushed to every vendor (no target; details { title, body, staff, users, phones, sent }).
+        'SEND_BROADCAST',
       ],
     },
     // What it was done to, e.g. { kind: 'cart', id, label: "Raju's Momos" }.

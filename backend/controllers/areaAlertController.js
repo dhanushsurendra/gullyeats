@@ -5,6 +5,7 @@ const asyncHandler = require('../utils/asyncHandler')
 const { findManagedCart } = require('../utils/cartAccess')
 const { distanceKm } = require('../utils/discoverCarts')
 const { sendToUsers } = require('../utils/push')
+const { rangeFor, hasRange } = require('../utils/dateRange')
 
 /*
  * Area alerts: a vendor warns every GullyEats cart within RADIUS_KM of their
@@ -149,6 +150,83 @@ exports.confirmAreaAlert = asyncHandler(async (req, res) => {
     { $addToSet: { confirmedBy: req.user._id }, $set: { expiresAt: new Date(Date.now() + ACTIVE_MIN * MIN) } },
   )
   res.json({ success: true })
+})
+
+// Alerts within RADIUS_KM of each other (oldest first) form one hotspot,
+// centred on its first alert.
+function hotspots(alerts) {
+  const spots = []
+  for (const a of [...alerts].sort((x, y) => x.createdAt - y.createdAt)) {
+    const s = spots.find((h) => distanceKm([h.lat, h.lng], a.coordinates) <= RADIUS_KM)
+    if (s) s.items.push(a)
+    else spots.push({ lat: a.coordinates[0], lng: a.coordinates[1], items: [a] })
+  }
+  return spots
+}
+
+// GET /api/admin/area-alerts?range=|startDate=&endDate= (none: all 90 kept days)
+// Admins see which cart sent each alert; vendors never do.
+exports.adminAreaAlerts = asyncHandler(async (req, res) => {
+  const filter = {}
+  if (hasRange(req.query)) {
+    const { start, end } = rangeFor(req.query)
+    filter.createdAt = { $gte: start, $lt: end }
+  }
+  // shortcut: whole window in memory, fine for 90 days of alerts; aggregate if it grows past ~10k rows.
+  const rows = await AreaAlert.find(filter).sort({ createdAt: -1 }).lean()
+  const carts = await Cart.find({ _id: { $in: [...new Set(rows.map((a) => String(a.cartId)))] } })
+    .select('cartName cartCity address')
+    .lean()
+  const cartOf = new Map(carts.map((c) => [String(c._id), c]))
+  const now = new Date()
+  const reports = (a) => 1 + a.confirmedBy.length
+
+  const alerts = rows.map((a) => {
+    const c = cartOf.get(String(a.cartId))
+    return {
+      id: a._id,
+      reason: a.reason,
+      lat: a.coordinates[0],
+      lng: a.coordinates[1],
+      createdAt: a.createdAt,
+      expiresAt: a.expiresAt,
+      active: a.expiresAt > now,
+      reports: reports(a),
+      cart: { id: a.cartId, name: c?.cartName || 'Removed cart', city: c?.cartCity || '', address: c?.address || '' },
+    }
+  })
+  const byReason = Object.fromEntries(Object.keys(TITLES).map((r) => [r, 0]))
+  for (const a of rows) byReason[a.reason] += 1
+
+  const spots = hotspots(rows)
+    .map((s) => ({
+      // Drawn at the middle of its alerts, not the first one.
+      lat: s.items.reduce((t, a) => t + a.coordinates[0], 0) / s.items.length,
+      lng: s.items.reduce((t, a) => t + a.coordinates[1], 0) / s.items.length,
+      alerts: s.items.length,
+      reports: s.items.reduce((t, a) => t + reports(a), 0),
+      carts: new Set(s.items.map((a) => String(a.cartId))).size,
+      reasons: s.items.reduce((m, a) => ({ ...m, [a.reason]: (m[a.reason] || 0) + 1 }), {}),
+      last: s.items[s.items.length - 1].createdAt,
+      area: cartOf.get(String(s.items[0].cartId))?.address || cartOf.get(String(s.items[0].cartId))?.cartName || '',
+    }))
+    .sort((a, b) => b.reports - a.reports || b.last - a.last)
+
+  res.json({
+    success: true,
+    data: {
+      radiusKm: RADIUS_KM,
+      totals: {
+        alerts: rows.length,
+        reports: rows.reduce((t, a) => t + reports(a), 0),
+        carts: new Set(rows.map((a) => String(a.cartId))).size,
+        active: alerts.filter((a) => a.active).length,
+      },
+      byReason,
+      hotspots: spots,
+      alerts,
+    },
+  })
 })
 
 exports.RADIUS_KM = RADIUS_KM

@@ -31,6 +31,7 @@ const ACTIONS = {
   REJECT_DISH: 'Rejected dish name',
   SET_PLATFORM_FEE: 'Changed platform fee',
   RESOLVE_REFUND_FLAG: 'Resolved refund flag',
+  SEND_BROADCAST: 'Sent message to vendors',
 }
 
 // One readable line per action, from the details the server stored.
@@ -57,6 +58,8 @@ function describe({ action, details: d }) {
       return `${d.days} days · ${d.reason}`
     case 'APPROVE_DISH':
       return d.image ? 'With a default photo' : 'No default photo'
+    case 'SEND_BROADCAST':
+      return `"${d.title}" · ${d.body} · to ${d.picked?.length ? d.picked.join(', ') : { all: 'all carts', unpaid: 'carts with unpaid fees', inactive: `carts with no orders for ${d.days} days` }[d.audience] || 'picked carts'} (${d.carts ?? '?'} carts) · ${d.sent} of ${d.phones} phones${d.staff ? ', staff included' : ''}`
     case 'MERGE_DISH':
       return `Now another name for ${d.into}`
     default:

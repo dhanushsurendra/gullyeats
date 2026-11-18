@@ -27,6 +27,7 @@ export const T = Object.fromEntries(
     'play',
     'pulse',
     'todo',
+    'areaAlerts',
   ].map((k) => [k, make(k, api[k])]),
 )
 

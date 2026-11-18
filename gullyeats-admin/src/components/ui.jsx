@@ -129,6 +129,7 @@ export const Seg = ({ options, value, onChange }) => (
     {options.map(([k, label]) => (
       <button
         key={k}
+        type='button'
         onClick={() => onChange(k)}
         className={`whitespace-nowrap rounded-full px-3 py-1 text-[12px] font-semibold transition-all
            ${value === k ? 'bg-night text-white shadow-[0_4px_12px_-4px_rgba(26,15,69,.6)] dark:bg-[#3b2a7a]' : 'text-neutral-500 hover:text-ink'}`}

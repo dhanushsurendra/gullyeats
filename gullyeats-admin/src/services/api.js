@@ -238,6 +238,10 @@ export const api = {
   socketToken: () => request(`${ADMIN}/notifications/socket-token`),
   // What's waiting in each to-do page (sidebar badges).
   todo: () => request(`${ADMIN}/todo`),
+  areaAlerts: (p) => request(`${ADMIN}/area-alerts`, p),
+  broadcastPreview: (p) => request(`${ADMIN}/broadcast`, p),
+  broadcastSearch: (q) => request(`${ADMIN}/broadcast/search`, { q }),
+  sendBroadcast: (body) => post(`${ADMIN}/broadcast`, body),
 
   resetVendorPin: (vendorId) =>
     post(`${ADMIN}/vendors/${encodeURIComponent(vendorId.trim())}/reset-pin`),

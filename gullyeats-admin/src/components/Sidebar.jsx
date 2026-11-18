@@ -17,6 +17,8 @@ import {
   ShieldAlert,
   Utensils,
   Rocket,
+  Siren,
+  Megaphone,
   LogOut,
   X,
 } from 'lucide-react'
@@ -46,6 +48,8 @@ const NAV = [
     'Run the platform',
     [
       ['Carts', '/restaurants', Store],
+      ['Area alerts', '/area-alerts', Siren],
+      ['Send message', '/broadcast', Megaphone],
       ['Owners', '/owners', Users],
       ['Orders', '/orders', ShoppingBag],
       ['Payments', '/payments', CreditCard],

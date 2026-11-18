@@ -23,28 +23,36 @@ const DEAD = ['messaging/installation-id-not-registered']
  * [userFilter]. [channelId] is an Android channel the app creates
  * (MainActivity.kt); [data] reaches the app when the push is tapped.
  * Never throws: a failed push must not fail what triggered it.
+ * Resolves to { phones, sent } (both 0 without Firebase).
  */
 async function sendToUsers(userFilter, { notification, channelId, data }) {
+  let phones = 0
+  let sent = 0
   try {
     const fcm = getMessaging()
-    if (!fcm) return
+    if (!fcm) return { phones, sent }
     const users = await User.find(userFilter).select('+pushIds').lean()
     const ids = users.flatMap((u) => u.pushIds || [])
-    if (!ids.length) return
+    phones = ids.length
 
-    const result = await fcm.sendEachForMulticast({
-      fids: ids,
-      notification,
-      data,
-      // High priority wakes a phone that's dozing.
-      android: { priority: 'high', notification: { channelId } },
-    })
-
-    const dead = ids.filter((_, i) => DEAD.includes(result.responses[i].error?.code))
-    if (dead.length) await User.updateMany({ pushIds: { $in: dead } }, { $pull: { pushIds: { $in: dead } } })
+    // Firebase takes at most 500 phones per multicast.
+    for (let i = 0; i < ids.length; i += 500) {
+      const batch = ids.slice(i, i + 500)
+      const result = await fcm.sendEachForMulticast({
+        fids: batch,
+        notification,
+        data,
+        // High priority wakes a phone that's dozing.
+        android: { priority: 'high', notification: { channelId } },
+      })
+      sent += result.responses.filter((r) => !r.error).length
+      const dead = batch.filter((_, j) => DEAD.includes(result.responses[j].error?.code))
+      if (dead.length) await User.updateMany({ pushIds: { $in: dead } }, { $pull: { pushIds: { $in: dead } } })
+    }
   } catch (e) {
     console.error('Push failed:', e.message)
   }
+  return { phones, sent }
 }
 
 // shortcut: pushes are English only (the server doesn't know each phone's language); send per-language text if vendors ask.

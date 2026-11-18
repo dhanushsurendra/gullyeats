@@ -51,6 +51,10 @@ class MainActivity : FlutterActivity() {
             manager.createNotificationChannel(
                 NotificationChannel("weather", "Weather alerts", NotificationManager.IMPORTANCE_HIGH),
             )
+            // Messages from the GullyEats team (backend broadcastController.js).
+            manager.createNotificationChannel(
+                NotificationChannel("announcements", "Messages from GullyEats", NotificationManager.IMPORTANCE_HIGH),
+            )
         }
     }
 
